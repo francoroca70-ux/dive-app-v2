@@ -297,6 +297,101 @@ body { background: var(--navy); color: var(--text); }
 .loading-logo span { color: var(--teal); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
+/* ─── SETTINGS ─── */
+.card-section-title {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--blue);
+  margin-bottom: 16px;
+}
+.card-desc { font-size: 0.875rem; color: var(--muted); margin-bottom: 4px; }
+.settings-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+.settings-row:last-of-type { border-bottom: none; }
+.settings-label { color: var(--muted); width: 140px; flex-shrink: 0; font-weight: 500; }
+.settings-value { color: var(--navy); font-weight: 600; }
+.settings-notice {
+  background: rgba(79,195,247,0.08); border: 1px solid rgba(79,195,247,0.2);
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 0.83rem; color: var(--blue); margin-bottom: 20px;
+}
+.settings-form { margin-top: 16px; }
+.sf-group { margin-bottom: 16px; }
+.sf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.sf-label {
+  display: block; font-size: 0.78rem; font-weight: 600;
+  color: var(--muted); letter-spacing: 0.06em;
+  text-transform: uppercase; margin-bottom: 7px;
+}
+.sf-input {
+  width: 100%; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.9rem; font-family: 'Inter', sans-serif;
+  color: var(--text); background: var(--white);
+  transition: border-color 0.2s; outline: none;
+}
+.sf-input:focus { border-color: var(--blue); }
+.settings-actions { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+.btn-save {
+  background: var(--blue); color: var(--white);
+  padding: 10px 22px; border-radius: 8px;
+  font-size: 0.875rem; font-weight: 700;
+  border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: background 0.2s;
+}
+.btn-save:hover { background: #155a76; }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-cancel {
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); padding: 10px 18px; border-radius: 8px;
+  font-size: 0.875rem; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: border-color 0.2s;
+}
+.btn-cancel:hover { border-color: var(--muted); }
+.btn-add {
+  background: none; border: 1px dashed var(--border);
+  color: var(--blue); padding: 10px 18px; border-radius: 8px;
+  font-size: 0.875rem; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; width: 100%;
+  transition: background 0.2s; margin-top: 4px;
+}
+.btn-add:hover { background: rgba(26,107,138,0.05); }
+.btn-danger-sm {
+  background: none; border: 1px solid rgba(229,62,62,0.3);
+  color: #e53e3e; padding: 7px 14px; border-radius: 6px;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; margin-top: 14px;
+  transition: background 0.2s;
+}
+.btn-danger-sm:hover { background: rgba(229,62,62,0.06); }
+.save-feedback {
+  font-size: 0.82rem; font-weight: 600;
+  color: var(--success); opacity: 0; transition: opacity 0.3s;
+}
+.save-feedback.visible { opacity: 1; }
+.save-feedback.error { color: var(--error); }
+.inline-form {
+  margin-top: 20px; padding: 20px;
+  background: var(--foam); border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.location-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+.location-item:last-child { border-bottom: none; }
+.location-name { font-weight: 600; color: var(--navy); }
+.location-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.location-delete {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 0.78rem; padding: 4px 8px;
+  border-radius: 4px; transition: color 0.2s;
+}
+.location-delete:hover { color: var(--error); }
+
 /* Mobile sidebar toggle */
 .sidebar-toggle {
   display: none; background: none; border: none;
@@ -594,14 +689,122 @@ body { background: var(--navy); color: var(--text); }
           <h1>Settings</h1>
           <p>Operation details and account</p>
         </div>
+
+        <!-- Account card -->
         <div class="card">
-          <h2>Account</h2>
-          <p>Signed in as <span id="settings-email" style="font-weight:600;color:var(--navy)">—</span></p>
+          <div class="card-section-title">Account</div>
+          <div class="settings-row">
+            <div class="settings-label">Signed in as</div>
+            <div class="settings-value" id="settings-email">—</div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Role</div>
+            <div class="settings-value" id="settings-role">Owner</div>
+          </div>
+          <button class="btn-danger-sm" id="btn-change-password">Change password</button>
         </div>
-        <div class="card">
-          <h2>Organisation setup</h2>
-          <p>Full settings — shop name, locations, billing — coming in next build.</p>
+
+        <!-- Organisation card -->
+        <div class="card" id="card-org">
+          <div class="card-section-title">Organisation</div>
+          <div class="settings-notice" id="org-notice-new">
+            No organisation set up yet. Fill in your details below and save.
+          </div>
+          <div class="settings-form">
+            <div class="sf-group">
+              <label class="sf-label">Operation name</label>
+              <input class="sf-input" type="text" id="org-name" placeholder="e.g. Blue Water Dive Centre">
+            </div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Country</label>
+                <select class="sf-input" id="org-country">
+                  <option value="">Select country</option>
+                  <option value="TH">Thailand</option>
+                  <option value="PH">Philippines</option>
+                  <option value="ID">Indonesia</option>
+                  <option value="VG">British Virgin Islands</option>
+                  <option value="FJ">Fiji</option>
+                  <option value="EG">Egypt</option>
+                  <option value="AU">Australia</option>
+                  <option value="MX">Mexico</option>
+                  <option value="US">United States</option>
+                  <option value="ES">Spain</option>
+                  <option value="AR">Argentina</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Currency</label>
+                <select class="sf-input" id="org-currency">
+                  <option value="USD">USD — US Dollar</option>
+                  <option value="THB">THB — Thai Baht</option>
+                  <option value="AUD">AUD — Australian Dollar</option>
+                  <option value="EUR">EUR — Euro</option>
+                  <option value="GBP">GBP — British Pound</option>
+                  <option value="IDR">IDR — Indonesian Rupiah</option>
+                  <option value="PHP">PHP — Philippine Peso</option>
+                  <option value="EGP">EGP — Egyptian Pound</option>
+                  <option value="ARS">ARS — Argentine Peso</option>
+                </select>
+              </div>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Contact email</label>
+              <input class="sf-input" type="email" id="org-email" placeholder="hello@yourdiveshop.com">
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-org">Save organisation</button>
+              <span class="save-feedback" id="org-save-feedback"></span>
+            </div>
+          </div>
         </div>
+
+        <!-- Locations card -->
+        <div class="card" id="card-locations">
+          <div class="card-section-title">Locations</div>
+          <p class="card-desc">Each location has its own boats, crew, and calendar. Add your main shop first.</p>
+          <div id="locations-list" style="margin: 16px 0;"></div>
+          <button class="btn-add" id="btn-add-location">+ Add location</button>
+
+          <!-- Add location form (hidden by default) -->
+          <div class="inline-form" id="form-add-location" style="display:none;">
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Location name</label>
+                <input class="sf-input" type="text" id="loc-name" placeholder="e.g. Main Shop, North Beach">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Country</label>
+                <input class="sf-input" type="text" id="loc-country" placeholder="e.g. Thailand">
+              </div>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Timezone</label>
+              <select class="sf-input" id="loc-timezone">
+                <option value="UTC">UTC</option>
+                <option value="Asia/Bangkok">Asia/Bangkok (Thailand, Indonesia)</option>
+                <option value="Asia/Manila">Asia/Manila (Philippines)</option>
+                <option value="Asia/Jakarta">Asia/Jakarta (Indonesia)</option>
+                <option value="Asia/Cairo">Africa/Cairo (Egypt)</option>
+                <option value="Pacific/Fiji">Pacific/Fiji</option>
+                <option value="America/Tortola">America/Tortola (BVI)</option>
+                <option value="Australia/Sydney">Australia/Sydney</option>
+                <option value="Europe/Madrid">Europe/Madrid</option>
+                <option value="America/Argentina/Buenos_Aires">America/Buenos_Aires</option>
+                <option value="America/New_York">America/New_York</option>
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                <option value="America/Mexico_City">America/Mexico_City</option>
+              </select>
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-location">Save location</button>
+              <button class="btn-cancel" id="btn-cancel-location">Cancel</button>
+              <span class="save-feedback" id="loc-save-feedback"></span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </main>
@@ -670,6 +873,7 @@ async function initAuth() {
 
   if (session) {
     initHome(session.user);
+    loadSettings(session.user);
     showScreen('app');
   } else {
     showScreen('login');
@@ -711,6 +915,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   }
 
   initHome(data.user);
+  loadSettings(data.user);
   showScreen('app');
 });
 
@@ -772,8 +977,210 @@ sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') showScreen('login');
 });
 
+
+// ─── SETTINGS ───
+let currentOrgId = null;
+
+async function loadSettings(user) {
+  document.getElementById('settings-email').textContent = user.email;
+
+  // Try to load existing org for this user
+  const { data: staffRow } = await sb
+    .from('staff')
+    .select('org_id, role')
+    .eq('id', user.id)
+    .single();
+
+  if (staffRow) {
+    currentOrgId = staffRow.org_id;
+    document.getElementById('settings-role').textContent =
+      staffRow.role.charAt(0).toUpperCase() + staffRow.role.slice(1);
+
+    // Load org details
+    const { data: org } = await sb
+      .from('organizations')
+      .select('*')
+      .eq('id', currentOrgId)
+      .single();
+
+    if (org) {
+      document.getElementById('org-name').value = org.name || '';
+      document.getElementById('org-country').value = org.country || '';
+      document.getElementById('org-currency').value = org.currency || 'USD';
+      document.getElementById('org-email').value = org.email || '';
+      document.getElementById('org-notice-new').style.display = 'none';
+    }
+
+    // Load locations
+    await loadLocations();
+  }
+}
+
+async function loadLocations() {
+  if (!currentOrgId) return;
+  const { data: locs } = await sb
+    .from('locations')
+    .select('*')
+    .eq('org_id', currentOrgId)
+    .order('created_at');
+
+  const list = document.getElementById('locations-list');
+  if (!locs || locs.length === 0) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No locations yet. Add your first one below.</p>';
+    return;
+  }
+  list.innerHTML = locs.map(l => `
+    <div class="location-item">
+      <div>
+        <div class="location-name">${l.name}</div>
+        <div class="location-meta">${l.country || ''} · ${l.timezone || 'UTC'}</div>
+      </div>
+      <button class="location-delete" onclick="deleteLocation('${l.id}')">Remove</button>
+    </div>
+  `).join('');
+
+  // Update home stat
+  document.getElementById('stat-boats').textContent = locs.length;
+}
+
+// Save org
+document.getElementById('btn-save-org').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-org');
+  const feedback = document.getElementById('org-save-feedback');
+  const name = document.getElementById('org-name').value.trim();
+  const country = document.getElementById('org-country').value;
+  const currency = document.getElementById('org-currency').value;
+  const email = document.getElementById('org-email').value.trim();
+
+  if (!name) {
+    feedback.textContent = 'Operation name is required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const { data: { user } } = await sb.auth.getUser();
+
+  if (!currentOrgId) {
+    // Create new org
+    const { data: org, error: orgErr } = await sb
+      .from('organizations')
+      .insert({ name, country, currency, email })
+      .select()
+      .single();
+
+    if (orgErr) {
+      feedback.textContent = 'Error saving. Try again.';
+      feedback.className = 'save-feedback error visible';
+      btn.disabled = false; btn.textContent = 'Save organisation';
+      return;
+    }
+
+    currentOrgId = org.id;
+
+    // Create staff row linking user to org as owner
+    await sb.from('staff').insert({
+      id: user.id,
+      org_id: org.id,
+      full_name: email.split('@')[0],
+      email: user.email,
+      role: 'owner'
+    });
+
+    document.getElementById('org-notice-new').style.display = 'none';
+
+  } else {
+    // Update existing org
+    const { error } = await sb
+      .from('organizations')
+      .update({ name, country, currency, email })
+      .eq('id', currentOrgId);
+
+    if (error) {
+      feedback.textContent = 'Error saving. Try again.';
+      feedback.className = 'save-feedback error visible';
+      btn.disabled = false; btn.textContent = 'Save organisation';
+      return;
+    }
+  }
+
+  feedback.textContent = 'Saved';
+  feedback.className = 'save-feedback visible';
+  btn.disabled = false; btn.textContent = 'Save organisation';
+  setTimeout(() => feedback.classList.remove('visible'), 3000);
+
+  // Hide setup banner on home
+  document.getElementById('setup-banner').style.display = 'none';
+});
+
+// Add location toggle
+document.getElementById('btn-add-location').addEventListener('click', () => {
+  document.getElementById('form-add-location').style.display = 'block';
+  document.getElementById('btn-add-location').style.display = 'none';
+});
+document.getElementById('btn-cancel-location').addEventListener('click', () => {
+  document.getElementById('form-add-location').style.display = 'none';
+  document.getElementById('btn-add-location').style.display = 'block';
+  document.getElementById('loc-name').value = '';
+  document.getElementById('loc-country').value = '';
+});
+
+// Save location
+document.getElementById('btn-save-location').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-location');
+  const feedback = document.getElementById('loc-save-feedback');
+  const name = document.getElementById('loc-name').value.trim();
+  const country = document.getElementById('loc-country').value.trim();
+  const timezone = document.getElementById('loc-timezone').value;
+
+  if (!name) {
+    feedback.textContent = 'Location name required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!currentOrgId) {
+    feedback.textContent = 'Save your organisation details first.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const { error } = await sb.from('locations').insert({
+    org_id: currentOrgId, name, country, timezone
+  });
+
+  if (error) {
+    feedback.textContent = 'Error saving.';
+    feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = 'Save location';
+    return;
+  }
+
+  document.getElementById('loc-name').value = '';
+  document.getElementById('loc-country').value = '';
+  document.getElementById('form-add-location').style.display = 'none';
+  document.getElementById('btn-add-location').style.display = 'block';
+  btn.disabled = false; btn.textContent = 'Save location';
+  feedback.className = 'save-feedback';
+
+  await loadLocations();
+});
+
+// Delete location
+async function deleteLocation(id) {
+  if (!confirm('Remove this location?')) return;
+  await sb.from('locations').delete().eq('id', id);
+  await loadLocations();
+}
+
+// ─── END SETTINGS ───
+
 // ─── START ───
 initAuth();
+
 </script>
 </body>
 </html>
