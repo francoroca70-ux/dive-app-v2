@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seven Seas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:   #0a1628;
+  --navy2:  #0f2040;
+  --blue:   #1a6b8a;
+  --teal:   #4fc3f7;
+  --foam:   #f0f8ff;
+  --text:   #1a2a3a;
+  --muted:  #5a7a8a;
+  --error:  #e53e3e;
+  --success:#2f855a;
+  --white:  #ffffff;
+  --border: rgba(26,107,138,0.2);
+}
+
+html, body { height: 100%; font-family: 'Inter', sans-serif; }
+body { background: var(--navy); color: var(--text); }
+
+/* ─── SCREENS ─── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ─── LOGIN SCREEN ─── */
+#screen-login {
+  align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--navy) 0%, var(--navy2) 60%, #0d3348 100%);
+  padding: 24px;
+}
+.login-box {
+  width: 100%; max-width: 400px;
+}
+.login-logo {
+  font-size: 1.6rem; font-weight: 800; color: var(--white);
+  letter-spacing: -0.03em; margin-bottom: 8px;
+  text-align: center;
+}
+.login-logo span { color: var(--teal); }
+.login-tagline {
+  text-align: center; color: rgba(255,255,255,0.4);
+  font-size: 0.8rem; margin-bottom: 40px; font-weight: 400;
+}
+.login-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 36px 32px;
+  backdrop-filter: blur(10px);
+}
+.login-card h2 {
+  font-size: 1.1rem; font-weight: 700; color: var(--white);
+  margin-bottom: 24px;
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block; font-size: 0.78rem; font-weight: 600;
+  color: rgba(255,255,255,0.5); letter-spacing: 0.06em;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.form-group input {
+  width: 100%; padding: 12px 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px; color: var(--white);
+  font-size: 0.95rem; font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s, background 0.2s;
+  outline: none;
+}
+.form-group input:focus {
+  border-color: var(--teal);
+  background: rgba(255,255,255,0.09);
+}
+.form-group input::placeholder { color: rgba(255,255,255,0.25); }
+.btn-login {
+  width: 100%; padding: 13px;
+  background: var(--teal); color: var(--navy);
+  border: none; border-radius: 8px;
+  font-size: 0.95rem; font-weight: 800;
+  cursor: pointer; margin-top: 8px;
+  transition: opacity 0.2s, transform 0.1s;
+  font-family: 'Inter', sans-serif;
+}
+.btn-login:hover { opacity: 0.9; }
+.btn-login:active { transform: scale(0.99); }
+.btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+.login-error {
+  background: rgba(229,62,62,0.12); border: 1px solid rgba(229,62,62,0.3);
+  color: #fc8181; border-radius: 8px; padding: 10px 14px;
+  font-size: 0.83rem; margin-top: 14px; display: none;
+}
+.login-error.visible { display: block; }
+.login-forgot {
+  text-align: center; margin-top: 18px;
+}
+.login-forgot a {
+  color: rgba(255,255,255,0.35); font-size: 0.8rem;
+  text-decoration: none; transition: color 0.2s;
+}
+.login-forgot a:hover { color: rgba(255,255,255,0.6); }
+.login-divider {
+  border: none; border-top: 1px solid rgba(255,255,255,0.07);
+  margin: 24px 0;
+}
+.login-signup {
+  text-align: center; font-size: 0.83rem;
+  color: rgba(255,255,255,0.35);
+}
+.login-signup a {
+  color: var(--teal); text-decoration: none; font-weight: 600;
+}
+
+/* ─── FORGOT PASSWORD SCREEN ─── */
+#screen-forgot {
+  align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--navy) 0%, var(--navy2) 60%, #0d3348 100%);
+  padding: 24px;
+}
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.4); font-size: 0.83rem;
+  text-decoration: none; margin-bottom: 28px;
+  transition: color 0.2s; cursor: pointer; background: none; border: none;
+}
+.back-link:hover { color: rgba(255,255,255,0.7); }
+.success-msg {
+  background: rgba(47,133,90,0.12); border: 1px solid rgba(47,133,90,0.3);
+  color: #68d391; border-radius: 8px; padding: 12px 14px;
+  font-size: 0.83rem; margin-top: 14px; display: none;
+}
+.success-msg.visible { display: block; }
+
+/* ─── APP SHELL ─── */
+#screen-app {
+  flex-direction: column;
+  background: var(--foam);
+  min-height: 100vh;
+}
+
+/* Top nav */
+.app-nav {
+  background: var(--navy);
+  height: 56px; display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: sticky; top: 0; z-index: 50;
+  flex-shrink: 0;
+}
+.app-logo {
+  font-size: 1rem; font-weight: 800; color: var(--white);
+  letter-spacing: -0.02em;
+}
+.app-logo span { color: var(--teal); }
+.nav-right { display: flex; align-items: center; gap: 16px; }
+.nav-user {
+  font-size: 0.78rem; color: rgba(255,255,255,0.45); font-weight: 500;
+}
+.nav-user strong { color: rgba(255,255,255,0.75); font-weight: 600; }
+.btn-signout {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5); padding: 6px 12px; border-radius: 6px;
+  font-size: 0.75rem; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: background 0.2s;
+}
+.btn-signout:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+
+/* Main layout */
+.app-body { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar {
+  width: 220px; background: var(--white);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  flex-shrink: 0; overflow-y: auto;
+  padding: 16px 0;
+}
+.nav-section-label {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 12px 20px 6px; opacity: 0.6;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 20px; cursor: pointer;
+  font-size: 0.875rem; font-weight: 500; color: var(--text);
+  border-left: 3px solid transparent;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+.nav-item:hover { background: var(--foam); color: var(--blue); }
+.nav-item.active {
+  background: rgba(26,107,138,0.08);
+  border-left-color: var(--blue);
+  color: var(--blue); font-weight: 600;
+}
+.nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+
+/* Main content */
+.app-main {
+  flex: 1; overflow-y: auto; padding: 32px;
+}
+.page { display: none; }
+.page.active { display: block; }
+
+/* Page header */
+.page-header { margin-bottom: 28px; }
+.page-header h1 {
+  font-size: 1.5rem; font-weight: 800; color: var(--navy);
+  letter-spacing: -0.02em;
+}
+.page-header p {
+  font-size: 0.875rem; color: var(--muted); margin-top: 4px;
+}
+
+/* Cards */
+.card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border); padding: 24px;
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: 1rem; font-weight: 700; color: var(--navy);
+  margin-bottom: 4px;
+}
+.card p { font-size: 0.875rem; color: var(--muted); }
+
+/* Setup banner */
+.setup-banner {
+  background: linear-gradient(135deg, var(--navy) 0%, #0d3348 100%);
+  border-radius: 12px; padding: 28px 32px;
+  margin-bottom: 28px; color: var(--white);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+}
+.setup-banner h2 {
+  font-size: 1.1rem; font-weight: 700; color: var(--white);
+  margin-bottom: 4px;
+}
+.setup-banner p { font-size: 0.875rem; color: rgba(255,255,255,0.55); }
+.btn-setup {
+  background: var(--teal); color: var(--navy);
+  padding: 10px 20px; border-radius: 8px;
+  font-weight: 700; font-size: 0.875rem;
+  border: none; cursor: pointer; white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Stat cards */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--white); border-radius: 10px;
+  border: 1px solid var(--border); padding: 20px;
+}
+.stat-label {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.stat-value {
+  font-size: 1.8rem; font-weight: 800; color: var(--navy);
+  letter-spacing: -0.03em; line-height: 1;
+}
+.stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+/* Coming soon placeholder */
+.coming-soon {
+  text-align: center; padding: 80px 40px;
+  color: var(--muted);
+}
+.coming-soon .icon { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.4; }
+.coming-soon h3 { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+.coming-soon p { font-size: 0.875rem; max-width: 320px; margin: 0 auto; }
+
+/* Loading overlay */
+#loading {
+  position: fixed; inset: 0; background: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999; transition: opacity 0.3s;
+}
+#loading.hidden { opacity: 0; pointer-events: none; }
+.loading-logo {
+  font-size: 1.4rem; font-weight: 800; color: var(--white);
+  letter-spacing: -0.03em; animation: pulse 1.5s ease-in-out infinite;
+}
+.loading-logo span { color: var(--teal); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Mobile sidebar toggle */
+.sidebar-toggle {
+  display: none; background: none; border: none;
+  color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .sidebar { display: none; position: fixed; z-index: 40; height: calc(100vh - 56px); top: 56px; }
+  .sidebar.open { display: flex; }
+  .sidebar-toggle { display: block; }
+  .app-main { padding: 20px 16px; }
+  .setup-banner { flex-direction: column; }
+  .login-card { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="loading-logo">Seven<span>Seas</span></div>
+</div>
+
+<!-- ─── LOGIN SCREEN ─── -->
+<div id="screen-login" class="screen">
+  <div class="login-box">
+    <div class="login-logo">Seven<span>Seas</span></div>
+    <div class="login-tagline">Water operations platform</div>
+    <div class="login-card">
+      <h2>Sign in to your account</h2>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-login" id="btn-login">Sign in</button>
+      <div class="login-error" id="login-error"></div>
+      <div class="login-forgot">
+        <a href="#" id="link-forgot">Forgot password?</a>
+      </div>
+      <hr class="login-divider">
+      <div class="login-signup">
+        New operation? <a href="#" id="link-signup">Request access</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── FORGOT PASSWORD SCREEN ─── -->
+<div id="screen-forgot" class="screen">
+  <div class="login-box">
+    <div class="login-logo">Seven<span>Seas</span></div>
+    <div class="login-tagline">Water operations platform</div>
+    <div class="login-card">
+      <button class="back-link" id="btn-back-login">← Back to sign in</button>
+      <h2>Reset your password</h2>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="forgot-email" placeholder="you@example.com">
+      </div>
+      <button class="btn-login" id="btn-reset">Send reset link</button>
+      <div class="login-error" id="forgot-error"></div>
+      <div class="success-msg" id="forgot-success">
+        Reset link sent — check your inbox.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── APP SHELL ─── -->
+<div id="screen-app" class="screen">
+
+  <!-- Top nav -->
+  <nav class="app-nav">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+      <div class="app-logo">Seven<span>Seas</span></div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <strong id="nav-username">—</strong></div>
+      <button class="btn-signout" id="btn-signout">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="app-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="nav-section-label">Operations</div>
+      <div class="nav-item active" data-page="home">
+        <span class="nav-icon">◎</span> Home
+      </div>
+      <div class="nav-item" data-page="calendar">
+        <span class="nav-icon">▦</span> Calendar
+      </div>
+      <div class="nav-item" data-page="fleet">
+        <span class="nav-icon">⛵</span> Fleet
+      </div>
+      <div class="nav-item" data-page="crew">
+        <span class="nav-icon">👥</span> Crew
+      </div>
+      <div class="nav-section-label">Daily Ops</div>
+      <div class="nav-item" data-page="checklists">
+        <span class="nav-icon">✓</span> Checklists
+      </div>
+      <div class="nav-item" data-page="gear">
+        <span class="nav-icon">🤿</span> Gear & Equipment
+      </div>
+      <div class="nav-item" data-page="waivers">
+        <span class="nav-icon">✍</span> Waivers
+      </div>
+      <div class="nav-item" data-page="cashup">
+        <span class="nav-icon">$</span> Daily Cash-Up
+      </div>
+      <div class="nav-section-label">Manage</div>
+      <div class="nav-item" data-page="tasks">
+        <span class="nav-icon">□</span> Tasks
+      </div>
+      <div class="nav-item" data-page="maintenance">
+        <span class="nav-icon">⚙</span> Maintenance
+      </div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">◈</span> Settings
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="app-main">
+
+      <!-- HOME -->
+      <div class="page active" id="page-home">
+        <div class="page-header">
+          <h1 id="home-greeting">Good morning</h1>
+          <p id="home-date">Loading...</p>
+        </div>
+        <div class="setup-banner" id="setup-banner">
+          <div>
+            <h2>Set up your operation</h2>
+            <p>Add your shop details, boats, and invite your crew to get started.</p>
+          </div>
+          <button class="btn-setup" onclick="showPage('settings')">Go to Settings</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Trips today</div>
+            <div class="stat-value" id="stat-trips">—</div>
+            <div class="stat-sub">scheduled</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Guests today</div>
+            <div class="stat-value" id="stat-guests">—</div>
+            <div class="stat-sub">across all trips</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active boats</div>
+            <div class="stat-value" id="stat-boats">—</div>
+            <div class="stat-sub">in fleet</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Crew online</div>
+            <div class="stat-value" id="stat-crew">—</div>
+            <div class="stat-sub">staff accounts</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Getting started</h2>
+          <p>Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.</p>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="page" id="page-calendar">
+        <div class="page-header">
+          <h1>Calendar</h1>
+          <p>All trips and bookings</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">▦</div>
+          <h3>Bookings coming in sprint</h3>
+          <p>Full booking system with manifests, gear assignment, and PDF export — building this week.</p>
+        </div>
+      </div>
+
+      <!-- FLEET -->
+      <div class="page" id="page-fleet">
+        <div class="page-header">
+          <h1>Fleet</h1>
+          <p>Boats and vessel management</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">⛵</div>
+          <h3>Fleet management coming soon</h3>
+          <p>Engine hours, service reminders, and vessel logs.</p>
+        </div>
+      </div>
+
+      <!-- CREW -->
+      <div class="page" id="page-crew">
+        <div class="page-header">
+          <h1>Crew</h1>
+          <p>Staff and role management</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">👥</div>
+          <h3>Crew management coming soon</h3>
+          <p>Invite staff by email, assign roles and locations.</p>
+        </div>
+      </div>
+
+      <!-- CHECKLISTS -->
+      <div class="page" id="page-checklists">
+        <div class="page-header">
+          <h1>Checklists</h1>
+          <p>Pre-departure, boat loading, department sign-offs</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">✓</div>
+          <h3>Checklists coming soon</h3>
+          <p>Smart checklists that pull gear totals from today's bookings automatically.</p>
+        </div>
+      </div>
+
+      <!-- GEAR -->
+      <div class="page" id="page-gear">
+        <div class="page-header">
+          <h1>Gear & Equipment</h1>
+          <p>Inventory and lifecycle tracking</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">🤿</div>
+          <h3>Gear tracking coming soon</h3>
+          <p>Full inventory with repair workflow and service history.</p>
+        </div>
+      </div>
+
+      <!-- WAIVERS -->
+      <div class="page" id="page-waivers">
+        <div class="page-header">
+          <h1>Waivers</h1>
+          <p>Digital signatures and medical forms</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">✍</div>
+          <h3>Waivers coming soon</h3>
+          <p>Digital signature capture with timestamp and PDF export.</p>
+        </div>
+      </div>
+
+      <!-- CASH-UP -->
+      <div class="page" id="page-cashup">
+        <div class="page-header">
+          <h1>Daily Cash-Up</h1>
+          <p>Cash and card reconciliation</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">$</div>
+          <h3>Cash-Up coming soon</h3>
+          <p>Daily totals, cash vs card breakdown, PDF export.</p>
+        </div>
+      </div>
+
+      <!-- TASKS -->
+      <div class="page" id="page-tasks">
+        <div class="page-header">
+          <h1>Tasks</h1>
+          <p>Crew task management</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">□</div>
+          <h3>Tasks coming soon</h3>
+          <p>Assign tasks to crew with priority and due dates.</p>
+        </div>
+      </div>
+
+      <!-- MAINTENANCE -->
+      <div class="page" id="page-maintenance">
+        <div class="page-header">
+          <h1>Maintenance</h1>
+          <p>Service logs and parts tracking</p>
+        </div>
+        <div class="coming-soon">
+          <div class="icon">⚙</div>
+          <h3>Maintenance logs coming soon</h3>
+          <p>Service history, parts tracking, and next-due reminders for boats and gear.</p>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="page-header">
+          <h1>Settings</h1>
+          <p>Operation details and account</p>
+        </div>
+        <div class="card">
+          <h2>Account</h2>
+          <p>Signed in as <span id="settings-email" style="font-weight:600;color:var(--navy)">—</span></p>
+        </div>
+        <div class="card">
+          <h2>Organisation setup</h2>
+          <p>Full settings — shop name, locations, billing — coming in next build.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// ─── SUPABASE INIT ───
+const SUPABASE_URL = 'https://ggtbxjwstkuhnabwpgdz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tiYQ81YqYtscWmvb3-8o-w_lBPGtbUw';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─── SCREEN MANAGEMENT ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === id);
+  });
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// ─── NAV ITEMS ───
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => showPage(item.dataset.page));
+});
+
+// ─── SIDEBAR TOGGLE (mobile) ───
+document.getElementById('sidebar-toggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// ─── HOME PAGE ───
+function initHome(user) {
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('home-greeting').textContent = greeting;
+  document.getElementById('home-date').textContent = now.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  // Set username in nav
+  const email = user.email || '';
+  const name = email.split('@')[0];
+  document.getElementById('nav-username').textContent = name;
+  document.getElementById('settings-email').textContent = email;
+
+  // Stats — will pull from DB once we have data
+  document.getElementById('stat-trips').textContent = '0';
+  document.getElementById('stat-guests').textContent = '0';
+  document.getElementById('stat-boats').textContent = '0';
+  document.getElementById('stat-crew').textContent = '1';
+}
+
+// ─── AUTH ───
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (session) {
+    initHome(session.user);
+    showScreen('app');
+  } else {
+    showScreen('login');
+  }
+
+  // Hide loading
+  const loading = document.getElementById('loading');
+  loading.classList.add('hidden');
+  setTimeout(() => loading.style.display = 'none', 300);
+}
+
+// ─── LOGIN ───
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('btn-login');
+  const errorEl = document.getElementById('login-error');
+
+  if (!email || !password) {
+    errorEl.textContent = 'Enter your email and password.';
+    errorEl.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+  errorEl.classList.remove('visible');
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    errorEl.textContent = error.message === 'Invalid login credentials'
+      ? 'Email or password is incorrect.'
+      : error.message;
+    errorEl.classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+    return;
+  }
+
+  initHome(data.user);
+  showScreen('app');
+});
+
+// Enter key on password field
+document.getElementById('login-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-login').click();
+});
+
+// ─── FORGOT PASSWORD ───
+document.getElementById('link-forgot').addEventListener('click', e => {
+  e.preventDefault();
+  showScreen('forgot');
+});
+
+document.getElementById('btn-back-login').addEventListener('click', () => {
+  showScreen('login');
+});
+
+document.getElementById('btn-reset').addEventListener('click', async () => {
+  const email = document.getElementById('forgot-email').value.trim();
+  const btn = document.getElementById('btn-reset');
+  const errorEl = document.getElementById('forgot-error');
+  const successEl = document.getElementById('forgot-success');
+
+  if (!email) {
+    errorEl.textContent = 'Enter your email address.';
+    errorEl.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  errorEl.classList.remove('visible');
+
+  const { error } = await sb.auth.resetPasswordForEmail(email);
+
+  if (error) {
+    errorEl.textContent = error.message;
+    errorEl.classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = 'Send reset link';
+    return;
+  }
+
+  successEl.classList.add('visible');
+  btn.textContent = 'Sent';
+});
+
+// ─── SIGN OUT ───
+document.getElementById('btn-signout').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  showScreen('login');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+});
+
+// ─── LISTEN FOR AUTH CHANGES ───
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') showScreen('login');
+});
+
+// ─── START ───
+initAuth();
+</script>
+</body>
+</html>
