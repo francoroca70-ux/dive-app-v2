@@ -633,11 +633,14 @@ body { background: var(--navy); color: var(--text); }
               <label class="sf-label">Type</label>
               <select class="sf-input" id="boat-type">
                 <option value="dive_boat">Dive boat</option>
+                <option value="day_charter">Day charter</option>
                 <option value="sailing_yacht">Sailing yacht</option>
+                <option value="motor_yacht">Motor yacht</option>
                 <option value="catamaran">Catamaran</option>
-                <option value="rib">RIB / Inflatable</option>
                 <option value="liveaboard">Liveaboard</option>
-                <option value="fishing">Fishing / Charter</option>
+                <option value="rib">RIB (Rigid Inflatable)</option>
+                <option value="fishing">Fishing vessel</option>
+                <option value="surf_sup">Surf / SUP</option>
                 <option value="other">Other</option>
               </select>
             </div>
@@ -646,6 +649,22 @@ body { background: var(--navy); color: var(--text); }
             <div class="sf-group">
               <label class="sf-label">Capacity (guests)</label>
               <input class="sf-input" type="number" id="boat-capacity" placeholder="e.g. 12" min="1">
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Length overall (ft)</label>
+              <input class="sf-input" type="number" id="boat-length" placeholder="e.g. 42" min="1">
+            </div>
+          </div>
+          <div class="sf-row">
+            <div class="sf-group">
+              <label class="sf-label">Number of engines</label>
+              <select class="sf-input" id="boat-engines">
+                <option value="0">No engine / sail only</option>
+                <option value="1">1 engine</option>
+                <option value="2">2 engines</option>
+                <option value="3">3 engines</option>
+                <option value="4">4 engines</option>
+              </select>
             </div>
             <div class="sf-group">
               <label class="sf-label">Current engine hours</label>
@@ -1282,9 +1301,11 @@ async function loadFleet() {
       <div class="boat-info">
         <div class="boat-name">${b.name}</div>
         <div class="boat-meta">
-          <span>${b.type ? b.type.replace('_', ' ') : 'Vessel'}</span>
-          ${b.capacity ? `<span>Up to ${b.capacity} guests</span>` : ''}
-          ${b.engine_hours ? `<span>${b.engine_hours} engine hrs</span>` : ''}
+          <span>${b.type ? b.type.replace(/_/g, ' ') : 'Vessel'}</span>
+          ${b.capacity ? `<span>${b.capacity} guests</span>` : ''}
+          ${b.length_ft ? `<span>${b.length_ft} ft</span>` : ''}
+          ${b.num_engines > 1 ? `<span>${b.num_engines} engines</span>` : ''}
+          ${b.engine_hours ? `<span>${b.engine_hours} hrs</span>` : ''}
           ${b.locations ? `<span>${b.locations.name}</span>` : ''}
         </div>
       </div>
@@ -1329,6 +1350,8 @@ document.getElementById('btn-save-boat').addEventListener('click', async () => {
   const type = document.getElementById('boat-type').value;
   const capacity = document.getElementById('boat-capacity').value;
   const engine_hours = document.getElementById('boat-engine-hours').value;
+  const loa = document.getElementById('boat-length').value;
+  const engines = document.getElementById('boat-engines').value;
   const location_id = document.getElementById('boat-location').value;
   const notes = document.getElementById('boat-notes').value.trim();
 
@@ -1351,6 +1374,8 @@ document.getElementById('btn-save-boat').addEventListener('click', async () => {
     name, type,
     capacity: capacity ? parseInt(capacity) : null,
     engine_hours: engine_hours ? parseFloat(engine_hours) : 0,
+    length_ft: loa ? parseFloat(loa) : null,
+    num_engines: engines ? parseInt(engines) : 1,
     notes: notes || null,
     active: true
   });
@@ -1364,6 +1389,7 @@ document.getElementById('btn-save-boat').addEventListener('click', async () => {
 
   document.getElementById('boat-name').value = '';
   document.getElementById('boat-capacity').value = '';
+  document.getElementById('boat-length').value = '';
   document.getElementById('boat-engine-hours').value = '';
   document.getElementById('boat-notes').value = '';
   document.getElementById('form-add-boat').style.display = 'none';
