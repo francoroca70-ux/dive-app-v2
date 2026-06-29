@@ -392,6 +392,38 @@ body { background: var(--navy); color: var(--text); }
 }
 .location-delete:hover { color: var(--error); }
 
+
+/* ─── FLEET ─── */
+.boat-card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border); padding: 20px 24px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.boat-info { flex: 1; }
+.boat-name { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.boat-meta { font-size: 0.8rem; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+.boat-meta span { display: flex; align-items: center; gap: 4px; }
+.boat-badge {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
+}
+.boat-badge.active { background: rgba(47,133,90,0.1); color: #276749; }
+.boat-badge.inactive { background: rgba(229,62,62,0.1); color: #c53030; }
+.boat-actions { display: flex; gap: 8px; align-items: center; }
+.btn-icon {
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); padding: 6px 12px; border-radius: 6px;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: all 0.2s;
+}
+.btn-icon:hover { border-color: var(--blue); color: var(--blue); }
+.btn-icon.danger:hover { border-color: var(--error); color: var(--error); }
+.fleet-empty {
+  text-align: center; padding: 60px 40px;
+  color: var(--muted); font-size: 0.875rem;
+}
 /* Mobile sidebar toggle */
 .sidebar-toggle {
   display: none; background: none; border: none;
@@ -581,15 +613,62 @@ body { background: var(--navy); color: var(--text); }
 
       <!-- FLEET -->
       <div class="page" id="page-fleet">
-        <div class="page-header">
-          <h1>Fleet</h1>
-          <p>Boats and vessel management</p>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1>Fleet</h1>
+            <p>Boats and vessel management</p>
+          </div>
+          <button class="btn-save" id="btn-show-add-boat">+ Add boat</button>
         </div>
-        <div class="coming-soon">
-          <div class="icon">⛵</div>
-          <h3>Fleet management coming soon</h3>
-          <p>Engine hours, service reminders, and vessel logs.</p>
+
+        <!-- Add boat form -->
+        <div class="inline-form" id="form-add-boat" style="display:none;margin-bottom:20px;">
+          <div class="card-section-title">New boat</div>
+          <div class="sf-row">
+            <div class="sf-group">
+              <label class="sf-label">Boat name</label>
+              <input class="sf-input" type="text" id="boat-name" placeholder="e.g. Sea Dragon">
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Type</label>
+              <select class="sf-input" id="boat-type">
+                <option value="dive_boat">Dive boat</option>
+                <option value="sailing_yacht">Sailing yacht</option>
+                <option value="catamaran">Catamaran</option>
+                <option value="rib">RIB / Inflatable</option>
+                <option value="liveaboard">Liveaboard</option>
+                <option value="fishing">Fishing / Charter</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="sf-row">
+            <div class="sf-group">
+              <label class="sf-label">Capacity (guests)</label>
+              <input class="sf-input" type="number" id="boat-capacity" placeholder="e.g. 12" min="1">
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Current engine hours</label>
+              <input class="sf-input" type="number" id="boat-engine-hours" placeholder="e.g. 450" min="0">
+            </div>
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Location</label>
+            <select class="sf-input" id="boat-location"></select>
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Notes</label>
+            <input class="sf-input" type="text" id="boat-notes" placeholder="Optional">
+          </div>
+          <div class="settings-actions">
+            <button class="btn-save" id="btn-save-boat">Save boat</button>
+            <button class="btn-cancel" id="btn-cancel-boat">Cancel</button>
+            <span class="save-feedback" id="boat-save-feedback"></span>
+          </div>
         </div>
+
+        <!-- Boats list -->
+        <div id="fleet-list"></div>
       </div>
 
       <!-- CREW -->
@@ -874,6 +953,7 @@ async function initAuth() {
   if (session) {
     initHome(session.user);
     loadSettings(session.user);
+    loadFleet();
     showScreen('app');
   } else {
     showScreen('login');
@@ -916,6 +996,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
 
   initHome(data.user);
   loadSettings(data.user);
+  loadFleet();
   showScreen('app');
 });
 
@@ -1177,6 +1258,134 @@ async function deleteLocation(id) {
 }
 
 // ─── END SETTINGS ───
+
+// ─── FLEET ───
+async function loadFleet() {
+  if (!currentOrgId) return;
+  const { data: boats } = await sb
+    .from('boats')
+    .select('*, locations(name)')
+    .eq('org_id', currentOrgId)
+    .order('created_at');
+
+  const list = document.getElementById('fleet-list');
+  if (!boats || boats.length === 0) {
+    list.innerHTML = '<div class="fleet-empty">No boats yet. Add your first vessel above.</div>';
+    document.getElementById('stat-boats').textContent = '0';
+    return;
+  }
+
+  document.getElementById('stat-boats').textContent = boats.filter(b => b.active).length;
+
+  list.innerHTML = boats.map(b => `
+    <div class="boat-card">
+      <div class="boat-info">
+        <div class="boat-name">${b.name}</div>
+        <div class="boat-meta">
+          <span>${b.type ? b.type.replace('_', ' ') : 'Vessel'}</span>
+          ${b.capacity ? `<span>Up to ${b.capacity} guests</span>` : ''}
+          ${b.engine_hours ? `<span>${b.engine_hours} engine hrs</span>` : ''}
+          ${b.locations ? `<span>${b.locations.name}</span>` : ''}
+        </div>
+      </div>
+      <div class="boat-actions">
+        <span class="boat-badge ${b.active ? 'active' : 'inactive'}">${b.active ? 'Active' : 'Inactive'}</span>
+        <button class="btn-icon" onclick="toggleBoat('${b.id}', ${b.active})">${b.active ? 'Deactivate' : 'Activate'}</button>
+        <button class="btn-icon danger" onclick="deleteBoat('${b.id}')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Populate location dropdown in add boat form
+async function populateBoatLocations() {
+  if (!currentOrgId) return;
+  const { data: locs } = await sb
+    .from('locations')
+    .select('id, name')
+    .eq('org_id', currentOrgId);
+  const sel = document.getElementById('boat-location');
+  sel.innerHTML = locs && locs.length
+    ? locs.map(l => `<option value="${l.id}">${l.name}</option>`).join('')
+    : '<option value="">No locations — add one in Settings</option>';
+}
+
+document.getElementById('btn-show-add-boat').addEventListener('click', () => {
+  document.getElementById('form-add-boat').style.display = 'block';
+  document.getElementById('btn-show-add-boat').style.display = 'none';
+  populateBoatLocations();
+});
+
+document.getElementById('btn-cancel-boat').addEventListener('click', () => {
+  document.getElementById('form-add-boat').style.display = 'none';
+  document.getElementById('btn-show-add-boat').style.display = 'inline-block';
+  document.getElementById('boat-name').value = '';
+});
+
+document.getElementById('btn-save-boat').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-boat');
+  const feedback = document.getElementById('boat-save-feedback');
+  const name = document.getElementById('boat-name').value.trim();
+  const type = document.getElementById('boat-type').value;
+  const capacity = document.getElementById('boat-capacity').value;
+  const engine_hours = document.getElementById('boat-engine-hours').value;
+  const location_id = document.getElementById('boat-location').value;
+  const notes = document.getElementById('boat-notes').value.trim();
+
+  if (!name) {
+    feedback.textContent = 'Boat name required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!currentOrgId) {
+    feedback.textContent = 'Set up your organisation in Settings first.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const { error } = await sb.from('boats').insert({
+    org_id: currentOrgId,
+    location_id: location_id || null,
+    name, type,
+    capacity: capacity ? parseInt(capacity) : null,
+    engine_hours: engine_hours ? parseFloat(engine_hours) : 0,
+    notes: notes || null,
+    active: true
+  });
+
+  if (error) {
+    feedback.textContent = 'Error saving. Try again.';
+    feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = 'Save boat';
+    return;
+  }
+
+  document.getElementById('boat-name').value = '';
+  document.getElementById('boat-capacity').value = '';
+  document.getElementById('boat-engine-hours').value = '';
+  document.getElementById('boat-notes').value = '';
+  document.getElementById('form-add-boat').style.display = 'none';
+  document.getElementById('btn-show-add-boat').style.display = 'inline-block';
+  btn.disabled = false; btn.textContent = 'Save boat';
+  feedback.className = 'save-feedback';
+
+  await loadFleet();
+});
+
+async function toggleBoat(id, currentActive) {
+  await sb.from('boats').update({ active: !currentActive }).eq('id', id);
+  await loadFleet();
+}
+
+async function deleteBoat(id) {
+  if (!confirm('Remove this boat from the fleet?')) return;
+  await sb.from('boats').delete().eq('id', id);
+  await loadFleet();
+}
+// ─── END FLEET ───
+
 
 // ─── START ───
 initAuth();
