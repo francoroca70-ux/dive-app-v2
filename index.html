@@ -393,6 +393,46 @@ body { background: var(--navy); color: var(--text); }
 .location-delete:hover { color: var(--error); }
 
 
+
+/* ─── CREW ─── */
+.crew-card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border); padding: 18px 24px;
+  margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.crew-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--teal));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; font-weight: 700; color: var(--white);
+  flex-shrink: 0;
+}
+.crew-info { flex: 1; display: flex; align-items: center; gap: 14px; }
+.crew-details {}
+.crew-name { font-size: 0.95rem; font-weight: 700; color: var(--navy); }
+.crew-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.role-badge {
+  display: inline-block; font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 20px;
+  background: rgba(26,107,138,0.1); color: var(--blue);
+}
+.role-badge.owner { background: rgba(79,195,247,0.15); color: #0277bd; }
+.invite-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  font-size: 0.875rem; gap: 12px; flex-wrap: wrap;
+}
+.invite-item:last-child { border-bottom: none; }
+.invite-email { font-weight: 600; color: var(--navy); }
+.invite-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.invite-status {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
+  background: rgba(251,191,36,0.1); color: #d97706;
+}
 /* ─── FLEET ─── */
 .boat-card {
   background: var(--white); border-radius: 12px;
@@ -692,15 +732,87 @@ body { background: var(--navy); color: var(--text); }
 
       <!-- CREW -->
       <div class="page" id="page-crew">
-        <div class="page-header">
-          <h1>Crew</h1>
-          <p>Staff and role management</p>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1>Crew</h1>
+            <p>Staff accounts and roles</p>
+          </div>
+          <button class="btn-save" id="btn-show-invite">+ Invite staff</button>
         </div>
-        <div class="coming-soon">
-          <div class="icon">👥</div>
-          <h3>Crew management coming soon</h3>
-          <p>Invite staff by email, assign roles and locations.</p>
+
+        <!-- Invite form -->
+        <div class="inline-form" id="form-invite" style="display:none;margin-bottom:20px;">
+          <div class="card-section-title">Invite a crew member</div>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;">They will receive an email with a link to set up their account.</p>
+          <div class="sf-row">
+            <div class="sf-group">
+              <label class="sf-label">Email address</label>
+              <input class="sf-input" type="email" id="invite-email" placeholder="crew@example.com">
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Full name</label>
+              <input class="sf-input" type="text" id="invite-name" placeholder="e.g. James Carter">
+            </div>
+          </div>
+          <div class="sf-row">
+            <div class="sf-group">
+              <label class="sf-label">Role</label>
+              <select class="sf-input" id="invite-role">
+                <optgroup label="Operations">
+                  <option value="manager">Manager</option>
+                  <option value="front_desk">Front Desk</option>
+                </optgroup>
+                <optgroup label="Boat & Deck">
+                  <option value="captain">Captain</option>
+                  <option value="first_mate">First Mate</option>
+                  <option value="deckhand">Deckhand</option>
+                  <option value="bosun">Bosun</option>
+                  <option value="engineer">Engineer</option>
+                </optgroup>
+                <optgroup label="Dive">
+                  <option value="instructor">Instructor</option>
+                  <option value="divemaster">Divemaster</option>
+                  <option value="dive_guide">Dive Guide</option>
+                  <option value="equipment_technician">Equipment Technician</option>
+                </optgroup>
+                <optgroup label="Hospitality">
+                  <option value="head_steward">Head Steward</option>
+                  <option value="steward">Steward</option>
+                  <option value="head_chef">Head Chef</option>
+                  <option value="chef">Chef</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="photographer">Photographer / Videographer</option>
+                  <option value="custom">Custom</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Location</label>
+              <select class="sf-input" id="invite-location"></select>
+            </div>
+          </div>
+          <div class="sf-group" id="custom-role-group" style="display:none;">
+            <label class="sf-label">Custom role title</label>
+            <input class="sf-input" type="text" id="invite-custom-role" placeholder="e.g. Dive Guide">
+          </div>
+          <div class="settings-actions">
+            <button class="btn-save" id="btn-send-invite">Send invite</button>
+            <button class="btn-cancel" id="btn-cancel-invite">Cancel</button>
+            <span class="save-feedback" id="invite-feedback"></span>
+          </div>
         </div>
+
+        <!-- Pending invites -->
+        <div id="pending-invites-section" style="display:none;margin-bottom:20px;">
+          <div class="card">
+            <div class="card-section-title">Pending invites</div>
+            <div id="pending-invites-list"></div>
+          </div>
+        </div>
+
+        <!-- Staff list -->
+        <div id="crew-list"></div>
       </div>
 
       <!-- CHECKLISTS -->
@@ -973,6 +1085,7 @@ async function initAuth() {
     initHome(session.user);
     loadSettings(session.user);
     loadFleet();
+    loadCrew();
     showScreen('app');
   } else {
     showScreen('login');
@@ -1016,6 +1129,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   initHome(data.user);
   loadSettings(data.user);
   loadFleet();
+  loadCrew();
   showScreen('app');
 });
 
@@ -1277,6 +1391,190 @@ async function deleteLocation(id) {
 }
 
 // ─── END SETTINGS ───
+
+// ─── CREW ───
+async function loadCrew() {
+  if (!currentOrgId) return;
+
+  // Load staff
+  const { data: staff } = await sb
+    .from('staff')
+    .select('*, staff_locations(location_id, locations(name))')
+    .eq('org_id', currentOrgId)
+    .order('created_at');
+
+  const list = document.getElementById('crew-list');
+  if (!staff || staff.length === 0) {
+    list.innerHTML = '<div class="fleet-empty">No crew yet. Invite your first staff member above.</div>';
+    document.getElementById('stat-crew').textContent = '0';
+    return;
+  }
+
+  document.getElementById('stat-crew').textContent = staff.length;
+
+  list.innerHTML = staff.map(s => {
+    const initials = s.full_name ? s.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : '?';
+    const roleName = s.custom_role_name || s.role.replace('_', ' ');
+    const location = s.staff_locations?.[0]?.locations?.name || '—';
+    const isOwner = s.role === 'owner';
+    return `
+    <div class="crew-card">
+      <div class="crew-info">
+        <div class="crew-avatar">${initials}</div>
+        <div class="crew-details">
+          <div class="crew-name">${s.full_name} <span class="role-badge ${isOwner ? 'owner' : ''}">${roleName}</span></div>
+          <div class="crew-meta">${s.email} · ${location}</div>
+        </div>
+      </div>
+      <div class="boat-actions">
+        ${!isOwner ? `<button class="btn-icon danger" onclick="removeStaff('${s.id}', '${s.full_name}')">Remove</button>` : '<span style="font-size:0.75rem;color:var(--muted)">Account owner</span>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Load pending invites
+  await loadPendingInvites();
+}
+
+async function loadPendingInvites() {
+  if (!currentOrgId) return;
+  const { data: invites } = await sb
+    .from('invites')
+    .select('*, locations(name)')
+    .eq('org_id', currentOrgId)
+    .eq('accepted', false)
+    .order('created_at', { ascending: false });
+
+  const section = document.getElementById('pending-invites-section');
+  const list = document.getElementById('pending-invites-list');
+
+  if (!invites || invites.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  list.innerHTML = invites.map(inv => `
+    <div class="invite-item">
+      <div>
+        <div class="invite-email">${inv.email}</div>
+        <div class="invite-meta">${inv.role.replace('_',' ')} · ${inv.locations?.name || 'No location'} · Invited ${new Date(inv.created_at).toLocaleDateString()}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="invite-status">Pending</span>
+        <button class="btn-icon danger" onclick="cancelInvite('${inv.id}')">Cancel</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Show/hide invite form
+document.getElementById('btn-show-invite').addEventListener('click', () => {
+  document.getElementById('form-invite').style.display = 'block';
+  document.getElementById('btn-show-invite').style.display = 'none';
+  populateInviteLocations();
+});
+
+document.getElementById('btn-cancel-invite').addEventListener('click', () => {
+  document.getElementById('form-invite').style.display = 'none';
+  document.getElementById('btn-show-invite').style.display = 'inline-block';
+  document.getElementById('invite-email').value = '';
+  document.getElementById('invite-name').value = '';
+});
+
+// Show custom role field
+document.getElementById('invite-role').addEventListener('change', function() {
+  document.getElementById('custom-role-group').style.display =
+    this.value === 'custom' ? 'block' : 'none';
+});
+
+async function populateInviteLocations() {
+  if (!currentOrgId) return;
+  const { data: locs } = await sb
+    .from('locations')
+    .select('id, name')
+    .eq('org_id', currentOrgId);
+  const sel = document.getElementById('invite-location');
+  sel.innerHTML = locs && locs.length
+    ? locs.map(l => `<option value="${l.id}">${l.name}</option>`).join('')
+    : '<option value="">No locations — add in Settings</option>';
+}
+
+// Send invite
+document.getElementById('btn-send-invite').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-send-invite');
+  const feedback = document.getElementById('invite-feedback');
+  const email = document.getElementById('invite-email').value.trim();
+  const fullName = document.getElementById('invite-name').value.trim();
+  const role = document.getElementById('invite-role').value;
+  const customRole = document.getElementById('invite-custom-role').value.trim();
+  const locationId = document.getElementById('invite-location').value;
+
+  if (!email || !fullName) {
+    feedback.textContent = 'Email and name are required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!currentOrgId) {
+    feedback.textContent = 'Set up your organisation in Settings first.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Sending...';
+
+  // Create invite record
+  const token = crypto.randomUUID();
+  const { error: invErr } = await sb.from('invites').insert({
+    org_id: currentOrgId,
+    email,
+    role,
+    location_id: locationId || null,
+    token,
+    created_by: (await sb.auth.getUser()).data.user.id
+  });
+
+  if (invErr) {
+    feedback.textContent = 'Error creating invite.';
+    feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = 'Send invite';
+    return;
+  }
+
+  // Send invite email via Supabase Auth
+  const { error: authErr } = await sb.auth.admin?.inviteUserByEmail?.(email) ||
+    await sb.auth.signInWithOtp({ email, options: {
+      emailRedirectTo: window.location.origin,
+      data: { full_name: fullName, role, org_id: currentOrgId, token }
+    }});
+
+  feedback.textContent = `Invite sent to ${email}`;
+  feedback.className = 'save-feedback visible';
+  btn.disabled = false; btn.textContent = 'Send invite';
+
+  document.getElementById('invite-email').value = '';
+  document.getElementById('invite-name').value = '';
+  document.getElementById('form-invite').style.display = 'none';
+  document.getElementById('btn-show-invite').style.display = 'inline-block';
+
+  setTimeout(() => feedback.className = 'save-feedback', 4000);
+  await loadPendingInvites();
+});
+
+async function removeStaff(id, name) {
+  if (!confirm(`Remove ${name} from your crew?`)) return;
+  await sb.from('staff_locations').delete().eq('staff_id', id);
+  await sb.from('staff').delete().eq('id', id);
+  await loadCrew();
+}
+
+async function cancelInvite(id) {
+  if (!confirm('Cancel this invite?')) return;
+  await sb.from('invites').delete().eq('id', id);
+  await loadPendingInvites();
+}
+// ─── END CREW ───
+
 
 // ─── FLEET ───
 async function loadFleet() {
