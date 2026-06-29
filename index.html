@@ -394,6 +394,179 @@ body { background: var(--navy); color: var(--text); }
 
 
 
+
+/* ─── CALENDAR ─── */
+.cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.cal-nav { display: flex; align-items: center; gap: 10px; }
+.cal-nav-btn {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 8px; width: 36px; height: 36px;
+  font-size: 1.2rem; cursor: pointer; color: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.cal-nav-btn:hover { background: var(--foam); }
+.cal-title-group { display: flex; align-items: center; gap: 8px; }
+.cal-title {
+  font-size: 1.1rem; font-weight: 800; color: var(--navy);
+  min-width: 160px; text-align: center;
+}
+.cal-today-btn {
+  background: none; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px;
+  font-size: 0.75rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: all 0.15s;
+}
+.cal-today-btn:hover { border-color: var(--blue); color: var(--blue); }
+.cal-view-switcher { display: flex; gap: 4px; }
+.cal-view-btn {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 14px;
+  font-size: 0.8rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: all 0.15s;
+}
+.cal-view-btn.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+
+/* Day view */
+.day-view { }
+.day-empty {
+  text-align: center; padding: 60px; color: var(--muted);
+  font-size: 0.875rem; background: var(--white);
+  border-radius: 12px; border: 1px solid var(--border);
+}
+.trip-card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border); border-left: 4px solid var(--blue);
+  padding: 18px 20px; margin-bottom: 12px;
+  cursor: pointer; transition: box-shadow 0.2s, transform 0.15s;
+}
+.trip-card:hover { box-shadow: 0 4px 20px rgba(26,107,138,0.12); transform: translateY(-1px); }
+.trip-card.completed { border-left-color: #2f855a; opacity: 0.75; }
+.trip-card.cancelled { border-left-color: #e53e3e; opacity: 0.6; }
+.trip-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.trip-card-title { font-size: 1rem; font-weight: 700; color: var(--navy); }
+.trip-card-meta { font-size: 0.8rem; color: var(--muted); margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+.trip-status-badge {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+}
+.trip-status-badge.scheduled { background: rgba(26,107,138,0.1); color: var(--blue); }
+.trip-status-badge.completed { background: rgba(47,133,90,0.1); color: #276749; }
+.trip-status-badge.cancelled { background: rgba(229,62,62,0.1); color: #c53030; }
+.trip-card-footer {
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--border); flex-wrap: wrap;
+}
+.trip-stat { font-size: 0.78rem; color: var(--muted); }
+.trip-stat strong { color: var(--navy); font-weight: 700; }
+
+/* Week view */
+.week-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+.week-day-col { min-height: 120px; }
+.week-day-header {
+  font-size: 0.72rem; font-weight: 700; text-align: center;
+  padding: 6px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.week-day-header.today { color: var(--blue); }
+.week-day-body {
+  background: var(--white); border-radius: 8px;
+  border: 1px solid var(--border); min-height: 80px;
+  padding: 6px; cursor: pointer; transition: background 0.15s;
+}
+.week-day-body:hover { background: var(--foam); }
+.week-day-body.today { border-color: var(--blue); }
+.week-trip-pill {
+  background: rgba(26,107,138,0.1); border-radius: 4px;
+  padding: 3px 6px; font-size: 0.7rem; font-weight: 600;
+  color: var(--blue); margin-bottom: 3px; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Month view */
+.month-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.month-day-header {
+  font-size: 0.7rem; font-weight: 700; text-align: center;
+  padding: 8px; color: var(--muted); text-transform: uppercase;
+}
+.month-day {
+  background: var(--white); border: 1px solid var(--border);
+  min-height: 80px; padding: 6px; cursor: pointer;
+  transition: background 0.15s; border-radius: 4px;
+}
+.month-day:hover { background: var(--foam); }
+.month-day.today { border-color: var(--blue); }
+.month-day.other-month { opacity: 0.35; }
+.month-day-num {
+  font-size: 0.78rem; font-weight: 700; color: var(--navy);
+  margin-bottom: 4px;
+}
+.month-day.today .month-day-num {
+  background: var(--blue); color: var(--white);
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.month-trip-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--blue); display: inline-block; margin: 1px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,22,40,0.7);
+  z-index: 200; display: flex; align-items: flex-start;
+  justify-content: center; padding: 40px 20px; overflow-y: auto;
+}
+.modal-box {
+  background: var(--white); border-radius: 16px;
+  width: 100%; max-width: 560px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal-large { max-width: 720px; }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+}
+.modal-header h2 { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+.modal-close {
+  background: none; border: none; font-size: 1.4rem;
+  color: var(--muted); cursor: pointer; padding: 0 4px;
+  transition: color 0.15s;
+}
+.modal-close:hover { color: var(--navy); }
+.modal-body { padding: 24px; }
+
+/* Participant list */
+.participant-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  gap: 12px; flex-wrap: wrap;
+}
+.participant-row:last-child { border-bottom: none; }
+.p-name { font-weight: 600; color: var(--navy); font-size: 0.9rem; }
+.p-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.p-payment {
+  font-size: 0.72rem; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.p-payment.paid { background: rgba(47,133,90,0.1); color: #276749; }
+.p-payment.pending { background: rgba(251,191,36,0.1); color: #d97706; }
+.p-payment.cash { background: rgba(47,133,90,0.1); color: #276749; }
+.p-payment.card { background: rgba(26,107,138,0.1); color: var(--blue); }
+.p-payment.transfer { background: rgba(107,70,193,0.1); color: #6b46c1; }
+
 /* ─── CREW ─── */
 .crew-card {
   background: var(--white); border-radius: 12px;
@@ -640,14 +813,238 @@ body { background: var(--navy); color: var(--text); }
 
       <!-- CALENDAR -->
       <div class="page" id="page-calendar">
-        <div class="page-header">
-          <h1>Calendar</h1>
-          <p>All trips and bookings</p>
+        <!-- Calendar header -->
+        <div class="cal-header">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" id="cal-prev">&#8249;</button>
+            <div class="cal-title-group">
+              <span class="cal-title" id="cal-title">Today</span>
+              <button class="cal-today-btn" id="cal-today">Today</button>
+            </div>
+            <button class="cal-nav-btn" id="cal-next">&#8250;</button>
+          </div>
+          <div class="cal-view-switcher">
+            <button class="cal-view-btn active" data-view="day">Day</button>
+            <button class="cal-view-btn" data-view="week">Week</button>
+            <button class="cal-view-btn" data-view="month">Month</button>
+          </div>
+          <button class="btn-save" id="btn-new-trip">+ New trip</button>
         </div>
-        <div class="coming-soon">
-          <div class="icon">▦</div>
-          <h3>Bookings coming in sprint</h3>
-          <p>Full booking system with manifests, gear assignment, and PDF export — building this week.</p>
+
+        <!-- Calendar body -->
+        <div id="cal-body"></div>
+      </div>
+
+      <!-- TRIP MODAL -->
+      <div class="modal-overlay" id="modal-trip" style="display:none;">
+        <div class="modal-box modal-large">
+          <div class="modal-header">
+            <h2 id="modal-trip-title">New trip</h2>
+            <button class="modal-close" id="modal-trip-close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <!-- Trip details form -->
+            <div id="trip-form-section">
+              <div class="sf-row">
+                <div class="sf-group">
+                  <label class="sf-label">Trip name</label>
+                  <input class="sf-input" type="text" id="trip-name" placeholder="e.g. Morning dive, Sunset charter">
+                </div>
+                <div class="sf-group">
+                  <label class="sf-label">Trip type</label>
+                  <select class="sf-input" id="trip-type">
+                    <optgroup label="Dive">
+                      <option value="fun_dive">Fun dive</option>
+                      <option value="discover_diving">Discover Scuba Diving</option>
+                      <option value="dive_course">Dive course</option>
+                      <option value="night_dive">Night dive</option>
+                      <option value="snorkel">Snorkel trip</option>
+                    </optgroup>
+                    <optgroup label="Charter">
+                      <option value="day_charter">Day charter</option>
+                      <option value="sunset_charter">Sunset charter</option>
+                      <option value="fishing">Fishing trip</option>
+                      <option value="sailing">Sailing trip</option>
+                      <option value="private_charter">Private charter</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                      <option value="surf_lesson">Surf lesson</option>
+                      <option value="transfer">Transfer</option>
+                      <option value="other">Other</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+              <div class="sf-row">
+                <div class="sf-group">
+                  <label class="sf-label">Date</label>
+                  <input class="sf-input" type="date" id="trip-date">
+                </div>
+                <div class="sf-group">
+                  <label class="sf-label">Departure time</label>
+                  <input class="sf-input" type="time" id="trip-time">
+                </div>
+              </div>
+              <div class="sf-row">
+                <div class="sf-group">
+                  <label class="sf-label">Boat</label>
+                  <select class="sf-input" id="trip-boat"></select>
+                </div>
+                <div class="sf-group">
+                  <label class="sf-label">Max guests</label>
+                  <input class="sf-input" type="number" id="trip-max-guests" placeholder="e.g. 12" min="1">
+                </div>
+              </div>
+              <!-- Dive-specific fields -->
+              <div id="dive-fields" style="display:none;">
+                <div class="sf-row">
+                  <div class="sf-group">
+                    <label class="sf-label">Number of dives (tanks)</label>
+                    <select class="sf-input" id="trip-num-dives">
+                      <option value="1">1 tank dive</option>
+                      <option value="2" selected>2 tank dive</option>
+                      <option value="3">3 tank dive</option>
+                      <option value="4">4 tank dive</option>
+                    </select>
+                  </div>
+                  <div class="sf-group">
+                    <label class="sf-label">Dive sites (optional)</label>
+                    <input class="sf-input" type="text" id="trip-dive-sites" placeholder="e.g. Chumphon Pinnacle, Southwest">
+                  </div>
+                </div>
+              </div>
+              <div class="sf-row">
+                <div class="sf-group">
+                  <label class="sf-label">Price per person</label>
+                  <input class="sf-input" type="number" id="trip-price" placeholder="e.g. 1500" min="0">
+                </div>
+                <div class="sf-group">
+                  <label class="sf-label">Currency</label>
+                  <select class="sf-input" id="trip-currency">
+                    <option value="USD">USD</option>
+                    <option value="THB">THB</option>
+                    <option value="AUD">AUD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="IDR">IDR</option>
+                    <option value="PHP">PHP</option>
+                    <option value="EGP">EGP</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Notes</label>
+                <input class="sf-input" type="text" id="trip-notes" placeholder="Optional">
+              </div>
+              <div class="settings-actions">
+                <button class="btn-save" id="btn-save-trip">Save trip</button>
+                <span class="save-feedback" id="trip-save-feedback"></span>
+              </div>
+            </div>
+
+            <!-- Participants section (shown after trip saved) -->
+            <div id="participants-section" style="display:none;">
+              <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <div class="card-section-title" style="margin-bottom:4px;">Participants</div>
+                  <div id="trip-tank-summary" style="font-size:0.8rem;color:var(--blue);font-weight:600;"></div>
+                </div>
+                <button class="btn-save" id="btn-add-participant" style="font-size:0.8rem;padding:8px 14px;">+ Add guest</button>
+              </div>
+              <div id="participants-list"></div>
+
+              <!-- Add participant form -->
+              <div class="inline-form" id="form-add-participant" style="display:none;margin-top:16px;">
+                <div class="sf-row">
+                  <div class="sf-group">
+                    <label class="sf-label">Full name</label>
+                    <input class="sf-input" type="text" id="p-name" placeholder="Guest name">
+                  </div>
+                  <div class="sf-group">
+                    <label class="sf-label">Cert level</label>
+                    <select class="sf-input" id="p-cert">
+                      <option value="">N/A (non-diver)</option>
+                      <option value="DSD">DSD (Discover Scuba)</option>
+                      <option value="OWD">Open Water Diver</option>
+                      <option value="AOW">Advanced Open Water</option>
+                      <option value="Rescue">Rescue Diver</option>
+                      <option value="DM">Divemaster</option>
+                      <option value="Instructor">Instructor</option>
+                      <option value="Other">Other cert</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="gear-fields">
+                  <div class="sf-row">
+                    <div class="sf-group">
+                      <label class="sf-label">BCD size</label>
+                      <select class="sf-input" id="p-bcd">
+                        <option value="">Own gear</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                      </select>
+                    </div>
+                    <div class="sf-group">
+                      <label class="sf-label">Wetsuit size</label>
+                      <select class="sf-input" id="p-wetsuit">
+                        <option value="">Own gear</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                      </select>
+                    </div>
+                    <div class="sf-group">
+                      <label class="sf-label">Fins size</label>
+                      <select class="sf-input" id="p-fins">
+                        <option value="">Own gear</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                      </select>
+                    </div>
+                    <div class="sf-group">
+                      <label class="sf-label">Weight (kg)</label>
+                      <input class="sf-input" type="number" id="p-weight" placeholder="e.g. 8" min="0" max="30">
+                    </div>
+                  </div>
+                </div>
+                <div class="sf-row">
+                  <div class="sf-group">
+                    <label class="sf-label">Payment</label>
+                    <select class="sf-input" id="p-payment">
+                      <option value="pending">Pending</option>
+                      <option value="cash">Cash</option>
+                      <option value="card">Card</option>
+                      <option value="transfer">Transfer</option>
+                    </select>
+                  </div>
+                  <div class="sf-group">
+                    <label class="sf-label">Amount paid</label>
+                    <input class="sf-input" type="number" id="p-amount" placeholder="0" min="0">
+                  </div>
+                </div>
+                <div class="sf-group">
+                  <label class="sf-label">Notes</label>
+                  <input class="sf-input" type="text" id="p-notes" placeholder="Allergies, special requirements...">
+                </div>
+                <div class="settings-actions">
+                  <button class="btn-save" id="btn-save-participant">Save guest</button>
+                  <button class="btn-cancel" id="btn-cancel-participant">Cancel</button>
+                  <span class="save-feedback" id="p-save-feedback"></span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1086,6 +1483,7 @@ async function initAuth() {
     loadSettings(session.user);
     loadFleet();
     loadCrew();
+    renderCalendar();
     showScreen('app');
   } else {
     showScreen('login');
@@ -1130,6 +1528,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   loadSettings(data.user);
   loadFleet();
   loadCrew();
+  renderCalendar();
   showScreen('app');
 });
 
@@ -1389,6 +1788,441 @@ async function deleteLocation(id) {
   await sb.from('locations').delete().eq('id', id);
   await loadLocations();
 }
+
+
+// ─── CALENDAR & BOOKINGS ───
+let calView = 'day';
+let calDate = new Date();
+let currentTripId = null;
+let trips = {};
+
+function formatDate(d) {
+  return d.toISOString().split('T')[0];
+}
+function isSameDay(a, b) {
+  return a.toDateString() === b.toDateString();
+}
+function addDays(d, n) {
+  const r = new Date(d); r.setDate(r.getDate() + n); return r;
+}
+
+function calTitleText() {
+  const opts = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+  const wOpts = { month: 'long', year: 'numeric' };
+  if (calView === 'day') return calDate.toLocaleDateString('en-US', opts);
+  if (calView === 'week') {
+    const start = getWeekStart(calDate);
+    const end = addDays(start, 6);
+    return `${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  }
+  return calDate.toLocaleDateString('en-US', wOpts);
+}
+
+function getWeekStart(d) {
+  const r = new Date(d);
+  const day = r.getDay();
+  r.setDate(r.getDate() - day);
+  return r;
+}
+
+async function renderCalendar() {
+  document.getElementById('cal-title').textContent = calTitleText();
+  if (calView === 'day') await renderDayView();
+  else if (calView === 'week') await renderWeekView();
+  else await renderMonthView();
+}
+
+async function fetchTripsForRange(start, end) {
+  if (!currentOrgId) return [];
+  const { data } = await sb
+    .from('trips')
+    .select('*, boats(name), participants(id)')
+    .eq('org_id', currentOrgId)
+    .gte('trip_date', formatDate(start))
+    .lte('trip_date', formatDate(end))
+    .order('trip_time');
+  return data || [];
+}
+
+async function renderDayView() {
+  const body = document.getElementById('cal-body');
+  const dayTrips = await fetchTripsForRange(calDate, calDate);
+
+  if (dayTrips.length === 0) {
+    body.innerHTML = `<div class="day-empty">No trips scheduled for this day.<br><br><button class="btn-save" onclick="openNewTrip()">+ Add a trip</button></div>`;
+    return;
+  }
+
+  body.innerHTML = dayTrips.map(t => tripCard(t)).join('');
+}
+
+function tripCard(t) {
+  const guestCount = t.participants?.length || 0;
+  const tanks = t.num_dives ? guestCount * t.num_dives : null;
+  const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(t.trip_type);
+  return `
+  <div class="trip-card ${t.status}" onclick="openTrip('${t.id}')">
+    <div class="trip-card-header">
+      <div>
+        <div class="trip-card-title">${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}</div>
+        <div class="trip-card-meta">
+          <span>${t.trip_time ? t.trip_time.slice(0,5) : '—'}</span>
+          <span>${t.boats?.name || 'No boat'}</span>
+          <span>${t.trip_type?.replace(/_/g,' ') || ''}</span>
+        </div>
+      </div>
+      <span class="trip-status-badge ${t.status}">${t.status}</span>
+    </div>
+    <div class="trip-card-footer">
+      <div class="trip-stat"><strong>${guestCount}</strong> guests</div>
+      ${t.max_guests ? `<div class="trip-stat">Max <strong>${t.max_guests}</strong></div>` : ''}
+      ${isDive && tanks ? `<div class="trip-stat"><strong>${tanks}</strong> tanks needed</div>` : ''}
+      ${t.price_per_person ? `<div class="trip-stat"><strong>${t.currency || ''} ${t.price_per_person}</strong> /person</div>` : ''}
+    </div>
+  </div>`;
+}
+
+async function renderWeekView() {
+  const body = document.getElementById('cal-body');
+  const start = getWeekStart(calDate);
+  const weekTrips = await fetchTripsForRange(start, addDays(start, 6));
+  const today = new Date();
+
+  const days = Array.from({length:7}, (_,i) => addDays(start, i));
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  body.innerHTML = `<div class="week-grid">
+    ${days.map((d,i) => {
+      const isToday = isSameDay(d, today);
+      const dayT = weekTrips.filter(t => t.trip_date === formatDate(d));
+      return `
+      <div class="week-day-col">
+        <div class="week-day-header ${isToday?'today':''}">${dayNames[i]}<br>${d.getDate()}</div>
+        <div class="week-day-body ${isToday?'today':''}" onclick="goToDay('${formatDate(d)}')">
+          ${dayT.map(t => `<div class="week-trip-pill" onclick="event.stopPropagation();openTrip('${t.id}')">${t.trip_time?t.trip_time.slice(0,5)+' ':''} ${t.trip_name||t.trip_type?.replace(/_/g,' ')||'Trip'}</div>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function renderMonthView() {
+  const body = document.getElementById('cal-body');
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  const monthTrips = await fetchTripsForRange(firstDay, lastDay);
+  const today = new Date();
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = `<div class="month-grid">`;
+  html += dayNames.map(d => `<div class="month-day-header">${d}</div>`).join('');
+
+  // Pad start
+  const startPad = firstDay.getDay();
+  for (let i = 0; i < startPad; i++) {
+    const d = addDays(firstDay, -(startPad - i));
+    html += `<div class="month-day other-month"><div class="month-day-num">${d.getDate()}</div></div>`;
+  }
+
+  // Days of month
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const date = new Date(year, month, d);
+    const dateStr = formatDate(date);
+    const isToday = isSameDay(date, today);
+    const dayTrips = monthTrips.filter(t => t.trip_date === dateStr);
+    html += `
+    <div class="month-day ${isToday?'today':''}" onclick="goToDay('${dateStr}')">
+      <div class="month-day-num">${d}</div>
+      ${dayTrips.slice(0,3).map(() => `<span class="month-trip-dot"></span>`).join('')}
+      ${dayTrips.length > 3 ? `<div style="font-size:0.65rem;color:var(--muted)">+${dayTrips.length-3}</div>` : ''}
+    </div>`;
+  }
+
+  html += `</div>`;
+  body.innerHTML = html;
+}
+
+function goToDay(dateStr) {
+  calDate = new Date(dateStr + 'T12:00:00');
+  calView = 'day';
+  document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'day'));
+  renderCalendar();
+}
+
+// Nav buttons
+document.getElementById('cal-prev').addEventListener('click', () => {
+  if (calView === 'day') calDate = addDays(calDate, -1);
+  else if (calView === 'week') calDate = addDays(calDate, -7);
+  else { calDate = new Date(calDate.getFullYear(), calDate.getMonth()-1, 1); }
+  renderCalendar();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  if (calView === 'day') calDate = addDays(calDate, 1);
+  else if (calView === 'week') calDate = addDays(calDate, 7);
+  else { calDate = new Date(calDate.getFullYear(), calDate.getMonth()+1, 1); }
+  renderCalendar();
+});
+document.getElementById('cal-today').addEventListener('click', () => {
+  calDate = new Date(); renderCalendar();
+});
+document.querySelectorAll('.cal-view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    calView = btn.dataset.view;
+    document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCalendar();
+  });
+});
+
+// ─── TRIP MODAL ───
+function openNewTrip() {
+  currentTripId = null;
+  document.getElementById('modal-trip-title').textContent = 'New trip';
+  document.getElementById('trip-form-section').style.display = 'block';
+  document.getElementById('participants-section').style.display = 'none';
+  document.getElementById('btn-save-trip').textContent = 'Save trip';
+  // Set date to current calendar date
+  document.getElementById('trip-date').value = formatDate(calDate);
+  document.getElementById('trip-save-feedback').className = 'save-feedback';
+  populateTripBoats();
+  document.getElementById('modal-trip').style.display = 'flex';
+}
+
+async function openTrip(id) {
+  currentTripId = id;
+  const { data: trip } = await sb
+    .from('trips')
+    .select('*, boats(name)')
+    .eq('id', id)
+    .single();
+  if (!trip) return;
+
+  document.getElementById('modal-trip-title').textContent = trip.trip_name || 'Trip details';
+  document.getElementById('trip-name').value = trip.trip_name || '';
+  document.getElementById('trip-type').value = trip.trip_type || 'fun_dive';
+  document.getElementById('trip-date').value = trip.trip_date || '';
+  document.getElementById('trip-time').value = trip.trip_time?.slice(0,5) || '';
+  document.getElementById('trip-max-guests').value = trip.max_guests || '';
+  document.getElementById('trip-price').value = trip.price_per_person || '';
+  document.getElementById('trip-currency').value = trip.currency || 'USD';
+  document.getElementById('trip-notes').value = trip.notes || '';
+  if (trip.num_dives) document.getElementById('trip-num-dives').value = trip.num_dives;
+  toggleDiveFields();
+  populateTripBoats(trip.boat_id);
+
+  document.getElementById('trip-form-section').style.display = 'block';
+  document.getElementById('participants-section').style.display = 'block';
+  document.getElementById('btn-save-trip').textContent = 'Update trip';
+  document.getElementById('modal-trip').style.display = 'flex';
+  await loadParticipants(id, trip.num_dives);
+}
+
+document.getElementById('btn-new-trip').addEventListener('click', openNewTrip);
+document.getElementById('modal-trip-close').addEventListener('click', () => {
+  document.getElementById('modal-trip').style.display = 'none';
+  renderCalendar();
+});
+document.getElementById('modal-trip').addEventListener('click', function(e) {
+  if (e.target === this) { this.style.display = 'none'; renderCalendar(); }
+});
+
+// Show dive fields based on trip type
+function toggleDiveFields() {
+  const type = document.getElementById('trip-type').value;
+  const isDive = ['fun_dive','discover_diving','dive_course','night_dive'].includes(type);
+  document.getElementById('dive-fields').style.display = isDive ? 'block' : 'none';
+}
+document.getElementById('trip-type').addEventListener('change', toggleDiveFields);
+
+async function populateTripBoats(selectedId) {
+  if (!currentOrgId) return;
+  const { data: boats } = await sb
+    .from('boats')
+    .select('id, name')
+    .eq('org_id', currentOrgId)
+    .eq('active', true);
+  const sel = document.getElementById('trip-boat');
+  sel.innerHTML = '<option value="">No boat assigned</option>' +
+    (boats || []).map(b => `<option value="${b.id}" ${b.id===selectedId?'selected':''}>${b.name}</option>`).join('');
+}
+
+// Save trip
+document.getElementById('btn-save-trip').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-trip');
+  const feedback = document.getElementById('trip-save-feedback');
+  const name = document.getElementById('trip-name').value.trim();
+  const type = document.getElementById('trip-type').value;
+  const date = document.getElementById('trip-date').value;
+  const time = document.getElementById('trip-time').value;
+  const boatId = document.getElementById('trip-boat').value;
+  const maxGuests = document.getElementById('trip-max-guests').value;
+  const numDives = document.getElementById('trip-num-dives').value;
+  const price = document.getElementById('trip-price').value;
+  const currency = document.getElementById('trip-currency').value;
+  const notes = document.getElementById('trip-notes').value.trim();
+
+  if (!date) {
+    feedback.textContent = 'Date is required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const payload = {
+    org_id: currentOrgId,
+    trip_name: name || null,
+    trip_type: type,
+    trip_date: date,
+    trip_time: time || null,
+    boat_id: boatId || null,
+    max_guests: maxGuests ? parseInt(maxGuests) : null,
+    num_dives: numDives ? parseInt(numDives) : null,
+    price_per_person: price ? parseFloat(price) : null,
+    currency,
+    notes: notes || null,
+    status: 'scheduled',
+    created_by: (await sb.auth.getUser()).data.user.id
+  };
+
+  let tripId = currentTripId;
+
+  if (!currentTripId) {
+    const { data, error } = await sb.from('trips').insert(payload).select().single();
+    if (error) {
+      feedback.textContent = 'Error saving trip.';
+      feedback.className = 'save-feedback error visible';
+      btn.disabled = false; btn.textContent = 'Save trip';
+      return;
+    }
+    tripId = data.id;
+    currentTripId = tripId;
+  } else {
+    await sb.from('trips').update(payload).eq('id', currentTripId);
+  }
+
+  feedback.textContent = 'Saved';
+  feedback.className = 'save-feedback visible';
+  btn.disabled = false; btn.textContent = 'Update trip';
+
+  // Show participants section
+  document.getElementById('participants-section').style.display = 'block';
+  document.getElementById('modal-trip-title').textContent = name || 'Trip details';
+  await loadParticipants(tripId, parseInt(numDives));
+
+  // Update home stats
+  document.getElementById('stat-trips').textContent = '↑';
+  setTimeout(() => feedback.className = 'save-feedback', 3000);
+});
+
+// ─── PARTICIPANTS ───
+async function loadParticipants(tripId, numDives) {
+  const { data: parts } = await sb
+    .from('participants')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('created_at');
+
+  const list = document.getElementById('participants-list');
+  const summary = document.getElementById('trip-tank-summary');
+  const count = parts?.length || 0;
+
+  if (numDives && count > 0) {
+    summary.textContent = `${count} guests · ${count * numDives} tanks needed`;
+  } else {
+    summary.textContent = count > 0 ? `${count} guests` : '';
+  }
+
+  if (!parts || parts.length === 0) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);padding:8px 0;">No guests yet. Add the first one below.</p>';
+    return;
+  }
+
+  list.innerHTML = parts.map(p => `
+    <div class="participant-row">
+      <div>
+        <div class="p-name">${p.full_name}</div>
+        <div class="p-meta">
+          ${p.cert_level || 'No cert'} ·
+          ${[p.bcd_size?'BCD '+p.bcd_size:'', p.wetsuit_size?'WS '+p.wetsuit_size:'', p.fins_size?'Fins '+p.fins_size:'', p.weight_kg?p.weight_kg+'kg':''].filter(Boolean).join(' · ') || 'Own gear'}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="p-payment ${p.payment_method||'pending'}">${p.payment_method||'pending'}</span>
+        <button class="btn-icon danger" onclick="removeParticipant('${p.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('btn-add-participant').addEventListener('click', () => {
+  document.getElementById('form-add-participant').style.display = 'block';
+  document.getElementById('btn-add-participant').style.display = 'none';
+});
+document.getElementById('btn-cancel-participant').addEventListener('click', () => {
+  document.getElementById('form-add-participant').style.display = 'none';
+  document.getElementById('btn-add-participant').style.display = 'inline-block';
+});
+
+document.getElementById('btn-save-participant').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-participant');
+  const feedback = document.getElementById('p-save-feedback');
+  const name = document.getElementById('p-name').value.trim();
+
+  if (!name) {
+    feedback.textContent = 'Name required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!currentTripId) {
+    feedback.textContent = 'Save the trip first.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const numDives = parseInt(document.getElementById('trip-num-dives').value) || null;
+  const { error } = await sb.from('participants').insert({
+    trip_id: currentTripId,
+    full_name: name,
+    cert_level: document.getElementById('p-cert').value || null,
+    bcd_size: document.getElementById('p-bcd').value || null,
+    wetsuit_size: document.getElementById('p-wetsuit').value || null,
+    fins_size: document.getElementById('p-fins').value || null,
+    weight_kg: document.getElementById('p-weight').value ? parseFloat(document.getElementById('p-weight').value) : null,
+    payment_method: document.getElementById('p-payment').value,
+    amount_paid: parseFloat(document.getElementById('p-amount').value) || 0,
+    notes: document.getElementById('p-notes').value.trim() || null
+  });
+
+  if (error) {
+    feedback.textContent = 'Error saving.';
+    feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = 'Save guest';
+    return;
+  }
+
+  // Clear form
+  ['p-name','p-weight','p-amount','p-notes'].forEach(id => document.getElementById(id).value = '');
+  ['p-cert','p-bcd','p-wetsuit','p-fins','p-payment'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  document.getElementById('form-add-participant').style.display = 'none';
+  document.getElementById('btn-add-participant').style.display = 'inline-block';
+  btn.disabled = false; btn.textContent = 'Save guest';
+  feedback.className = 'save-feedback';
+
+  await loadParticipants(currentTripId, numDives);
+});
+
+async function removeParticipant(id) {
+  if (!confirm('Remove this guest?')) return;
+  await sb.from('participants').delete().eq('id', id);
+  const numDives = parseInt(document.getElementById('trip-num-dives').value) || null;
+  await loadParticipants(currentTripId, numDives);
+}
+// ─── END CALENDAR ───
 
 // ─── END SETTINGS ───
 
