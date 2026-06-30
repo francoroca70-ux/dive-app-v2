@@ -470,6 +470,24 @@ body { background: var(--navy); color: var(--text); }
 }
 
 
+
+/* ─── RADIO BUTTONS ─── */
+.radio-group {
+  display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.radio-btn {
+  flex: 1; padding: 10px 16px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--white);
+  color: var(--muted); font-size: 0.875rem; cursor: pointer;
+  text-align: center; transition: all 0.15s; font-weight: 500;
+  user-select: none; min-width: 120px;
+}
+.radio-btn:hover { border-color: var(--blue); color: var(--blue); }
+.radio-btn.selected {
+  background: var(--blue); color: var(--white);
+  border-color: var(--blue); font-weight: 600;
+}
+
 /* ─── CALENDAR ─── */
 .cal-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -1027,6 +1045,7 @@ body { background: var(--navy); color: var(--text); }
               <div class="warning-banner caution" id="save-conflict-warning" style="display:none;"></div>
               <div class="settings-actions">
                 <button class="btn-save" id="btn-save-trip">Save trip</button>
+                <button class="btn-cancel" id="btn-delete-trip" style="display:none;color:var(--error);border-color:rgba(229,62,62,0.3);">Delete trip</button>
                 <span class="save-feedback" id="trip-save-feedback"></span>
               </div>
             </div>
@@ -2115,6 +2134,7 @@ function openNewTrip() {
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('participants-section').style.display = 'none';
   document.getElementById('btn-save-trip').textContent = 'Save trip';
+  document.getElementById('btn-delete-trip').style.display = 'none';
   document.getElementById('trip-date').value = formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
   document.getElementById('trip-arrival').value = '';
@@ -2170,12 +2190,24 @@ async function openTrip(id) {
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('participants-section').style.display = 'block';
   document.getElementById('btn-save-trip').textContent = 'Update trip';
+  document.getElementById('btn-delete-trip').style.display = 'inline-block';
   document.getElementById('modal-trip').style.display = 'flex';
   await loadParticipants(id);
   await loadTripCrewSection(id);
 }
 
 document.getElementById('btn-new-trip').addEventListener('click', openNewTrip);
+
+document.getElementById('btn-delete-trip').addEventListener('click', async () => {
+  if (!currentTripId) return;
+  if (!confirm('Delete this trip? This cannot be undone.')) return;
+  await sb.from('participants').delete().eq('trip_id', currentTripId);
+  await sb.from('trip_crew').delete().eq('trip_id', currentTripId);
+  await sb.from('trips').delete().eq('id', currentTripId);
+  document.getElementById('modal-trip').style.display = 'none';
+  currentTripId = null;
+  renderCalendar();
+});
 document.getElementById('modal-trip-close').addEventListener('click', () => {
   document.getElementById('modal-trip').style.display = 'none';
   renderCalendar();
