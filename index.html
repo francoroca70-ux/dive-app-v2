@@ -1706,6 +1706,10 @@ async function loadSettings(user) {
     await loadLocations();
 
     // Load categories and trip types
+    const existingCategories = await loadActiveCategories();
+    if (existingCategories.length > 0) {
+      document.getElementById('org-categories-group').style.display = 'none';
+    }
     await renderActiveCategories();
     await renderTripTypesList();
   }
