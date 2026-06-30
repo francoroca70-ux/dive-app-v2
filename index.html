@@ -2770,6 +2770,11 @@ function confirmAddCategory(category) {
 }
 
 async function doAddCategory(category) {
+  const existing = await loadActiveCategories();
+  if (existing.includes(category)) {
+    document.getElementById('category-confirm-zone').innerHTML = '<p style="color:var(--error);font-size:0.83rem;">This category is already active.</p>';
+    return;
+  }
   await seedTripTypesForCategory(category);
   await renderActiveCategories();
   await renderTripTypesList();
@@ -2800,15 +2805,19 @@ async function renderTripTypesList() {
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <input class="trip-type-price-input" type="number" min="0" value="${t.default_price || ''}" placeholder="0"
-          onchange="updateTripTypePrice('${t.id}', this.value)">
+          onchange="updateTripTypePrice('${t.id}', this.value, this)">
         <button class="btn-icon danger" onclick="deactivateTripType('${t.id}')">Remove</button>
       </div>
     </div>
   `).join('');
 }
 
-async function updateTripTypePrice(id, value) {
+async function updateTripTypePrice(id, value, inputEl) {
   await sb.from('trip_types').update({ default_price: parseFloat(value) || 0 }).eq('id', id);
+  if (inputEl) {
+    inputEl.style.borderColor = 'var(--success, #2f855a)';
+    setTimeout(() => { inputEl.style.borderColor = ''; }, 800);
+  }
 }
 
 async function deactivateTripType(id) {
