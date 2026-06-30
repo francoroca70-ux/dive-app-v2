@@ -2372,7 +2372,7 @@ function renderDynamicGearFields() {
   container.innerHTML = selectedTripTypeFields.map(f => {
     const inputId = 'pgear-' + f.field_key;
     if (f.field_type === 'select') {
-      const opts = JSON.parse(f.options || '[]');
+      const opts = Array.isArray(f.options) ? f.options : (f.options ? JSON.parse(f.options) : []);
       return `<div class="sf-group">
         <label class="sf-label">${f.label}</label>
         <select class="sf-input" id="${inputId}" data-key="${f.field_key}">
