@@ -447,6 +447,29 @@ body { background: var(--navy); color: var(--text); }
 
 
 
+
+.required-star { color: #d97706; }
+
+.warning-banner {
+  background: var(--foam); border: 1px solid rgba(79,195,247,0.35);
+  border-radius: 10px; padding: 12px 16px; margin: 12px 0;
+  font-size: 0.83rem; color: var(--blue); line-height: 1.5;
+}
+.warning-banner.caution {
+  background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.3); color: #92660a;
+}
+
+
+.crew-member-tag-v2 {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--foam); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; color: var(--text);
+}
+.crew-member-tag-v2 button {
+  background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 0;
+}
+
+
 /* ─── CALENDAR ─── */
 .cal-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -897,97 +920,111 @@ body { background: var(--navy); color: var(--text); }
           <div class="modal-body">
             <!-- Trip details form -->
             <div id="trip-form-section">
-              <div class="sf-row">
-                <div class="sf-group">
-                  <label class="sf-label">Trip name</label>
-                  <input class="sf-input" type="text" id="trip-name" placeholder="e.g. Morning dive, Sunset charter">
-                </div>
-                <div class="sf-group">
-                  <label class="sf-label">Trip type</label>
-                  <select class="sf-input" id="trip-type">
-                    <optgroup label="Dive">
-                      <option value="fun_dive">Fun dive</option>
-                      <option value="discover_diving">Discover Scuba Diving</option>
-                      <option value="dive_course">Dive course</option>
-                      <option value="night_dive">Night dive</option>
-                      <option value="snorkel">Snorkel trip</option>
-                    </optgroup>
-                    <optgroup label="Charter">
-                      <option value="day_charter">Day charter</option>
-                      <option value="sunset_charter">Sunset charter</option>
-                      <option value="fishing">Fishing trip</option>
-                      <option value="sailing">Sailing trip</option>
-                      <option value="private_charter">Private charter</option>
-                    </optgroup>
-                    <optgroup label="Other">
-                      <option value="surf_lesson">Surf lesson</option>
-                      <option value="transfer">Transfer</option>
-                      <option value="other">Other</option>
-                    </optgroup>
-                  </select>
-                </div>
+
+              <div class="sf-group">
+                <label class="sf-label">Trip type</label>
+                <select class="sf-input" id="trip-type-select"></select>
+              </div>
+
+              <div class="warning-banner" id="private-charter-warning" style="display:none;">
+                Private Charter — this boat will be exclusively reserved for these hours.
+              </div>
+
+              <div class="sf-group">
+                <label class="sf-label">Trip name / site <span class="required-star">*</span></label>
+                <input class="sf-input" type="text" id="trip-name" placeholder="e.g. Shark Point Morning Dive">
+              </div>
+
+              <div class="sf-group">
+                <label class="sf-label">Date <span class="required-star">*</span></label>
+                <input class="sf-input" type="date" id="trip-date">
               </div>
               <div class="sf-row">
                 <div class="sf-group">
-                  <label class="sf-label">Date</label>
-                  <input class="sf-input" type="date" id="trip-date">
-                </div>
-                <div class="sf-group">
-                  <label class="sf-label">Departure time</label>
+                  <label class="sf-label">Departure <span class="required-star">*</span></label>
                   <input class="sf-input" type="time" id="trip-time">
                 </div>
+                <div class="sf-group">
+                  <label class="sf-label">Arrival <span class="required-star">*</span></label>
+                  <input class="sf-input" type="time" id="trip-arrival">
+                </div>
+              </div>
+
+              <div class="card-section-title" style="margin-top:20px;">Boat</div>
+              <div class="sf-group">
+                <label class="sf-label">Select boat</label>
+                <select class="sf-input" id="trip-boat"></select>
+              </div>
+              <div class="warning-banner caution" id="boat-conflict-warning" style="display:none;"></div>
+
+              <!-- Dynamic tank/dive info -->
+              <div id="trip-tank-fields" style="display:none;">
+                <div class="sf-group">
+                  <label class="sf-label">Dive sites (optional)</label>
+                  <input class="sf-input" type="text" id="trip-dive-sites" placeholder="e.g. Chumphon Pinnacle, Southwest">
+                </div>
+              </div>
+
+              <div class="card-section-title" style="margin-top:20px;">Contact</div>
+              <div class="sf-row">
+                <div class="sf-group">
+                  <label class="sf-label">Lead contact name <span class="required-star">*</span></label>
+                  <input class="sf-input" type="text" id="trip-contact-name" placeholder="e.g. John Smith">
+                </div>
+                <div class="sf-group">
+                  <label class="sf-label">Phone <span class="required-star">*</span></label>
+                  <input class="sf-input" type="tel" id="trip-contact-phone" placeholder="+1 555 000 0000">
+                </div>
               </div>
               <div class="sf-row">
                 <div class="sf-group">
-                  <label class="sf-label">Boat</label>
-                  <select class="sf-input" id="trip-boat"></select>
+                  <label class="sf-label">Email</label>
+                  <input class="sf-input" type="email" id="trip-contact-email" placeholder="john@email.com">
                 </div>
                 <div class="sf-group">
-                  <label class="sf-label">Max guests</label>
-                  <input class="sf-input" type="number" id="trip-max-guests" placeholder="e.g. 12" min="1">
+                  <label class="sf-label">Booked by</label>
+                  <input class="sf-input" type="text" id="trip-booked-by" placeholder="Staff member name">
                 </div>
               </div>
-              <!-- Dive-specific fields -->
-              <div id="dive-fields" style="display:none;">
-                <div class="sf-row">
-                  <div class="sf-group">
-                    <label class="sf-label">Number of dives (tanks)</label>
-                    <select class="sf-input" id="trip-num-dives">
-                      <option value="1">1 tank dive</option>
-                      <option value="2" selected>2 tank dive</option>
-                      <option value="3">3 tank dive</option>
-                      <option value="4">4 tank dive</option>
-                    </select>
-                  </div>
-                  <div class="sf-group">
-                    <label class="sf-label">Dive sites (optional)</label>
-                    <input class="sf-input" type="text" id="trip-dive-sites" placeholder="e.g. Chumphon Pinnacle, Southwest">
-                  </div>
-                </div>
-              </div>
-              <div class="sf-row">
-                <div class="sf-group">
-                  <label class="sf-label">Price per person</label>
-                  <input class="sf-input" type="number" id="trip-price" placeholder="e.g. 1500" min="0">
-                </div>
-                <div class="sf-group">
-                  <label class="sf-label">Currency</label>
-                  <select class="sf-input" id="trip-currency">
-                    <option value="USD">USD</option>
-                    <option value="THB">THB</option>
-                    <option value="AUD">AUD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="GBP">GBP</option>
-                    <option value="IDR">IDR</option>
-                    <option value="PHP">PHP</option>
-                    <option value="EGP">EGP</option>
-                  </select>
+
+              <div class="card-section-title" style="margin-top:20px;">Guests</div>
+              <div class="sf-group">
+                <label class="sf-label">Party type</label>
+                <div class="radio-group">
+                  <div class="radio-btn selected" id="party-single" onclick="setPartyType('single')">Single group</div>
+                  <div class="radio-btn" id="party-multiple" onclick="setPartyType('multiple')">Multiple groups</div>
                 </div>
               </div>
               <div class="sf-group">
-                <label class="sf-label">Notes</label>
-                <input class="sf-input" type="text" id="trip-notes" placeholder="Optional">
+                <label class="sf-label">Max guests</label>
+                <input class="sf-input" type="number" id="trip-max-guests" placeholder="e.g. 12" min="1">
               </div>
+
+              <div class="card-section-title" style="margin-top:20px;">Payment</div>
+              <div class="sf-row">
+                <div class="sf-group">
+                  <label class="sf-label">Amount</label>
+                  <input class="sf-input" type="number" id="trip-price" placeholder="e.g. 1500" min="0">
+                </div>
+                <div class="sf-group">
+                  <label class="sf-label">Status</label>
+                  <select class="sf-input" id="trip-payment-status">
+                    <option value="pending">Pending</option>
+                    <option value="paid_cash">Paid — cash</option>
+                    <option value="paid_card">Paid — card</option>
+                    <option value="partial">Partial payment</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="card-section-title" style="margin-top:20px;">Crew</div>
+              <div id="trip-crew-fields" style="font-size:0.83rem;color:var(--muted);">Save the trip to assign crew.</div>
+
+              <div class="sf-group" style="margin-top:20px;">
+                <label class="sf-label">Notes</label>
+                <input class="sf-input" type="text" id="trip-notes" placeholder="Any additional info">
+              </div>
+              <div class="warning-banner caution" id="save-conflict-warning" style="display:none;"></div>
               <div class="settings-actions">
                 <button class="btn-save" id="btn-save-trip">Save trip</button>
                 <span class="save-feedback" id="trip-save-feedback"></span>
@@ -1010,81 +1047,16 @@ body { background: var(--navy); color: var(--text); }
               <div class="inline-form" id="form-add-participant" style="display:none;margin-top:16px;">
                 <div class="sf-row">
                   <div class="sf-group">
-                    <label class="sf-label">Full name</label>
+                    <label class="sf-label">Full name <span class="required-star">*</span></label>
                     <input class="sf-input" type="text" id="p-name" placeholder="Guest name">
                   </div>
                   <div class="sf-group">
-                    <label class="sf-label">Cert level</label>
-                    <select class="sf-input" id="p-cert">
-                      <option value="">N/A (non-diver)</option>
-                      <option value="DSD">DSD (Discover Scuba)</option>
-                      <option value="OWD">Open Water Diver</option>
-                      <option value="AOW">Advanced Open Water</option>
-                      <option value="Rescue">Rescue Diver</option>
-                      <option value="DM">Divemaster</option>
-                      <option value="Instructor">Instructor</option>
-                      <option value="Other">Other cert</option>
-                    </select>
+                    <label class="sf-label">Phone</label>
+                    <input class="sf-input" type="tel" id="p-phone" placeholder="Optional">
                   </div>
                 </div>
-                <div id="gear-fields">
-                  <div class="sf-row">
-                    <div class="sf-group">
-                      <label class="sf-label">BCD size</label>
-                      <select class="sf-input" id="p-bcd">
-                        <option value="">Own gear</option>
-                        <option value="XS">XS</option>
-                        <option value="S">S</option>
-                        <option value="M">M</option>
-                        <option value="L">L</option>
-                        <option value="XL">XL</option>
-                        <option value="XXL">XXL</option>
-                      </select>
-                    </div>
-                    <div class="sf-group">
-                      <label class="sf-label">Wetsuit size</label>
-                      <select class="sf-input" id="p-wetsuit">
-                        <option value="">Own gear</option>
-                        <option value="XS">XS</option>
-                        <option value="S">S</option>
-                        <option value="M">M</option>
-                        <option value="L">L</option>
-                        <option value="XL">XL</option>
-                        <option value="XXL">XXL</option>
-                      </select>
-                    </div>
-                    <div class="sf-group">
-                      <label class="sf-label">Fins size</label>
-                      <select class="sf-input" id="p-fins">
-                        <option value="">Own gear</option>
-                        <option value="XS">XS</option>
-                        <option value="S">S</option>
-                        <option value="M">M</option>
-                        <option value="L">L</option>
-                        <option value="XL">XL</option>
-                      </select>
-                    </div>
-                    <div class="sf-group">
-                      <label class="sf-label">Weight (kg)</label>
-                      <input class="sf-input" type="number" id="p-weight" placeholder="e.g. 8" min="0" max="30">
-                    </div>
-                  </div>
-                </div>
-                <div class="sf-row">
-                  <div class="sf-group">
-                    <label class="sf-label">Payment</label>
-                    <select class="sf-input" id="p-payment">
-                      <option value="pending">Pending</option>
-                      <option value="cash">Cash</option>
-                      <option value="card">Card</option>
-                      <option value="transfer">Transfer</option>
-                    </select>
-                  </div>
-                  <div class="sf-group">
-                    <label class="sf-label">Amount paid</label>
-                    <input class="sf-input" type="number" id="p-amount" placeholder="0" min="0">
-                  </div>
-                </div>
+                <!-- Dynamic gear fields render here based on trip type -->
+                <div id="dynamic-gear-fields"></div>
                 <div class="sf-group">
                   <label class="sf-label">Notes</label>
                   <input class="sf-input" type="text" id="p-notes" placeholder="Allergies, special requirements...">
@@ -2071,16 +2043,98 @@ document.querySelectorAll('.cal-view-btn').forEach(btn => {
 });
 
 // ─── TRIP MODAL ───
+let currentTripTypes = [];
+let selectedTripTypeFields = [];
+
+async function loadTripTypesForModal() {
+  if (!currentOrgId) return [];
+  const { data } = await sb
+    .from('trip_types')
+    .select('*')
+    .eq('org_id', currentOrgId)
+    .eq('is_active', true)
+    .order('category')
+    .order('sort_order');
+  currentTripTypes = data || [];
+  return currentTripTypes;
+}
+
+async function populateTripTypeSelect(selectedId) {
+  const types = await loadTripTypesForModal();
+  const sel = document.getElementById('trip-type-select');
+  if (!types.length) {
+    sel.innerHTML = '<option value="">No trip types — set up in Settings first</option>';
+    return;
+  }
+  const grouped = {};
+  types.forEach(t => {
+    const cat = CATEGORY_LABELS[t.category] || t.category || 'Other';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(t);
+  });
+  sel.innerHTML = Object.entries(grouped).map(([cat, items]) =>
+    `<optgroup label="${cat}">` +
+    items.map(t => `<option value="${t.id}" ${t.id === selectedId ? 'selected' : ''}>${t.name}</option>`).join('') +
+    `</optgroup>`
+  ).join('');
+}
+
+async function onTripTypeChange() {
+  const typeId = document.getElementById('trip-type-select').value;
+  const tripType = currentTripTypes.find(t => t.id === typeId);
+  if (!tripType) return;
+
+  // Auto-fill price
+  const priceInput = document.getElementById('trip-price');
+  if (tripType.default_price && !priceInput.value) priceInput.value = tripType.default_price;
+
+  // Private charter warning
+  document.getElementById('private-charter-warning').style.display = tripType.can_be_private ? 'block' : 'none';
+
+  // Tank/dive fields
+  document.getElementById('trip-tank-fields').style.display = tripType.needs_tank_count ? 'block' : 'none';
+
+  // Boat requirement visual cue (boat field stays optional in UI either way)
+  checkBoatConflict();
+
+  // Load gear fields for this trip type for participant form later
+  const { data: ttgf } = await sb
+    .from('trip_type_gear_fields')
+    .select('*, gear_field_definitions(*)')
+    .eq('trip_type_id', typeId)
+    .order('sort_order');
+  selectedTripTypeFields = (ttgf || []).map(r => r.gear_field_definitions).filter(Boolean);
+}
+
+document.getElementById('trip-type-select').addEventListener('change', onTripTypeChange);
+
 function openNewTrip() {
   currentTripId = null;
+  tripParticipants_cache = [];
   document.getElementById('modal-trip-title').textContent = 'New trip';
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('participants-section').style.display = 'none';
   document.getElementById('btn-save-trip').textContent = 'Save trip';
-  // Set date to current calendar date
   document.getElementById('trip-date').value = formatDate(calDate);
+  document.getElementById('trip-time').value = '08:00';
+  document.getElementById('trip-arrival').value = '';
+  document.getElementById('trip-name').value = '';
+  document.getElementById('trip-max-guests').value = '';
+  document.getElementById('trip-price').value = '';
+  document.getElementById('trip-payment-status').value = 'pending';
+  document.getElementById('trip-contact-name').value = '';
+  document.getElementById('trip-contact-phone').value = '';
+  document.getElementById('trip-contact-email').value = '';
+  document.getElementById('trip-booked-by').value = '';
+  document.getElementById('trip-notes').value = '';
+  document.getElementById('trip-dive-sites').value = '';
+  document.getElementById('trip-crew-fields').innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Save the trip to assign crew.</p>';
+  document.getElementById('boat-conflict-warning').style.display = 'none';
+  document.getElementById('save-conflict-warning').style.display = 'none';
+  setPartyType('single');
   document.getElementById('trip-save-feedback').className = 'save-feedback';
   populateTripBoats();
+  populateTripTypeSelect().then(onTripTypeChange);
   document.getElementById('modal-trip').style.display = 'flex';
 }
 
@@ -2094,23 +2148,31 @@ async function openTrip(id) {
   if (!trip) return;
 
   document.getElementById('modal-trip-title').textContent = trip.trip_name || 'Trip details';
+  await populateTripTypeSelect(trip.trip_type_id);
+  await onTripTypeChange();
+
   document.getElementById('trip-name').value = trip.trip_name || '';
-  document.getElementById('trip-type').value = trip.trip_type || 'fun_dive';
   document.getElementById('trip-date').value = trip.trip_date || '';
   document.getElementById('trip-time').value = trip.trip_time?.slice(0,5) || '';
+  document.getElementById('trip-arrival').value = trip.arrival_time?.slice(0,5) || '';
   document.getElementById('trip-max-guests').value = trip.max_guests || '';
-  document.getElementById('trip-price').value = trip.price_per_person || '';
-  document.getElementById('trip-currency').value = trip.currency || 'USD';
+  document.getElementById('trip-price').value = trip.payment_amount || trip.price_per_person || '';
+  document.getElementById('trip-payment-status').value = trip.payment_status || 'pending';
+  document.getElementById('trip-contact-name').value = trip.contact_name || '';
+  document.getElementById('trip-contact-phone').value = trip.contact_phone || '';
+  document.getElementById('trip-contact-email').value = trip.contact_email || '';
+  document.getElementById('trip-booked-by').value = trip.booked_by || '';
   document.getElementById('trip-notes').value = trip.notes || '';
-  if (trip.num_dives) document.getElementById('trip-num-dives').value = trip.num_dives;
-  toggleDiveFields();
+  document.getElementById('trip-dive-sites').value = trip.dive_sites || '';
+  setPartyType(trip.party_type || 'single');
   populateTripBoats(trip.boat_id);
 
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('participants-section').style.display = 'block';
   document.getElementById('btn-save-trip').textContent = 'Update trip';
   document.getElementById('modal-trip').style.display = 'flex';
-  await loadParticipants(id, trip.num_dives);
+  await loadParticipants(id);
+  await loadTripCrewSection(id);
 }
 
 document.getElementById('btn-new-trip').addEventListener('click', openNewTrip);
@@ -2122,43 +2184,77 @@ document.getElementById('modal-trip').addEventListener('click', function(e) {
   if (e.target === this) { this.style.display = 'none'; renderCalendar(); }
 });
 
-// Show dive fields based on trip type
-function toggleDiveFields() {
-  const type = document.getElementById('trip-type').value;
-  const isDive = ['fun_dive','discover_diving','dive_course','night_dive'].includes(type);
-  document.getElementById('dive-fields').style.display = isDive ? 'block' : 'none';
+function setPartyType(type) {
+  document.getElementById('party-single').classList.toggle('selected', type === 'single');
+  document.getElementById('party-multiple').classList.toggle('selected', type === 'multiple');
+  window.currentPartyType = type;
 }
-document.getElementById('trip-type').addEventListener('change', toggleDiveFields);
 
 async function populateTripBoats(selectedId) {
   if (!currentOrgId) return;
   const { data: boats } = await sb
     .from('boats')
-    .select('id, name')
+    .select('id, name, capacity')
     .eq('org_id', currentOrgId)
     .eq('active', true);
   const sel = document.getElementById('trip-boat');
-  sel.innerHTML = '<option value="">No boat assigned</option>' +
-    (boats || []).map(b => `<option value="${b.id}" ${b.id===selectedId?'selected':''}>${b.name}</option>`).join('');
+  sel.innerHTML = '<option value="">No boat / select a boat</option>' +
+    (boats || []).map(b => `<option value="${b.id}" data-capacity="${b.capacity||''}" ${b.id===selectedId?'selected':''}>${b.name}${b.capacity ? ' · Max ' + b.capacity : ''}</option>`).join('');
+  sel.onchange = checkBoatConflict;
 }
+
+async function checkBoatConflict() {
+  const boatId = document.getElementById('trip-boat').value;
+  const date = document.getElementById('trip-date').value;
+  const warning = document.getElementById('boat-conflict-warning');
+  if (!boatId || !date || !currentOrgId) { warning.style.display = 'none'; return; }
+
+  const { data: conflicts } = await sb
+    .from('trips')
+    .select('id, trip_name, trip_time, arrival_time')
+    .eq('boat_id', boatId)
+    .eq('trip_date', date)
+    .neq('id', currentTripId || '00000000-0000-0000-0000-000000000000');
+
+  if (conflicts && conflicts.length > 0) {
+    warning.textContent = `This boat already has ${conflicts.length} trip(s) on this date — confirm this is intentional.`;
+    warning.style.display = 'block';
+  } else {
+    warning.style.display = 'none';
+  }
+}
+document.getElementById('trip-date').addEventListener('change', checkBoatConflict);
 
 // Save trip
 document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-trip');
   const feedback = document.getElementById('trip-save-feedback');
+  const typeId = document.getElementById('trip-type-select').value;
   const name = document.getElementById('trip-name').value.trim();
-  const type = document.getElementById('trip-type').value;
   const date = document.getElementById('trip-date').value;
   const time = document.getElementById('trip-time').value;
+  const arrival = document.getElementById('trip-arrival').value;
   const boatId = document.getElementById('trip-boat').value;
   const maxGuests = document.getElementById('trip-max-guests').value;
-  const numDives = document.getElementById('trip-num-dives').value;
   const price = document.getElementById('trip-price').value;
-  const currency = document.getElementById('trip-currency').value;
+  const paymentStatus = document.getElementById('trip-payment-status').value;
+  const contactName = document.getElementById('trip-contact-name').value.trim();
+  const contactPhone = document.getElementById('trip-contact-phone').value.trim();
+  const contactEmail = document.getElementById('trip-contact-email').value.trim();
+  const bookedBy = document.getElementById('trip-booked-by').value.trim();
   const notes = document.getElementById('trip-notes').value.trim();
+  const diveSites = document.getElementById('trip-dive-sites').value.trim();
+  const tripType = currentTripTypes.find(t => t.id === typeId);
 
-  if (!date) {
-    feedback.textContent = 'Date is required.';
+  const errors = [];
+  if (!name) errors.push('Trip name');
+  if (!date) errors.push('Date');
+  if (!time) errors.push('Departure time');
+  if (!contactName) errors.push('Contact name');
+  if (!contactPhone) errors.push('Contact phone');
+
+  if (errors.length) {
+    feedback.textContent = 'Missing: ' + errors.join(', ');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -2167,15 +2263,24 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
 
   const payload = {
     org_id: currentOrgId,
-    trip_name: name || null,
-    trip_type: type,
+    trip_type_id: typeId || null,
+    trip_name: name,
+    trip_type: tripType ? tripType.name : null,
     trip_date: date,
-    trip_time: time || null,
+    trip_time: time,
+    arrival_time: arrival || null,
     boat_id: boatId || null,
     max_guests: maxGuests ? parseInt(maxGuests) : null,
-    num_dives: numDives ? parseInt(numDives) : null,
+    num_dives: tripType?.num_tanks || null,
+    dive_sites: diveSites || null,
     price_per_person: price ? parseFloat(price) : null,
-    currency,
+    payment_amount: price ? parseFloat(price) : 0,
+    payment_status: paymentStatus,
+    contact_name: contactName,
+    contact_phone: contactPhone,
+    contact_email: contactEmail || null,
+    booked_by: bookedBy || null,
+    party_type: window.currentPartyType || 'single',
     notes: notes || null,
     status: 'scheduled',
     created_by: (await sb.auth.getUser()).data.user.id
@@ -2201,30 +2306,109 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   feedback.className = 'save-feedback visible';
   btn.disabled = false; btn.textContent = 'Update trip';
 
-  // Show participants section
   document.getElementById('participants-section').style.display = 'block';
-  document.getElementById('modal-trip-title').textContent = name || 'Trip details';
-  await loadParticipants(tripId, parseInt(numDives));
+  document.getElementById('modal-trip-title').textContent = name;
+  await loadParticipants(tripId);
+  await loadTripCrewSection(tripId);
 
-  // Update home stats
   document.getElementById('stat-trips').textContent = '↑';
   setTimeout(() => feedback.className = 'save-feedback', 3000);
 });
 
+// ─── TRIP CREW ───
+async function loadTripCrewSection(tripId) {
+  if (!currentOrgId) return;
+  const { data: staffList } = await sb
+    .from('staff')
+    .select('id, full_name, role')
+    .eq('org_id', currentOrgId);
+
+  const { data: assigned } = await sb
+    .from('trip_crew')
+    .select('*, staff(full_name, role)')
+    .eq('trip_id', tripId);
+
+  const container = document.getElementById('trip-crew-fields');
+  const assignedHtml = (assigned || []).map(a => `
+    <span class="crew-member-tag-v2">${a.staff?.full_name || 'Unknown'} (${a.role})
+      <button onclick="removeTripCrew('${a.id}', '${tripId}')">×</button>
+    </span>
+  `).join('');
+
+  container.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${assignedHtml || '<span style="font-size:0.8rem;color:var(--muted)">No crew assigned yet.</span>'}</div>
+    <div style="display:flex;gap:8px;">
+      <select class="sf-input" id="add-crew-select" style="margin-bottom:0;">
+        <option value="">Select crew member</option>
+        ${(staffList || []).map(s => `<option value="${s.id}" data-role="${s.role}">${s.full_name} (${s.role})</option>`).join('')}
+      </select>
+      <button class="btn-cancel" onclick="addTripCrew('${tripId}')">Add</button>
+    </div>
+  `;
+}
+
+async function addTripCrew(tripId) {
+  const sel = document.getElementById('add-crew-select');
+  if (!sel.value) return;
+  const role = sel.options[sel.selectedIndex].dataset.role;
+  await sb.from('trip_crew').insert({ trip_id: tripId, staff_id: sel.value, role });
+  await loadTripCrewSection(tripId);
+}
+
+async function removeTripCrew(id, tripId) {
+  await sb.from('trip_crew').delete().eq('id', id);
+  await loadTripCrewSection(tripId);
+}
+
 // ─── PARTICIPANTS ───
-async function loadParticipants(tripId, numDives) {
+let tripParticipants_cache = [];
+
+function renderDynamicGearFields() {
+  const container = document.getElementById('dynamic-gear-fields');
+  if (!selectedTripTypeFields.length) {
+    container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No gear fields for this trip type.</p>';
+    return;
+  }
+  container.innerHTML = selectedTripTypeFields.map(f => {
+    const inputId = 'pgear-' + f.field_key;
+    if (f.field_type === 'select') {
+      const opts = JSON.parse(f.options || '[]');
+      return `<div class="sf-group">
+        <label class="sf-label">${f.label}</label>
+        <select class="sf-input" id="${inputId}" data-key="${f.field_key}">
+          ${opts.map(o => `<option value="${o}">${o}</option>`).join('')}
+        </select>
+      </div>`;
+    } else if (f.field_type === 'number') {
+      return `<div class="sf-group">
+        <label class="sf-label">${f.label}</label>
+        <input class="sf-input" type="number" id="${inputId}" data-key="${f.field_key}" placeholder="0">
+      </div>`;
+    } else {
+      return `<div class="sf-group">
+        <label class="sf-label">${f.label}</label>
+        <input class="sf-input" type="text" id="${inputId}" data-key="${f.field_key}">
+      </div>`;
+    }
+  }).join('');
+}
+
+async function loadParticipants(tripId) {
   const { data: parts } = await sb
     .from('participants')
     .select('*')
     .eq('trip_id', tripId)
     .order('created_at');
 
+  tripParticipants_cache = parts || [];
   const list = document.getElementById('participants-list');
   const summary = document.getElementById('trip-tank-summary');
   const count = parts?.length || 0;
+  const typeId = document.getElementById('trip-type-select').value;
+  const tripType = currentTripTypes.find(t => t.id === typeId);
 
-  if (numDives && count > 0) {
-    summary.textContent = `${count} guests · ${count * numDives} tanks needed`;
+  if (tripType?.needs_tank_count && count > 0) {
+    summary.textContent = `${count} guests · ${count * (tripType.num_tanks || 1)} tanks needed`;
   } else {
     summary.textContent = count > 0 ? `${count} guests` : '';
   }
@@ -2234,26 +2418,30 @@ async function loadParticipants(tripId, numDives) {
     return;
   }
 
-  list.innerHTML = parts.map(p => `
+  list.innerHTML = parts.map(p => {
+    const gear = p.gear || {};
+    const gearStr = Object.values(gear).filter(Boolean).join(' · ') || 'No gear requests';
+    return `
     <div class="participant-row">
       <div>
-        <div class="p-name">${p.full_name}</div>
-        <div class="p-meta">
-          ${p.cert_level || 'No cert'} ·
-          ${[p.bcd_size?'BCD '+p.bcd_size:'', p.wetsuit_size?'WS '+p.wetsuit_size:'', p.fins_size?'Fins '+p.fins_size:'', p.weight_kg?p.weight_kg+'kg':''].filter(Boolean).join(' · ') || 'Own gear'}
-        </div>
+        <div class="p-name">${p.full_name}${p.phone ? ' · ' + p.phone : ''}</div>
+        <div class="p-meta">${gearStr}</div>
+        ${p.notes ? `<div class="p-meta">${p.notes}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span class="p-payment ${p.payment_method||'pending'}">${p.payment_method||'pending'}</span>
         <button class="btn-icon danger" onclick="removeParticipant('${p.id}')">✕</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 document.getElementById('btn-add-participant').addEventListener('click', () => {
   document.getElementById('form-add-participant').style.display = 'block';
   document.getElementById('btn-add-participant').style.display = 'none';
+  document.getElementById('p-name').value = '';
+  document.getElementById('p-phone').value = '';
+  document.getElementById('p-notes').value = '';
+  renderDynamicGearFields();
 });
 document.getElementById('btn-cancel-participant').addEventListener('click', () => {
   document.getElementById('form-add-participant').style.display = 'none';
@@ -2278,17 +2466,18 @@ document.getElementById('btn-save-participant').addEventListener('click', async 
 
   btn.disabled = true; btn.textContent = 'Saving...';
 
-  const numDives = parseInt(document.getElementById('trip-num-dives').value) || null;
+  // Collect dynamic gear field values
+  const gear = {};
+  selectedTripTypeFields.forEach(f => {
+    const el = document.getElementById('pgear-' + f.field_key);
+    if (el && el.value) gear[f.field_key] = el.value;
+  });
+
   const { error } = await sb.from('participants').insert({
     trip_id: currentTripId,
     full_name: name,
-    cert_level: document.getElementById('p-cert').value || null,
-    bcd_size: document.getElementById('p-bcd').value || null,
-    wetsuit_size: document.getElementById('p-wetsuit').value || null,
-    fins_size: document.getElementById('p-fins').value || null,
-    weight_kg: document.getElementById('p-weight').value ? parseFloat(document.getElementById('p-weight').value) : null,
-    payment_method: document.getElementById('p-payment').value,
-    amount_paid: parseFloat(document.getElementById('p-amount').value) || 0,
+    phone: document.getElementById('p-phone').value.trim() || null,
+    gear: gear,
     notes: document.getElementById('p-notes').value.trim() || null
   });
 
@@ -2299,24 +2488,21 @@ document.getElementById('btn-save-participant').addEventListener('click', async 
     return;
   }
 
-  // Clear form
-  ['p-name','p-weight','p-amount','p-notes'].forEach(id => document.getElementById(id).value = '');
-  ['p-cert','p-bcd','p-wetsuit','p-fins','p-payment'].forEach(id => document.getElementById(id).selectedIndex = 0);
   document.getElementById('form-add-participant').style.display = 'none';
   document.getElementById('btn-add-participant').style.display = 'inline-block';
   btn.disabled = false; btn.textContent = 'Save guest';
   feedback.className = 'save-feedback';
 
-  await loadParticipants(currentTripId, numDives);
+  await loadParticipants(currentTripId);
 });
 
 async function removeParticipant(id) {
   if (!confirm('Remove this guest?')) return;
   await sb.from('participants').delete().eq('id', id);
-  const numDives = parseInt(document.getElementById('trip-num-dives').value) || null;
-  await loadParticipants(currentTripId, numDives);
+  await loadParticipants(currentTripId);
 }
 // ─── END CALENDAR ───
+
 
 // ─── END SETTINGS ───
 
