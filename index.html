@@ -2238,24 +2238,38 @@ async function populateTripBoats(selectedId) {
 async function checkBoatConflict() {
   const boatId = document.getElementById('trip-boat').value;
   const date = document.getElementById('trip-date').value;
+  const newStart = document.getElementById('trip-time').value || '00:00';
+  const newEnd = document.getElementById('trip-arrival').value || '23:59';
   const warning = document.getElementById('boat-conflict-warning');
   if (!boatId || !date || !currentOrgId) { warning.style.display = 'none'; return; }
 
-  const { data: conflicts } = await sb
+  const { data: existing } = await sb
     .from('trips')
     .select('id, trip_name, trip_time, arrival_time')
     .eq('boat_id', boatId)
     .eq('trip_date', date)
     .neq('id', currentTripId || '00000000-0000-0000-0000-000000000000');
 
-  if (conflicts && conflicts.length > 0) {
-    warning.textContent = `This boat already has ${conflicts.length} trip(s) on this date — confirm this is intentional.`;
+  if (!existing || existing.length === 0) { warning.style.display = 'none'; return; }
+
+  // Only warn if times actually overlap
+  const overlaps = existing.filter(t => {
+    const tStart = t.trip_time?.slice(0,5) || '00:00';
+    const tEnd = t.arrival_time?.slice(0,5) || '23:59';
+    return newStart < tEnd && newEnd > tStart;
+  });
+
+  if (overlaps.length > 0) {
+    const names = overlaps.map(t => t.trip_name || 'Unnamed').join(', ');
+    warning.textContent = `Time conflict: boat overlaps with "${names}". Adjust departure or arrival times.`;
     warning.style.display = 'block';
   } else {
     warning.style.display = 'none';
   }
 }
 document.getElementById('trip-date').addEventListener('change', checkBoatConflict);
+document.getElementById('trip-time').addEventListener('change', checkBoatConflict);
+document.getElementById('trip-arrival').addEventListener('change', checkBoatConflict);
 
 // Save trip
 document.getElementById('btn-save-trip').addEventListener('click', async () => {
