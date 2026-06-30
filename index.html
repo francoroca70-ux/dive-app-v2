@@ -297,6 +297,58 @@ body { background: var(--navy); color: var(--text); }
 .loading-logo span { color: var(--teal); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
+
+/* ─── CATEGORY PICKER ─── */
+.category-picker {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px;
+}
+.category-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 16px; border: 1px solid var(--border);
+  border-radius: 20px; font-size: 0.85rem; font-weight: 500;
+  color: var(--text); cursor: pointer; background: var(--white);
+  transition: all 0.15s; user-select: none;
+}
+.category-chip:hover { border-color: var(--blue); }
+.category-chip input { accent-color: var(--blue); cursor: pointer; }
+.category-chip.checked {
+  background: rgba(26,107,138,0.08); border-color: var(--blue); color: var(--blue); font-weight: 600;
+}
+.active-category-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(26,107,138,0.08); color: var(--blue);
+  padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+  margin: 0 8px 8px 0;
+}
+.confirm-banner {
+  background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 10px; padding: 14px 16px; margin-top: 14px;
+  font-size: 0.85rem; color: #92660a;
+}
+.confirm-banner-actions { display: flex; gap: 10px; margin-top: 10px; }
+.btn-confirm-yes {
+  background: var(--blue); color: var(--white); border: none;
+  padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+}
+.btn-confirm-no {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+}
+.trip-type-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap;
+}
+.trip-type-row:last-child { border-bottom: none; }
+.trip-type-name { font-weight: 600; color: var(--navy); font-size: 0.9rem; }
+.trip-type-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.trip-type-price-input {
+  width: 90px; padding: 6px 10px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.85rem; text-align: right;
+  font-family: 'Inter', sans-serif;
+}
+
 /* ─── SETTINGS ─── */
 .card-section-title {
   font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
@@ -1360,11 +1412,37 @@ body { background: var(--navy); color: var(--text); }
               <label class="sf-label">Contact email</label>
               <input class="sf-input" type="email" id="org-email" placeholder="hello@yourdiveshop.com">
             </div>
+            <div class="sf-group" id="org-categories-group">
+              <label class="sf-label">What does your operation run? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">— select all that apply</span></label>
+              <div class="category-picker" id="org-categories-picker">
+                <label class="category-chip"><input type="checkbox" value="diving"> Diving</label>
+                <label class="category-chip"><input type="checkbox" value="charter_yacht"> Charter & Yacht</label>
+                <label class="category-chip"><input type="checkbox" value="surf"> Surf</label>
+                <label class="category-chip"><input type="checkbox" value="fishing"> Fishing</label>
+                <label class="category-chip"><input type="checkbox" value="freediving"> Freediving</label>
+              </div>
+            </div>
             <div class="settings-actions">
               <button class="btn-save" id="btn-save-org">Save organisation</button>
               <span class="save-feedback" id="org-save-feedback"></span>
             </div>
           </div>
+        </div>
+
+        <!-- Operation Categories card (post-setup management) -->
+        <div class="card" id="card-categories">
+          <div class="card-section-title">Operation Categories</div>
+          <p class="card-desc">Add a category any time your operation grows — adding one creates a starter set of trip types you can edit. Owner only.</p>
+          <div id="active-categories-list" style="margin: 14px 0;"></div>
+          <div class="category-picker" id="add-category-picker"></div>
+        </div>
+
+        <!-- Trip Types card -->
+        <div class="card" id="card-trip-types">
+          <div class="card-section-title">Trip Types</div>
+          <p class="card-desc">Set default prices and gear requirements per trip type. These auto-fill when staff create a booking.</p>
+          <div id="trip-types-list" style="margin: 14px 0;"></div>
+          <button class="btn-add" id="btn-add-trip-type">+ Add custom trip type</button>
         </div>
 
         <!-- Locations card -->
@@ -1626,6 +1704,10 @@ async function loadSettings(user) {
 
     // Load locations
     await loadLocations();
+
+    // Load categories and trip types
+    await renderActiveCategories();
+    await renderTripTypesList();
   }
 }
 
@@ -1703,6 +1785,14 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     });
 
     document.getElementById('org-notice-new').style.display = 'none';
+
+    // Seed trip types for selected categories on first setup
+    const selectedCategories = Array.from(document.querySelectorAll('#org-categories-picker input:checked')).map(cb => cb.value);
+    for (const cat of selectedCategories) {
+      await seedTripTypesForCategory(cat);
+    }
+    await renderActiveCategories();
+    await renderTripTypesList();
 
   } else {
     // Update existing org
@@ -2543,6 +2633,198 @@ async function deleteBoat(id) {
   await loadFleet();
 }
 // ─── END FLEET ───
+
+// ─── OPERATION CATEGORIES & TRIP TYPE SEEDING ───
+
+// Starter trip type bundles per category — name, default price placeholder, gear field keys, tank info
+const CATEGORY_STARTER_TYPES = {
+  diving: [
+    { name: '1 Dive', needs_tank_count: true, num_tanks: 1, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','tank_size','computer','mask_type'] },
+    { name: '2 Dives', needs_tank_count: true, num_tanks: 2, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','tank_size','computer','mask_type'] },
+    { name: 'Night Dive', needs_tank_count: true, num_tanks: 1, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','torch','computer'] },
+    { name: 'Nitrox Dive', needs_tank_count: true, num_tanks: 2, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','nitrox','computer'] },
+    { name: 'Discover Scuba Diving', needs_tank_count: true, num_tanks: 1, gear: ['bcd_size','wetsuit_size','fins_size','weight_kg'] },
+    { name: 'Confined Water / Pool', needs_tank_count: false, gear: ['bcd_size','wetsuit_size','fins_size','weight_kg'] },
+    { name: 'Shore Dive', needs_tank_count: true, num_tanks: 1, requires_boat: false, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg'] },
+  ],
+  charter_yacht: [
+    { name: 'Half Day Charter', gear: [] },
+    { name: 'Day Charter', gear: [] },
+    { name: 'Sunset Cruise', gear: [] },
+    { name: 'Private Charter', can_be_private: true, gear: [] },
+    { name: 'Island Hopping', gear: [] },
+  ],
+  surf: [
+    { name: 'Surf Lesson', gear: ['board_type','rashguard_size','surf_wetsuit'] },
+    { name: 'Surf Trip', gear: ['board_type','rashguard_size','surf_wetsuit'] },
+  ],
+  fishing: [
+    { name: 'Fishing Trip', gear: ['rod_type','reel_type'] },
+  ],
+  freediving: [
+    { name: 'Freediving Session', gear: ['monofin_size','freediving_wetsuit','weight_kg'] },
+  ]
+};
+
+let gearFieldCatalog = []; // loaded once from DB
+
+async function loadGearFieldCatalog() {
+  const { data } = await sb.from('gear_field_definitions').select('*');
+  gearFieldCatalog = data || [];
+}
+
+async function loadActiveCategories() {
+  if (!currentOrgId) return [];
+  const { data } = await sb
+    .from('org_operation_categories')
+    .select('category')
+    .eq('org_id', currentOrgId);
+  return (data || []).map(r => r.category);
+}
+
+const CATEGORY_LABELS = {
+  diving: 'Diving', charter_yacht: 'Charter & Yacht', surf: 'Surf',
+  fishing: 'Fishing', freediving: 'Freediving'
+};
+
+async function seedTripTypesForCategory(category) {
+  const starters = CATEGORY_STARTER_TYPES[category] || [];
+  if (!gearFieldCatalog.length) await loadGearFieldCatalog();
+
+  for (const t of starters) {
+    const { data: tripType, error } = await sb.from('trip_types').insert({
+      org_id: currentOrgId,
+      name: t.name,
+      category: category,
+      default_price: 0,
+      requires_boat: t.requires_boat !== false,
+      can_be_private: t.can_be_private || false,
+      needs_tank_count: t.needs_tank_count || false,
+      num_tanks: t.num_tanks || null,
+      is_system_default: true
+    }).select().single();
+
+    if (error || !tripType) continue;
+
+    // Attach gear fields
+    for (const fieldKey of (t.gear || [])) {
+      const fieldDef = gearFieldCatalog.find(f => f.field_key === fieldKey);
+      if (!fieldDef) continue;
+      await sb.from('trip_type_gear_fields').insert({
+        trip_type_id: tripType.id,
+        gear_field_id: fieldDef.id
+      });
+    }
+  }
+
+  // Mark category as active for this org
+  await sb.from('org_operation_categories').insert({ org_id: currentOrgId, category });
+}
+
+// ─── ORG CATEGORY PICKER (initial setup, inside org card) ───
+document.querySelectorAll('#org-categories-picker .category-chip input').forEach(cb => {
+  cb.addEventListener('change', function() {
+    this.closest('.category-chip').classList.toggle('checked', this.checked);
+  });
+});
+
+// ─── SETTINGS: ACTIVE CATEGORIES MANAGEMENT ───
+async function renderActiveCategories() {
+  if (!currentOrgId) return;
+  const active = await loadActiveCategories();
+  const list = document.getElementById('active-categories-list');
+  const addPicker = document.getElementById('add-category-picker');
+
+  if (!active.length) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No categories set yet — set these up in the Organisation section above.</p>';
+  } else {
+    list.innerHTML = active.map(c => `<span class="active-category-pill">${CATEGORY_LABELS[c] || c}</span>`).join('');
+  }
+
+  const remaining = Object.keys(CATEGORY_LABELS).filter(c => !active.includes(c));
+  if (!remaining.length) {
+    addPicker.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">All categories active.</p>';
+    return;
+  }
+
+  addPicker.innerHTML = remaining.map(c =>
+    `<label class="category-chip" onclick="event.preventDefault();confirmAddCategory('${c}')">+ ${CATEGORY_LABELS[c]}</label>`
+  ).join('') + '<div id="category-confirm-zone"></div>';
+}
+
+function confirmAddCategory(category) {
+  const zone = document.getElementById('category-confirm-zone');
+  const starterCount = (CATEGORY_STARTER_TYPES[category] || []).length;
+  zone.innerHTML = `
+    <div class="confirm-banner">
+      Adding <strong>${CATEGORY_LABELS[category]}</strong> will create ${starterCount} starter trip type${starterCount !== 1 ? 's' : ''} you can edit afterward. This action is owner-only.
+      <div class="confirm-banner-actions">
+        <button class="btn-confirm-yes" onclick="doAddCategory('${category}')">Add category</button>
+        <button class="btn-confirm-no" onclick="document.getElementById('category-confirm-zone').innerHTML=''">Cancel</button>
+      </div>
+    </div>`;
+}
+
+async function doAddCategory(category) {
+  await seedTripTypesForCategory(category);
+  await renderActiveCategories();
+  await renderTripTypesList();
+}
+
+// ─── TRIP TYPES LIST (Settings) ───
+async function renderTripTypesList() {
+  if (!currentOrgId) return;
+  const { data: types } = await sb
+    .from('trip_types')
+    .select('*')
+    .eq('org_id', currentOrgId)
+    .eq('is_active', true)
+    .order('category')
+    .order('sort_order');
+
+  const list = document.getElementById('trip-types-list');
+  if (!types || types.length === 0) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No trip types yet. Select an operation category above to get started.</p>';
+    return;
+  }
+
+  list.innerHTML = types.map(t => `
+    <div class="trip-type-row">
+      <div>
+        <div class="trip-type-name">${t.name}</div>
+        <div class="trip-type-meta">${CATEGORY_LABELS[t.category] || t.category}${t.needs_tank_count ? ' · ' + t.num_tanks + ' tank' + (t.num_tanks > 1 ? 's' : '') : ''}${t.can_be_private ? ' · can be private' : ''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input class="trip-type-price-input" type="number" min="0" value="${t.default_price || ''}" placeholder="0"
+          onchange="updateTripTypePrice('${t.id}', this.value)">
+        <button class="btn-icon danger" onclick="deactivateTripType('${t.id}')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateTripTypePrice(id, value) {
+  await sb.from('trip_types').update({ default_price: parseFloat(value) || 0 }).eq('id', id);
+}
+
+async function deactivateTripType(id) {
+  if (!confirm('Remove this trip type? Existing bookings using it are unaffected.')) return;
+  await sb.from('trip_types').update({ is_active: false }).eq('id', id);
+  await renderTripTypesList();
+}
+
+document.getElementById('btn-add-trip-type').addEventListener('click', async () => {
+  const name = prompt('Trip type name (e.g. "Wreck Dive", "Yoga Charter"):');
+  if (!name || !name.trim()) return;
+  await sb.from('trip_types').insert({
+    org_id: currentOrgId, name: name.trim(), category: 'other',
+    default_price: 0, is_system_default: false
+  });
+  await renderTripTypesList();
+});
+
+// ─── END TRIP TYPES ───
+
 
 
 // ─── START ───
