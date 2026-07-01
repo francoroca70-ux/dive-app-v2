@@ -498,6 +498,9 @@ body { background: var(--navy); color: var(--text); }
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
 }
+.cal-header > * { flex: 1; }
+.cal-header .cal-view-switcher { display: flex; justify-content: center; gap: 4px; flex: 1; }
+.cal-header > button:last-child { display: flex; justify-content: flex-end; flex: 1; }
 .cal-nav { display: flex; align-items: center; gap: 10px; }
 .cal-nav-btn {
   background: var(--white); border: 1px solid var(--border);
@@ -565,30 +568,58 @@ body { background: var(--navy); color: var(--text); }
 .trip-stat strong { color: var(--navy); font-weight: 700; }
 
 /* Week view */
-.week-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+.week-grid-wrapper {
+  display: flex; border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; background: var(--white);
 }
+.week-time-col {
+  display: flex; flex-direction: column; flex-shrink: 0;
+  width: 48px; border-right: 1px solid var(--border);
+}
+.week-time-header { height: 40px; border-bottom: 1px solid var(--border); }
+.week-time-slot {
+  height: 56px; font-size: 0.65rem; color: var(--muted);
+  text-align: right; padding: 3px 8px 0 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.week-days-scroll { display: flex; flex: 1; overflow-x: auto; }
+.week-day-col-v2 {
+  flex: 1; min-width: 80px; border-right: 1px solid var(--border); position: relative;
+}
+.week-day-col-v2:last-child { border-right: none; }
+.week-day-col-header {
+  height: 40px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.7rem; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.week-day-col-header.today { background: rgba(79,195,247,0.06); }
+.week-day-col-header.today .wdnum { color: var(--blue); }
+.wdnum { font-size: 0.85rem; font-weight: 700; color: var(--navy); }
+.week-day-col-body { position: relative; }
+.week-hour-row {
+  height: 56px; border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.week-hour-row:hover { background: var(--foam); }
+.week-trip-block-v2 {
+  position: absolute; left: 3px; right: 3px; border-radius: 6px;
+  padding: 4px 7px; overflow: hidden; cursor: pointer;
+  background: rgba(26,107,138,0.12); border-left: 3px solid var(--blue);
+  transition: opacity 0.15s; z-index: 2;
+}
+.week-trip-block-v2:hover { opacity: 0.8; }
+.week-trip-block-v2 .wtb-time { font-size: 0.65rem; font-weight: 600; color: var(--blue); }
+.week-trip-block-v2 .wtb-name { font-size: 0.72rem; font-weight: 600; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.week-trip-block-v2 .wtb-sub { font-size: 0.65rem; color: var(--muted); }
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
 .week-day-col { min-height: 120px; }
-.week-day-header {
-  font-size: 0.72rem; font-weight: 700; text-align: center;
-  padding: 6px; color: var(--muted); text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
+.week-day-header { font-size: 0.72rem; font-weight: 700; text-align: center; padding: 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .week-day-header.today { color: var(--blue); }
-.week-day-body {
-  background: var(--white); border-radius: 8px;
-  border: 1px solid var(--border); min-height: 80px;
-  padding: 6px; cursor: pointer; transition: background 0.15s;
-}
+.week-day-body { background: var(--white); border-radius: 8px; border: 1px solid var(--border); min-height: 80px; padding: 6px; cursor: pointer; transition: background 0.15s; }
 .week-day-body:hover { background: var(--foam); }
 .week-day-body.today { border-color: var(--blue); }
-.week-trip-pill {
-  background: rgba(26,107,138,0.1); border-radius: 4px;
-  padding: 3px 6px; font-size: 0.7rem; font-weight: 600;
-  color: var(--blue); margin-bottom: 3px; cursor: pointer;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.week-trip-pill { background: rgba(26,107,138,0.1); border-radius: 4px; padding: 3px 6px; font-size: 0.7rem; font-weight: 600; color: var(--blue); margin-bottom: 3px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Month view */
 .month-grid {
@@ -1541,11 +1572,25 @@ function initHome(user) {
   document.getElementById('nav-username').textContent = name;
   document.getElementById('settings-email').textContent = email;
 
-  // Stats — will pull from DB once we have data
+  // Stats
   document.getElementById('stat-trips').textContent = '0';
   document.getElementById('stat-guests').textContent = '0';
   document.getElementById('stat-boats').textContent = '0';
   document.getElementById('stat-crew').textContent = '1';
+}
+
+async function updateHomeBanner() {
+  if (!currentOrgId) return;
+  const { data: org } = await sb.from('organizations').select('name').eq('id', currentOrgId).single();
+  const banner = document.getElementById('setup-banner');
+  if (org && org.name) {
+    // Replace banner with welcome banner showing operation name
+    banner.innerHTML = `<div>
+      <h2 style="color:var(--white);font-size:1.1rem;margin-bottom:4px;">${org.name}</h2>
+      <p>Your operations dashboard. All systems ready.</p>
+    </div>
+    <button class="btn-setup" onclick="showPage('calendar')">View Calendar</button>`;
+  }
 }
 
 // ─── AUTH ───
@@ -1682,6 +1727,8 @@ async function loadSettings(user) {
     currentOrgId = staffRow.org_id;
     document.getElementById('settings-role').textContent =
       staffRow.role.charAt(0).toUpperCase() + staffRow.role.slice(1);
+    // Update home banner with operation name
+    await updateHomeBanner();
 
     // Load org details
     const { data: org } = await sb
@@ -1785,6 +1832,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     });
 
     document.getElementById('org-notice-new').style.display = 'none';
+    await updateHomeBanner();
 
     // Seed trip types for selected categories on first setup
     const selectedCategories = Array.from(document.querySelectorAll('#org-categories-picker input:checked')).map(cb => cb.value);
@@ -1939,7 +1987,7 @@ async function renderDayView() {
   const dayTrips = await fetchTripsForRange(calDate, calDate);
 
   if (dayTrips.length === 0) {
-    body.innerHTML = `<div class="day-empty">No trips scheduled for this day.<br><br><button class="btn-save" onclick="openNewTrip()">+ Add a trip</button></div>`;
+    body.innerHTML = `<div class="day-empty">No trips scheduled for this day.<br><br><button class="btn-save" onclick="openNewTrip()" style="margin-right:8px;">+ Add a trip</button><button class="btn-cancel" onclick="calDate=new Date();calDate.setDate(calDate.getDate()-1);renderCalendar()">← Yesterday</button></div>`;
     return;
   }
 
@@ -1972,27 +2020,76 @@ function tripCard(t) {
   </div>`;
 }
 
+const WEEK_START_HOUR = 6;
+const WEEK_END_HOUR = 21;
+const SLOT_HEIGHT = 56; // px per hour
+
+function timeToY(timeStr) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(':').map(Number);
+  const clamped = Math.max(WEEK_START_HOUR, Math.min(WEEK_END_HOUR, h + m/60));
+  return (clamped - WEEK_START_HOUR) * SLOT_HEIGHT;
+}
+
+function durationH(start, end) {
+  if (!start) return 1;
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end ? end.split(':').map(Number) : [sh+1, sm];
+  return Math.max(0.5, (eh + em/60) - (sh + sm/60));
+}
+
 async function renderWeekView() {
   const body = document.getElementById('cal-body');
   const start = getWeekStart(calDate);
   const weekTrips = await fetchTripsForRange(start, addDays(start, 6));
   const today = new Date();
-
+  const totalSlots = WEEK_END_HOUR - WEEK_START_HOUR;
   const days = Array.from({length:7}, (_,i) => addDays(start, i));
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-  body.innerHTML = `<div class="week-grid">
-    ${days.map((d,i) => {
-      const isToday = isSameDay(d, today);
-      const dayT = weekTrips.filter(t => t.trip_date === formatDate(d));
-      return `
-      <div class="week-day-col">
-        <div class="week-day-header ${isToday?'today':''}">${dayNames[i]}<br>${d.getDate()}</div>
-        <div class="week-day-body ${isToday?'today':''}" onclick="goToDay('${formatDate(d)}')">
-          ${dayT.map(t => `<div class="week-trip-pill" onclick="event.stopPropagation();openTrip('${t.id}')">${t.trip_time?t.trip_time.slice(0,5)+' ':''} ${t.trip_name||t.trip_type?.replace(/_/g,' ')||'Trip'}</div>`).join('')}
-        </div>
+  // Time column
+  let timeCells = '<div class="week-time-header"></div>';
+  for (let h = WEEK_START_HOUR; h < WEEK_END_HOUR; h++) {
+    timeCells += `<div class="week-time-slot">${h}:00</div>`;
+  }
+
+  // Day columns
+  const dayCols = days.map((d, i) => {
+    const isToday = isSameDay(d, today);
+    const dayT = weekTrips.filter(t => t.trip_date === formatDate(d));
+
+    // Hour rows
+    let hourRows = '';
+    for (let j = 0; j < totalSlots; j++) {
+      hourRows += `<div class="week-hour-row" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()"></div>`;
+    }
+
+    // Trip blocks
+    const tripBlocks = dayT.map(t => {
+      const top = timeToY(t.trip_time?.slice(0,5));
+      const height = Math.max(durationH(t.trip_time?.slice(0,5), t.arrival_time?.slice(0,5)) * SLOT_HEIGHT, 36);
+      const showSub = height >= 52;
+      return `<div class="week-trip-block-v2" style="top:${top}px;height:${height}px;" onclick="event.stopPropagation();openTrip('${t.id}')">
+        <div class="wtb-time">${t.trip_time?.slice(0,5)||''}</div>
+        <div class="wtb-name">${t.trip_name||t.trip_type||'Trip'}</div>
+        ${showSub ? `<div class="wtb-sub">${t.max_guests ? t.max_guests+' guests' : ''}</div>` : ''}
       </div>`;
-    }).join('')}
+    }).join('');
+
+    return `<div class="week-day-col-v2">
+      <div class="week-day-col-header ${isToday?'today':''}">
+        <span>${dayNames[i]}</span>
+        <span class="wdnum">${d.getDate()}</span>
+      </div>
+      <div class="week-day-col-body" style="height:${totalSlots * SLOT_HEIGHT}px;position:relative;">
+        ${hourRows}${tripBlocks}
+      </div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `<div class="week-grid-wrapper">
+    <div class="week-time-col">${timeCells}</div>
+    <div class="week-days-scroll">${dayCols}</div>
   </div>`;
 }
 
@@ -2764,7 +2861,7 @@ async function loadFleet() {
       <div class="boat-info">
         <div class="boat-name">${b.name}</div>
         <div class="boat-meta">
-          <span>${b.type ? b.type.replace(/_/g, ' ') : 'Vessel'}</span>
+          <span>${b.type ? b.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Vessel'}</span>
           ${b.capacity ? `<span>${b.capacity} guests</span>` : ''}
           ${b.length_ft ? `<span>${b.length_ft} ft</span>` : ''}
           ${b.num_engines > 1 ? `<span>${b.num_engines} engines</span>` : ''}
