@@ -303,6 +303,78 @@ body { background: var(--navy); color: var(--text); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 
+
+/* ─── CHECKLISTS ─── */
+.cl-tab-row { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+.cl-tab {
+  padding: 10px 18px; font-size: 0.85rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; transition: all 0.15s;
+}
+.cl-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.cl-tab:hover { color: var(--blue); }
+.cl-role-tab-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.cl-role-tab {
+  padding: 7px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+  color: var(--muted); background: var(--foam); cursor: pointer; transition: all 0.15s;
+  border: 1px solid transparent;
+}
+.cl-role-tab.active { background: var(--blue); color: var(--white); }
+.cl-role-tab:hover { border-color: var(--blue); color: var(--blue); }
+.cl-panel { display: none; }
+.cl-panel.active { display: block; }
+.cl-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.1s; border-radius: 4px;
+}
+.cl-item:last-child { border-bottom: none; }
+.cl-item:hover { background: var(--foam); padding-left: 6px; }
+.cl-item.checked .cl-item-text { color: var(--muted); text-decoration: line-through; }
+.cl-checkbox {
+  width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
+  border: 2px solid var(--border); display: flex; align-items: center;
+  justify-content: center; margin-top: 1px; transition: all 0.15s;
+  background: var(--white);
+}
+.cl-item.checked .cl-checkbox {
+  background: var(--blue); border-color: var(--blue); color: white;
+}
+.cl-item-text { font-size: 0.875rem; line-height: 1.4; color: var(--text); }
+.cl-signoff {
+  margin-top: 24px; padding-top: 20px;
+  border-top: 2px solid var(--border);
+}
+.cl-progress-bar {
+  height: 6px; background: var(--border); border-radius: 3px;
+  margin: 12px 0 4px 0; overflow: hidden;
+}
+.cl-progress-fill {
+  height: 100%; background: var(--blue); border-radius: 3px;
+  transition: width 0.3s ease; width: 0%;
+}
+.cl-done-banner {
+  background: rgba(47,133,90,0.08); border: 1px solid rgba(47,133,90,0.25);
+  border-radius: 8px; padding: 10px 14px; font-size: 0.83rem;
+  color: #276749; margin-top: 12px;
+}
+.cl-trip-pill {
+  padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);
+  margin-bottom: 8px; cursor: pointer; transition: all 0.15s; background: var(--white);
+}
+.cl-trip-pill:hover { border-color: var(--blue); }
+.cl-trip-pill.selected { border-color: var(--blue); background: rgba(26,107,138,0.06); }
+.cl-info-box {
+  background: rgba(79,195,247,0.08); border: 1px solid rgba(79,195,247,0.3);
+  border-radius: 8px; padding: 12px 14px; font-size: 0.83rem;
+  color: var(--blue); margin-bottom: 16px; line-height: 1.8;
+}
+.cl-trip-banner {
+  background: var(--foam); border-radius: 6px; padding: 7px 12px;
+  font-size: 0.78rem; color: var(--blue); font-weight: 600;
+  margin-bottom: 14px;
+}
+
 /* ─── CATEGORY PICKER ─── */
 .category-picker {
   display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px;
@@ -695,6 +767,86 @@ body { background: var(--navy); color: var(--text); }
 .p-payment.cash { background: rgba(47,133,90,0.1); color: #276749; }
 .p-payment.card { background: rgba(26,107,138,0.1); color: var(--blue); }
 .p-payment.transfer { background: rgba(107,70,193,0.1); color: #6b46c1; }
+
+
+/* ─── CHECKLISTS ─── */
+.cl-tab-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.cl-tab {
+  padding: 8px 18px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--white); color: var(--muted); font-size: 0.875rem;
+  cursor: pointer; font-weight: 500; transition: all 0.15s;
+}
+.cl-tab.active { background: var(--blue); color: var(--white); border-color: var(--blue); font-weight: 600; }
+.cl-role-tab-row { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.cl-role-tab {
+  padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--foam); color: var(--muted); font-size: 0.82rem;
+  cursor: pointer; font-weight: 500; transition: all 0.15s;
+}
+.cl-role-tab.active { background: var(--navy); color: var(--white); border-color: var(--navy); font-weight: 600; }
+.cl-panel { display: none; }
+.cl-panel.active { display: block; }
+.cl-view { }
+.cl-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 13px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.cl-item:last-of-type { border-bottom: none; }
+.cl-item.checked { opacity: 0.55; }
+.cl-item.checked .cl-item-label { text-decoration: line-through; }
+.cl-checkbox {
+  width: 22px; height: 22px; border-radius: 5px; border: 2px solid var(--border);
+  background: var(--white); flex-shrink: 0; display: flex;
+  align-items: center; justify-content: center; transition: all 0.15s; margin-top: 1px;
+}
+.cl-item.checked .cl-checkbox {
+  background: var(--blue); border-color: var(--blue);
+}
+.cl-item.checked .cl-checkbox::after {
+  content: ''; width: 5px; height: 9px;
+  border: 2px solid var(--white); border-top: none; border-left: none;
+  transform: rotate(45deg); margin-top: -2px; display: block;
+}
+.cl-item-label { font-size: 0.9rem; color: var(--navy); line-height: 1.4; }
+.cl-item-note { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+.cl-category { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); margin: 18px 0 8px; }
+.cl-signoff { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.cl-trip-banner {
+  background: rgba(47,133,90,0.08); border: 1px solid rgba(47,133,90,0.25);
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
+  font-size: 0.85rem; color: #276749; font-weight: 500;
+}
+.cl-info-box {
+  background: var(--foam); border: 1px solid rgba(79,195,247,0.3);
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
+  font-size: 0.85rem; color: var(--blue);
+}
+.cl-done-banner {
+  background: rgba(47,133,90,0.08); border: 1px solid rgba(47,133,90,0.25);
+  border-radius: 8px; padding: 12px 16px; margin-top: 12px;
+  font-size: 0.85rem; color: #276749; font-weight: 600;
+}
+.cl-progress-bar {
+  background: var(--foam); border-radius: 10px; height: 6px;
+  margin-bottom: 8px; overflow: hidden;
+}
+.cl-progress-fill {
+  height: 100%; background: var(--blue); border-radius: 10px;
+  transition: width 0.3s ease; width: 0%;
+}
+.eq-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.eq-item:last-of-type { border-bottom: none; }
+.eq-item-label { font-size: 0.9rem; color: var(--navy); font-weight: 500; margin-bottom: 3px; }
+.eq-item-note { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; }
+.eq-status-row { display: flex; gap: 8px; }
+.eq-btn {
+  flex: 1; padding: 7px; border-radius: 7px; border: 1px solid var(--border);
+  background: var(--white); color: var(--muted); font-size: 0.78rem;
+  cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+}
+.eq-btn.pass.active { background: rgba(47,133,90,0.1); border-color: #2f855a; color: #276749; font-weight: 600; }
+.eq-btn.attention.active { background: rgba(251,191,36,0.1); border-color: #d97706; color: #92660a; font-weight: 600; }
+.eq-btn.fail.active { background: rgba(229,62,62,0.1); border-color: var(--error); color: var(--error); font-weight: 600; }
 
 /* ─── CREW ─── */
 .crew-card {
@@ -1297,10 +1449,149 @@ body { background: var(--navy); color: var(--text); }
           <h1>Checklists</h1>
           <p>Pre-departure, boat loading, department sign-offs</p>
         </div>
-        <div class="coming-soon">
-          <div class="icon">✓</div>
-          <h3>Checklists coming soon</h3>
-          <p>Smart checklists that pull gear totals from today's bookings automatically.</p>
+
+        <!-- Tab row -->
+        <div class="cl-tab-row">
+          <div class="cl-tab active" onclick="showChecklistView('predeparture',this)">Pre-Departure</div>
+          <div class="cl-tab" onclick="showChecklistView('boatloading',this)">Boat Loading</div>
+          <div class="cl-tab" onclick="showChecklistView('department',this)">Department</div>
+        </div>
+
+        <!-- PRE-DEPARTURE -->
+        <div id="cl-predeparture" class="cl-view">
+          <!-- Trip selector -->
+          <div class="card" id="cl-trip-selector-card">
+            <div class="card-section-title">Today's Trips</div>
+            <p class="card-desc">Select a trip to load smart gear totals into your checklist.</p>
+            <div id="cl-trip-list"></div>
+          </div>
+
+          <!-- Role tabs -->
+          <div class="card">
+            <div class="card-section-title" style="margin-bottom:12px;">Role Checklists</div>
+            <div class="cl-role-tab-row">
+              <div class="cl-role-tab active" onclick="showChecklistPanel('captain',this)">Captain</div>
+              <div class="cl-role-tab" onclick="showChecklistPanel('instructor',this)">Instructor / DM</div>
+              <div class="cl-role-tab" onclick="showChecklistPanel('snorkel',this)">Snorkel Guide</div>
+              <div class="cl-role-tab" onclick="showChecklistPanel('eqcheck',this)">Eq. Check</div>
+            </div>
+
+            <!-- Captain panel -->
+            <div class="cl-panel active" id="cl-panel-captain">
+              <div class="cl-trip-banner" id="cl-captain-banner" style="display:none;"></div>
+              <div id="cl-captain-items"></div>
+              <div class="cl-signoff">
+                <div class="card-section-title">Captain Sign-Off</div>
+                <input class="sf-input" type="text" id="cl-captain-name" placeholder="Captain name">
+                <input class="sf-input" type="text" id="cl-captain-boat" placeholder="Boat name" style="margin-top:8px;">
+                <div class="cl-done-banner" id="cl-captain-done" style="display:none;"></div>
+                <div class="settings-actions" style="margin-top:12px;">
+                  <button class="btn-save" onclick="captainSignOff()">Sign Off — Clear to Depart</button>
+                  <button class="btn-cancel" onclick="initCaptainChecklist()">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Instructor panel -->
+            <div class="cl-panel" id="cl-panel-instructor">
+              <div class="cl-trip-banner" id="cl-instructor-banner" style="display:none;"></div>
+              <div class="cl-info-box" id="cl-tank-info" style="display:none;"></div>
+              <div id="cl-instructor-items"></div>
+              <div class="cl-signoff">
+                <div class="card-section-title">Sign-Off</div>
+                <input class="sf-input" type="text" id="cl-instructor-name" placeholder="Your name">
+                <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
+                <div class="settings-actions" style="margin-top:12px;">
+                  <button class="btn-save" onclick="instructorSignOff()">Sign Off — Gear Ready</button>
+                  <button class="btn-cancel" onclick="initInstructorChecklist()">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Snorkel panel -->
+            <div class="cl-panel" id="cl-panel-snorkel">
+              <div id="cl-snorkel-items"></div>
+              <div class="cl-signoff">
+                <div class="card-section-title">Guide Sign-Off</div>
+                <input class="sf-input" type="text" id="cl-snorkel-name" placeholder="Guide name">
+                <div class="cl-done-banner" id="cl-snorkel-done" style="display:none;"></div>
+                <div class="settings-actions" style="margin-top:12px;">
+                  <button class="btn-save" onclick="snorkelSignOff()">Sign Off — Gear Ready</button>
+                  <button class="btn-cancel" onclick="initSnorkelChecklist()">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Equipment Check panel -->
+            <div class="cl-panel" id="cl-panel-eqcheck">
+              <p class="card-desc" style="margin-bottom:16px;">Monthly inspection. Complete when assigned or voluntarily.</p>
+              <div id="cl-eq-items"></div>
+              <div class="cl-signoff">
+                <div class="card-section-title">Inspector Sign-Off</div>
+                <input class="sf-input" type="text" id="cl-eq-inspector" placeholder="Inspector name">
+                <input class="sf-input" type="text" id="cl-eq-location" placeholder="Location / shop" style="margin-top:8px;">
+                <div class="settings-actions" style="margin-top:12px;">
+                  <button class="btn-save" onclick="eqSignOff()">Complete Inspection</button>
+                  <button class="btn-cancel" onclick="initEqChecklist()">Reset</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOAT LOADING -->
+        <div id="cl-boatloading" class="cl-view" style="display:none;">
+          <div class="card">
+            <div class="card-section-title" style="margin-bottom:12px;">Boat Loading Checklist</div>
+            <div class="sf-group">
+              <label class="sf-label">Trip Type</label>
+              <select class="sf-input" id="bl-trip-type" onchange="renderBoatChecklist()">
+                <option value="dive1">1 Dive</option>
+                <option value="dive2">2 Dives</option>
+                <option value="night">Night Dive</option>
+                <option value="nitrox">Nitrox Dive</option>
+                <option value="snorkel">Snorkel Trip</option>
+                <option value="dive-snorkel">Dive + Snorkel</option>
+                <option value="half">Half Day Charter</option>
+                <option value="charter">Day Charter</option>
+                <option value="private">Private Charter</option>
+                <option value="island">Island Hopping</option>
+                <option value="fishing">Fishing Trip</option>
+                <option value="surf">Surf Trip</option>
+                <option value="passage">Passage</option>
+              </select>
+            </div>
+            <div class="cl-progress-bar"><div class="cl-progress-fill" id="bl-progress-fill"></div></div>
+            <div style="text-align:right;font-size:0.82rem;font-weight:600;color:var(--navy);margin-bottom:12px;" id="bl-check-count">0 / 0</div>
+            <div class="cl-done-banner" id="bl-done-banner" style="display:none;"></div>
+            <div id="bl-items"></div>
+            <div class="cl-signoff">
+              <div class="card-section-title">Captain / Instructor Sign-Off</div>
+              <input class="sf-input" type="text" id="bl-signoff-name" placeholder="Your name">
+              <input class="sf-input" type="text" id="bl-boat-name" placeholder="Boat name" style="margin-top:8px;">
+              <div class="settings-actions" style="margin-top:12px;">
+                <button class="btn-save" id="bl-signoff-btn" onclick="blSignOff()">Sign Off & Depart</button>
+                <button class="btn-cancel" onclick="renderBoatChecklist()">Reset</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEPARTMENT -->
+        <div id="cl-department" class="cl-view" style="display:none;">
+          <div class="card">
+            <div class="card-section-title" style="margin-bottom:12px;">Department Checklists</div>
+            <p class="card-desc">Reusable daily routines per department — not linked to bookings.</p>
+            <div class="cl-role-tab-row" id="dept-tabs"></div>
+            <div id="dept-list"></div>
+          </div>
+          <div class="card" id="dept-detail-card" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-section-title" id="dept-detail-title" style="margin-bottom:0;"></div>
+              <button class="btn-cancel" onclick="closeDeptDetail()">Back</button>
+            </div>
+            <div id="dept-detail-items"></div>
+          </div>
         </div>
       </div>
 
@@ -1542,8 +1833,10 @@ function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(n => {
     n.classList.toggle('active', n.dataset.page === id);
   });
-  // Close mobile sidebar
   document.getElementById('sidebar').classList.remove('open');
+  if (id === 'checklists') initChecklists();
+  if (id === 'fleet') loadFleet();
+  if (id === 'crew') loadCrew();
 }
 
 // ─── NAV ITEMS ───
@@ -2653,6 +2946,541 @@ async function removeParticipant(id) {
 
 
 // ─── END SETTINGS ───
+
+// ─── CHECKLISTS ───
+
+const CAPTAIN_ITEMS = [
+  { id:'c1', text:'Engine started and warmed up — no unusual sounds or smoke' },
+  { id:'c2', text:'Engine oil level checked — dipstick confirmed' },
+  { id:'c3', text:'Fuel level confirmed — sufficient for trip + 25% reserve' },
+  { id:'c4', text:'Bilge pumped and dry — no unusual water accumulation' },
+  { id:'c5', text:'Navigation lights tested (red port, green starboard, white stern)' },
+  { id:'c6', text:'VHF radio operational — channel 16 confirmed' },
+  { id:'c7', text:'Life jackets aboard — count matches max POB' },
+  { id:'c8', text:'Fire extinguisher in place — pin intact, not expired' },
+  { id:'c9', text:'First aid kit stocked and accessible' },
+  { id:'c10', text:'Flares in date — count confirmed' },
+  { id:'c11', text:'Anchor and rode aboard' },
+  { id:'c12', text:'Mooring lines and fenders ready for departure' },
+  { id:'c13', text:'Weather check completed — conditions acceptable for trip' },
+  { id:'c14', text:'Float plan filed / shore contact notified' },
+  { id:'c15', text:'Dive flag / alpha flag aboard (if applicable)' },
+];
+
+const INSTRUCTOR_ITEMS = [
+  { id:'i1', text:'Student/guest gear manifest checked against booking' },
+  { id:'i2', text:'All BCDs on board — sizes confirmed per booking' },
+  { id:'i3', text:'All regulators rinsed and functioning — no free-flows' },
+  { id:'i4', text:'All tanks on board — counted and valves closed' },
+  { id:'i5', text:'Tank pressures verified — minimum 200 bar on all tanks' },
+  { id:'i6', text:'Weight belts and weight bags loaded — total kg confirmed' },
+  { id:'i7', text:'Wetsuits loaded — sizes per manifest' },
+  { id:'i8', text:'Fins loaded — sizes per manifest' },
+  { id:'i9', text:'Masks loaded and rinsed' },
+  { id:'i10', text:'Student certs / paperwork / waivers complete' },
+  { id:'i11', text:'Dive computers charged and functioning' },
+  { id:'i12', text:'Underwater slates and pencils aboard' },
+  { id:'i13', text:'Oxygen kit aboard and cylinder full' },
+  { id:'i14', text:'Spare regulator aboard' },
+  { id:'i15', text:'Briefing materials ready (site map, fish cards, slates)' },
+];
+
+const SNORKEL_ITEMS = [
+  { id:'s1', text:'Snorkel vests / flotation devices counted — matches guest count' },
+  { id:'s2', text:'Masks loaded — sizes per booking' },
+  { id:'s3', text:'Fins loaded (if applicable)' },
+  { id:'s4', text:'Snorkels loaded and rinsed' },
+  { id:'s5', text:'Reef-safe sunscreen reminder given to all guests' },
+  { id:'s6', text:'Marine life ID cards / briefing cards aboard' },
+  { id:'s7', text:'Underwater camera / GoPro charged (if service offered)' },
+];
+
+const EQ_ITEMS = [
+  { id:'e1', text:'All BCDs inspected — no bladder leaks, valves functioning' },
+  { id:'e2', text:'All regulators serviced or service date checked' },
+  { id:'e3', text:'Tank visual inspections current — stickers in date' },
+  { id:'e4', text:'Weight belt buckles and clips functioning' },
+  { id:'e5', text:'Wetsuit zippers, seams, and neoprene inspected' },
+  { id:'e6', text:'Masks and fins inspected — no cracks or broken straps' },
+  { id:'e7', text:'Dive computers — batteries replaced, calibration current' },
+  { id:'e8', text:'Oxygen cylinder full and in date — regulator functioning' },
+  { id:'e9', text:'First aid kit restocked — expiry dates checked' },
+  { id:'e10', text:'Fire extinguisher in date — pressure confirmed' },
+  { id:'e11', text:'Flares in date — replaced if expired' },
+  { id:'e12', text:'VHF radio charged and programmed' },
+  { id:'e13', text:'Life jackets inspected — no tears, CO2 cylinders in date' },
+  { id:'e14', text:'Bilge pump tested — operational' },
+  { id:'e15', text:'All safety signage visible and legible' },
+];
+
+const BOAT_LOADING_ITEMS = {
+  dive1: [
+    'All tanks on board — count confirmed (1 per diver)',
+    'Tank valves open and pressures verified (min 200 bar)',
+    'BCDs on board — sizes per manifest',
+    'Regulators on board and tested',
+    'Weights loaded — per manifest',
+    'Wetsuits, masks, fins on board',
+    'Dive flag / alpha flag hoisted',
+    'O2 kit and first aid on board',
+    'Boat log completed — destination, POB, departure time',
+  ],
+  dive2: [
+    'All tanks on board — count confirmed (2 per diver)',
+    'Tank valves open and pressures verified (min 200 bar)',
+    'BCDs on board — sizes per manifest',
+    'Regulators on board and tested',
+    'Weights loaded — per manifest',
+    'Wetsuits, masks, fins on board',
+    'Surface snacks and water loaded',
+    'Dive flag / alpha flag hoisted',
+    'O2 kit and first aid on board',
+    'Boat log completed — destination, POB, departure time',
+  ],
+  night: [
+    'All tanks on board — count confirmed',
+    'Primary torches per diver + spares',
+    'Tank valves open and pressures verified',
+    'BCDs, regulators, weights, wetsuits loaded',
+    'Cyalume / glow sticks for tank IDs',
+    'Navigation lights ON before departure',
+    'O2 kit and first aid on board',
+    'Shore contact notified — expected return time',
+  ],
+  nitrox: [
+    'Nitrox tanks labelled and O2% confirmed per diver',
+    'O2 analyser reading confirmed and logged',
+    'MOD calculated and marked on all tanks',
+    'BCDs, regulators, weights, wetsuits loaded',
+    'Dive computers set to correct mix per diver',
+    'O2 kit and first aid on board',
+  ],
+  snorkel: [
+    'Snorkel vests / flotation counted — matches guest count',
+    'Masks, snorkels, fins loaded',
+    'Dive flag hoisted',
+    'First aid kit on board',
+    'Water and snacks loaded',
+    'Briefing cards / site map on board',
+  ],
+  charter: [
+    'Fuel confirmed — full for day charter + reserve',
+    'Ice and provisions loaded',
+    'Life jackets counted — matches max POB',
+    'Safety equipment checked (flares, extinguisher, first aid)',
+    'Navigation charts / chartplotter programmed',
+    'Music / entertainment equipment working',
+    'Boat log completed — destination, POB, departure time',
+  ],
+  private: [
+    'Client brief completed and itinerary confirmed',
+    'Special requests loaded (catering, equipment etc.)',
+    'Fuel confirmed — full + reserve',
+    'Life jackets counted — matches max POB',
+    'Safety equipment checked',
+    'Boat log completed — destination, POB, departure time',
+  ],
+  surf: [
+    'Boards loaded — count and sizes per manifest',
+    'Rashguards / wetsuits per booking',
+    'Surf leashes checked',
+    'First aid kit on board',
+    'Water and snacks loaded',
+    'Reef booties if applicable',
+  ],
+  fishing: [
+    'Rods, reels, tackle loaded per booking',
+    'Bait and ice loaded',
+    'Life jackets — matches POB',
+    'Safety equipment checked',
+    'Fish finder / sounder operational',
+    'Cooler / fish box on board',
+    'Boat log completed — departure time, location planned',
+  ],
+};
+
+const DEPT_CHECKLISTS = {
+  'Morning — Captain': [
+    'Engine room inspection complete',
+    'Bilge checked and pumped',
+    'Fuel and oil levels logged',
+    'VHF check with marina / port authority',
+    'Weather briefing completed',
+    'Daily log started',
+  ],
+  'Morning — Instructor': [
+    'Student waivers and certs checked',
+    'Gear manifest printed / confirmed',
+    'Theory briefing materials ready',
+    'Pool / confined water set up if applicable',
+    'Emergency procedures briefed to students',
+  ],
+  'End of Day — Deck': [
+    'All tanks rinsed with fresh water and stored vertically',
+    'BCDs rinsed and hung to dry',
+    'Wetsuits rinsed and hung',
+    'Regulators rinsed and bagged',
+    'Boat rinsed — salt water off all surfaces',
+    'Bilge checked',
+    'Lines secured and fenders in place',
+    'Log book completed and signed',
+  ],
+  'End of Day — Instructor': [
+    'Student progress logged',
+    'Gear returns confirmed — nothing left on boat',
+    'Lost and found checked',
+    'Next day student list reviewed',
+    'Any equipment defects reported',
+  ],
+};
+
+// State
+let captainChecks = {};
+let instructorChecks = {};
+let snorkelChecks = {};
+let eqChecks = {};
+let blChecks = {};
+let currentChecklistTripId = null;
+let currentChecklistTripType = null;
+
+// ─── INIT CHECKLIST PAGE ───
+async function initChecklists() {
+  await loadTodaysTripList();
+  initCaptainChecklist();
+  initInstructorChecklist();
+  initSnorkelChecklist();
+  initEqChecklist();
+  renderBoatChecklist();
+  initDeptChecklists();
+}
+
+async function loadTodaysTripList() {
+  if (!currentOrgId) return;
+  const today = formatDate(new Date());
+  const { data: trips } = await sb
+    .from('trips')
+    .select('id, trip_name, trip_time, trip_type, trip_type_id, trip_types(name, num_tanks, needs_tank_count), participants(id, gear)')
+    .eq('org_id', currentOrgId)
+    .eq('trip_date', today)
+    .order('trip_time');
+
+  const list = document.getElementById('cl-trip-list');
+  if (!trips || trips.length === 0) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">No trips today. Checklists are available to use independently below.</p>';
+    return;
+  }
+
+  list.innerHTML = trips.map(t => {
+    const name = t.trip_name || t.trip_types?.name || t.trip_type || 'Trip';
+    const time = t.trip_time?.slice(0,5) || '';
+    const guests = t.participants?.length || 0;
+    const tanks = t.trip_types?.needs_tank_count ? `${guests * (t.trip_types?.num_tanks||1)} tanks` : '';
+    return `<div class="cl-trip-pill ${currentChecklistTripId===t.id?'selected':''}" onclick="selectChecklistTrip('${t.id}','${t.trip_type||''}',${JSON.stringify(t.participants||[]).replace(/"/g,'&quot;')})">
+      <div style="font-weight:600;font-size:0.875rem;">${time} — ${name}</div>
+      <div style="font-size:0.75rem;color:var(--muted);">${guests} guests${tanks?' · '+tanks:''}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectChecklistTrip(tripId, tripType, participants) {
+  currentChecklistTripId = tripId;
+  currentChecklistTripType = tripType;
+
+  // Calculate gear totals from participants
+  const gearTotals = {};
+  let totalTanks = 0;
+  let totalWeight = 0;
+  participants.forEach(p => {
+    const g = typeof p.gear === 'string' ? JSON.parse(p.gear||'{}') : (p.gear||{});
+    Object.entries(g).forEach(([k,v]) => {
+      if (!v || v === 'Own gear' || v === 'None') return;
+      if (k === 'weight_kg') { totalWeight += parseFloat(v)||0; return; }
+      if (k === 'tank_size') { totalTanks++; return; }
+      if (!gearTotals[k]) gearTotals[k] = {};
+      gearTotals[k][v] = (gearTotals[k][v]||0) + 1;
+    });
+  });
+
+  // Show tank info in instructor panel
+  const tankInfo = document.getElementById('cl-tank-info');
+  if (tankInfo) {
+    const lines = [];
+    if (totalTanks > 0) lines.push(`<strong>${totalTanks} tanks</strong> needed`);
+    if (totalWeight > 0) lines.push(`<strong>${totalWeight} kg</strong> weights total`);
+    Object.entries(gearTotals).forEach(([key, sizes]) => {
+      const label = key.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+      const breakdown = Object.entries(sizes).map(([s,n]) => `${n}×${s}`).join(', ');
+      lines.push(`${label}: ${breakdown}`);
+    });
+    if (lines.length) {
+      tankInfo.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+      tankInfo.style.display = 'block';
+    }
+  }
+
+  // Show trip banner in panels
+  ['captain','instructor'].forEach(role => {
+    const banner = document.getElementById(`cl-${role}-banner`);
+    if (banner) {
+      banner.textContent = `Linked to trip: ${currentChecklistTripId ? 'loaded' : '—'}`;
+      banner.style.display = 'block';
+    }
+  });
+
+  loadTodaysTripList();
+}
+
+// ─── RENDER HELPERS ───
+function renderItems(containerId, items, checks, onToggle) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items.map((item, idx) => `
+    <div class="cl-item ${checks[item.id||idx]?'checked':''}" onclick="${onToggle}('${item.id||idx}')">
+      <div class="cl-checkbox">${checks[item.id||idx]?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>':''}</div>
+      <div class="cl-item-text">${item.text}</div>
+    </div>`).join('');
+}
+
+function toggleCheck(checks, id, containerId, items, onToggle) {
+  checks[id] = !checks[id];
+  renderItems(containerId, items, checks, onToggle);
+  updateProgress(containerId, checks, items);
+}
+
+function updateProgress(containerId, checks, items) {
+  const done = items.filter(i => checks[i.id]).length;
+  const total = items.length;
+  const progressEl = document.getElementById(containerId.replace('items','progress'));
+  if (progressEl) progressEl.style.width = (done/total*100)+'%';
+}
+
+// ─── CAPTAIN ───
+function initCaptainChecklist() {
+  captainChecks = {};
+  renderItems('cl-captain-items', CAPTAIN_ITEMS, captainChecks, 'toggleCaptain');
+  document.getElementById('cl-captain-done').style.display = 'none';
+}
+function toggleCaptain(id) { toggleCheck(captainChecks, id, 'cl-captain-items', CAPTAIN_ITEMS, 'toggleCaptain'); }
+
+async function captainSignOff() {
+  const name = document.getElementById('cl-captain-name').value.trim();
+  const boat = document.getElementById('cl-captain-boat').value.trim();
+  const done = CAPTAIN_ITEMS.filter(i => captainChecks[i.id]).length;
+  if (!name) { alert('Enter captain name to sign off.'); return; }
+  if (done < CAPTAIN_ITEMS.length) {
+    if (!confirm(`${CAPTAIN_ITEMS.length - done} items incomplete. Sign off anyway?`)) return;
+  }
+  const ts = new Date().toLocaleString();
+  const doneBanner = document.getElementById('cl-captain-done');
+  doneBanner.innerHTML = `✓ Signed off by <strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
+  doneBanner.style.display = 'block';
+  // Save to Supabase
+  if (currentOrgId) {
+    await sb.from('checklist_completions').insert({
+      org_id: currentOrgId, trip_id: currentChecklistTripId || null,
+      role: 'captain', signed_by: name, boat_name: boat,
+      completed_items: done, total_items: CAPTAIN_ITEMS.length,
+      signed_at: new Date().toISOString()
+    }).select();
+  }
+}
+
+// ─── INSTRUCTOR ───
+function initInstructorChecklist() {
+  instructorChecks = {};
+  renderItems('cl-instructor-items', INSTRUCTOR_ITEMS, instructorChecks, 'toggleInstructor');
+  document.getElementById('cl-instructor-done').style.display = 'none';
+  document.getElementById('cl-tank-info').style.display = 'none';
+}
+function toggleInstructor(id) { toggleCheck(instructorChecks, id, 'cl-instructor-items', INSTRUCTOR_ITEMS, 'toggleInstructor'); }
+
+async function instructorSignOff() {
+  const name = document.getElementById('cl-instructor-name').value.trim();
+  const done = INSTRUCTOR_ITEMS.filter(i => instructorChecks[i.id]).length;
+  if (!name) { alert('Enter your name to sign off.'); return; }
+  if (done < INSTRUCTOR_ITEMS.length) {
+    if (!confirm(`${INSTRUCTOR_ITEMS.length - done} items incomplete. Sign off anyway?`)) return;
+  }
+  const ts = new Date().toLocaleString();
+  const doneBanner = document.getElementById('cl-instructor-done');
+  doneBanner.innerHTML = `✓ Signed off by <strong>${name}</strong> at ${ts}`;
+  doneBanner.style.display = 'block';
+  if (currentOrgId) {
+    await sb.from('checklist_completions').insert({
+      org_id: currentOrgId, trip_id: currentChecklistTripId || null,
+      role: 'instructor', signed_by: name,
+      completed_items: done, total_items: INSTRUCTOR_ITEMS.length,
+      signed_at: new Date().toISOString()
+    });
+  }
+}
+
+// ─── SNORKEL ───
+function initSnorkelChecklist() {
+  snorkelChecks = {};
+  renderItems('cl-snorkel-items', SNORKEL_ITEMS, snorkelChecks, 'toggleSnorkel');
+  document.getElementById('cl-snorkel-done').style.display = 'none';
+}
+function toggleSnorkel(id) { toggleCheck(snorkelChecks, id, 'cl-snorkel-items', SNORKEL_ITEMS, 'toggleSnorkel'); }
+
+async function snorkelSignOff() {
+  const name = document.getElementById('cl-snorkel-name').value.trim();
+  const done = SNORKEL_ITEMS.filter(i => snorkelChecks[i.id]).length;
+  if (!name) { alert('Enter guide name to sign off.'); return; }
+  const ts = new Date().toLocaleString();
+  document.getElementById('cl-snorkel-done').innerHTML = `✓ Signed off by <strong>${name}</strong> at ${ts}`;
+  document.getElementById('cl-snorkel-done').style.display = 'block';
+  if (currentOrgId) {
+    await sb.from('checklist_completions').insert({
+      org_id: currentOrgId, trip_id: currentChecklistTripId || null,
+      role: 'snorkel_guide', signed_by: name,
+      completed_items: done, total_items: SNORKEL_ITEMS.length,
+      signed_at: new Date().toISOString()
+    });
+  }
+}
+
+// ─── EQUIPMENT CHECK ───
+function initEqChecklist() {
+  eqChecks = {};
+  renderItems('cl-eq-items', EQ_ITEMS, eqChecks, 'toggleEq');
+}
+function toggleEq(id) { toggleCheck(eqChecks, id, 'cl-eq-items', EQ_ITEMS, 'toggleEq'); }
+
+async function eqSignOff() {
+  const inspector = document.getElementById('cl-eq-inspector').value.trim();
+  const location = document.getElementById('cl-eq-location').value.trim();
+  const done = EQ_ITEMS.filter(i => eqChecks[i.id]).length;
+  if (!inspector) { alert('Enter inspector name.'); return; }
+  if (done < EQ_ITEMS.length) {
+    if (!confirm(`${EQ_ITEMS.length - done} items incomplete. Complete inspection anyway?`)) return;
+  }
+  const ts = new Date().toLocaleString();
+  alert(`✓ Equipment inspection signed off by ${inspector}${location?' at '+location:''} — ${ts}`);
+  if (currentOrgId) {
+    await sb.from('checklist_completions').insert({
+      org_id: currentOrgId, role: 'equipment_check',
+      signed_by: inspector, boat_name: location,
+      completed_items: done, total_items: EQ_ITEMS.length,
+      signed_at: new Date().toISOString()
+    });
+  }
+}
+
+// ─── BOAT LOADING ───
+function renderBoatChecklist() {
+  const typeKey = document.getElementById('bl-trip-type').value;
+  const items = BOAT_LOADING_ITEMS[typeKey] || BOAT_LOADING_ITEMS.dive2;
+  blChecks = {};
+
+  const container = document.getElementById('bl-items');
+  container.innerHTML = items.map((text, i) => `
+    <div class="cl-item" id="bl-item-${i}" onclick="toggleBL(${i}, ${items.length})">
+      <div class="cl-checkbox"></div>
+      <div class="cl-item-text">${text}</div>
+    </div>`).join('');
+
+  document.getElementById('bl-check-count').textContent = `0 / ${items.length}`;
+  document.getElementById('bl-progress-fill').style.width = '0%';
+  document.getElementById('bl-done-banner').style.display = 'none';
+}
+
+function toggleBL(idx, total) {
+  blChecks[idx] = !blChecks[idx];
+  const item = document.getElementById(`bl-item-${idx}`);
+  item.classList.toggle('checked', blChecks[idx]);
+  item.querySelector('.cl-checkbox').innerHTML = blChecks[idx]
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>'
+    : '';
+  const done = Object.values(blChecks).filter(Boolean).length;
+  document.getElementById('bl-check-count').textContent = `${done} / ${total}`;
+  document.getElementById('bl-progress-fill').style.width = (done/total*100)+'%';
+}
+
+async function blSignOff() {
+  const name = document.getElementById('bl-signoff-name').value.trim();
+  const boat = document.getElementById('bl-boat-name').value.trim();
+  if (!name) { alert('Enter your name to sign off.'); return; }
+  const ts = new Date().toLocaleString();
+  const banner = document.getElementById('bl-done-banner');
+  banner.innerHTML = `✓ Boat loading signed off by <strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
+  banner.style.display = 'block';
+  if (currentOrgId) {
+    const typeKey = document.getElementById('bl-trip-type').value;
+    const items = BOAT_LOADING_ITEMS[typeKey] || [];
+    const done = Object.values(blChecks).filter(Boolean).length;
+    await sb.from('checklist_completions').insert({
+      org_id: currentOrgId, trip_id: currentChecklistTripId || null,
+      role: 'boat_loading', signed_by: name, boat_name: boat,
+      completed_items: done, total_items: items.length,
+      signed_at: new Date().toISOString()
+    });
+  }
+}
+
+// ─── DEPARTMENT ───
+function initDeptChecklists() {
+  const tabRow = document.getElementById('dept-tabs');
+  const list = document.getElementById('dept-list');
+  const deptNames = Object.keys(DEPT_CHECKLISTS);
+
+  tabRow.innerHTML = deptNames.map((name, i) =>
+    `<div class="cl-role-tab ${i===0?'active':''}" onclick="filterDeptList('${name}',this)">${name}</div>`
+  ).join('');
+
+  renderDeptList(deptNames[0]);
+}
+
+function filterDeptList(name, el) {
+  document.querySelectorAll('#dept-tabs .cl-role-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderDeptList(name);
+}
+
+function renderDeptList(name) {
+  const items = DEPT_CHECKLISTS[name] || [];
+  const checks = {};
+  const list = document.getElementById('dept-list');
+  list.innerHTML = `
+    <div style="margin-top:16px;">
+      ${items.map((text, i) => `
+        <div class="cl-item" id="dept-item-${i}" onclick="toggleDept(${i}, '${name}')">
+          <div class="cl-checkbox"></div>
+          <div class="cl-item-text">${text}</div>
+        </div>`).join('')}
+      <div class="settings-actions" style="margin-top:16px;">
+        <button class="btn-cancel" onclick="resetDept('${name}')">Reset</button>
+      </div>
+    </div>`;
+}
+
+function toggleDept(idx, name) {
+  const item = document.getElementById(`dept-item-${idx}`);
+  const checked = item.classList.toggle('checked');
+  item.querySelector('.cl-checkbox').innerHTML = checked
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>'
+    : '';
+}
+
+function resetDept(name) { renderDeptList(name); }
+
+// ─── NAV FUNCTIONS ───
+function showChecklistView(view, el) {
+  document.querySelectorAll('.cl-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.cl-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('cl-' + view).style.display = 'block';
+  el.classList.add('active');
+}
+
+function showChecklistPanel(panel, el) {
+  document.querySelectorAll('.cl-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.cl-role-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('cl-panel-' + panel).classList.add('active');
+  el.classList.add('active');
+}
+
+// ─── END CHECKLISTS ───
+
 
 // ─── CREW ───
 async function loadCrew() {
