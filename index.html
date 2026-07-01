@@ -1951,7 +1951,7 @@ function tripCard(t) {
   const tanks = t.num_dives ? guestCount * t.num_dives : null;
   const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(t.trip_type);
   return `
-  <div class="trip-card ${t.status}" onclick="openTrip('${t.id}')">
+  <div class="trip-card ${t.status}" onclick="event.stopPropagation();openTrip('${t.id}')">
     <div class="trip-card-header">
       <div>
         <div class="trip-card-title">${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}</div>
