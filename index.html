@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"><!-- v2.1 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -369,6 +369,14 @@ body { background: var(--navy); color: var(--text); }
   border-radius: 8px; padding: 12px 14px; font-size: 0.83rem;
   color: var(--blue); margin-bottom: 16px; line-height: 1.8;
 }
+
+.cl-role-badge {
+  font-size: 0.72rem; font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; background: var(--foam); color: var(--muted);
+  border: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.cl-role-badge.done { background: rgba(47,133,90,0.1); color: #276749; border-color: rgba(47,133,90,0.3); }
+
 .cl-trip-banner {
   background: var(--foam); border-radius: 6px; padding: 7px 12px;
   font-size: 0.78rem; color: var(--blue); font-weight: 600;
@@ -811,6 +819,14 @@ body { background: var(--navy); color: var(--text); }
 .cl-item-note { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
 .cl-category { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); margin: 18px 0 8px; }
 .cl-signoff { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+.cl-role-badge {
+  font-size: 0.72rem; font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; background: var(--foam); color: var(--muted);
+  border: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.cl-role-badge.done { background: rgba(47,133,90,0.1); color: #276749; border-color: rgba(47,133,90,0.3); }
+
 .cl-trip-banner {
   background: rgba(47,133,90,0.08); border: 1px solid rgba(47,133,90,0.25);
   border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
@@ -1447,150 +1463,84 @@ body { background: var(--navy); color: var(--text); }
       <div class="page" id="page-checklists">
         <div class="page-header">
           <h1>Checklists</h1>
-          <p>Pre-departure, boat loading, department sign-offs</p>
+          <p>Trip prep, vessel safety, department routines</p>
         </div>
 
         <!-- Tab row -->
         <div class="cl-tab-row">
-          <div class="cl-tab active" onclick="showChecklistView('predeparture',this)">Pre-Departure</div>
-          <div class="cl-tab" onclick="showChecklistView('boatloading',this)">Boat Loading</div>
-          <div class="cl-tab" onclick="showChecklistView('department',this)">Department</div>
+          <div class="cl-tab active" onclick="showChecklistView('tripprep',this)">Trip Prep</div>
+          <div class="cl-tab" id="cl-tab-captain" onclick="showChecklistView('captaincheck',this)">Captain</div>
+          <div class="cl-tab" onclick="showChecklistView('department',this)">Department Routines</div>
         </div>
 
-        <!-- PRE-DEPARTURE -->
-        <div id="cl-predeparture" class="cl-view">
-          <!-- Trip selector -->
+        <!-- TRIP PREP — smart, linked to booking, role-filtered -->
+        <div id="cl-tripprep" class="cl-view">
           <div class="card" id="cl-trip-selector-card">
             <div class="card-section-title">Today's Trips</div>
-            <p class="card-desc">Select a trip to load smart gear totals into your checklist.</p>
+            <p class="card-desc">Select a trip to load gear totals from your bookings automatically.</p>
             <div id="cl-trip-list"></div>
           </div>
 
-          <!-- Role tabs -->
-          <div class="card">
-            <div class="card-section-title" style="margin-bottom:12px;">Role Checklists</div>
-            <div class="cl-role-tab-row">
-              <div class="cl-role-tab active" onclick="showChecklistPanel('captain',this)">Captain</div>
-              <div class="cl-role-tab" onclick="showChecklistPanel('instructor',this)">Instructor / DM</div>
-              <div class="cl-role-tab" onclick="showChecklistPanel('snorkel',this)">Snorkel Guide</div>
-              <div class="cl-role-tab" onclick="showChecklistPanel('eqcheck',this)">Eq. Check</div>
-            </div>
-
-            <!-- Captain panel -->
-            <div class="cl-panel active" id="cl-panel-captain">
-              <div class="cl-trip-banner" id="cl-captain-banner" style="display:none;"></div>
-              <div id="cl-captain-items"></div>
-              <div class="cl-signoff">
-                <div class="card-section-title">Captain Sign-Off</div>
-                <input class="sf-input" type="text" id="cl-captain-name" placeholder="Captain name">
-                <input class="sf-input" type="text" id="cl-captain-boat" placeholder="Boat name" style="margin-top:8px;">
-                <div class="cl-done-banner" id="cl-captain-done" style="display:none;"></div>
-                <div class="settings-actions" style="margin-top:12px;">
-                  <button class="btn-save" onclick="captainSignOff()">Sign Off — Clear to Depart</button>
-                  <button class="btn-cancel" onclick="initCaptainChecklist()">Reset</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Instructor panel -->
-            <div class="cl-panel" id="cl-panel-instructor">
-              <div class="cl-trip-banner" id="cl-instructor-banner" style="display:none;"></div>
-              <div class="cl-info-box" id="cl-tank-info" style="display:none;"></div>
-              <div id="cl-instructor-items"></div>
-              <div class="cl-signoff">
-                <div class="card-section-title">Sign-Off</div>
-                <input class="sf-input" type="text" id="cl-instructor-name" placeholder="Your name">
-                <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
-                <div class="settings-actions" style="margin-top:12px;">
-                  <button class="btn-save" onclick="instructorSignOff()">Sign Off — Gear Ready</button>
-                  <button class="btn-cancel" onclick="initInstructorChecklist()">Reset</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Snorkel panel -->
-            <div class="cl-panel" id="cl-panel-snorkel">
-              <div id="cl-snorkel-items"></div>
-              <div class="cl-signoff">
-                <div class="card-section-title">Guide Sign-Off</div>
-                <input class="sf-input" type="text" id="cl-snorkel-name" placeholder="Guide name">
-                <div class="cl-done-banner" id="cl-snorkel-done" style="display:none;"></div>
-                <div class="settings-actions" style="margin-top:12px;">
-                  <button class="btn-save" onclick="snorkelSignOff()">Sign Off — Gear Ready</button>
-                  <button class="btn-cancel" onclick="initSnorkelChecklist()">Reset</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Equipment Check panel -->
-            <div class="cl-panel" id="cl-panel-eqcheck">
-              <p class="card-desc" style="margin-bottom:16px;">Monthly inspection. Complete when assigned or voluntarily.</p>
-              <div id="cl-eq-items"></div>
-              <div class="cl-signoff">
-                <div class="card-section-title">Inspector Sign-Off</div>
-                <input class="sf-input" type="text" id="cl-eq-inspector" placeholder="Inspector name">
-                <input class="sf-input" type="text" id="cl-eq-location" placeholder="Location / shop" style="margin-top:8px;">
-                <div class="settings-actions" style="margin-top:12px;">
-                  <button class="btn-save" onclick="eqSignOff()">Complete Inspection</button>
-                  <button class="btn-cancel" onclick="initEqChecklist()">Reset</button>
-                </div>
-              </div>
-            </div>
+          <!-- Gear summary from booking -->
+          <div class="card" id="cl-gear-summary-card" style="display:none;">
+            <div class="card-section-title" style="margin-bottom:8px;">Gear Required — from Booking</div>
+            <div class="cl-info-box" id="cl-tank-info"></div>
           </div>
-        </div>
 
-        <!-- BOAT LOADING -->
-        <div id="cl-boatloading" class="cl-view" style="display:none;">
-          <div class="card">
-            <div class="card-section-title" style="margin-bottom:12px;">Boat Loading Checklist</div>
-            <div class="sf-group">
-              <label class="sf-label">Trip Type</label>
-              <select class="sf-input" id="bl-trip-type" onchange="renderBoatChecklist()">
-                <option value="dive1">1 Dive</option>
-                <option value="dive2">2 Dives</option>
-                <option value="night">Night Dive</option>
-                <option value="nitrox">Nitrox Dive</option>
-                <option value="snorkel">Snorkel Trip</option>
-                <option value="dive-snorkel">Dive + Snorkel</option>
-                <option value="half">Half Day Charter</option>
-                <option value="charter">Day Charter</option>
-                <option value="private">Private Charter</option>
-                <option value="island">Island Hopping</option>
-                <option value="fishing">Fishing Trip</option>
-                <option value="surf">Surf Trip</option>
-                <option value="passage">Passage</option>
-              </select>
+          <!-- Instructor / DM section — always visible to relevant roles -->
+          <div class="card" id="cl-instructor-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-section-title" style="margin-bottom:0;">Instructor / DM — Gear Prep</div>
+              <div class="cl-role-badge" id="cl-instructor-status">Pending</div>
             </div>
-            <div class="cl-progress-bar"><div class="cl-progress-fill" id="bl-progress-fill"></div></div>
-            <div style="text-align:right;font-size:0.82rem;font-weight:600;color:var(--navy);margin-bottom:12px;" id="bl-check-count">0 / 0</div>
-            <div class="cl-done-banner" id="bl-done-banner" style="display:none;"></div>
-            <div id="bl-items"></div>
+            <div id="cl-instructor-items"></div>
             <div class="cl-signoff">
-              <div class="card-section-title">Captain / Instructor Sign-Off</div>
-              <input class="sf-input" type="text" id="bl-signoff-name" placeholder="Your name">
-              <input class="sf-input" type="text" id="bl-boat-name" placeholder="Boat name" style="margin-top:8px;">
+              <input class="sf-input" type="text" id="cl-instructor-name" placeholder="Your name">
+              <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
-                <button class="btn-save" id="bl-signoff-btn" onclick="blSignOff()">Sign Off & Depart</button>
-                <button class="btn-cancel" onclick="renderBoatChecklist()">Reset</button>
+                <button class="btn-save" onclick="instructorSignOff()">Sign Off — Gear Ready</button>
+                <button class="btn-cancel" onclick="initInstructorChecklist()">Reset</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Captain overview — only visible to captain/manager/owner -->
+          <div class="card" id="cl-captain-overview" style="display:none;">
+            <div class="card-section-title" style="margin-bottom:12px;">Crew Sign-Off Status</div>
+            <div id="cl-crew-status-list"></div>
+          </div>
+        </div>
+
+        <!-- CAPTAIN — vessel safety, independent of trips -->
+        <div id="cl-captaincheck" class="cl-view" style="display:none;">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-section-title" style="margin-bottom:0;">Vessel Safety Check</div>
+              <div class="cl-role-badge" id="cl-captain-status">Pending</div>
+            </div>
+            <p class="card-desc" style="margin-bottom:16px;">Complete once per day before first departure. Independent of individual trips.</p>
+            <div class="cl-progress-bar"><div class="cl-progress-fill" id="cl-captain-progress"></div></div>
+            <div id="cl-captain-items"></div>
+            <div class="cl-signoff">
+              <div class="card-section-title">Captain Sign-Off</div>
+              <input class="sf-input" type="text" id="cl-captain-name" placeholder="Captain name">
+              <input class="sf-input" type="text" id="cl-captain-boat" placeholder="Boat name" style="margin-top:8px;">
+              <div class="cl-done-banner" id="cl-captain-done" style="display:none;"></div>
+              <div class="settings-actions" style="margin-top:12px;">
+                <button class="btn-save" onclick="captainSignOff()">Sign Off — Clear to Depart</button>
+                <button class="btn-cancel" onclick="initCaptainChecklist()">Reset</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- DEPARTMENT -->
+        <!-- DEPARTMENT ROUTINES -->
         <div id="cl-department" class="cl-view" style="display:none;">
           <div class="card">
-            <div class="card-section-title" style="margin-bottom:12px;">Department Checklists</div>
+            <div class="card-section-title" style="margin-bottom:12px;">Department Routines</div>
             <p class="card-desc">Reusable daily routines per department — not linked to bookings.</p>
             <div class="cl-role-tab-row" id="dept-tabs"></div>
             <div id="dept-list"></div>
-          </div>
-          <div class="card" id="dept-detail-card" style="display:none;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div class="card-section-title" id="dept-detail-title" style="margin-bottom:0;"></div>
-              <button class="btn-cancel" onclick="closeDeptDetail()">Back</button>
-            </div>
-            <div id="dept-detail-items"></div>
           </div>
         </div>
       </div>
@@ -2951,9 +2901,9 @@ async function removeParticipant(id) {
 
 const CAPTAIN_ITEMS = [
   { id:'c1', text:'Engine started and warmed up — no unusual sounds or smoke' },
-  { id:'c2', text:'Engine oil level checked — dipstick confirmed' },
-  { id:'c3', text:'Fuel level confirmed — sufficient for trip + 25% reserve' },
-  { id:'c4', text:'Bilge pumped and dry — no unusual water accumulation' },
+  { id:'c2', text:'Engine oil level checked' },
+  { id:'c3', text:'Fuel confirmed — sufficient for trip + 25% reserve' },
+  { id:'c4', text:'Bilge pumped and dry' },
   { id:'c5', text:'Navigation lights tested (red port, green starboard, white stern)' },
   { id:'c6', text:'VHF radio operational — channel 16 confirmed' },
   { id:'c7', text:'Life jackets aboard — count matches max POB' },
@@ -2961,143 +2911,28 @@ const CAPTAIN_ITEMS = [
   { id:'c9', text:'First aid kit stocked and accessible' },
   { id:'c10', text:'Flares in date — count confirmed' },
   { id:'c11', text:'Anchor and rode aboard' },
-  { id:'c12', text:'Mooring lines and fenders ready for departure' },
-  { id:'c13', text:'Weather check completed — conditions acceptable for trip' },
+  { id:'c12', text:'Mooring lines and fenders ready' },
+  { id:'c13', text:'Weather check completed — conditions acceptable' },
   { id:'c14', text:'Float plan filed / shore contact notified' },
   { id:'c15', text:'Dive flag / alpha flag aboard (if applicable)' },
 ];
 
 const INSTRUCTOR_ITEMS = [
-  { id:'i1', text:'Student/guest gear manifest checked against booking' },
+  { id:'i1', text:'Guest gear manifest checked against booking' },
   { id:'i2', text:'All BCDs on board — sizes confirmed per booking' },
   { id:'i3', text:'All regulators rinsed and functioning — no free-flows' },
-  { id:'i4', text:'All tanks on board — counted and valves closed' },
-  { id:'i5', text:'Tank pressures verified — minimum 200 bar on all tanks' },
-  { id:'i6', text:'Weight belts and weight bags loaded — total kg confirmed' },
+  { id:'i4', text:'All tanks on board — counted, valves closed' },
+  { id:'i5', text:'Tank pressures verified — minimum 200 bar' },
+  { id:'i6', text:'Weight belts and bags loaded — total kg confirmed' },
   { id:'i7', text:'Wetsuits loaded — sizes per manifest' },
   { id:'i8', text:'Fins loaded — sizes per manifest' },
   { id:'i9', text:'Masks loaded and rinsed' },
-  { id:'i10', text:'Student certs / paperwork / waivers complete' },
+  { id:'i10', text:'Waivers / paperwork complete' },
   { id:'i11', text:'Dive computers charged and functioning' },
-  { id:'i12', text:'Underwater slates and pencils aboard' },
-  { id:'i13', text:'Oxygen kit aboard and cylinder full' },
-  { id:'i14', text:'Spare regulator aboard' },
-  { id:'i15', text:'Briefing materials ready (site map, fish cards, slates)' },
+  { id:'i12', text:'Oxygen kit aboard and cylinder full' },
+  { id:'i13', text:'Spare regulator aboard' },
+  { id:'i14', text:'Briefing materials ready' },
 ];
-
-const SNORKEL_ITEMS = [
-  { id:'s1', text:'Snorkel vests / flotation devices counted — matches guest count' },
-  { id:'s2', text:'Masks loaded — sizes per booking' },
-  { id:'s3', text:'Fins loaded (if applicable)' },
-  { id:'s4', text:'Snorkels loaded and rinsed' },
-  { id:'s5', text:'Reef-safe sunscreen reminder given to all guests' },
-  { id:'s6', text:'Marine life ID cards / briefing cards aboard' },
-  { id:'s7', text:'Underwater camera / GoPro charged (if service offered)' },
-];
-
-const EQ_ITEMS = [
-  { id:'e1', text:'All BCDs inspected — no bladder leaks, valves functioning' },
-  { id:'e2', text:'All regulators serviced or service date checked' },
-  { id:'e3', text:'Tank visual inspections current — stickers in date' },
-  { id:'e4', text:'Weight belt buckles and clips functioning' },
-  { id:'e5', text:'Wetsuit zippers, seams, and neoprene inspected' },
-  { id:'e6', text:'Masks and fins inspected — no cracks or broken straps' },
-  { id:'e7', text:'Dive computers — batteries replaced, calibration current' },
-  { id:'e8', text:'Oxygen cylinder full and in date — regulator functioning' },
-  { id:'e9', text:'First aid kit restocked — expiry dates checked' },
-  { id:'e10', text:'Fire extinguisher in date — pressure confirmed' },
-  { id:'e11', text:'Flares in date — replaced if expired' },
-  { id:'e12', text:'VHF radio charged and programmed' },
-  { id:'e13', text:'Life jackets inspected — no tears, CO2 cylinders in date' },
-  { id:'e14', text:'Bilge pump tested — operational' },
-  { id:'e15', text:'All safety signage visible and legible' },
-];
-
-const BOAT_LOADING_ITEMS = {
-  dive1: [
-    'All tanks on board — count confirmed (1 per diver)',
-    'Tank valves open and pressures verified (min 200 bar)',
-    'BCDs on board — sizes per manifest',
-    'Regulators on board and tested',
-    'Weights loaded — per manifest',
-    'Wetsuits, masks, fins on board',
-    'Dive flag / alpha flag hoisted',
-    'O2 kit and first aid on board',
-    'Boat log completed — destination, POB, departure time',
-  ],
-  dive2: [
-    'All tanks on board — count confirmed (2 per diver)',
-    'Tank valves open and pressures verified (min 200 bar)',
-    'BCDs on board — sizes per manifest',
-    'Regulators on board and tested',
-    'Weights loaded — per manifest',
-    'Wetsuits, masks, fins on board',
-    'Surface snacks and water loaded',
-    'Dive flag / alpha flag hoisted',
-    'O2 kit and first aid on board',
-    'Boat log completed — destination, POB, departure time',
-  ],
-  night: [
-    'All tanks on board — count confirmed',
-    'Primary torches per diver + spares',
-    'Tank valves open and pressures verified',
-    'BCDs, regulators, weights, wetsuits loaded',
-    'Cyalume / glow sticks for tank IDs',
-    'Navigation lights ON before departure',
-    'O2 kit and first aid on board',
-    'Shore contact notified — expected return time',
-  ],
-  nitrox: [
-    'Nitrox tanks labelled and O2% confirmed per diver',
-    'O2 analyser reading confirmed and logged',
-    'MOD calculated and marked on all tanks',
-    'BCDs, regulators, weights, wetsuits loaded',
-    'Dive computers set to correct mix per diver',
-    'O2 kit and first aid on board',
-  ],
-  snorkel: [
-    'Snorkel vests / flotation counted — matches guest count',
-    'Masks, snorkels, fins loaded',
-    'Dive flag hoisted',
-    'First aid kit on board',
-    'Water and snacks loaded',
-    'Briefing cards / site map on board',
-  ],
-  charter: [
-    'Fuel confirmed — full for day charter + reserve',
-    'Ice and provisions loaded',
-    'Life jackets counted — matches max POB',
-    'Safety equipment checked (flares, extinguisher, first aid)',
-    'Navigation charts / chartplotter programmed',
-    'Music / entertainment equipment working',
-    'Boat log completed — destination, POB, departure time',
-  ],
-  private: [
-    'Client brief completed and itinerary confirmed',
-    'Special requests loaded (catering, equipment etc.)',
-    'Fuel confirmed — full + reserve',
-    'Life jackets counted — matches max POB',
-    'Safety equipment checked',
-    'Boat log completed — destination, POB, departure time',
-  ],
-  surf: [
-    'Boards loaded — count and sizes per manifest',
-    'Rashguards / wetsuits per booking',
-    'Surf leashes checked',
-    'First aid kit on board',
-    'Water and snacks loaded',
-    'Reef booties if applicable',
-  ],
-  fishing: [
-    'Rods, reels, tackle loaded per booking',
-    'Bait and ice loaded',
-    'Life jackets — matches POB',
-    'Safety equipment checked',
-    'Fish finder / sounder operational',
-    'Cooler / fish box on board',
-    'Boat log completed — departure time, location planned',
-  ],
-};
 
 const DEPT_CHECKLISTS = {
   'Morning — Captain': [
@@ -3112,15 +2947,14 @@ const DEPT_CHECKLISTS = {
     'Student waivers and certs checked',
     'Gear manifest printed / confirmed',
     'Theory briefing materials ready',
-    'Pool / confined water set up if applicable',
     'Emergency procedures briefed to students',
   ],
   'End of Day — Deck': [
-    'All tanks rinsed with fresh water and stored vertically',
+    'All tanks rinsed with fresh water and stored',
     'BCDs rinsed and hung to dry',
     'Wetsuits rinsed and hung',
     'Regulators rinsed and bagged',
-    'Boat rinsed — salt water off all surfaces',
+    'Boat rinsed — salt off all surfaces',
     'Bilge checked',
     'Lines secured and fenders in place',
     'Log book completed and signed',
@@ -3130,27 +2964,32 @@ const DEPT_CHECKLISTS = {
     'Gear returns confirmed — nothing left on boat',
     'Lost and found checked',
     'Next day student list reviewed',
-    'Any equipment defects reported',
+    'Equipment defects reported',
   ],
 };
 
 // State
 let captainChecks = {};
 let instructorChecks = {};
-let snorkelChecks = {};
-let eqChecks = {};
-let blChecks = {};
 let currentChecklistTripId = null;
-let currentChecklistTripType = null;
+let currentUserRole = 'instructor';
 
-// ─── INIT CHECKLIST PAGE ───
+// ─── INIT ───
 async function initChecklists() {
+  // Get current user role
+  if (currentOrgId) {
+    const { data: s } = await sb.from('staff').select('role').eq('id', (await sb.auth.getUser()).data.user.id).single();
+    currentUserRole = s?.role || 'instructor';
+  }
+
+  // Show/hide captain tab based on role
+  const isLeader = ['owner','manager','captain'].includes(currentUserRole);
+  document.getElementById('cl-tab-captain').style.display = isLeader ? 'block' : 'none';
+  document.getElementById('cl-captain-overview').style.display = isLeader ? 'block' : 'none';
+
   await loadTodaysTripList();
-  initCaptainChecklist();
   initInstructorChecklist();
-  initSnorkelChecklist();
-  initEqChecklist();
-  renderBoatChecklist();
+  initCaptainChecklist();
   initDeptChecklists();
 }
 
@@ -3159,14 +2998,14 @@ async function loadTodaysTripList() {
   const today = formatDate(new Date());
   const { data: trips } = await sb
     .from('trips')
-    .select('id, trip_name, trip_time, trip_type, trip_type_id, trip_types(name, num_tanks, needs_tank_count), participants(id, gear)')
+    .select('id, trip_name, trip_time, trip_type, trip_types(name, num_tanks, needs_tank_count), participants(id, gear)')
     .eq('org_id', currentOrgId)
     .eq('trip_date', today)
     .order('trip_time');
 
   const list = document.getElementById('cl-trip-list');
   if (!trips || trips.length === 0) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">No trips today. Checklists are available to use independently below.</p>';
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">No trips today. You can still use checklists independently.</p>';
     return;
   }
 
@@ -3174,137 +3013,151 @@ async function loadTodaysTripList() {
     const name = t.trip_name || t.trip_types?.name || t.trip_type || 'Trip';
     const time = t.trip_time?.slice(0,5) || '';
     const guests = t.participants?.length || 0;
-    const tanks = t.trip_types?.needs_tank_count ? `${guests * (t.trip_types?.num_tanks||1)} tanks` : '';
-    return `<div class="cl-trip-pill ${currentChecklistTripId===t.id?'selected':''}" onclick="selectChecklistTrip('${t.id}','${t.trip_type||''}',${JSON.stringify(t.participants||[]).replace(/"/g,'&quot;')})">
-      <div style="font-weight:600;font-size:0.875rem;">${time} — ${name}</div>
-      <div style="font-size:0.75rem;color:var(--muted);">${guests} guests${tanks?' · '+tanks:''}</div>
+    const numTanks = t.trip_types?.num_tanks || 1;
+    const needsTanks = t.trip_types?.needs_tank_count;
+    const tanks = needsTanks ? `${guests * numTanks} tanks` : '';
+    return `<div class="cl-trip-pill ${currentChecklistTripId===t.id?'selected':''}"
+      onclick="selectChecklistTrip('${t.id}',${JSON.stringify(t.participants||[]).replace(/"/g,'&quot;')},${numTanks},${needsTanks?'true':'false'},'${name}','${time}')">
+      <div style="font-weight:600;font-size:0.875rem;">${time ? time+' — ' : ''}${name}</div>
+      <div style="font-size:0.75rem;color:var(--muted);">${guests} guest${guests!==1?'s':''}${tanks?' · '+tanks:''}</div>
     </div>`;
   }).join('');
 }
 
-function selectChecklistTrip(tripId, tripType, participants) {
+function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripName, tripTime) {
   currentChecklistTripId = tripId;
-  currentChecklistTripType = tripType;
 
-  // Calculate gear totals from participants
+  // Recalculate gear totals from participants
   const gearTotals = {};
   let totalTanks = 0;
   let totalWeight = 0;
+  const tankSizes = {};
+
   participants.forEach(p => {
     const g = typeof p.gear === 'string' ? JSON.parse(p.gear||'{}') : (p.gear||{});
+    if (needsTanks) totalTanks += numTanks;
     Object.entries(g).forEach(([k,v]) => {
       if (!v || v === 'Own gear' || v === 'None') return;
       if (k === 'weight_kg') { totalWeight += parseFloat(v)||0; return; }
-      if (k === 'tank_size') { totalTanks++; return; }
+      if (k === 'tank_size') { tankSizes[v] = (tankSizes[v]||0) + numTanks; return; }
       if (!gearTotals[k]) gearTotals[k] = {};
       gearTotals[k][v] = (gearTotals[k][v]||0) + 1;
     });
   });
 
-  // Show tank info in instructor panel
-  const tankInfo = document.getElementById('cl-tank-info');
-  if (tankInfo) {
-    const lines = [];
-    if (totalTanks > 0) lines.push(`<strong>${totalTanks} tanks</strong> needed`);
-    if (totalWeight > 0) lines.push(`<strong>${totalWeight} kg</strong> weights total`);
-    Object.entries(gearTotals).forEach(([key, sizes]) => {
-      const label = key.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-      const breakdown = Object.entries(sizes).map(([s,n]) => `${n}×${s}`).join(', ');
-      lines.push(`${label}: ${breakdown}`);
-    });
-    if (lines.length) {
-      tankInfo.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
-      tankInfo.style.display = 'block';
-    }
+  // Build gear summary
+  const lines = [];
+  if (totalTanks > 0) {
+    const tankBreakdown = Object.entries(tankSizes).map(([s,n])=>`${n}×${s}`).join(', ');
+    lines.push(`<strong>${totalTanks} tanks needed</strong>${tankBreakdown?' ('+tankBreakdown+')':''}`);
   }
-
-  // Show trip banner in panels
-  ['captain','instructor'].forEach(role => {
-    const banner = document.getElementById(`cl-${role}-banner`);
-    if (banner) {
-      banner.textContent = `Linked to trip: ${currentChecklistTripId ? 'loaded' : '—'}`;
-      banner.style.display = 'block';
-    }
+  if (totalWeight > 0) lines.push(`<strong>${totalWeight} kg weights</strong> total`);
+  Object.entries(gearTotals).forEach(([key, sizes]) => {
+    const label = key.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase());
+    const breakdown = Object.entries(sizes).map(([s,n])=>`${n}×${s}`).join(', ');
+    lines.push(`${label}: ${breakdown}`);
   });
 
+  const summaryCard = document.getElementById('cl-gear-summary-card');
+  const infoBox = document.getElementById('cl-tank-info');
+  if (lines.length) {
+    infoBox.innerHTML = lines.map(l=>`<div style="margin-bottom:4px;">${l}</div>`).join('');
+    summaryCard.style.display = 'block';
+  } else {
+    summaryCard.style.display = 'none';
+  }
+
   loadTodaysTripList();
+
+  // Load crew sign-off status for captain overview
+  if (['owner','manager','captain'].includes(currentUserRole)) {
+    loadCrewStatus(tripId);
+  }
 }
 
-// ─── RENDER HELPERS ───
-function renderItems(containerId, items, checks, onToggle) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  el.innerHTML = items.map((item, idx) => `
-    <div class="cl-item ${checks[item.id||idx]?'checked':''}" onclick="${onToggle}('${item.id||idx}')">
-      <div class="cl-checkbox">${checks[item.id||idx]?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>':''}</div>
-      <div class="cl-item-text">${item.text}</div>
+async function loadCrewStatus(tripId) {
+  const { data: signoffs } = await sb
+    .from('checklist_completions')
+    .select('role, signed_by, signed_at, completed_items, total_items')
+    .eq('trip_id', tripId);
+
+  const container = document.getElementById('cl-crew-status-list');
+  if (!signoffs || signoffs.length === 0) {
+    container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">No sign-offs yet for this trip.</p>';
+    return;
+  }
+  container.innerHTML = signoffs.map(s => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-weight:600;font-size:0.875rem;">${s.role.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase())}</div>
+        <div style="font-size:0.75rem;color:var(--muted);">Signed by ${s.signed_by} · ${new Date(s.signed_at).toLocaleTimeString()}</div>
+      </div>
+      <div class="cl-role-badge done">${s.completed_items}/${s.total_items} ✓</div>
     </div>`).join('');
-}
-
-function toggleCheck(checks, id, containerId, items, onToggle) {
-  checks[id] = !checks[id];
-  renderItems(containerId, items, checks, onToggle);
-  updateProgress(containerId, checks, items);
-}
-
-function updateProgress(containerId, checks, items) {
-  const done = items.filter(i => checks[i.id]).length;
-  const total = items.length;
-  const progressEl = document.getElementById(containerId.replace('items','progress'));
-  if (progressEl) progressEl.style.width = (done/total*100)+'%';
 }
 
 // ─── CAPTAIN ───
 function initCaptainChecklist() {
   captainChecks = {};
-  renderItems('cl-captain-items', CAPTAIN_ITEMS, captainChecks, 'toggleCaptain');
-  document.getElementById('cl-captain-done').style.display = 'none';
+  renderCheckItems('cl-captain-items', CAPTAIN_ITEMS, captainChecks, 'toggleCaptain', 'cl-captain-progress');
+  const done = document.getElementById('cl-captain-done');
+  if (done) done.style.display = 'none';
+  const status = document.getElementById('cl-captain-status');
+  if (status) { status.textContent = 'Pending'; status.classList.remove('done'); }
 }
-function toggleCaptain(id) { toggleCheck(captainChecks, id, 'cl-captain-items', CAPTAIN_ITEMS, 'toggleCaptain'); }
+
+function toggleCaptain(id) {
+  captainChecks[id] = !captainChecks[id];
+  renderCheckItems('cl-captain-items', CAPTAIN_ITEMS, captainChecks, 'toggleCaptain', 'cl-captain-progress');
+}
 
 async function captainSignOff() {
   const name = document.getElementById('cl-captain-name').value.trim();
   const boat = document.getElementById('cl-captain-boat').value.trim();
   const done = CAPTAIN_ITEMS.filter(i => captainChecks[i.id]).length;
   if (!name) { alert('Enter captain name to sign off.'); return; }
-  if (done < CAPTAIN_ITEMS.length) {
-    if (!confirm(`${CAPTAIN_ITEMS.length - done} items incomplete. Sign off anyway?`)) return;
-  }
+  if (done < CAPTAIN_ITEMS.length && !confirm(`${CAPTAIN_ITEMS.length - done} items incomplete. Sign off anyway?`)) return;
   const ts = new Date().toLocaleString();
   const doneBanner = document.getElementById('cl-captain-done');
   doneBanner.innerHTML = `✓ Signed off by <strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
   doneBanner.style.display = 'block';
-  // Save to Supabase
+  const status = document.getElementById('cl-captain-status');
+  if (status) { status.textContent = 'Complete ✓'; status.classList.add('done'); }
   if (currentOrgId) {
     await sb.from('checklist_completions').insert({
       org_id: currentOrgId, trip_id: currentChecklistTripId || null,
       role: 'captain', signed_by: name, boat_name: boat,
       completed_items: done, total_items: CAPTAIN_ITEMS.length,
       signed_at: new Date().toISOString()
-    }).select();
+    });
   }
 }
 
 // ─── INSTRUCTOR ───
 function initInstructorChecklist() {
   instructorChecks = {};
-  renderItems('cl-instructor-items', INSTRUCTOR_ITEMS, instructorChecks, 'toggleInstructor');
-  document.getElementById('cl-instructor-done').style.display = 'none';
-  document.getElementById('cl-tank-info').style.display = 'none';
+  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS, instructorChecks, 'toggleInstructor', null);
+  const done = document.getElementById('cl-instructor-done');
+  if (done) done.style.display = 'none';
+  const status = document.getElementById('cl-instructor-status');
+  if (status) { status.textContent = 'Pending'; status.classList.remove('done'); }
 }
-function toggleInstructor(id) { toggleCheck(instructorChecks, id, 'cl-instructor-items', INSTRUCTOR_ITEMS, 'toggleInstructor'); }
+
+function toggleInstructor(id) {
+  instructorChecks[id] = !instructorChecks[id];
+  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS, instructorChecks, 'toggleInstructor', null);
+}
 
 async function instructorSignOff() {
   const name = document.getElementById('cl-instructor-name').value.trim();
   const done = INSTRUCTOR_ITEMS.filter(i => instructorChecks[i.id]).length;
   if (!name) { alert('Enter your name to sign off.'); return; }
-  if (done < INSTRUCTOR_ITEMS.length) {
-    if (!confirm(`${INSTRUCTOR_ITEMS.length - done} items incomplete. Sign off anyway?`)) return;
-  }
+  if (done < INSTRUCTOR_ITEMS.length && !confirm(`${INSTRUCTOR_ITEMS.length - done} items incomplete. Sign off anyway?`)) return;
   const ts = new Date().toLocaleString();
-  const doneBanner = document.getElementById('cl-instructor-done');
-  doneBanner.innerHTML = `✓ Signed off by <strong>${name}</strong> at ${ts}`;
-  doneBanner.style.display = 'block';
+  document.getElementById('cl-instructor-done').innerHTML = `✓ Signed off by <strong>${name}</strong> at ${ts}`;
+  document.getElementById('cl-instructor-done').style.display = 'block';
+  const status = document.getElementById('cl-instructor-status');
+  if (status) { status.textContent = 'Complete ✓'; status.classList.add('done'); }
   if (currentOrgId) {
     await sb.from('checklist_completions').insert({
       org_id: currentOrgId, trip_id: currentChecklistTripId || null,
@@ -3312,122 +3165,35 @@ async function instructorSignOff() {
       completed_items: done, total_items: INSTRUCTOR_ITEMS.length,
       signed_at: new Date().toISOString()
     });
+    if (currentChecklistTripId && ['owner','manager','captain'].includes(currentUserRole)) {
+      await loadCrewStatus(currentChecklistTripId);
+    }
   }
 }
 
-// ─── SNORKEL ───
-function initSnorkelChecklist() {
-  snorkelChecks = {};
-  renderItems('cl-snorkel-items', SNORKEL_ITEMS, snorkelChecks, 'toggleSnorkel');
-  document.getElementById('cl-snorkel-done').style.display = 'none';
-}
-function toggleSnorkel(id) { toggleCheck(snorkelChecks, id, 'cl-snorkel-items', SNORKEL_ITEMS, 'toggleSnorkel'); }
-
-async function snorkelSignOff() {
-  const name = document.getElementById('cl-snorkel-name').value.trim();
-  const done = SNORKEL_ITEMS.filter(i => snorkelChecks[i.id]).length;
-  if (!name) { alert('Enter guide name to sign off.'); return; }
-  const ts = new Date().toLocaleString();
-  document.getElementById('cl-snorkel-done').innerHTML = `✓ Signed off by <strong>${name}</strong> at ${ts}`;
-  document.getElementById('cl-snorkel-done').style.display = 'block';
-  if (currentOrgId) {
-    await sb.from('checklist_completions').insert({
-      org_id: currentOrgId, trip_id: currentChecklistTripId || null,
-      role: 'snorkel_guide', signed_by: name,
-      completed_items: done, total_items: SNORKEL_ITEMS.length,
-      signed_at: new Date().toISOString()
-    });
-  }
-}
-
-// ─── EQUIPMENT CHECK ───
-function initEqChecklist() {
-  eqChecks = {};
-  renderItems('cl-eq-items', EQ_ITEMS, eqChecks, 'toggleEq');
-}
-function toggleEq(id) { toggleCheck(eqChecks, id, 'cl-eq-items', EQ_ITEMS, 'toggleEq'); }
-
-async function eqSignOff() {
-  const inspector = document.getElementById('cl-eq-inspector').value.trim();
-  const location = document.getElementById('cl-eq-location').value.trim();
-  const done = EQ_ITEMS.filter(i => eqChecks[i.id]).length;
-  if (!inspector) { alert('Enter inspector name.'); return; }
-  if (done < EQ_ITEMS.length) {
-    if (!confirm(`${EQ_ITEMS.length - done} items incomplete. Complete inspection anyway?`)) return;
-  }
-  const ts = new Date().toLocaleString();
-  alert(`✓ Equipment inspection signed off by ${inspector}${location?' at '+location:''} — ${ts}`);
-  if (currentOrgId) {
-    await sb.from('checklist_completions').insert({
-      org_id: currentOrgId, role: 'equipment_check',
-      signed_by: inspector, boat_name: location,
-      completed_items: done, total_items: EQ_ITEMS.length,
-      signed_at: new Date().toISOString()
-    });
-  }
-}
-
-// ─── BOAT LOADING ───
-function renderBoatChecklist() {
-  const typeKey = document.getElementById('bl-trip-type').value;
-  const items = BOAT_LOADING_ITEMS[typeKey] || BOAT_LOADING_ITEMS.dive2;
-  blChecks = {};
-
-  const container = document.getElementById('bl-items');
-  container.innerHTML = items.map((text, i) => `
-    <div class="cl-item" id="bl-item-${i}" onclick="toggleBL(${i}, ${items.length})">
-      <div class="cl-checkbox"></div>
-      <div class="cl-item-text">${text}</div>
+// ─── SHARED RENDER ───
+function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const done = items.filter(i => checks[i.id]).length;
+  el.innerHTML = items.map(item => `
+    <div class="cl-item ${checks[item.id]?'checked':''}" onclick="${toggleFn}('${item.id}')">
+      <div class="cl-checkbox">${checks[item.id]?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>':''}</div>
+      <div class="cl-item-text">${item.text}</div>
     </div>`).join('');
-
-  document.getElementById('bl-check-count').textContent = `0 / ${items.length}`;
-  document.getElementById('bl-progress-fill').style.width = '0%';
-  document.getElementById('bl-done-banner').style.display = 'none';
-}
-
-function toggleBL(idx, total) {
-  blChecks[idx] = !blChecks[idx];
-  const item = document.getElementById(`bl-item-${idx}`);
-  item.classList.toggle('checked', blChecks[idx]);
-  item.querySelector('.cl-checkbox').innerHTML = blChecks[idx]
-    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>'
-    : '';
-  const done = Object.values(blChecks).filter(Boolean).length;
-  document.getElementById('bl-check-count').textContent = `${done} / ${total}`;
-  document.getElementById('bl-progress-fill').style.width = (done/total*100)+'%';
-}
-
-async function blSignOff() {
-  const name = document.getElementById('bl-signoff-name').value.trim();
-  const boat = document.getElementById('bl-boat-name').value.trim();
-  if (!name) { alert('Enter your name to sign off.'); return; }
-  const ts = new Date().toLocaleString();
-  const banner = document.getElementById('bl-done-banner');
-  banner.innerHTML = `✓ Boat loading signed off by <strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
-  banner.style.display = 'block';
-  if (currentOrgId) {
-    const typeKey = document.getElementById('bl-trip-type').value;
-    const items = BOAT_LOADING_ITEMS[typeKey] || [];
-    const done = Object.values(blChecks).filter(Boolean).length;
-    await sb.from('checklist_completions').insert({
-      org_id: currentOrgId, trip_id: currentChecklistTripId || null,
-      role: 'boat_loading', signed_by: name, boat_name: boat,
-      completed_items: done, total_items: items.length,
-      signed_at: new Date().toISOString()
-    });
+  if (progressId) {
+    const prog = document.getElementById(progressId);
+    if (prog) prog.style.width = (done/items.length*100)+'%';
   }
 }
 
 // ─── DEPARTMENT ───
 function initDeptChecklists() {
   const tabRow = document.getElementById('dept-tabs');
-  const list = document.getElementById('dept-list');
   const deptNames = Object.keys(DEPT_CHECKLISTS);
-
   tabRow.innerHTML = deptNames.map((name, i) =>
     `<div class="cl-role-tab ${i===0?'active':''}" onclick="filterDeptList('${name}',this)">${name}</div>`
   ).join('');
-
   renderDeptList(deptNames[0]);
 }
 
@@ -3440,21 +3206,20 @@ function filterDeptList(name, el) {
 function renderDeptList(name) {
   const items = DEPT_CHECKLISTS[name] || [];
   const checks = {};
-  const list = document.getElementById('dept-list');
-  list.innerHTML = `
+  document.getElementById('dept-list').innerHTML = `
     <div style="margin-top:16px;">
       ${items.map((text, i) => `
-        <div class="cl-item" id="dept-item-${i}" onclick="toggleDept(${i}, '${name}')">
+        <div class="cl-item" id="dept-item-${i}" onclick="toggleDept(${i})">
           <div class="cl-checkbox"></div>
           <div class="cl-item-text">${text}</div>
         </div>`).join('')}
       <div class="settings-actions" style="margin-top:16px;">
-        <button class="btn-cancel" onclick="resetDept('${name}')">Reset</button>
+        <button class="btn-cancel" onclick="renderDeptList('${name}')">Reset</button>
       </div>
     </div>`;
 }
 
-function toggleDept(idx, name) {
+function toggleDept(idx) {
   const item = document.getElementById(`dept-item-${idx}`);
   const checked = item.classList.toggle('checked');
   item.querySelector('.cl-checkbox').innerHTML = checked
@@ -3462,20 +3227,11 @@ function toggleDept(idx, name) {
     : '';
 }
 
-function resetDept(name) { renderDeptList(name); }
-
-// ─── NAV FUNCTIONS ───
+// ─── NAV ───
 function showChecklistView(view, el) {
   document.querySelectorAll('.cl-view').forEach(v => v.style.display = 'none');
   document.querySelectorAll('.cl-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('cl-' + view).style.display = 'block';
-  el.classList.add('active');
-}
-
-function showChecklistPanel(panel, el) {
-  document.querySelectorAll('.cl-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.cl-role-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('cl-panel-' + panel).classList.add('active');
   el.classList.add('active');
 }
 
