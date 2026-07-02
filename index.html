@@ -1305,7 +1305,13 @@ body { background: var(--navy); color: var(--text); }
           <button class="btn-save" id="btn-show-add-boat">+ Add boat</button>
         </div>
 
-        <!-- Add boat form -->
+         
+        <div class="cl-tab-row">
+          <div class="cl-tab active" onclick="showFleetView('boats',this)">Boats</div>
+          <div class="cl-tab" onclick="showFleetView('engines',this)">Engine Hours</div>
+        </div>
+
+        <div id="fleet-boats-view" class="cl-view">
         <div class="inline-form" id="form-add-boat" style="display:none;margin-bottom:20px;">
           <div class="card-section-title">New boat</div>
           <div class="sf-row">
@@ -1372,6 +1378,32 @@ body { background: var(--navy); color: var(--text); }
 
         <!-- Boats list -->
         <div id="fleet-list"></div>
+        </div>
+
+        <div id="fleet-engines-view" class="cl-view" style="display:none;">
+          <div class="inline-form" style="margin-bottom:20px;">
+            <div class="card-section-title">Add Engine / Motor</div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Boat</label>
+                <select class="sf-input" id="engine-boat"></select>
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Engine name</label>
+                <input class="sf-input" type="text" id="engine-name" placeholder="e.g. Main Engine, Port Engine">
+              </div>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Service interval (hours)</label>
+              <input class="sf-input" type="number" id="engine-interval" placeholder="e.g. 100" min="1">
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-engine">Add Engine</button>
+              <span class="save-feedback" id="engine-save-feedback"></span>
+            </div>
+          </div>
+          <div id="engines-list"></div>
+        </div>
       </div>
 
       <!-- CREW -->
@@ -1545,29 +1577,55 @@ body { background: var(--navy); color: var(--text); }
         </div>
       </div>
 
-      <!-- GEAR -->
+    <!-- GEAR -->
       <div class="page" id="page-gear">
         <div class="page-header">
           <h1>Gear & Equipment</h1>
           <p>Inventory and lifecycle tracking</p>
         </div>
-        <div class="coming-soon">
-          <div class="icon">🤿</div>
-          <h3>Gear tracking coming soon</h3>
-          <p>Full inventory with repair workflow and service history.</p>
-        </div>
-      </div>
 
-      <!-- WAIVERS -->
-      <div class="page" id="page-waivers">
-        <div class="page-header">
-          <h1>Waivers</h1>
-          <p>Digital signatures and medical forms</p>
+        <div class="cl-tab-row">
+          <div class="cl-tab active" onclick="showGearView('compressors',this)">Compressors</div>
+          <div class="cl-tab" onclick="showGearView('inventory',this)">Inventory</div>
         </div>
-        <div class="coming-soon">
-          <div class="icon">✍</div>
-          <h3>Waivers coming soon</h3>
-          <p>Digital signature capture with timestamp and PDF export.</p>
+
+        <div id="gear-compressors-view" class="cl-view">
+          <div class="inline-form" style="margin-bottom:20px;">
+            <div class="card-section-title">Add Compressor</div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Location</label>
+                <select class="sf-input" id="compressor-location"></select>
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Assign to boat (optional)</label>
+                <select class="sf-input" id="compressor-boat"><option value="">— Shop-based, no boat —</option></select>
+              </div>
+            </div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Compressor name</label>
+                <input class="sf-input" type="text" id="compressor-name" placeholder="e.g. Bauer 1">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Filter lifespan (hours)</label>
+                <input class="sf-input" type="number" id="compressor-interval" placeholder="e.g. 50" min="1">
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-compressor">Add Compressor</button>
+              <span class="save-feedback" id="compressor-save-feedback"></span>
+            </div>
+          </div>
+          <div id="compressors-list"></div>
+        </div>
+
+        <div id="gear-inventory-view" class="cl-view" style="display:none;">
+          <div class="coming-soon">
+            <div class="icon">🤿</div>
+            <h3>Full inventory tracking coming soon</h3>
+            <p>Tanks, BCDs, regulators and more — repair workflow and monthly inspection log.</p>
+          </div>
         </div>
       </div>
 
@@ -1786,6 +1844,7 @@ function showPage(id) {
   document.getElementById('sidebar').classList.remove('open');
   if (id === 'checklists') initChecklists();
   if (id === 'fleet') loadFleet();
+  if (id === 'gear') loadCompressors();
   if (id === 'crew') loadCrew();
 }
 
@@ -3555,6 +3614,271 @@ async function deleteBoat(id) {
   await loadFleet();
 }
 // ─── END FLEET ───
+
+// ─── ENGINE HOURS ───
+function showFleetView(view, el) {
+  document.querySelectorAll('#page-fleet .cl-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('#page-fleet .cl-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('fleet-' + view + '-view').style.display = 'block';
+  el.classList.add('active');
+  document.getElementById('btn-show-add-boat').style.display = view === 'boats' ? 'inline-block' : 'none';
+  if (view === 'engines') loadEngines();
+}
+
+async function populateEngineBoatSelect(selectedId) {
+  if (!currentOrgId) return;
+  const { data: boats } = await sb.from('boats').select('id,name').eq('org_id', currentOrgId).eq('active', true);
+  const sel = document.getElementById('engine-boat');
+  sel.innerHTML = (boats || []).map(b => `<option value="${b.id}" ${b.id===selectedId?'selected':''}>${b.name}</option>`).join('') || '<option value="">No boats yet</option>';
+}
+
+document.getElementById('btn-save-engine').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-engine');
+  const feedback = document.getElementById('engine-save-feedback');
+  const boatId = document.getElementById('engine-boat').value;
+  const name = document.getElementById('engine-name').value.trim();
+  const interval = document.getElementById('engine-interval').value;
+  if (!boatId || !name || !interval) {
+    feedback.textContent = 'Boat, name and service interval are required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { error } = await sb.from('engines').insert({
+    org_id: currentOrgId, boat_id: boatId, name,
+    service_interval_hours: parseFloat(interval), current_hours: 0
+  });
+  btn.disabled = false; btn.textContent = 'Add Engine';
+  if (error) {
+    feedback.textContent = 'Error saving.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  document.getElementById('engine-name').value = '';
+  document.getElementById('engine-interval').value = '';
+  feedback.className = 'save-feedback';
+  await loadEngines();
+});
+
+async function loadEngines() {
+  if (!currentOrgId) return;
+  await populateEngineBoatSelect();
+  const { data: engines } = await sb.from('engines').select('*, boats(name)').eq('org_id', currentOrgId).order('created_at');
+  const list = document.getElementById('engines-list');
+  if (!engines || !engines.length) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No engines tracked yet. Add one above.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  for (const e of engines) {
+    const { data: logs } = await sb.from('engine_hour_logs').select('*').eq('engine_id', e.id).order('logged_at', {ascending:false}).limit(5);
+    list.innerHTML += renderEngineCard(e, logs || []);
+  }
+}
+
+function renderEngineCard(e, logs) {
+  const pct = Math.min(100, (e.current_hours / e.service_interval_hours) * 100);
+  const remaining = Math.max(0, e.service_interval_hours - e.current_hours).toFixed(1);
+  const warn = remaining <= 10;
+  return `
+  <div class="card" id="engine-card-${e.id}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h2>${e.boats?.name || 'Unknown boat'} — ${e.name}</h2>
+        <p>Total hours: ${e.current_hours}h</p>
+      </div>
+      <button class="btn-icon danger" onclick="deleteEngine('${e.id}')">Remove</button>
+    </div>
+    <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
+    <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
+      ${e.current_hours}h / ${e.service_interval_hours}h since service — ${remaining}h remaining
+    </p>
+    <div class="card-section-title">Log Hours</div>
+    <div class="sf-row">
+      <input class="sf-input" type="text" id="engine-logby-${e.id}" placeholder="Logged by">
+      <input class="sf-input" type="number" id="engine-hoursrun-${e.id}" placeholder="Hours run (e.g. 2.5)" step="0.1">
+    </div>
+    <div class="settings-actions">
+      <button class="btn-save" onclick="logEngineHours('${e.id}')">Log Hours</button>
+      <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">Service Completed — Reset Counter</button>
+    </div>
+    <div class="card-section-title" style="margin-top:16px;">Recent Logs</div>
+    ${logs.length ? logs.map(l => `<div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);padding:4px 0;">
+      <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?' · <strong style="color:var(--success)">Serviced</strong>':''}</span>
+      <span>${l.event_type==='service' ? '' : l.hours_run+'h'}</span>
+    </div>`).join('') : '<p style="font-size:0.8rem;color:var(--muted)">No logs yet.</p>'}
+  </div>`;
+}
+
+async function logEngineHours(id) {
+  const loggedBy = document.getElementById(`engine-logby-${id}`).value.trim();
+  const hours = parseFloat(document.getElementById(`engine-hoursrun-${id}`).value);
+  if (!loggedBy || !hours) { alert('Enter who logged and hours run.'); return; }
+  const { data: engine } = await sb.from('engines').select('current_hours').eq('id', id).single();
+  await sb.from('engines').update({ current_hours: (engine.current_hours || 0) + hours }).eq('id', id);
+  await sb.from('engine_hour_logs').insert({ engine_id: id, logged_by: loggedBy, hours_run: hours, event_type: 'log' });
+  await loadEngines();
+}
+
+async function resetEngine(id) {
+  if (!confirm('Log this as a completed service and reset the hour counter to zero?')) return;
+  const loggedBy = document.getElementById(`engine-logby-${id}`)?.value.trim() || prompt('Who completed the service?');
+  if (!loggedBy) return;
+  await sb.from('engines').update({ current_hours: 0 }).eq('id', id);
+  await sb.from('engine_hour_logs').insert({ engine_id: id, logged_by: loggedBy, hours_run: 0, event_type: 'service' });
+  await loadEngines();
+}
+
+async function deleteEngine(id) {
+  if (!confirm('Remove this engine and its history?')) return;
+  await sb.from('engine_hour_logs').delete().eq('engine_id', id);
+  await sb.from('engines').delete().eq('id', id);
+  await loadEngines();
+}
+// ─── END ENGINE HOURS ───
+
+
+// ─── COMPRESSORS ───
+function showGearView(view, el) {
+  document.querySelectorAll('#page-gear .cl-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('#page-gear .cl-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('gear-' + view + '-view').style.display = 'block';
+  el.classList.add('active');
+  if (view === 'compressors') loadCompressors();
+}
+
+async function populateCompressorSelects(selectedLoc, selectedBoat) {
+  if (!currentOrgId) return;
+  const { data: locs } = await sb.from('locations').select('id,name').eq('org_id', currentOrgId);
+  const { data: boats } = await sb.from('boats').select('id,name').eq('org_id', currentOrgId).eq('active', true);
+  const locSel = document.getElementById('compressor-location');
+  locSel.innerHTML = (locs || []).map(l => `<option value="${l.id}" ${l.id===selectedLoc?'selected':''}>${l.name}</option>`).join('') || '<option value="">No locations — add in Settings</option>';
+  const boatSel = document.getElementById('compressor-boat');
+  boatSel.innerHTML = '<option value="">— Shop-based, no boat —</option>' + (boats || []).map(b => `<option value="${b.id}" ${b.id===selectedBoat?'selected':''}>${b.name}</option>`).join('');
+}
+
+document.getElementById('btn-save-compressor').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-compressor');
+  const feedback = document.getElementById('compressor-save-feedback');
+  const locationId = document.getElementById('compressor-location').value;
+  const boatId = document.getElementById('compressor-boat').value;
+  const name = document.getElementById('compressor-name').value.trim();
+  const interval = document.getElementById('compressor-interval').value;
+  if (!locationId || !name || !interval) {
+    feedback.textContent = 'Location, name and filter lifespan are required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { error } = await sb.from('compressors').insert({
+    org_id: currentOrgId, location_id: locationId, boat_id: boatId || null, name,
+    filter_interval_hours: parseFloat(interval), current_hours: 0
+  });
+  btn.disabled = false; btn.textContent = 'Add Compressor';
+  if (error) {
+    feedback.textContent = 'Error saving.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  document.getElementById('compressor-name').value = '';
+  document.getElementById('compressor-interval').value = '';
+  feedback.className = 'save-feedback';
+  await loadCompressors();
+});
+
+async function loadCompressors() {
+  if (!currentOrgId) return;
+  await populateCompressorSelects();
+  const { data: compressors } = await sb.from('compressors').select('*, locations(name), boats(name)').eq('org_id', currentOrgId).order('created_at');
+  const list = document.getElementById('compressors-list');
+  if (!compressors || !compressors.length) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No compressors tracked yet. Add one above.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  for (const c of compressors) {
+    const { data: logs } = await sb.from('compressor_fill_logs').select('*').eq('compressor_id', c.id).order('logged_at', {ascending:false}).limit(5);
+    list.innerHTML += renderCompressorCard(c, logs || []);
+  }
+}
+
+function renderCompressorCard(c, logs) {
+  const pct = Math.min(100, (c.current_hours / c.filter_interval_hours) * 100);
+  const remaining = Math.max(0, c.filter_interval_hours - c.current_hours).toFixed(1);
+  const warn = remaining <= 10;
+  return `
+  <div class="card" id="compressor-card-${c.id}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h2>${c.name}</h2>
+        <p>${c.locations?.name || 'No location'}${c.boats?.name ? ' · ' + c.boats.name : ' · Shop-based'}</p>
+      </div>
+      <button class="btn-icon danger" onclick="deleteCompressor('${c.id}')">Remove</button>
+    </div>
+    ${warn ? `<div class="warning-banner caution" style="margin-top:12px;">Filter change due soon — ${remaining}h remaining. Plan it in.</div>` : ''}
+    <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
+    <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
+      ${c.current_hours}h / ${c.filter_interval_hours}h used — ${remaining}h remaining
+    </p>
+    <div class="card-section-title">Log a Fill</div>
+    <input class="sf-input" type="text" id="comp-logby-${c.id}" placeholder="Who filled">
+    <div class="sf-row" style="margin-top:8px;">
+      <div class="sf-group">
+        <label class="sf-label">Start time</label>
+        <input class="sf-input" type="time" id="comp-start-${c.id}">
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Stop time</label>
+        <input class="sf-input" type="time" id="comp-stop-${c.id}">
+      </div>
+    </div>
+    <div class="settings-actions">
+      <button class="btn-save" onclick="logCompressorFill('${c.id}')">Log Fill</button>
+      <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetCompressor('${c.id}')">Filter Replaced — Reset Counter</button>
+    </div>
+    <div class="card-section-title" style="margin-top:16px;">Recent Activity</div>
+    ${logs.length ? logs.map(l => `<div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);padding:4px 0;">
+      <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?' · <strong style="color:var(--success)">Filter replaced</strong>':''}</span>
+      <span>${l.event_type==='service' ? '' : (l.start_time && l.stop_time ? l.start_time+'-'+l.stop_time+' ('+l.hours_run+'h)' : l.hours_run+'h')}</span>
+    </div>`).join('') : '<p style="font-size:0.8rem;color:var(--muted)">No activity yet.</p>'}
+  </div>`;
+}
+
+function timeDiffHours(start, stop) {
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = stop.split(':').map(Number);
+  return Math.max(0, ((eh*60+em) - (sh*60+sm)) / 60);
+}
+
+async function logCompressorFill(id) {
+  const loggedBy = document.getElementById(`comp-logby-${id}`).value.trim();
+  const start = document.getElementById(`comp-start-${id}`).value;
+  const stop = document.getElementById(`comp-stop-${id}`).value;
+  if (!loggedBy || !start || !stop) { alert('Enter who filled, start time and stop time.'); return; }
+  const hours = timeDiffHours(start, stop);
+  if (hours <= 0) { alert('Stop time must be after start time.'); return; }
+  const { data: comp } = await sb.from('compressors').select('current_hours').eq('id', id).single();
+  await sb.from('compressors').update({ current_hours: (comp.current_hours || 0) + hours }).eq('id', id);
+  await sb.from('compressor_fill_logs').insert({ compressor_id: id, logged_by: loggedBy, start_time: start, stop_time: stop, hours_run: hours, event_type: 'fill' });
+  await loadCompressors();
+}
+
+async function resetCompressor(id) {
+  if (!confirm('Log this as a completed filter change and reset the hour counter to zero?')) return;
+  const loggedBy = document.getElementById(`comp-logby-${id}`)?.value.trim() || prompt('Who replaced the filter?');
+  if (!loggedBy) return;
+  await sb.from('compressors').update({ current_hours: 0 }).eq('id', id);
+  await sb.from('compressor_fill_logs').insert({ compressor_id: id, logged_by: loggedBy, hours_run: 0, event_type: 'service' });
+  await loadCompressors();
+}
+
+async function deleteCompressor(id) {
+  if (!confirm('Remove this compressor and its history?')) return;
+  await sb.from('compressor_fill_logs').delete().eq('compressor_id', id);
+  await sb.from('compressors').delete().eq('id', id);
+  await loadCompressors();
+}
+// ─── END COMPRESSORS ───
 
 // ─── OPERATION CATEGORIES & TRIP TYPE SEEDING ───
 
