@@ -22,7 +22,31 @@
   --success:#2f855a;
   --white:  #ffffff;
   --border: rgba(26,107,138,0.2);
+  --warning: #c2760c;
 }
+
+.gear-item-row { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.gear-item-row:last-child { border-bottom: none; }
+.gear-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.gear-item-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+.gear-item-unit { font-size: 0.75rem; color: var(--muted); }
+.gear-size-box { background: var(--foam); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 90px; }
+.gear-size-label { font-size: 0.7rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.gear-stock-value { font-weight: 700; color: var(--success); }
+.gear-stock-value.repair { color: var(--warning); }
+.gear-stock-value-lg { font-weight: 700; font-size: 1.1rem; color: var(--success); }
+.gear-stock-value-lg.repair { color: var(--warning); }
+.gear-stock-label { font-size: 0.8rem; color: var(--muted); }
+.gear-action-btn { font-size: 0.6rem; padding: 3px 6px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.gear-action-btn.add { background: rgba(47,133,90,0.12); color: var(--success); }
+.gear-action-btn.repair { background: rgba(194,118,12,0.12); color: var(--warning); }
+.gear-action-btn.return { background: rgba(79,195,247,0.12); color: var(--teal); }
+.gear-action-btn.discard { background: rgba(229,62,62,0.12); color: var(--error); }
+.gear-action-btn-lg { font-size: 0.75rem; padding: 5px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.gear-action-btn-lg.add { background: rgba(47,133,90,0.12); color: var(--success); }
+.gear-action-btn-lg.repair { background: rgba(194,118,12,0.12); color: var(--warning); }
+.gear-action-btn-lg.return { background: rgba(79,195,247,0.12); color: var(--teal); }
+.gear-action-btn-lg.discard { background: rgba(229,62,62,0.12); color: var(--error); }
 
 html, body { height: 100%; font-family: 'Inter', sans-serif; }
 body { background: var(--navy); color: var(--text); }
@@ -958,6 +982,9 @@ body { background: var(--navy); color: var(--text); }
       <p id="confirm-modal-message" style="font-size:0.95rem;color:var(--text);line-height:1.5;margin-bottom:16px;"></p>
       <div id="confirm-modal-input-wrap" style="display:none;margin-bottom:16px;">
         <input class="sf-input" type="text" id="confirm-modal-input" placeholder="">
+      </div>
+      <div id="confirm-modal-input2-wrap" style="display:none;margin-bottom:16px;">
+        <input class="sf-input" type="text" id="confirm-modal-input2" placeholder="">
       </div>
       <div class="settings-actions" style="justify-content:flex-end;">
         <button class="btn-cancel" id="confirm-modal-cancel">Cancel</button>
@@ -4104,6 +4131,7 @@ function showConfirmModal(message, options = {}) {
     _modalResolve = resolve;
     document.getElementById('confirm-modal-message').textContent = message;
     document.getElementById('confirm-modal-input-wrap').style.display = 'none';
+    document.getElementById('confirm-modal-input2-wrap').style.display = 'none';
     const okBtn = document.getElementById('confirm-modal-ok');
     okBtn.textContent = options.okText || 'Confirm';
     okBtn.style.background = options.danger ? 'var(--error)' : '';
