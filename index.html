@@ -1631,7 +1631,10 @@ body { background: var(--navy); color: var(--text); }
         </div>
 
         <div id="gear-compressors-view" class="cl-view">
-          <div class="inline-form" style="margin-bottom:20px;">
+          <div style="margin-bottom:20px;">
+            <button class="btn-save" id="btn-show-add-compressor">+ Add Compressor</button>
+          </div>
+          <div class="inline-form" id="form-add-compressor" style="display:none;margin-bottom:20px;">
             <div class="card-section-title">Add Compressor</div>
             <div class="sf-row">
               <div class="sf-group">
@@ -3575,6 +3578,11 @@ async function populateBoatLocations() {
     : '<option value="">No locations — add one in Settings</option>';
 }
 
+document.getElementById('btn-show-add-compressor').addEventListener('click', () => {
+  document.getElementById('form-add-compressor').style.display = 'block';
+  document.getElementById('btn-show-add-compressor').style.display = 'none';
+});
+
 document.getElementById('btn-show-add-boat').addEventListener('click', () => {
   document.getElementById('form-add-boat').style.display = 'block';
   document.getElementById('btn-show-add-boat').style.display = 'none';
@@ -3824,6 +3832,8 @@ document.getElementById('btn-save-compressor').addEventListener('click', async (
   document.getElementById('compressor-name').value = '';
   document.getElementById('compressor-interval').value = '';
   feedback.className = 'save-feedback';
+  document.getElementById('form-add-compressor').style.display = 'none';
+  document.getElementById('btn-show-add-compressor').style.display = 'inline-block';
   await loadCompressors();
 });
 
@@ -4169,9 +4179,14 @@ document.getElementById('confirm-modal-cancel').addEventListener('click', () => 
 
 document.getElementById('confirm-modal-ok').addEventListener('click', () => {
   const isPrompt = document.getElementById('confirm-modal-input-wrap').style.display === 'block';
+  const isTwoField = document.getElementById('confirm-modal-input2-wrap').style.display === 'block';
   document.getElementById('modal-confirm').style.display = 'none';
   if (_modalResolve) {
-    if (isPrompt) {
+    if (isTwoField) {
+      const val1 = document.getElementById('confirm-modal-input').value.trim();
+      const val2 = document.getElementById('confirm-modal-input2').value.trim();
+      _modalResolve((val1 && val2) ? { field1: val1, field2: val2 } : null);
+    } else if (isPrompt) {
       const val = document.getElementById('confirm-modal-input').value.trim();
       _modalResolve(val || null);
     } else {
