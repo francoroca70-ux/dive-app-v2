@@ -1422,7 +1422,10 @@ body { background: var(--navy); color: var(--text); }
         </div>
 
         <div id="fleet-engines-view" class="cl-view" style="display:none;">
-          <div class="inline-form" style="margin-bottom:20px;">
+          <div style="margin-bottom:20px;">
+            <button class="btn-save" id="btn-show-add-engine">+ Add Engine</button>
+          </div>
+          <div class="inline-form" id="form-add-engine" style="display:none;margin-bottom:20px;">
             <div class="card-section-title">Add Engine / Motor</div>
             <div class="sf-row">
               <div class="sf-group">
@@ -3578,6 +3581,11 @@ async function populateBoatLocations() {
     : '<option value="">No locations — add one in Settings</option>';
 }
 
+document.getElementById('btn-show-add-engine').addEventListener('click', () => {
+  document.getElementById('form-add-engine').style.display = 'block';
+  document.getElementById('btn-show-add-engine').style.display = 'none';
+});
+
 document.getElementById('btn-show-add-compressor').addEventListener('click', () => {
   document.getElementById('form-add-compressor').style.display = 'block';
   document.getElementById('btn-show-add-compressor').style.display = 'none';
@@ -3706,6 +3714,8 @@ document.getElementById('btn-save-engine').addEventListener('click', async () =>
   document.getElementById('engine-name').value = '';
   document.getElementById('engine-interval').value = '';
   feedback.className = 'save-feedback';
+  document.getElementById('form-add-engine').style.display = 'none';
+  document.getElementById('btn-show-add-engine').style.display = 'inline-block';
   await loadEngines();
 });
 
