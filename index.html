@@ -2224,7 +2224,7 @@ document.getElementById('btn-save-location').addEventListener('click', async () 
 
 // Delete location
 async function deleteLocation(id) {
-  if (!confirm('Remove this location?')) return;
+  if (!(await showConfirmModal('Remove this location?'))) return;
   await sb.from('locations').delete().eq('id', id);
   await loadLocations();
 }
@@ -2604,7 +2604,7 @@ document.getElementById('btn-new-trip').addEventListener('click', openNewTrip);
 
 document.getElementById('btn-delete-trip').addEventListener('click', async () => {
   if (!currentTripId) return;
-  if (!confirm('Delete this trip? This cannot be undone.')) return;
+   if (!(await showConfirmModal('Delete this trip? This cannot be undone.', { danger: true }))) return;
   await sb.from('participants').delete().eq('trip_id', currentTripId);
   await sb.from('trip_crew').delete().eq('trip_id', currentTripId);
   await sb.from('trips').delete().eq('id', currentTripId);
@@ -2947,7 +2947,7 @@ document.getElementById('btn-save-participant').addEventListener('click', async 
 });
 
 async function removeParticipant(id) {
-  if (!confirm('Remove this guest?')) return;
+   if (!(await showConfirmModal('Remove this guest?'))) return;
   await sb.from('participants').delete().eq('id', id);
   await loadParticipants(currentTripId);
 }
@@ -3174,8 +3174,8 @@ async function captainSignOff() {
   const name = document.getElementById('cl-captain-name').value.trim();
   const boat = document.getElementById('cl-captain-boat').value.trim();
   const done = CAPTAIN_ITEMS.filter(i => captainChecks[i.id]).length;
-  if (!name) { alert('Enter captain name to sign off.'); return; }
-  if (done < CAPTAIN_ITEMS.length && !confirm(`${CAPTAIN_ITEMS.length - done} items incomplete. Sign off anyway?`)) return;
+  if (!name) { await showAlertModal('Enter captain name to sign off.'); return; }
+  if (done < CAPTAIN_ITEMS.length && !(await showConfirmModal(`${CAPTAIN_ITEMS.length - done} items incomplete. Sign off anyway?`))) return;
   const ts = new Date().toLocaleString();
   const doneBanner = document.getElementById('cl-captain-done');
   doneBanner.innerHTML = `✓ Signed off by <strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
@@ -3210,8 +3210,8 @@ function toggleInstructor(id) {
 async function instructorSignOff() {
   const name = document.getElementById('cl-instructor-name').value.trim();
   const done = INSTRUCTOR_ITEMS.filter(i => instructorChecks[i.id]).length;
-  if (!name) { alert('Enter your name to sign off.'); return; }
-  if (done < INSTRUCTOR_ITEMS.length && !confirm(`${INSTRUCTOR_ITEMS.length - done} items incomplete. Sign off anyway?`)) return;
+  if (!name) { await showAlertModal('Enter your name to sign off.'); return; }
+  if (done < INSTRUCTOR_ITEMS.length && !(await showConfirmModal(`${INSTRUCTOR_ITEMS.length - done} items incomplete. Sign off anyway?`))) return;
   const ts = new Date().toLocaleString();
   document.getElementById('cl-instructor-done').innerHTML = `✓ Signed off by <strong>${name}</strong> at ${ts}`;
   document.getElementById('cl-instructor-done').style.display = 'block';
@@ -3467,14 +3467,14 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
 });
 
 async function removeStaff(id, name) {
-  if (!confirm(`Remove ${name} from your crew?`)) return;
+  if (!(await showConfirmModal(`Remove ${name} from your crew?`))) return;
   await sb.from('staff_locations').delete().eq('staff_id', id);
   await sb.from('staff').delete().eq('id', id);
   await loadCrew();
 }
 
 async function cancelInvite(id) {
-  if (!confirm('Cancel this invite?')) return;
+  if (!(await showConfirmModal('Cancel this invite?'))) return;
   await sb.from('invites').delete().eq('id', id);
   await loadPendingInvites();
 }
@@ -3609,7 +3609,7 @@ async function toggleBoat(id, currentActive) {
 }
 
 async function deleteBoat(id) {
-  if (!confirm('Remove this boat from the fleet?')) return;
+  if (!(await showConfirmModal('Remove this boat from the fleet?'))) return;
   await sb.from('boats').delete().eq('id', id);
   await loadFleet();
 }
@@ -3713,7 +3713,7 @@ function renderEngineCard(e, logs) {
 async function logEngineHours(id) {
   const loggedBy = document.getElementById(`engine-logby-${id}`).value.trim();
   const hours = parseFloat(document.getElementById(`engine-hoursrun-${id}`).value);
-  if (!loggedBy || !hours) { alert('Enter who logged and hours run.'); return; }
+ if (!loggedBy || !hours) { await showAlertModal('Enter who logged and hours run.'); return; }
   const { data: engine } = await sb.from('engines').select('current_hours').eq('id', id).single();
   await sb.from('engines').update({ current_hours: (engine.current_hours || 0) + hours }).eq('id', id);
   await sb.from('engine_hour_logs').insert({ engine_id: id, logged_by: loggedBy, hours_run: hours, event_type: 'log' });
@@ -3721,8 +3721,8 @@ async function logEngineHours(id) {
 }
 
 async function resetEngine(id) {
-  if (!confirm('Log this as a completed service and reset the hour counter to zero?')) return;
-  const loggedBy = document.getElementById(`engine-logby-${id}`)?.value.trim() || prompt('Who completed the service?');
+  if (!(await showConfirmModal('Log this as a completed service and reset the hour counter to zero?'))) return;
+  const loggedBy = document.getElementById(`engine-logby-${id}`)?.value.trim() || await showPromptModal('Who completed the service?', 'Your name');
   if (!loggedBy) return;
   await sb.from('engines').update({ current_hours: 0 }).eq('id', id);
   await sb.from('engine_hour_logs').insert({ engine_id: id, logged_by: loggedBy, hours_run: 0, event_type: 'service' });
@@ -3730,7 +3730,7 @@ async function resetEngine(id) {
 }
 
 async function deleteEngine(id) {
-  if (!confirm('Remove this engine and its history?')) return;
+  if (!(await showConfirmModal('Remove this engine and its history?'))) return;
   await sb.from('engine_hour_logs').delete().eq('engine_id', id);
   await sb.from('engines').delete().eq('id', id);
   await loadEngines();
@@ -3854,9 +3854,9 @@ async function logCompressorFill(id) {
   const loggedBy = document.getElementById(`comp-logby-${id}`).value.trim();
   const start = document.getElementById(`comp-start-${id}`).value;
   const stop = document.getElementById(`comp-stop-${id}`).value;
-  if (!loggedBy || !start || !stop) { alert('Enter who filled, start time and stop time.'); return; }
+  if (!loggedBy || !start || !stop) { await showAlertModal('Enter who filled, start time and stop time.'); return; }
   const hours = timeDiffHours(start, stop);
-  if (hours <= 0) { alert('Stop time must be after start time.'); return; }
+  if (hours <= 0) { await showAlertModal('Stop time must be after start time.'); return; }
   const { data: comp } = await sb.from('compressors').select('current_hours').eq('id', id).single();
   await sb.from('compressors').update({ current_hours: (comp.current_hours || 0) + hours }).eq('id', id);
   await sb.from('compressor_fill_logs').insert({ compressor_id: id, logged_by: loggedBy, start_time: start, stop_time: stop, hours_run: hours, event_type: 'fill' });
@@ -3864,8 +3864,8 @@ async function logCompressorFill(id) {
 }
 
 async function resetCompressor(id) {
-  if (!confirm('Log this as a completed filter change and reset the hour counter to zero?')) return;
-  const loggedBy = document.getElementById(`comp-logby-${id}`)?.value.trim() || prompt('Who replaced the filter?');
+  if (!(await showConfirmModal('Log this as a completed filter change and reset the hour counter to zero?'))) return;
+  const loggedBy = document.getElementById(`comp-logby-${id}`)?.value.trim() || await showPromptModal('Who replaced the filter?', 'Your name');
   if (!loggedBy) return;
   await sb.from('compressors').update({ current_hours: 0 }).eq('id', id);
   await sb.from('compressor_fill_logs').insert({ compressor_id: id, logged_by: loggedBy, hours_run: 0, event_type: 'service' });
@@ -3873,7 +3873,7 @@ async function resetCompressor(id) {
 }
 
 async function deleteCompressor(id) {
-  if (!confirm('Remove this compressor and its history?')) return;
+  if (!(await showConfirmModal('Remove this compressor and its history?'))) return;
   await sb.from('compressor_fill_logs').delete().eq('compressor_id', id);
   await sb.from('compressors').delete().eq('id', id);
   await loadCompressors();
@@ -4063,13 +4063,13 @@ async function updateTripTypePrice(id, value, inputEl) {
 }
 
 async function deactivateTripType(id) {
-  if (!confirm('Remove this trip type? Existing bookings using it are unaffected.')) return;
+  if (!(await showConfirmModal('Remove this trip type? Existing bookings using it are unaffected.'))) return;
   await sb.from('trip_types').update({ is_active: false }).eq('id', id);
   await renderTripTypesList();
 }
 
 document.getElementById('btn-add-trip-type').addEventListener('click', async () => {
-  const name = prompt('Trip type name (e.g. "Wreck Dive", "Yoga Charter"):');
+  const name = await showPromptModal('Trip type name:', 'e.g. Wreck Dive, Yoga Charter');
   if (!name || !name.trim()) return;
   await sb.from('trip_types').insert({
     org_id: currentOrgId, name: name.trim(), category: 'other',
@@ -4082,9 +4082,82 @@ document.getElementById('btn-add-trip-type').addEventListener('click', async () 
 
 
 
+// ─── CONFIRM / PROMPT / ALERT MODAL ───
+let _modalResolve = null;
+
+function showConfirmModal(message, options = {}) {
+  return new Promise(resolve => {
+    _modalResolve = resolve;
+    document.getElementById('confirm-modal-message').textContent = message;
+    document.getElementById('confirm-modal-input-wrap').style.display = 'none';
+    const okBtn = document.getElementById('confirm-modal-ok');
+    okBtn.textContent = options.okText || 'Confirm';
+    okBtn.style.background = options.danger ? 'var(--error)' : '';
+    document.getElementById('confirm-modal-cancel').style.display = options.hideCancel ? 'none' : 'inline-block';
+    document.getElementById('modal-confirm').style.display = 'flex';
+  });
+}
+
+function showAlertModal(message) {
+  return showConfirmModal(message, { okText: 'OK', hideCancel: true });
+}
+
+function showPromptModal(message, placeholder, defaultValue) {
+  return new Promise(resolve => {
+    _modalResolve = resolve;
+    document.getElementById('confirm-modal-message').textContent = message;
+    const wrap = document.getElementById('confirm-modal-input-wrap');
+    const input = document.getElementById('confirm-modal-input');
+    wrap.style.display = 'block';
+    input.placeholder = placeholder || '';
+    input.value = defaultValue || '';
+    const okBtn = document.getElementById('confirm-modal-ok');
+    okBtn.textContent = 'Submit';
+    okBtn.style.background = '';
+    document.getElementById('confirm-modal-cancel').style.display = 'inline-block';
+    document.getElementById('modal-confirm').style.display = 'flex';
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
+document.getElementById('confirm-modal-cancel').addEventListener('click', () => {
+  document.getElementById('modal-confirm').style.display = 'none';
+  if (_modalResolve) _modalResolve(null);
+});
+
+document.getElementById('confirm-modal-ok').addEventListener('click', () => {
+  const isPrompt = document.getElementById('confirm-modal-input-wrap').style.display === 'block';
+  document.getElementById('modal-confirm').style.display = 'none';
+  if (_modalResolve) {
+    if (isPrompt) {
+      const val = document.getElementById('confirm-modal-input').value.trim();
+      _modalResolve(val || null);
+    } else {
+      _modalResolve(true);
+    }
+  }
+});
+// ─── END CONFIRM / PROMPT / ALERT MODAL ───
+
 // ─── START ───
 initAuth();
 
 </script>
+<!-- CONFIRM / PROMPT MODAL -->
+<div class="modal-overlay" id="modal-confirm" style="display:none;">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-body">
+      <p id="confirm-modal-message" style="font-size:0.95rem;color:var(--text);line-height:1.5;margin-bottom:16px;"></p>
+      <div id="confirm-modal-input-wrap" style="display:none;margin-bottom:16px;">
+        <input class="sf-input" type="text" id="confirm-modal-input" placeholder="">
+      </div>
+      <div class="settings-actions" style="justify-content:flex-end;">
+        <button class="btn-cancel" id="confirm-modal-cancel">Cancel</button>
+        <button class="btn-save" id="confirm-modal-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
