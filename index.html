@@ -37,16 +37,18 @@
 .gear-stock-value-lg { font-weight: 700; font-size: 1.1rem; color: var(--success); }
 .gear-stock-value-lg.repair { color: var(--warning); }
 .gear-stock-label { font-size: 0.8rem; color: var(--muted); }
-.gear-action-btn { font-size: 0.6rem; padding: 3px 6px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap; }
-.gear-action-btn.add { background: rgba(47,133,90,0.12); color: var(--success); }
-.gear-action-btn.repair { background: rgba(194,118,12,0.12); color: var(--warning); }
-.gear-action-btn.return { background: rgba(79,195,247,0.12); color: var(--teal); }
-.gear-action-btn.discard { background: rgba(229,62,62,0.12); color: var(--error); }
-.gear-action-btn-lg { font-size: 0.75rem; padding: 5px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-.gear-action-btn-lg.add { background: rgba(47,133,90,0.12); color: var(--success); }
-.gear-action-btn-lg.repair { background: rgba(194,118,12,0.12); color: var(--warning); }
-.gear-action-btn-lg.return { background: rgba(79,195,247,0.12); color: var(--teal); }
-.gear-action-btn-lg.discard { background: rgba(229,62,62,0.12); color: var(--error); }
+.gear-action-btn {
+  font-size: 0.7rem; padding: 5px 10px; border: 1px solid var(--border);
+  border-radius: 5px; cursor: pointer; font-weight: 600; white-space: nowrap;
+  background: var(--white); color: var(--text);
+  min-width: 64px; text-align: center;
+}
+.gear-action-btn-lg {
+  font-size: 0.8rem; padding: 6px 14px; border: 1px solid var(--border);
+  border-radius: 6px; cursor: pointer; font-weight: 600;
+  background: var(--white); color: var(--text);
+  min-width: 80px; text-align: center;
+}
 
 html, body { height: 100%; font-family: 'Inter', sans-serif; }
 body { background: var(--navy); color: var(--text); }
@@ -4469,6 +4471,28 @@ function showPromptModal(message, placeholder, defaultValue) {
     document.getElementById('confirm-modal-cancel').style.display = 'inline-block';
     document.getElementById('modal-confirm').style.display = 'flex';
     setTimeout(() => input.focus(), 50);
+  });
+}
+function showTwoFieldModal(message, placeholder1, placeholder2) {
+  return new Promise(resolve => {
+    _modalResolve = resolve;
+    document.getElementById('confirm-modal-message').textContent = message;
+    const wrap1 = document.getElementById('confirm-modal-input-wrap');
+    const input1 = document.getElementById('confirm-modal-input');
+    const wrap2 = document.getElementById('confirm-modal-input2-wrap');
+    const input2 = document.getElementById('confirm-modal-input2');
+    wrap1.style.display = 'block';
+    wrap2.style.display = 'block';
+    input1.placeholder = placeholder1 || '';
+    input1.value = '';
+    input2.placeholder = placeholder2 || '';
+    input2.value = '';
+    const okBtn = document.getElementById('confirm-modal-ok');
+    okBtn.textContent = 'Confirm';
+    okBtn.style.background = '';
+    document.getElementById('confirm-modal-cancel').style.display = 'inline-block';
+    document.getElementById('modal-confirm').style.display = 'flex';
+    setTimeout(() => input1.focus(), 50);
   });
 }
 
