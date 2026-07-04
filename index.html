@@ -1988,7 +1988,15 @@ async function updateAppContext(orgName) {
 }
 document.getElementById('location-picker').addEventListener('change', (e) => {
   currentLocationId = e.target.value;
+  refreshCurrentView();
 });
+function refreshCurrentView() {
+  const gearInvView = document.getElementById('gear-inventory-view');
+  if (gearInvView && gearInvView.style.display !== 'none') {
+    loadGearInventory();
+  }
+  // Add more location-aware view refreshes here as new pages become location-aware
+}
 
 // ─── AUTH ───
 async function initAuth() {
