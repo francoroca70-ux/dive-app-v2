@@ -1294,6 +1294,7 @@ body { background: var(--navy); color: var(--text); }
                     <option value="pending">Pending</option>
                     <option value="paid_cash">Paid — cash</option>
                     <option value="paid_card">Paid — card</option>
+                    <option value="paid_transfer">Paid — bank transfer</option>
                     <option value="partial">Partial payment</option>
                   </select>
                 </div>
@@ -2801,6 +2802,13 @@ document.getElementById('trip-time').addEventListener('change', checkBoatConflic
 document.getElementById('trip-arrival').addEventListener('change', checkBoatConflict);
 
 // Save trip
+async function resolveTripLocationId(boatId) {
+  if (boatId) {
+    const { data: boat } = await sb.from('boats').select('location_id').eq('id', boatId).single();
+    if (boat && boat.location_id) return boat.location_id;
+  }
+  return currentLocationId;
+}
 document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-trip');
   const feedback = document.getElementById('trip-save-feedback');
@@ -2845,6 +2853,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     trip_time: time,
     arrival_time: arrival || null,
     boat_id: boatId || null,
+    location_id: await resolveTripLocationId(boatId),
     max_guests: maxGuests ? parseInt(maxGuests) : null,
     num_dives: tripType?.num_tanks || null,
     dive_sites: diveSites || null,
