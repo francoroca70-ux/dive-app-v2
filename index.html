@@ -2245,6 +2245,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     for (const cat of selectedCategories) {
       await seedTripTypesForCategory(cat);
       await seedGearForCategory(cat);
+      await seedInspectionChecklistForCategory(cat);
     }
     await renderActiveCategories();
     await renderTripTypesList();
@@ -4248,6 +4249,85 @@ async function seedGearForCategory(category) {
   }
 }
 
+// ─── INSPECTION CHECKLIST SEEDING ───
+const CATEGORY_STARTER_INSPECTION = {
+  diving: [
+    { category: 'Regulators', label: '1st Stage', note: 'Corrosion, port condition, IP pressure' },
+    { category: 'Regulators', label: '2nd Stage — Primary', note: 'Mouthpiece, purge button, inhalation effort' },
+    { category: 'Regulators', label: 'Octopus / Alternate Air', note: 'Mouthpiece, hose condition, free flow' },
+    { category: 'BCDs', label: 'BCD Bladder', note: 'Inflate fully, check for leaks, hold 5 min' },
+    { category: 'BCDs', label: 'Dump Valves', note: 'Test all, check for sticking' },
+    { category: 'BCDs', label: 'Straps and Buckles', note: 'All buckles release and lock correctly' },
+    { category: 'Tanks', label: 'Visual Inspection', note: 'Corrosion, dents' },
+    { category: 'Tanks', label: 'Tank Valve', note: 'Leaks, smooth operation, O-ring condition' },
+    { category: 'Wetsuits', label: 'Wetsuit Condition', note: 'Tears, seam separation, zip function' },
+    { category: 'Wetsuits', label: 'Rinsed & Dried', note: 'Fresh water rinse, fully dried to prevent mold' },
+    { category: 'Masks & Snorkels', label: 'Masks Cleaned & Disinfected', note: 'Skirt condition, strap, buckle, lens; disinfect to prevent mold' },
+    { category: 'Masks & Snorkels', label: 'Snorkels Cleaned & Disinfected', note: 'Mouthpiece condition, disinfect to prevent mold' },
+    { category: 'Fins', label: 'Fins Condition', note: 'Blade condition, strap, buckle' },
+    { category: 'Safety', label: 'SMBs and Reels', note: 'Inflation, line condition, reel function' },
+    { category: 'Safety', label: 'Emergency O2 Unit', note: 'Pressure, mask condition, regulator function' },
+    { category: 'Safety', label: 'First Aid Kit', note: 'Check expiry dates, restock if needed' },
+    { category: 'Safety', label: 'Dive Computer Batteries', note: 'Battery level check' },
+  ],
+  charter_yacht: [
+    { category: 'Safety Equipment', label: 'Life Jackets', note: 'Cleaned, sprayed with bleach solution, sun-dried' },
+    { category: 'Safety Equipment', label: 'Life Raft', note: 'Check service date' },
+    { category: 'Safety Equipment', label: 'Flares', note: 'Check expiry date' },
+    { category: 'Safety Equipment', label: 'EPIRB', note: 'Battery check, test function' },
+    { category: 'Safety Equipment', label: 'Fire Extinguishers', note: 'Pressure gauge, expiry date' },
+    { category: 'Safety Equipment', label: 'First Aid Kit', note: 'Check expiry dates, restock if needed' },
+    { category: 'Vessel Systems', label: 'Bilge Pumps', note: 'Test function' },
+    { category: 'Vessel Systems', label: 'Navigation Lights', note: 'Test function' },
+    { category: 'Vessel Systems', label: 'VHF Radio', note: 'Test function' },
+    { category: 'Vessel Systems', label: 'Fuel System', note: 'Check for leaks' },
+    { category: 'Monthly Deep Clean', label: 'Exterior / Hull', note: 'Full clean' },
+    { category: 'Monthly Deep Clean', label: 'Engine Room', note: 'Full clean' },
+    { category: 'Monthly Deep Clean', label: 'Galley', note: 'Full clean' },
+    { category: 'Monthly Deep Clean', label: 'Deck & Non-Slip Surfaces', note: 'Full clean' },
+    { category: 'Yacht Extras', label: 'Generator', note: 'Function check' },
+    { category: 'Yacht Extras', label: 'Water Maker / Tanks', note: 'Function check' },
+    { category: 'Yacht Extras', label: 'Fridge / Freezer', note: 'Function check' },
+    { category: 'Yacht Extras', label: 'Anchor & Windlass', note: 'Function check' },
+  ],
+  surf: [
+    { category: 'Boards', label: 'Condition Check', note: 'Dings, delamination' },
+    { category: 'Boards', label: 'Fin Attachment', note: 'Check fin boxes/screws' },
+    { category: 'Safety', label: 'Leash Condition', note: 'Check for wear/cracks' },
+    { category: 'Safety', label: 'Rash Guards', note: 'Cleaned and condition checked' },
+    { category: 'Safety', label: 'First Aid Kit', note: 'Check expiry dates, restock if needed' },
+    { category: 'Repair', label: 'Ding Repair Kit', note: 'Stock check' },
+  ],
+  fishing: [
+    { category: 'Tackle', label: 'Rods & Reels', note: 'Condition check' },
+    { category: 'Tackle', label: 'Line Condition', note: 'Check for wear' },
+    { category: 'Tackle', label: 'Hooks', note: 'Sharpness, rust check' },
+    { category: 'Safety', label: 'Life Jackets', note: 'Cleaned' },
+    { category: 'Safety', label: 'First Aid Kit', note: 'Check expiry dates, restock if needed' },
+    { category: 'Gear', label: 'Gaff & Landing Net', note: 'Condition check' },
+    { category: 'Gear', label: 'Bait Tank / Livewell', note: 'Cleaned' },
+  ],
+  freediving: [
+    { category: 'Wetsuits', label: 'Condition & Rinse', note: 'Tears, seam separation; rinsed and dried' },
+    { category: 'Fins', label: 'Monofin / Bifins', note: 'Condition check' },
+    { category: 'Weights', label: 'Weight Belt & Weights', note: 'Condition check' },
+    { category: 'Safety', label: 'Buoy & Line', note: 'Condition check' },
+    { category: 'Safety', label: 'Safety Knife / Lanyard', note: 'Condition check' },
+    { category: 'Safety', label: 'Computer Battery', note: 'Battery level check' },
+  ]
+};
+async function seedInspectionChecklistForCategory(category) {
+  const items = CATEGORY_STARTER_INSPECTION[category] || [];
+  if (!items.length) return;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    await sb.from('gear_inspection_checklist_items').insert({
+      org_id: currentOrgId, category: item.category, label: item.label,
+      note: item.note, active: true, sort_order: i
+    });
+  }
+}
+
 // Starter trip type bundles per category — name, default price placeholder, gear field keys, tank info
 const CATEGORY_STARTER_TYPES = {
   diving: [
@@ -4385,6 +4465,7 @@ async function doAddCategory(category) {
   }
   await seedTripTypesForCategory(category);
   await seedGearForCategory(category);
+  await seedInspectionChecklistForCategory(category);
   await renderActiveCategories();
   await renderTripTypesList();
 }
