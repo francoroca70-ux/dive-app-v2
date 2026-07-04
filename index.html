@@ -4363,7 +4363,7 @@ function renderInspectionChecklist(items, compMap, month) {
       const itemsHtml = groups[catName].map(item => {
         const comp = compMap[item.id];
         if (comp) {
-          const statusColor = comp.status === 'pass' ? 'var(--success)' : comp.status === 'attention' ? 'var(--warning)' : 'var(--error)';
+          const statusColor = comp.status === 'pass' ? 'var(--success)' : comp.status === 'attention' ? '#c0392b' : 'var(--error)';
           const statusLabel = comp.status === 'pass' ? 'Pass' : comp.status === 'attention' ? 'Needs Attention' : 'Failed';
           return `<div class="gear-item-row">
             <div class="gear-item-header">
