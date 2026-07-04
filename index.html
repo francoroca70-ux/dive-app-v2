@@ -1686,11 +1686,10 @@ body { background: var(--navy); color: var(--text); }
         </div>
 
         <div id="gear-inventory-view" class="cl-view" style="display:none;">
-          <div class="coming-soon">
-            <div class="icon">🤿</div>
-            <h3>Full inventory tracking coming soon</h3>
-            <p>Tanks, BCDs, regulators and more — repair workflow and monthly inspection log.</p>
+          <div id="inventory-no-location" style="display:none;">
+            <p style="color:var(--muted);">Select a location above to view inventory.</p>
           </div>
+          <div id="inventory-categories"></div>
         </div>
       </div>
 
@@ -3853,6 +3852,157 @@ function showGearView(view, el) {
   document.getElementById('gear-' + view + '-view').style.display = 'block';
   el.classList.add('active');
   if (view === 'compressors') loadCompressors();
+  if (view === 'inventory') loadGearInventory();
+}
+
+async function loadGearInventory() {
+  const noLocEl = document.getElementById('inventory-no-location');
+  const catEl = document.getElementById('inventory-categories');
+  if (!currentOrgId || !currentLocationId) {
+    noLocEl.style.display = 'block';
+    catEl.innerHTML = '';
+    return;
+  }
+  noLocEl.style.display = 'none';
+  const { data: categories } = await sb.from('gear_categories').select('*').eq('org_id', currentOrgId).eq('active', true).order('label');
+  if (!categories || !categories.length) {
+    catEl.innerHTML = '<p style="color:var(--muted);">No gear categories active. Enable categories in Settings.</p>';
+    return;
+  }
+  const catIds = categories.map(c => c.id);
+  const { data: items } = await sb.from('gear_items').select('*, gear_item_sizes(*)').in('category_id', catIds).order('name');
+  const itemIds = (items || []).map(i => i.id);
+  const { data: stockRows } = await sb.from('gear_stock').select('*').eq('location_id', currentLocationId).in('gear_item_id', itemIds.length ? itemIds : ['00000000-0000-0000-0000-000000000000']);
+  const stockMap = {};
+  (stockRows || []).forEach(s => { stockMap[s.gear_item_id + '|' + s.size_label] = s; });
+  renderGearInventory(categories, items || [], stockMap);
+}
+function renderGearInventory(categories, items, stockMap) {
+  const el = document.getElementById('inventory-categories');
+  el.innerHTML = categories.map(cat => {
+    const catItems = items.filter(i => i.category_id === cat.id);
+    if (!catItems.length) return '';
+    const itemsHtml = catItems.map(item => {
+      const sizes = item.track_sizes ? item.gear_item_sizes.slice().sort((a,b) => a.sort_order - b.sort_order).map(s => s.size_label) : ['total'];
+      let stockHtml = '';
+      if (item.track_sizes) {
+        stockHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">' +
+          sizes.map(sz => {
+            const s = stockMap[item.id + '|' + sz] || { available_count: 0, repair_count: 0 };
+            return `<div class="gear-size-box">
+              <div class="gear-size-label">${sz}</div>
+              <div style="font-size:0.7rem;color:var(--muted);margin-bottom:2px;">Available: <span class="gear-stock-value">${s.available_count}</span></div>
+              <div style="display:flex;gap:3px;margin-bottom:4px;">
+                <button class="gear-action-btn add" onclick="gearStockAdd('${item.id}','${sz}')">+ Add</button>
+                <button class="gear-action-btn repair" onclick="gearStockRepair('${item.id}','${sz}')">→ Repair</button>
+              </div>
+              <div style="font-size:0.7rem;color:var(--warning);margin-bottom:2px;">In Repair: <span class="gear-stock-value repair">${s.repair_count}</span></div>
+              <div style="display:flex;gap:3px;">
+                <button class="gear-action-btn return" onclick="gearStockReturn('${item.id}','${sz}')">→ Avail</button>
+                <button class="gear-action-btn discard" onclick="gearStockDiscard('${item.id}','${sz}')">✕ Discard</button>
+              </div>
+            </div>`;
+          }).join('') + '</div>';
+      } else {
+        const s = stockMap[item.id + '|total'] || { available_count: 0, repair_count: 0 };
+        stockHtml = `<div style="margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <span class="gear-stock-label">Available: <span class="gear-stock-value-lg">${s.available_count}</span></span>
+            <button class="gear-action-btn-lg add" onclick="gearStockAdd('${item.id}','total')">+ Add</button>
+            <button class="gear-action-btn-lg repair" onclick="gearStockRepair('${item.id}','total')">→ Repair</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="gear-stock-label">In Repair: <span class="gear-stock-value-lg repair">${s.repair_count}</span></span>
+            <button class="gear-action-btn-lg return" onclick="gearStockReturn('${item.id}','total')">→ Available</button>
+            <button class="gear-action-btn-lg discard" onclick="gearStockDiscard('${item.id}','total')">✕ Discard</button>
+          </div>
+        </div>`;
+      }
+      return `<div class="gear-item-row">
+        <div class="gear-item-header">
+          <span class="gear-item-name">${item.name}</span>
+          <span class="gear-item-unit">${item.unit}</span>
+        </div>
+        ${stockHtml}
+      </div>`;
+    }).join('');
+    return `<div class="inline-form" style="margin-bottom:20px;">
+      <div class="card-section-title">${cat.label}</div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+}
+
+async function getOrCreateStockRow(itemId, size) {
+  let { data: row } = await sb.from('gear_stock').select('*').eq('gear_item_id', itemId).eq('size_label', size).eq('location_id', currentLocationId).maybeSingle();
+  if (!row) {
+    const { data: newRow } = await sb.from('gear_stock').insert({
+      gear_item_id: itemId, size_label: size, location_id: currentLocationId,
+      available_count: 0, repair_count: 0
+    }).select().single();
+    row = newRow;
+  }
+  return row;
+}
+async function gearStockAdd(itemId, size) {
+  const result = await showTwoFieldModal('Add stock — enter your name and quantity.', 'Your name', 'Quantity');
+  if (!result) return;
+  const qty = parseInt(result.field2);
+  if (!qty || qty < 1) { await showAlertModal('Please enter a valid quantity.'); return; }
+  const row = await getOrCreateStockRow(itemId, size);
+  await sb.from('gear_stock').update({ available_count: row.available_count + qty }).eq('id', row.id);
+  await sb.from('gear_stock_moves').insert({
+    gear_item_id: itemId, size_label: size, location_id: currentLocationId,
+    field: 'available', delta: qty, logged_by: result.field1, reason: 'Stock added'
+  });
+  await loadGearInventory();
+}
+async function gearStockRepair(itemId, size) {
+  const row = await getOrCreateStockRow(itemId, size);
+  if (row.available_count <= 0) { await showAlertModal('No available stock to send to repair.'); return; }
+  const result = await showTwoFieldModal("Send to repair — enter your name and what's wrong with it.", 'Your name', "What's wrong with it?");
+  if (!result) return;
+  await sb.from('gear_stock').update({
+    available_count: row.available_count - 1, repair_count: row.repair_count + 1
+  }).eq('id', row.id);
+  await sb.from('gear_stock_moves').insert({
+    gear_item_id: itemId, size_label: size, location_id: currentLocationId,
+    field: 'available', delta: -1, logged_by: result.field1, reason: result.field2
+  });
+  await sb.from('gear_stock_moves').insert({
+    gear_item_id: itemId, size_label: size, location_id: currentLocationId,
+    field: 'repair', delta: 1, logged_by: result.field1, reason: result.field2
+  });
+  await loadGearInventory();
+}
+async function gearStockReturn(itemId, size) {
+  const row = await getOrCreateStockRow(itemId, size);
+  if (row.repair_count <= 0) { await showAlertModal('No items in repair for this size.'); return; }
+  if (!(await showConfirmModal('Confirm this item has been repaired and is back in service?'))) return;
+  await sb.from('gear_stock').update({
+    available_count: row.available_count + 1, repair_count: row.repair_count - 1
+  }).eq('id', row.id);
+  await sb.from('gear_stock_moves').insert({
+    gear_item_id: itemId, size_label: size, location_id: currentLocationId,
+    field: 'repair', delta: -1, logged_by: 'System', reason: 'Returned from repair'
+  });
+  await sb.from('gear_stock_moves').insert({
+    gear_item_id: itemId, size_label: size, location_id: currentLocationId,
+    field: 'available', delta: 1, logged_by: 'System', reason: 'Returned from repair'
+  });
+  await loadGearInventory();
+}
+async function gearStockDiscard(itemId, size) {
+  const row = await getOrCreateStockRow(itemId, size);
+  if (row.repair_count <= 0) { await showAlertModal('No items in repair to discard.'); return; }
+  const result = await showTwoFieldModal('Permanently discard this item — enter your name and reason.', 'Your name', 'Reason for discarding');
+  if (!result) return;
+  await sb.from('gear_stock').update({ repair_count: row.repair_count - 1 }).eq('id', row.id);
+  await sb.from('gear_stock_moves').insert({
+    gear_item_id: itemId, size_label: size, location_id: currentLocationId,
+    field: 'repair', delta: -1, logged_by: result.field1, reason: 'Discarded: ' + result.field2
+  });
+  await loadGearInventory();
 }
 
 async function populateCompressorSelects(selectedLoc, selectedBoat) {
