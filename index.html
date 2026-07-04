@@ -2804,6 +2804,151 @@ document.getElementById('trip-date').addEventListener('change', checkBoatConflic
 document.getElementById('trip-time').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-arrival').addEventListener('change', checkBoatConflict);
 
+async function loadCashUp() {
+  const noLocEl = document.getElementById('cashup-no-location');
+  const contentEl = document.getElementById('cashup-content');
+  const dateInput = document.getElementById('cashup-date');
+  if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  if (!currentOrgId || !currentLocationId) {
+    noLocEl.style.display = 'block';
+    contentEl.innerHTML = '';
+    return;
+  }
+  noLocEl.style.display = 'none';
+  const date = dateInput.value;
+  const { data: trips } = await sb.from('trips')
+    .select('*, boats(name)')
+    .eq('org_id', currentOrgId)
+    .eq('location_id', currentLocationId)
+    .eq('trip_date', date)
+    .order('trip_time');
+  const { data: existing } = await sb.from('cash_ups')
+    .select('*')
+    .eq('org_id', currentOrgId)
+    .eq('location_id', currentLocationId)
+    .eq('cash_up_date', date)
+    .maybeSingle();
+  renderCashUp(trips || [], existing, date);
+}
+document.getElementById('cashup-date').addEventListener('change', loadCashUp);
+
+function renderCashUp(trips, existing, date) {
+  const el = document.getElementById('cashup-content');
+  if (!trips.length) {
+    el.innerHTML = '<p style="color:var(--muted);">No trips on this date.</p>';
+    return;
+  }
+  let cashTotal = 0, cardTotal = 0, transferTotal = 0, partialTotal = 0, pendingTotal = 0;
+  const rowsHtml = trips.map(t => {
+    const amount = t.payment_amount || 0;
+    const status = t.payment_status || 'pending';
+    const statusMap = {
+      pending: ['Pending', 'var(--error)'],
+      paid_cash: ['Cash', 'var(--success)'],
+      paid_card: ['Card', 'var(--teal)'],
+      paid_transfer: ['Transfer', 'var(--teal)'],
+      partial: ['Partial', 'var(--warning)']
+    };
+    const [statusLabel, statusColor] = statusMap[status] || statusMap.pending;
+    if (status === 'paid_cash') cashTotal += amount;
+    else if (status === 'paid_card') cardTotal += amount;
+    else if (status === 'paid_transfer') transferTotal += amount;
+    else if (status === 'partial') partialTotal += amount;
+    else pendingTotal += amount;
+    return `<div class="gear-item-row">
+      <div class="gear-item-header">
+        <span class="gear-item-name">${t.contact_name || '—'}</span>
+        <span style="font-size:0.95rem;font-weight:700;">$${amount.toFixed(2)}</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t.trip_name}${t.boats ? ' · ' + t.boats.name : ''}${t.trip_time ? ' · ' + t.trip_time : ''}</div>
+      <div style="font-size:0.75rem;color:${statusColor};font-weight:600;margin-top:4px;">${statusLabel}</div>
+    </div>`;
+  }).join('');
+  const takenToday = cashTotal + cardTotal + transferTotal + partialTotal;
+  const opening = existing?.opening_float || 0;
+  const paidOut = existing?.cash_paid_out || 0;
+  const expectedCash = opening + cashTotal - paidOut;
+  const counted = existing?.counted_cash;
+  const discrepancy = (counted !== null && counted !== undefined) ? counted - expectedCash : null;
+  el.innerHTML = `
+    <div class="inline-form" style="margin-bottom:20px;">${rowsHtml}</div>
+    <div class="inline-form" style="margin-bottom:20px;">
+      <div class="card-section-title">Totals</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+        <div><div class="gear-stock-label">Cash</div><div class="gear-stock-value-lg">$${cashTotal.toFixed(2)}</div></div>
+        <div><div class="gear-stock-label">Card</div><div class="gear-stock-value-lg">$${cardTotal.toFixed(2)}</div></div>
+        <div><div class="gear-stock-label">Transfer</div><div class="gear-stock-value-lg">$${transferTotal.toFixed(2)}</div></div>
+        <div><div class="gear-stock-label">Partial</div><div class="gear-stock-value-lg repair">$${partialTotal.toFixed(2)}</div></div>
+        <div><div class="gear-stock-label">Pending</div><div class="gear-stock-value-lg" style="color:var(--error);">$${pendingTotal.toFixed(2)}</div></div>
+      </div>
+      <div style="padding:14px;background:var(--foam);border-radius:10px;border:1px solid var(--border);">
+        <span style="font-weight:600;">Total taken today: $${takenToday.toFixed(2)}</span>
+      </div>
+    </div>
+    <div class="inline-form">
+      <div class="card-section-title">Cash Reconciliation</div>
+      <div class="sf-row">
+        <div class="sf-group">
+          <label class="sf-label">Opening float</label>
+          <input class="sf-input" type="number" step="0.01" id="cashup-opening" value="${opening}">
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Cash paid out (expenses)</label>
+          <input class="sf-input" type="number" step="0.01" id="cashup-paidout" value="${paidOut}">
+        </div>
+      </div>
+      <div class="sf-row">
+        <div class="sf-group">
+          <label class="sf-label">Counted cash (actual)</label>
+          <input class="sf-input" type="number" step="0.01" id="cashup-counted" value="${counted ?? ''}">
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Expected cash</label>
+          <input class="sf-input" type="text" value="$${expectedCash.toFixed(2)}" disabled>
+        </div>
+      </div>
+      ${discrepancy !== null ? `<p style="color:${discrepancy === 0 ? 'var(--success)' : 'var(--error)'};font-weight:600;">Discrepancy: $${discrepancy.toFixed(2)}</p>` : ''}
+      <div class="sf-group">
+        <label class="sf-label">Notes</label>
+        <input class="sf-input" type="text" id="cashup-notes" value="${existing?.notes || ''}" placeholder="Any anomalies or comments">
+      </div>
+      <div class="settings-actions">
+        <button class="btn-save" id="btn-save-cashup">Close Out Day</button>
+        <span class="save-feedback" id="cashup-save-feedback"></span>
+      </div>
+      ${existing?.closed_by ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">Last closed by ${existing.closed_by} · ${new Date(existing.closed_at).toLocaleString()}</p>` : ''}
+    </div>
+  `;
+  document.getElementById('btn-save-cashup').addEventListener('click', () => saveCashUp(date, cashTotal, cardTotal, transferTotal, pendingTotal, partialTotal));
+}
+async function saveCashUp(date, cashTotal, cardTotal, transferTotal, pendingTotal, partialTotal) {
+  const btn = document.getElementById('btn-save-cashup');
+  const feedback = document.getElementById('cashup-save-feedback');
+  const opening = parseFloat(document.getElementById('cashup-opening').value) || 0;
+  const paidOut = parseFloat(document.getElementById('cashup-paidout').value) || 0;
+  const countedInput = document.getElementById('cashup-counted').value;
+  const counted = countedInput ? parseFloat(countedInput) : null;
+  const notes = document.getElementById('cashup-notes').value.trim();
+  const { data: { user } } = await sb.auth.getUser();
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { error } = await sb.from('cash_ups').upsert({
+    org_id: currentOrgId, location_id: currentLocationId, cash_up_date: date,
+    total_cash: cashTotal, total_card: cardTotal, total_transfer: transferTotal,
+    total_partial: partialTotal, total_pending: pendingTotal,
+    opening_float: opening, cash_paid_out: paidOut, counted_cash: counted,
+    notes: notes || null, closed_by: user.email, closed_at: new Date().toISOString()
+  }, { onConflict: 'org_id,location_id,cash_up_date' });
+  btn.disabled = false; btn.textContent = 'Close Out Day';
+  if (error) {
+    feedback.textContent = 'Error saving.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  feedback.textContent = 'Saved';
+  feedback.className = 'save-feedback visible';
+  await loadCashUp();
+}
+
 // Save trip
 async function resolveTripLocationId(boatId) {
   if (boatId) {
