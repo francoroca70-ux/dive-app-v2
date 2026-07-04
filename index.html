@@ -1706,15 +1706,17 @@ body { background: var(--navy); color: var(--text); }
 
       <!-- CASH-UP -->
       <div class="page" id="page-cashup">
-        <div class="page-header">
-          <h1>Daily Cash-Up</h1>
-          <p>Cash and card reconciliation</p>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1>Daily Cash-Up</h1>
+            <p>Cash reconciliation and daily totals</p>
+          </div>
+          <input class="sf-input" type="date" id="cashup-date" style="width:auto;">
         </div>
-        <div class="coming-soon">
-          <div class="icon">$</div>
-          <h3>Cash-Up coming soon</h3>
-          <p>Daily totals, cash vs card breakdown, PDF export.</p>
+        <div id="cashup-no-location" style="display:none;">
+          <p style="color:var(--muted);">Select a location above to view cash-up.</p>
         </div>
+        <div id="cashup-content"></div>
       </div>
 
       <!-- TASKS -->
