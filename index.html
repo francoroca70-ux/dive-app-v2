@@ -1651,6 +1651,7 @@ body { background: var(--navy); color: var(--text); }
         <div class="cl-tab-row">
           <div class="cl-tab active" onclick="showGearView('compressors',this)">Compressors</div>
           <div class="cl-tab" onclick="showGearView('inventory',this)">Inventory</div>
+          <div class="cl-tab" onclick="showGearView('inspection',this)">Inspection</div>
         </div>
 
         <div id="gear-compressors-view" class="cl-view">
@@ -1692,6 +1693,13 @@ body { background: var(--navy); color: var(--text); }
             <p style="color:var(--muted);">Select a location above to view inventory.</p>
           </div>
           <div id="inventory-categories"></div>
+        </div>
+
+        <div id="gear-inspection-view" class="cl-view" style="display:none;">
+          <div id="inspection-no-location" style="display:none;">
+            <p style="color:var(--muted);">Select a location above to view the inspection checklist.</p>
+          </div>
+          <div id="inspection-categories"></div>
         </div>
       </div>
 
@@ -3864,6 +3872,7 @@ function showGearView(view, el) {
   el.classList.add('active');
   if (view === 'compressors') loadCompressors();
   if (view === 'inventory') loadGearInventory();
+  if (view === 'inspection') loadInspectionChecklist();
 }
 
 async function loadGearInventory() {
