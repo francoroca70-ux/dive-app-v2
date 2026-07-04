@@ -3896,11 +3896,11 @@ function renderGearInventory(categories, items, stockMap) {
               <div style="font-size:0.7rem;color:var(--muted);margin-bottom:2px;">Available: <span class="gear-stock-value">${s.available_count}</span></div>
               <div style="display:flex;gap:3px;margin-bottom:4px;">
                 <button class="gear-action-btn add" onclick="gearStockAdd('${item.id}','${sz}')">+ Add</button>
-                <button class="gear-action-btn repair" onclick="gearStockRepair('${item.id}','${sz}')">→ Repair</button>
+                <button class="gear-action-btn" onclick="gearStockRepair('${item.id}','${sz}')">Repair</button>
               </div>
               <div style="font-size:0.7rem;color:var(--warning);margin-bottom:2px;">In Repair: <span class="gear-stock-value repair">${s.repair_count}</span></div>
               <div style="display:flex;gap:3px;">
-                <button class="gear-action-btn return" onclick="gearStockReturn('${item.id}','${sz}')">→ Avail</button>
+                <button class="gear-action-btn" onclick="gearStockReturn('${item.id}','${sz}')">Avail</button>
                 <button class="gear-action-btn discard" onclick="gearStockDiscard('${item.id}','${sz}')">✕ Discard</button>
               </div>
             </div>`;
@@ -3911,11 +3911,11 @@ function renderGearInventory(categories, items, stockMap) {
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
             <span class="gear-stock-label">Available: <span class="gear-stock-value-lg">${s.available_count}</span></span>
             <button class="gear-action-btn-lg add" onclick="gearStockAdd('${item.id}','total')">+ Add</button>
-            <button class="gear-action-btn-lg repair" onclick="gearStockRepair('${item.id}','total')">→ Repair</button>
+            <button class="gear-action-btn-lg" onclick="gearStockRepair('${item.id}','total')">Repair</button>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
             <span class="gear-stock-label">In Repair: <span class="gear-stock-value-lg repair">${s.repair_count}</span></span>
-            <button class="gear-action-btn-lg return" onclick="gearStockReturn('${item.id}','total')">→ Available</button>
+            <button class="gear-action-btn-lg" onclick="gearStockReturn('${item.id}','total')">Available</button>
             <button class="gear-action-btn-lg discard" onclick="gearStockDiscard('${item.id}','total')">✕ Discard</button>
           </div>
         </div>`;
