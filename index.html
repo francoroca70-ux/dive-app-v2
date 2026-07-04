@@ -2187,6 +2187,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     const selectedCategories = Array.from(document.querySelectorAll('#org-categories-picker input:checked')).map(cb => cb.value);
     for (const cat of selectedCategories) {
       await seedTripTypesForCategory(cat);
+      await seedGearForCategory(cat);
     }
     await renderActiveCategories();
     await renderTripTypesList();
@@ -3943,6 +3944,96 @@ async function deleteCompressor(id) {
 
 // ─── OPERATION CATEGORIES & TRIP TYPE SEEDING ───
 
+// ─── GEAR INVENTORY SEEDING ───
+const CATEGORY_STARTER_GEAR = {
+  diving: [
+    { name: 'Tanks (Air)', unit: 'units', sizes: [] },
+    { name: 'Tanks (Nitrox)', unit: 'units', sizes: [] },
+    { name: 'Regulators', unit: 'units', sizes: [] },
+    { name: 'Nitrox Analysers', unit: 'units', sizes: [] },
+    { name: 'BCDs', unit: 'units', sizes: ['XXS','XS','S','M','L','XL','XXL'] },
+    { name: 'Wetsuits', unit: 'units', sizes: ['Kids','XS-3mm','S-3mm','M-3mm','L-3mm','XL-3mm','XXL-3mm','XS-5mm','S-5mm','M-5mm','L-5mm','XL-5mm','XXL-5mm','XS-7mm','S-7mm','M-7mm','L-7mm','XL-7mm','XXL-7mm'] },
+    { name: 'Masks (Adult)', unit: 'units', sizes: [] },
+    { name: 'Masks (Kids)', unit: 'units', sizes: [] },
+    { name: 'Fins', unit: 'units', sizes: ['XXS','XS','S','M','L','XL','XXL'] },
+    { name: 'Dive Computers', unit: 'units', sizes: [] },
+    { name: 'SMBs & Reels', unit: 'units', sizes: [] },
+    { name: 'Compasses', unit: 'units', sizes: [] },
+    { name: 'Dive Torches', unit: 'units', sizes: ['Primary','Backup'] },
+    { name: 'Underwater Slates', unit: 'units', sizes: [] },
+    { name: 'Knives / Shears', unit: 'units', sizes: [] },
+    { name: 'Weight Belts & Weights (kg)', unit: 'kg', sizes: [] },
+    { name: 'Weight Belts & Weights (lb)', unit: 'lb', sizes: [] },
+    { name: 'Snorkel Sets (Mask+Snorkel+Fins)', unit: 'units', sizes: ['Adult','Kids'] },
+    { name: 'Flotation Vests', unit: 'units', sizes: ['Adult','Kids'] },
+    { name: 'Fish ID Cards', unit: 'units', sizes: [] },
+  ],
+  charter_yacht: [
+    { name: 'Life Jackets', unit: 'units', sizes: ['Adult','Kids'] },
+    { name: 'Life Raft', unit: 'units', sizes: [] },
+    { name: 'Flares', unit: 'units', sizes: [] },
+    { name: 'EPIRB', unit: 'units', sizes: [] },
+    { name: 'Paddleboards / Kayaks', unit: 'units', sizes: [] },
+    { name: 'Towels', unit: 'units', sizes: [] },
+    { name: 'Coolers / Ice Boxes', unit: 'units', sizes: [] },
+  ],
+  surf: [
+    { name: 'Shortboards', unit: 'units', sizes: ["5'6","5'8","5'10","6'0","6'2"] },
+    { name: 'Longboards', unit: 'units', sizes: ["8'0","9'0","9'6","10'0"] },
+    { name: 'Foil Boards', unit: 'units', sizes: [] },
+    { name: 'Foil Wings', unit: 'units', sizes: ['3m²','4m²','5m²','6m²'] },
+    { name: 'Foil Masts', unit: 'units', sizes: ['Short','Medium','Long'] },
+    { name: 'Wakeboards', unit: 'units', sizes: ['138cm','142cm','146cm','150cm'] },
+    { name: 'Leashes', unit: 'units', sizes: ["6'","7'","8'","9'","10'"] },
+    { name: 'Surf Wax', unit: 'bars', sizes: ['Cold','Cool','Warm','Tropical'] },
+    { name: 'Fin Sets', unit: 'sets', sizes: ['Single','Twin','Thruster','Quad'] },
+    { name: 'Rash Guards', unit: 'units', sizes: ['XS','S','M','L','XL','XXL'] },
+    { name: 'Impact Vests', unit: 'units', sizes: ['XS','S','M','L','XL'] },
+    { name: 'Ding Repair Kits', unit: 'units', sizes: [] },
+  ],
+  fishing: [
+    { name: 'Spinning Rods', unit: 'units', sizes: ['Light','Medium','Heavy'] },
+    { name: 'Jigging Rods', unit: 'units', sizes: ['Light','Medium','Heavy'] },
+    { name: 'Trolling Rods', unit: 'units', sizes: ['20lb','30lb','50lb','80lb'] },
+    { name: 'Reels', unit: 'units', sizes: ['Spinning','Baitcaster','Overhead'] },
+    { name: 'Lures & Jigs', unit: 'sets', sizes: [] },
+    { name: 'Hooks & Lines', unit: 'sets', sizes: [] },
+    { name: 'Tackle Boxes', unit: 'units', sizes: [] },
+    { name: 'Gaff & Landing Net', unit: 'units', sizes: [] },
+    { name: 'Fish Coolers', unit: 'units', sizes: ['Small','Medium','Large'] },
+    { name: 'Bait Tanks / Live Wells', unit: 'units', sizes: [] },
+  ],
+  freediving: [
+    { name: 'Apnea Wetsuits', unit: 'units', sizes: ['XS-3mm','S-3mm','M-3mm','L-3mm','XL-3mm','XS-5mm','S-5mm','M-5mm','L-5mm','XL-5mm'] },
+    { name: 'Monofins', unit: 'units', sizes: ['S','M','L'] },
+    { name: 'Carbon Bifins', unit: 'units', sizes: ['XS','S','M','L','XL'] },
+    { name: 'Freediving Buoys', unit: 'units', sizes: [] },
+    { name: 'Lanyards & Safety Knives', unit: 'units', sizes: [] },
+    { name: 'Freediving Watches / Computers', unit: 'units', sizes: [] },
+  ]
+};
+async function seedGearForCategory(category) {
+  const items = CATEGORY_STARTER_GEAR[category] || [];
+  if (!items.length) return;
+  const { data: cat, error: catError } = await sb.from('gear_categories').insert({
+    org_id: currentOrgId, key: category,
+    label: CATEGORY_LABELS[category] || category, active: true
+  }).select().single();
+  if (catError || !cat) return;
+  for (const item of items) {
+    const { data: gearItem, error: itemError } = await sb.from('gear_items').insert({
+      org_id: currentOrgId, category_id: cat.id, name: item.name,
+      unit: item.unit, track_sizes: item.sizes.length > 0
+    }).select().single();
+    if (itemError || !gearItem) continue;
+    for (let i = 0; i < item.sizes.length; i++) {
+      await sb.from('gear_item_sizes').insert({
+        gear_item_id: gearItem.id, size_label: item.sizes[i], sort_order: i
+      });
+    }
+  }
+}
+
 // Starter trip type bundles per category — name, default price placeholder, gear field keys, tank info
 const CATEGORY_STARTER_TYPES = {
   diving: [
@@ -4079,6 +4170,7 @@ async function doAddCategory(category) {
     return;
   }
   await seedTripTypesForCategory(category);
+  await seedGearForCategory(category);
   await renderActiveCategories();
   await renderTripTypesList();
 }
