@@ -189,6 +189,17 @@ body { background: var(--navy); color: var(--text); }
   font-size: 0.78rem; color: rgba(255,255,255,0.45); font-weight: 500;
 }
 .nav-user strong { color: rgba(255,255,255,0.75); font-weight: 600; }
+.app-context {
+  font-size: 0.82rem; color: rgba(255,255,255,0.5); font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+}
+.app-context strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+.location-picker {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9); font-size: 0.82rem; font-weight: 600;
+  padding: 4px 8px; border-radius: 6px; cursor: pointer;
+}
+.location-picker option { background: var(--navy); color: var(--white); }
 .btn-signout {
   background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
   color: rgba(255,255,255,0.5); padding: 6px 12px; border-radius: 6px;
@@ -1056,6 +1067,13 @@ body { background: var(--navy); color: var(--text); }
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="sidebar-toggle" id="sidebar-toggle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <div class="app-logo">Seven<span>Seas</span></div>
+      <div class="app-context" id="app-context" style="display:none;">
+        <span>—</span> <strong id="app-context-org">—</strong>
+        <span id="app-context-location-wrap" style="display:none;">
+          <span>—</span>
+          <select class="location-picker" id="location-picker"></select>
+        </span>
+      </div>
     </div>
     <div class="nav-right">
       <div class="nav-user">Signed in as <strong id="nav-username">—</strong></div>
@@ -1940,7 +1958,36 @@ async function updateHomeBanner() {
     </div>
     <button class="btn-setup" onclick="showPage('calendar')">View Calendar</button>`;
   }
+  await updateAppContext(org && org.name);
 }
+async function updateAppContext(orgName) {
+  if (!currentOrgId) return;
+  const { data: locations } = await sb.from('locations').select('id,name').eq('org_id', currentOrgId).order('created_at');
+  const contextEl = document.getElementById('app-context');
+  const orgEl = document.getElementById('app-context-org');
+  const locWrap = document.getElementById('app-context-location-wrap');
+  const picker = document.getElementById('location-picker');
+  if (!orgName) { contextEl.style.display = 'none'; return; }
+  orgEl.textContent = orgName;
+  contextEl.style.display = 'flex';
+  if (!locations || locations.length === 0) {
+    locWrap.style.display = 'none';
+    currentLocationId = null;
+  } else if (locations.length === 1) {
+    locWrap.style.display = 'none';
+    currentLocationId = locations[0].id;
+  } else {
+    locWrap.style.display = 'inline-flex';
+    picker.innerHTML = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+    if (!currentLocationId || !locations.some(l => l.id === currentLocationId)) {
+      currentLocationId = locations[0].id;
+    }
+    picker.value = currentLocationId;
+  }
+}
+document.getElementById('location-picker').addEventListener('change', (e) => {
+  currentLocationId = e.target.value;
+});
 
 // ─── AUTH ───
 async function initAuth() {
@@ -2061,6 +2108,7 @@ sb.auth.onAuthStateChange((event, session) => {
 
 // ─── SETTINGS ───
 let currentOrgId = null;
+let currentLocationId = null;
 
 async function loadSettings(user) {
   document.getElementById('settings-email').textContent = user.email;
