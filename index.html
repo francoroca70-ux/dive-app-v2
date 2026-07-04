@@ -4325,6 +4325,86 @@ const CATEGORY_STARTER_INSPECTION = {
     { category: 'Safety', label: 'Computer Battery', note: 'Battery level check' },
   ]
 };
+async function loadInspectionChecklist() {
+  const noLocEl = document.getElementById('inspection-no-location');
+  const catEl = document.getElementById('inspection-categories');
+  if (!currentOrgId || !currentLocationId) {
+    noLocEl.style.display = 'block';
+    catEl.innerHTML = '';
+    return;
+  }
+  noLocEl.style.display = 'none';
+  const month = new Date().toISOString().slice(0, 7);
+  const { data: items } = await sb.from('gear_inspection_checklist_items').select('*').eq('org_id', currentOrgId).eq('active', true).order('sort_order');
+  if (!items || !items.length) {
+    catEl.innerHTML = '<p style="color:var(--muted);">No inspection checklist items yet. Enable a category in Settings.</p>';
+    return;
+  }
+  const itemIds = items.map(i => i.id);
+  const { data: completions } = await sb.from('gear_inspection_completions').select('*').eq('location_id', currentLocationId).eq('month', month).in('checklist_item_id', itemIds);
+  const compMap = {};
+  (completions || []).forEach(c => { compMap[c.checklist_item_id] = c; });
+  renderInspectionChecklist(items, compMap, month);
+}
+function renderInspectionChecklist(items, compMap, month) {
+  const el = document.getElementById('inspection-categories');
+  const groups = {};
+  items.forEach(item => {
+    if (!groups[item.category]) groups[item.category] = [];
+    groups[item.category].push(item);
+  });
+  const monthLabel = new Date(month + '-01T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  el.innerHTML = `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">${monthLabel} — tick items as completed. Anyone can complete any item; progress is shared with the whole team.</p>` +
+    Object.keys(groups).map(catName => {
+      const itemsHtml = groups[catName].map(item => {
+        const comp = compMap[item.id];
+        if (comp) {
+          const statusColor = comp.status === 'pass' ? 'var(--success)' : comp.status === 'attention' ? 'var(--warning)' : 'var(--error)';
+          const statusLabel = comp.status === 'pass' ? 'Pass' : comp.status === 'attention' ? 'Needs Attention' : 'Failed';
+          return `<div class="gear-item-row">
+            <div class="gear-item-header">
+              <span class="gear-item-name">${item.label}</span>
+              <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
+            </div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${comp.completed_by} · ${new Date(comp.completed_at).toLocaleDateString()}${comp.notes ? ' · ' + comp.notes : ''}</div>
+          </div>`;
+        } else {
+          return `<div class="gear-item-row">
+            <div class="gear-item-header">
+              <span class="gear-item-name">${item.label}</span>
+              <span style="font-size:0.75rem;color:var(--muted);">Not checked</span>
+            </div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','pass')">Pass</button>
+              <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','attention')">Needs Attention</button>
+              <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','fail')">Fail</button>
+            </div>
+          </div>`;
+        }
+      }).join('');
+      return `<div class="inline-form" style="margin-bottom:20px;">
+        <div class="card-section-title">${catName}</div>
+        ${itemsHtml}
+      </div>`;
+    }).join('');
+}
+async function tickInspectionItem(itemId, status) {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  let notes = null;
+  if (status !== 'pass') {
+    notes = await showPromptModal(status === 'attention' ? 'What needs attention?' : 'What failed and why?', 'Describe the issue');
+    if (!notes) return;
+  }
+  const month = new Date().toISOString().slice(0, 7);
+  await sb.from('gear_inspection_completions').upsert({
+    org_id: currentOrgId, location_id: currentLocationId, checklist_item_id: itemId,
+    month, status, notes, completed_by: user.email, completed_at: new Date().toISOString()
+  }, { onConflict: 'location_id,checklist_item_id,month' });
+  await loadInspectionChecklist();
+}
 async function seedInspectionChecklistForCategory(category) {
   const items = CATEGORY_STARTER_INSPECTION[category] || [];
   if (!items.length) return;
