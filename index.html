@@ -4357,7 +4357,7 @@ async function loadInspectionChecklist() {
   (completions || []).forEach(c => { compMap[c.checklist_item_id] = c; });
   renderInspectionChecklist(items, compMap, month);
 }
-let _inspectionState = { groups: {}, compMap: {}, month: '', activeCat: null };
+let _inspectionState = { groups: {}, compMap: {}, month: '', activeCat: null, editMode: false };
 function renderInspectionChecklist(items, compMap, month) {
   const groups = {};
   items.forEach(item => {
@@ -4382,12 +4382,14 @@ function switchInspectionCategory(catName) {
   renderInspectionActiveCategory();
 }
 function renderInspectionActiveCategory() {
-  const { groups, compMap, month, activeCat } = _inspectionState;
+  const { groups, compMap, month, activeCat, editMode } = _inspectionState;
   const el = document.getElementById('inspection-categories');
   const monthLabel = new Date(month + '-01T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const catItems = groups[activeCat] || [];
+  const isLeader = ['owner','manager','captain'].includes(currentUserRole);
   const itemsHtml = catItems.map(item => {
     const comp = compMap[item.id];
+    const deleteBtn = (editMode && isLeader) ? `<button class="gear-action-btn" style="color:var(--error);" onclick="deleteInspectionItem('${item.id}')">✕ Remove</button>` : '';
     if (comp) {
       const statusColor = comp.status === 'pass' ? 'var(--success)' : comp.status === 'attention' ? '#c0392b' : 'var(--error)';
       const statusLabel = comp.status === 'pass' ? 'Pass' : comp.status === 'attention' ? 'Needs Attention' : 'Failed';
@@ -4398,6 +4400,7 @@ function renderInspectionActiveCategory() {
         </div>
         <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
         <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${comp.completed_by} · ${new Date(comp.completed_at).toLocaleDateString()}${comp.notes ? ' · ' + comp.notes : ''}</div>
+        ${deleteBtn ? `<div style="margin-top:8px;">${deleteBtn}</div>` : ''}
       </div>`;
     } else {
       return `<div class="gear-item-row">
@@ -4406,16 +4409,41 @@ function renderInspectionActiveCategory() {
           <span style="font-size:0.75rem;color:var(--muted);">Not checked</span>
         </div>
         <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
           <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','pass')">Pass</button>
           <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','attention')">Needs Attention</button>
           <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','fail')">Fail</button>
+          ${deleteBtn}
         </div>
       </div>`;
     }
   }).join('');
+  const editButtonHtml = isLeader ? `<button class="btn-cancel" style="margin-bottom:16px;" onclick="toggleInspectionEdit()">${editMode ? 'Done Editing' : 'Edit List'}</button>` : '';
+  const addItemHtml = (editMode && isLeader) ? `<button class="gear-action-btn-lg" style="margin-top:12px;" onclick="addInspectionItem()">+ Add Item</button>` : '';
   el.innerHTML = `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">${monthLabel} — tick items as completed. Anyone can complete any item; progress is shared with the whole team.</p>
-    <div class="inline-form">${itemsHtml}</div>`;
+    ${editButtonHtml}
+    <div class="inline-form">${itemsHtml}${addItemHtml}</div>`;
+}
+async function toggleInspectionEdit() {
+  _inspectionState.editMode = !_inspectionState.editMode;
+  renderInspectionActiveCategory();
+}
+async function addInspectionItem() {
+  const activeCat = _inspectionState.activeCat;
+  const label = await showPromptModal('New item name', 'e.g. Anchor Chain');
+  if (!label) return;
+  const currentCount = (_inspectionState.groups[activeCat] || []).length;
+  await sb.from('gear_inspection_checklist_items').insert({
+    org_id: currentOrgId, category: activeCat, label: label.trim(),
+    note: '', active: true, sort_order: currentCount
+  });
+  await loadInspectionChecklist();
+}
+async function deleteInspectionItem(itemId) {
+  if (!(await showConfirmModal('Remove this checklist item? This also deletes its history.', { danger: true }))) return;
+  await sb.from('gear_inspection_completions').delete().eq('checklist_item_id', itemId);
+  await sb.from('gear_inspection_checklist_items').delete().eq('id', itemId);
+  await loadInspectionChecklist();
 }
 async function tickInspectionItem(itemId, status) {
   const { data: { user } } = await sb.auth.getUser();
