@@ -1699,6 +1699,7 @@ body { background: var(--navy); color: var(--text); }
           <div id="inspection-no-location" style="display:none;">
             <p style="color:var(--muted);">Select a location above to view the inspection checklist.</p>
           </div>
+          <div class="cl-tab-row" id="inspection-tabs"></div>
           <div id="inspection-categories"></div>
         </div>
       </div>
@@ -4350,49 +4351,65 @@ async function loadInspectionChecklist() {
   (completions || []).forEach(c => { compMap[c.checklist_item_id] = c; });
   renderInspectionChecklist(items, compMap, month);
 }
+let _inspectionState = { groups: {}, compMap: {}, month: '', activeCat: null };
 function renderInspectionChecklist(items, compMap, month) {
-  const el = document.getElementById('inspection-categories');
   const groups = {};
   items.forEach(item => {
     if (!groups[item.category]) groups[item.category] = [];
     groups[item.category].push(item);
   });
+  const keepActive = _inspectionState.activeCat && groups[_inspectionState.activeCat];
+  _inspectionState = { groups, compMap, month, activeCat: keepActive ? _inspectionState.activeCat : Object.keys(groups)[0] };
+  renderInspectionTabs();
+  renderInspectionActiveCategory();
+}
+function renderInspectionTabs() {
+  const { groups, activeCat } = _inspectionState;
+  const tabsEl = document.getElementById('inspection-tabs');
+  tabsEl.innerHTML = Object.keys(groups).map(catName =>
+    `<div class="cl-tab${catName === activeCat ? ' active' : ''}" onclick="switchInspectionCategory('${catName.replace(/'/g, "\\'")}')">${catName}</div>`
+  ).join('');
+}
+function switchInspectionCategory(catName) {
+  _inspectionState.activeCat = catName;
+  renderInspectionTabs();
+  renderInspectionActiveCategory();
+}
+function renderInspectionActiveCategory() {
+  const { groups, compMap, month, activeCat } = _inspectionState;
+  const el = document.getElementById('inspection-categories');
   const monthLabel = new Date(month + '-01T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  el.innerHTML = `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">${monthLabel} — tick items as completed. Anyone can complete any item; progress is shared with the whole team.</p>` +
-    Object.keys(groups).map(catName => {
-      const itemsHtml = groups[catName].map(item => {
-        const comp = compMap[item.id];
-        if (comp) {
-          const statusColor = comp.status === 'pass' ? 'var(--success)' : comp.status === 'attention' ? '#c0392b' : 'var(--error)';
-          const statusLabel = comp.status === 'pass' ? 'Pass' : comp.status === 'attention' ? 'Needs Attention' : 'Failed';
-          return `<div class="gear-item-row">
-            <div class="gear-item-header">
-              <span class="gear-item-name">${item.label}</span>
-              <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
-            </div>
-            <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
-            <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${comp.completed_by} · ${new Date(comp.completed_at).toLocaleDateString()}${comp.notes ? ' · ' + comp.notes : ''}</div>
-          </div>`;
-        } else {
-          return `<div class="gear-item-row">
-            <div class="gear-item-header">
-              <span class="gear-item-name">${item.label}</span>
-              <span style="font-size:0.75rem;color:var(--muted);">Not checked</span>
-            </div>
-            <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
-            <div style="display:flex;gap:6px;margin-top:8px;">
-              <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','pass')">Pass</button>
-              <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','attention')">Needs Attention</button>
-              <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','fail')">Fail</button>
-            </div>
-          </div>`;
-        }
-      }).join('');
-      return `<div class="inline-form" style="margin-bottom:20px;">
-        <div class="card-section-title">${catName}</div>
-        ${itemsHtml}
+  const catItems = groups[activeCat] || [];
+  const itemsHtml = catItems.map(item => {
+    const comp = compMap[item.id];
+    if (comp) {
+      const statusColor = comp.status === 'pass' ? 'var(--success)' : comp.status === 'attention' ? '#c0392b' : 'var(--error)';
+      const statusLabel = comp.status === 'pass' ? 'Pass' : comp.status === 'attention' ? 'Needs Attention' : 'Failed';
+      return `<div class="gear-item-row">
+        <div class="gear-item-header">
+          <span class="gear-item-name">${item.label}</span>
+          <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${comp.completed_by} · ${new Date(comp.completed_at).toLocaleDateString()}${comp.notes ? ' · ' + comp.notes : ''}</div>
       </div>`;
-    }).join('');
+    } else {
+      return `<div class="gear-item-row">
+        <div class="gear-item-header">
+          <span class="gear-item-name">${item.label}</span>
+          <span style="font-size:0.75rem;color:var(--muted);">Not checked</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','pass')">Pass</button>
+          <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','attention')">Needs Attention</button>
+          <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','fail')">Fail</button>
+        </div>
+      </div>`;
+    }
+  }).join('');
+  el.innerHTML = `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">${monthLabel} — tick items as completed. Anyone can complete any item; progress is shared with the whole team.</p>
+    <div class="inline-form">${itemsHtml}</div>`;
 }
 async function tickInspectionItem(itemId, status) {
   const { data: { user } } = await sb.auth.getUser();
