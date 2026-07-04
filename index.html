@@ -2011,6 +2011,12 @@ function refreshCurrentView() {
 }
 
 // ─── AUTH ───
+async function loadCurrentUserRole() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  const { data: s } = await sb.from('staff').select('role').eq('id', user.id).single();
+  currentUserRole = s?.role || 'instructor';
+}
 async function initAuth() {
   const { data: { session } } = await sb.auth.getSession();
 
@@ -2020,6 +2026,7 @@ async function initAuth() {
     loadFleet();
     loadCrew();
     renderCalendar();
+    await loadCurrentUserRole();
     showScreen('app');
   } else {
     showScreen('login');
