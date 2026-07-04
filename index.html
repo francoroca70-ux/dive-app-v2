@@ -2003,6 +2003,10 @@ function refreshCurrentView() {
   if (gearInvView && gearInvView.style.display !== 'none') {
     loadGearInventory();
   }
+  const inspectionView = document.getElementById('gear-inspection-view');
+  if (inspectionView && inspectionView.style.display !== 'none') {
+    loadInspectionChecklist();
+  }
   // Add more location-aware view refreshes here as new pages become location-aware
 }
 
