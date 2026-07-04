@@ -3936,15 +3936,21 @@ function renderGearInventory(categories, items, stockMap) {
 }
 
 async function getOrCreateStockRow(itemId, size) {
-  let { data: row } = await sb.from('gear_stock').select('*').eq('gear_item_id', itemId).eq('size_label', size).eq('location_id', currentLocationId).maybeSingle();
-  if (!row) {
-    const { data: newRow } = await sb.from('gear_stock').insert({
+  const { data: row, error } = await sb.from('gear_stock')
+    .upsert({
       gear_item_id: itemId, size_label: size, location_id: currentLocationId,
       available_count: 0, repair_count: 0
-    }).select().single();
-    row = newRow;
-  }
-  return row;
+    }, {
+      onConflict: 'gear_item_id,size_label,location_id',
+      ignoreDuplicates: true
+    })
+    .select()
+    .single();
+  if (row) return row;
+  // Row already existed (upsert with ignoreDuplicates returns nothing) — fetch it
+  const { data: existing } = await sb.from('gear_stock').select('*')
+    .eq('gear_item_id', itemId).eq('size_label', size).eq('location_id', currentLocationId).single();
+  return existing;
 }
 async function gearStockAdd(itemId, size) {
   const result = await showTwoFieldModal('Add stock — enter your name and quantity.', 'Your name', 'Quantity');
