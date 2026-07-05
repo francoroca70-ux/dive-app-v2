@@ -2407,7 +2407,7 @@ async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
   const { data } = await sb
     .from('trips')
-    .select('*, boats(name), participants(id)')
+    .select('*, boats(name), participants(id), trip_crew(staff(full_name))')
     .eq('org_id', currentOrgId)
     .gte('trip_date', formatDate(start))
     .lte('trip_date', formatDate(end))
@@ -2437,7 +2437,7 @@ function tripCard(t) {
       <div>
         <div class="trip-card-title">${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}</div>
         <div class="trip-card-meta">
-          <span>${t.trip_time ? t.trip_time.slice(0,5) : '—'}</span>
+          <span>${t.trip_time ? t.trip_time.slice(0,5) : '—'}${t.arrival_time ? ' – ' + t.arrival_time.slice(0,5) : ''}</span>
           <span>${t.boats?.name || 'No boat'}</span>
           <span>${t.trip_type?.replace(/_/g,' ') || ''}</span>
         </div>
@@ -2446,6 +2446,7 @@ function tripCard(t) {
     </div>
     <div class="trip-card-footer">
       <div class="trip-stat"><strong>${guestCount}</strong> guests</div>
+      ${t.trip_crew?.length ? `<div class="trip-stat">Crew: <strong>${t.trip_crew.map(c => c.staff?.full_name).filter(Boolean).join(', ')}</strong></div>` : ''}
       ${t.max_guests ? `<div class="trip-stat">Max <strong>${t.max_guests}</strong></div>` : ''}
       ${isDive && tanks ? `<div class="trip-stat"><strong>${tanks}</strong> tanks needed</div>` : ''}
       ${t.price_per_person ? `<div class="trip-stat"><strong>${t.currency || ''} ${t.price_per_person}</strong> /person</div>` : ''}
