@@ -2705,7 +2705,6 @@ async function openTrip(id) {
   await populateTripTypeSelect(trip.trip_type_id);
   await onTripTypeChange();
 
-  document.getElementById('trip-name').value = trip.trip_name || '';
   document.getElementById('trip-date').value = trip.trip_date || '';
   document.getElementById('trip-time').value = trip.trip_time?.slice(0,5) || '';
   document.getElementById('trip-arrival').value = trip.arrival_time?.slice(0,5) || '';
