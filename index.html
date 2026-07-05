@@ -1776,6 +1776,10 @@ body { background: var(--navy); color: var(--text); }
           </div>
           <div class="settings-form">
             <div class="sf-group">
+              <label class="sf-label">Your full name</label>
+              <input class="sf-input" type="text" id="owner-full-name" placeholder="e.g. Jane Smith">
+            </div>
+            <div class="sf-group">
               <label class="sf-label">Operation name</label>
               <input class="sf-input" type="text" id="org-name" placeholder="e.g. Blue Water Dive Centre">
             </div>
@@ -2254,10 +2258,11 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     currentOrgId = org.id;
 
     // Create staff row linking user to org as owner
+    const ownerFullName = document.getElementById('owner-full-name').value.trim();
     await sb.from('staff').insert({
       id: user.id,
       org_id: org.id,
-      full_name: email.split('@')[0],
+      full_name: ownerFullName || email.split('@')[0],
       email: user.email,
       role: 'owner'
     });
