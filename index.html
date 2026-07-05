@@ -1270,14 +1270,16 @@ body { background: var(--navy); color: var(--text); }
                 </div>
               </div>
 
-              <div class="card-section-title" style="margin-top:20px;">Guests</div>
+              <div class="card-section-title" style="margin-top:20px;">Booking Mode</div>
               <div class="sf-group">
-                <label class="sf-label">Party type</label>
+                <label class="sf-label">Is this boat private or shared?</label>
                 <div class="radio-group">
-                  <div class="radio-btn selected" id="party-single" onclick="setPartyType('single')">Single group</div>
-                  <div class="radio-btn" id="party-multiple" onclick="setPartyType('multiple')">Multiple groups</div>
+                  <div class="radio-btn selected" id="mode-private" onclick="setBookingMode('private')">Private boat</div>
+                  <div class="radio-btn" id="mode-shared" onclick="setBookingMode('shared')">Shared boat</div>
                 </div>
+                <p id="booking-mode-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;">This boat will be exclusively reserved for this time slot.</p>
               </div>
+              <div class="card-section-title" style="margin-top:20px;">Guests</div>
               <div class="sf-group">
                 <label class="sf-label">Max guests</label>
                 <input class="sf-input" type="number" id="trip-max-guests" placeholder="e.g. 12" min="1">
@@ -2750,10 +2752,16 @@ document.getElementById('modal-trip').addEventListener('click', function(e) {
   if (e.target === this) { this.style.display = 'none'; renderCalendar(); }
 });
 
-function setPartyType(type) {
-  document.getElementById('party-single').classList.toggle('selected', type === 'single');
-  document.getElementById('party-multiple').classList.toggle('selected', type === 'multiple');
-  window.currentPartyType = type;
+window.currentBookingMode = 'private';
+function setBookingMode(mode) {
+  document.getElementById('mode-private').classList.toggle('selected', mode === 'private');
+  document.getElementById('mode-shared').classList.toggle('selected', mode === 'shared');
+  window.currentBookingMode = mode;
+  const hint = document.getElementById('booking-mode-hint');
+  hint.textContent = mode === 'private'
+    ? 'This boat will be exclusively reserved for this time slot.'
+    : 'Other independent bookings can share this boat, up to its max capacity.';
+  checkBoatConflict();
 }
 
 async function populateTripBoats(selectedId) {
