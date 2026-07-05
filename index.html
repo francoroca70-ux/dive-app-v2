@@ -2783,27 +2783,44 @@ async function checkBoatConflict() {
   const newStart = document.getElementById('trip-time').value || '00:00';
   const newEnd = document.getElementById('trip-arrival').value || '23:59';
   const warning = document.getElementById('boat-conflict-warning');
+  const newMode = window.currentBookingMode || 'private';
   if (!boatId || !date || !currentOrgId) { warning.style.display = 'none'; return; }
 
   const { data: existing } = await sb
     .from('trips')
-    .select('id, trip_name, trip_time, arrival_time')
+    .select('id, trip_name, trip_time, arrival_time, booking_mode, max_guests')
     .eq('boat_id', boatId)
     .eq('trip_date', date)
     .neq('id', currentTripId || '00000000-0000-0000-0000-000000000000');
 
   if (!existing || existing.length === 0) { warning.style.display = 'none'; return; }
 
-  // Only warn if times actually overlap
   const overlaps = existing.filter(t => {
     const tStart = t.trip_time?.slice(0,5) || '00:00';
     const tEnd = t.arrival_time?.slice(0,5) || '23:59';
     return newStart < tEnd && newEnd > tStart;
   });
 
-  if (overlaps.length > 0) {
+  if (overlaps.length === 0) { warning.style.display = 'none'; return; }
+
+  const anyPrivate = overlaps.some(t => t.booking_mode === 'private');
+  if (newMode === 'private' || anyPrivate) {
     const names = overlaps.map(t => t.trip_name || 'Unnamed').join(', ');
-    warning.textContent = `Time conflict: boat overlaps with "${names}". Adjust departure or arrival times.`;
+    warning.textContent = `Boat unavailable: overlaps with "${names}"${anyPrivate ? ' (privately booked)' : ' — this trip is private'}. Adjust times or choose a different boat.`;
+    warning.style.display = 'block';
+    return;
+  }
+
+  // All shared — check cumulative capacity
+  const boatSelect = document.getElementById('trip-boat');
+  const selectedOption = boatSelect.options[boatSelect.selectedIndex];
+  const capacity = parseInt(selectedOption?.dataset.capacity) || null;
+  const newGuests = parseInt(document.getElementById('trip-max-guests').value) || 0;
+  const existingGuests = overlaps.reduce((sum, t) => sum + (t.max_guests || 0), 0);
+  const totalGuests = existingGuests + newGuests;
+
+  if (capacity && totalGuests > capacity) {
+    warning.textContent = `Boat capacity exceeded: ${existingGuests} guests already booked in this slot, adding ${newGuests} would total ${totalGuests} (max ${capacity}).`;
     warning.style.display = 'block';
   } else {
     warning.style.display = 'none';
@@ -3021,7 +3038,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     contact_phone: contactPhone,
     contact_email: contactEmail || null,
     booked_by: bookedBy || null,
-    party_type: window.currentPartyType || 'single',
+    booking_mode: window.currentBookingMode || 'private',
     notes: notes || null,
     status: 'scheduled',
     created_by: (await sb.auth.getUser()).data.user.id
