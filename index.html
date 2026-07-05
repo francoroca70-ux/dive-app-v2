@@ -1215,7 +1215,6 @@ body { background: var(--navy); color: var(--text); }
 
               <div class="sf-group">
                 <label class="sf-label">Trip name / site <span class="required-star">*</span></label>
-                <input class="sf-input" type="text" id="trip-name" placeholder="e.g. Shark Point Morning Dive">
               </div>
 
               <div class="sf-group">
@@ -2674,8 +2673,6 @@ function openNewTrip() {
   document.getElementById('trip-date').value = formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
   document.getElementById('trip-arrival').value = '';
-  document.getElementById('trip-name').value = '';
-  document.getElementById('trip-max-guests').value = '';
   document.getElementById('trip-price').value = '';
   document.getElementById('trip-payment-status').value = 'pending';
   document.getElementById('trip-contact-name').value = '';
@@ -2687,6 +2684,7 @@ function openNewTrip() {
   document.getElementById('trip-crew-fields').innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Save the trip to assign crew.</p>';
   document.getElementById('boat-conflict-warning').style.display = 'none';
   document.getElementById('save-conflict-warning').style.display = 'none';
+  window.currentBoatConflict = false;
   setBookingMode('private');
   document.getElementById('trip-save-feedback').className = 'save-feedback';
   populateTripBoats();
@@ -2703,7 +2701,7 @@ async function openTrip(id) {
     .single();
   if (!trip) return;
 
-  document.getElementById('modal-trip-title').textContent = trip.trip_name || 'Trip details';
+  document.getElementById('modal-trip-title').textContent = trip.contact_name || 'Trip details';
   await populateTripTypeSelect(trip.trip_type_id);
   await onTripTypeChange();
 
@@ -2784,11 +2782,11 @@ async function checkBoatConflict() {
   const newEnd = document.getElementById('trip-arrival').value || '23:59';
   const warning = document.getElementById('boat-conflict-warning');
   const newMode = window.currentBookingMode || 'private';
-  if (!boatId || !date || !currentOrgId) { warning.style.display = 'none'; return; }
+  if (!boatId || !date || !currentOrgId) { warning.style.display = 'none'; window.currentBoatConflict = false; return; }
 
   const { data: existing } = await sb
     .from('trips')
-    .select('id, trip_name, trip_time, arrival_time, booking_mode, max_guests')
+    .select('id, trip_name, contact_name, trip_time, arrival_time, booking_mode, max_guests')
     .eq('boat_id', boatId)
     .eq('trip_date', date)
     .neq('id', currentTripId || '00000000-0000-0000-0000-000000000000');
@@ -2805,7 +2803,7 @@ async function checkBoatConflict() {
 
   const anyPrivate = overlaps.some(t => t.booking_mode === 'private');
   if (newMode === 'private' || anyPrivate) {
-    const names = overlaps.map(t => t.trip_name || 'Unnamed').join(', ');
+    const names = overlaps.map(t => t.contact_name || 'Unnamed').join(', ');
     warning.textContent = `Boat unavailable: overlaps with "${names}"${anyPrivate ? ' (privately booked)' : ' — this trip is private'}. Adjust times or choose a different boat.`;
     warning.style.display = 'block';
     window.currentBoatConflict = true;
@@ -2832,6 +2830,7 @@ async function checkBoatConflict() {
 document.getElementById('trip-date').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-time').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-arrival').addEventListener('change', checkBoatConflict);
+document.getElementById('trip-max-guests').addEventListener('input', checkBoatConflict);
 
 async function loadCashUp() {
   const noLocEl = document.getElementById('cashup-no-location');
@@ -2889,7 +2888,7 @@ function renderCashUp(trips, existing, date) {
         <span class="gear-item-name">${t.contact_name || '—'}</span>
         <span style="font-size:0.95rem;font-weight:700;">$${amount.toFixed(2)}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t.trip_name}${t.boats ? ' · ' + t.boats.name : ''}${t.trip_time ? ' · ' + t.trip_time : ''}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t.trip_type || ''}${t.boats ? ' · ' + t.boats.name : ''}${t.trip_time ? ' · ' + t.trip_time : ''}</div>
       <div style="font-size:0.75rem;color:${statusColor};font-weight:600;margin-top:4px;">${statusLabel}</div>
     </div>`;
   }).join('');
@@ -2990,7 +2989,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-trip');
   const feedback = document.getElementById('trip-save-feedback');
   const typeId = document.getElementById('trip-type-select').value;
-  const name = document.getElementById('trip-name').value.trim();
+  const name = '';
   const date = document.getElementById('trip-date').value;
   const time = document.getElementById('trip-time').value;
   const arrival = document.getElementById('trip-arrival').value;
@@ -3007,7 +3006,6 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const tripType = currentTripTypes.find(t => t.id === typeId);
 
   const errors = [];
-  if (!name) errors.push('Trip name');
   if (!date) errors.push('Date');
   if (!time) errors.push('Departure time');
   if (!contactName) errors.push('Contact name');
