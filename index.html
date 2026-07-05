@@ -2801,13 +2801,14 @@ async function checkBoatConflict() {
     return newStart < tEnd && newEnd > tStart;
   });
 
-  if (overlaps.length === 0) { warning.style.display = 'none'; return; }
+  if (overlaps.length === 0) { warning.style.display = 'none'; window.currentBoatConflict = false; return; }
 
   const anyPrivate = overlaps.some(t => t.booking_mode === 'private');
   if (newMode === 'private' || anyPrivate) {
     const names = overlaps.map(t => t.trip_name || 'Unnamed').join(', ');
     warning.textContent = `Boat unavailable: overlaps with "${names}"${anyPrivate ? ' (privately booked)' : ' — this trip is private'}. Adjust times or choose a different boat.`;
     warning.style.display = 'block';
+    window.currentBoatConflict = true;
     return;
   }
 
@@ -2822,8 +2823,10 @@ async function checkBoatConflict() {
   if (capacity && totalGuests > capacity) {
     warning.textContent = `Boat capacity exceeded: ${existingGuests} guests already booked in this slot, adding ${newGuests} would total ${totalGuests} (max ${capacity}).`;
     warning.style.display = 'block';
+    window.currentBoatConflict = true;
   } else {
     warning.style.display = 'none';
+    window.currentBoatConflict = false;
   }
 }
 document.getElementById('trip-date').addEventListener('change', checkBoatConflict);
@@ -3012,6 +3015,12 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
 
   if (errors.length) {
     feedback.textContent = 'Missing: ' + errors.join(', ');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  if (window.currentBoatConflict) {
+    feedback.textContent = 'Cannot save: resolve the boat conflict first.';
     feedback.className = 'save-feedback error visible';
     return;
   }
