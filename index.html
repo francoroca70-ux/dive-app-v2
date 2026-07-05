@@ -2687,7 +2687,7 @@ function openNewTrip() {
   document.getElementById('trip-crew-fields').innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Save the trip to assign crew.</p>';
   document.getElementById('boat-conflict-warning').style.display = 'none';
   document.getElementById('save-conflict-warning').style.display = 'none';
-  setPartyType('single');
+  setBookingMode('private');
   document.getElementById('trip-save-feedback').className = 'save-feedback';
   populateTripBoats();
   populateTripTypeSelect().then(onTripTypeChange);
@@ -2720,7 +2720,7 @@ async function openTrip(id) {
   document.getElementById('trip-booked-by').value = trip.booked_by || '';
   document.getElementById('trip-notes').value = trip.notes || '';
   document.getElementById('trip-dive-sites').value = trip.dive_sites || '';
-  setPartyType(trip.party_type || 'single');
+  setBookingMode(trip.booking_mode || 'private');
   populateTripBoats(trip.boat_id);
 
   document.getElementById('trip-form-section').style.display = 'block';
