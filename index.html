@@ -1704,7 +1704,11 @@ body { background: var(--navy); color: var(--text); }
             <h1>Daily Cash-Up</h1>
             <p>Cash reconciliation and daily totals</p>
           </div>
-          <input class="sf-input" type="date" id="cashup-date" style="width:auto;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="btn-cancel" id="cashup-prev" style="padding:8px 12px;">←</button>
+            <input class="sf-input" type="date" id="cashup-date" style="width:auto;">
+            <button class="btn-cancel" id="cashup-next" style="padding:8px 12px;">→</button>
+          </div>
         </div>
         <div id="cashup-no-location" style="display:none;">
           <p style="color:var(--muted);">Select a location above to view cash-up.</p>
@@ -2893,6 +2897,18 @@ async function loadCashUp() {
   renderCashUp(payments || [], existing, date);
 }
 document.getElementById('cashup-date').addEventListener('change', loadCashUp);
+document.getElementById('cashup-prev').addEventListener('click', () => {
+  const d = new Date(document.getElementById('cashup-date').value + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  document.getElementById('cashup-date').value = d.toISOString().split('T')[0];
+  loadCashUp();
+});
+document.getElementById('cashup-next').addEventListener('click', () => {
+  const d = new Date(document.getElementById('cashup-date').value + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  document.getElementById('cashup-date').value = d.toISOString().split('T')[0];
+  loadCashUp();
+});
 
 function renderCashUp(payments, existing, date) {
   const el = document.getElementById('cashup-content');
