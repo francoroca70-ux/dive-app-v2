@@ -216,25 +216,31 @@ body { background: var(--navy); color: var(--text); }
 
 /* Sidebar */
 .sidebar {
-  width: 220px; background: var(--white);
+  width: 64px; background: var(--white);
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
-  flex-shrink: 0; overflow-y: auto;
+  flex-shrink: 0; overflow: hidden;
   padding: 16px 0;
+  transition: width 0.2s ease;
+  z-index: 30;
 }
+.sidebar:hover { width: 220px; overflow-y: auto; }
 .nav-section-label {
   font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--muted);
-  padding: 12px 20px 6px; opacity: 0.6;
+  padding: 12px 20px 6px; opacity: 0; white-space: nowrap;
+  transition: opacity 0.15s ease;
 }
+.sidebar:hover .nav-section-label { opacity: 0.6; }
 .nav-item {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 16px; cursor: pointer; margin: 1px 8px;
   font-size: 0.845rem; font-weight: 500; color: var(--muted);
   border-radius: 8px; border-left: none;
   transition: background 0.15s, color 0.15s;
-  user-select: none;
+  user-select: none; white-space: nowrap;
 }
+.nav-icon { flex-shrink: 0; }
 .nav-item:hover { background: var(--foam); color: var(--blue); }
 .nav-item.active {
   background: rgba(26,107,138,0.1);
