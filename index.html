@@ -2468,6 +2468,43 @@ function durationH(start, end) {
   return Math.max(0.5, (eh + em/60) - (sh + sm/60));
 }
 
+function layoutDayTrips(dayT) {
+  const items = dayT.map(t => {
+    const start = timeToY(t.trip_time?.slice(0,5));
+    const height = Math.max(durationH(t.trip_time?.slice(0,5), t.arrival_time?.slice(0,5)) * SLOT_HEIGHT, 36);
+    return { trip: t, start, end: start + height, height };
+  });
+  items.sort((a,b) => a.start - b.start);
+  const clusters = [];
+  let currentCluster = [];
+  let clusterEnd = -Infinity;
+  items.forEach(item => {
+    if (currentCluster.length && item.start >= clusterEnd) {
+      clusters.push(currentCluster);
+      currentCluster = [];
+      clusterEnd = -Infinity;
+    }
+    currentCluster.push(item);
+    clusterEnd = Math.max(clusterEnd, item.end);
+  });
+  if (currentCluster.length) clusters.push(currentCluster);
+  clusters.forEach(cluster => {
+    const columnEnds = [];
+    cluster.forEach(item => {
+      let placedCol = -1;
+      for (let c = 0; c < columnEnds.length; c++) {
+        if (item.start >= columnEnds[c]) { placedCol = c; break; }
+      }
+      if (placedCol === -1) { placedCol = columnEnds.length; columnEnds.push(0); }
+      columnEnds[placedCol] = item.end;
+      item.col = placedCol;
+    });
+    const totalCols = columnEnds.length;
+    cluster.forEach(item => { item.totalCols = totalCols; });
+  });
+  return items;
+}
+
 async function renderWeekView() {
   const body = document.getElementById('cal-body');
   const start = getWeekStart(calDate);
@@ -2494,12 +2531,14 @@ async function renderWeekView() {
       hourRows += `<div class="week-hour-row" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()"></div>`;
     }
 
-    // Trip blocks
-    const tripBlocks = dayT.map(t => {
-      const top = timeToY(t.trip_time?.slice(0,5));
-      const height = Math.max(durationH(t.trip_time?.slice(0,5), t.arrival_time?.slice(0,5)) * SLOT_HEIGHT, 36);
-      const showSub = height >= 52;
-      return `<div class="week-trip-block-v2" style="top:${top}px;height:${height}px;" onclick="event.stopPropagation();openTrip('${t.id}')">
+    // Trip blocks — laid out side-by-side when they overlap
+    const laidOut = layoutDayTrips(dayT);
+    const tripBlocks = laidOut.map(item => {
+      const t = item.trip;
+      const showSub = item.height >= 52;
+      const width = 100 / item.totalCols;
+      const left = item.col * width;
+      return `<div class="week-trip-block-v2" style="top:${item.start}px;height:${item.height}px;left:${left}%;width:calc(${width}% - 4px);" onclick="event.stopPropagation();openTrip('${t.id}')">
         <div class="wtb-time">${t.trip_time?.slice(0,5)||''}</div>
         <div class="wtb-name">${t.trip_name||t.trip_type||'Trip'}</div>
         ${showSub ? `<div class="wtb-sub">${t.max_guests ? t.max_guests+' guests' : ''}</div>` : ''}
