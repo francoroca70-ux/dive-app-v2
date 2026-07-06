@@ -2714,6 +2714,7 @@ async function openTrip(id) {
   document.getElementById('trip-dive-sites').value = trip.dive_sites || '';
   setBookingMode(trip.booking_mode || 'private');
   populateTripBoats(trip.boat_id);
+  await loadTripPaymentsSection(trip.id);
 
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('participants-section').style.display = 'block';
@@ -3069,6 +3070,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   document.getElementById('modal-trip-title').textContent = name;
   await loadParticipants(tripId);
   await loadTripCrewSection(tripId);
+  await loadTripPaymentsSection(tripId);
 
   document.getElementById('stat-trips').textContent = '↑';
   setTimeout(() => feedback.className = 'save-feedback', 3000);
