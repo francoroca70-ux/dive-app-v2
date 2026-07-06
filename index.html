@@ -3134,10 +3134,13 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
 // ─── TRIP CREW ───
 async function loadTripCrewSection(tripId) {
   if (!currentOrgId) return;
-  const { data: staffList } = await sb
-    .from('staff')
-    .select('id, full_name, role')
-    .eq('org_id', currentOrgId);
+  const { data: tripLoc } = await sb.from('trips').select('location_id').eq('id', tripId).single();
+  const locId = tripLoc?.location_id || currentLocationId;
+  const { data: staffLocRows } = await sb
+    .from('staff_locations')
+    .select('staff(id, full_name, role)')
+    .eq('location_id', locId);
+  const staffList = (staffLocRows || []).map(r => r.staff).filter(Boolean);
 
   const { data: assigned } = await sb
     .from('trip_crew')
