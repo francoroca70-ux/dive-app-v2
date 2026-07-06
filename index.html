@@ -739,6 +739,19 @@ body { background: var(--navy); color: var(--text); }
 .week-day-body.today { border-color: var(--blue); }
 .week-trip-pill { background: rgba(26,107,138,0.1); border-radius: 4px; padding: 3px 6px; font-size: 0.7rem; font-weight: 600; color: var(--blue); margin-bottom: 3px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Week view v3 - list style, no hourly grid */
+.week-grid-wrapper-v3 { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; }
+.week-day-col-v3 { flex: 1; min-width: 150px; }
+.week-day-col-header-v3 { font-size: 0.72rem; font-weight: 700; text-align: center; padding: 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 2px solid var(--border); margin-bottom: 8px; }
+.week-day-col-header-v3.today { color: var(--blue); }
+.week-day-col-body-v3 { display: flex; flex-direction: column; gap: 6px; padding: 0 4px; }
+.week-chip { background: var(--white); border: 1px solid var(--border); border-left: 3px solid var(--teal); border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: box-shadow 0.15s; }
+.week-chip:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.week-chip-time { font-size: 0.7rem; font-weight: 700; color: var(--teal); margin-bottom: 2px; }
+.week-chip-title { font-size: 0.82rem; font-weight: 600; color: var(--text); text-transform: capitalize; }
+.week-chip-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.week-day-empty-v3 { font-size: 0.75rem; color: var(--muted); text-align: center; padding: 24px 0; }
+
 /* Month view */
 .month-grid {
   display: grid; grid-template-columns: repeat(7, 1fr);
