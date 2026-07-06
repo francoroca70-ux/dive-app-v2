@@ -1285,21 +1285,12 @@ body { background: var(--navy); color: var(--text); }
               </div>
 
               <div class="card-section-title" style="margin-top:20px;">Payment</div>
-              <div class="sf-row">
-                <div class="sf-group">
-                  <label class="sf-label">Amount</label>
-                  <input class="sf-input" type="number" id="trip-price" placeholder="e.g. 1500" min="0">
-                </div>
-                <div class="sf-group">
-                  <label class="sf-label">Status</label>
-                  <select class="sf-input" id="trip-payment-status">
-                    <option value="pending">Pending</option>
-                    <option value="paid_cash">Paid — cash</option>
-                    <option value="paid_card">Paid — card</option>
-                    <option value="paid_transfer">Paid — bank transfer</option>
-                    <option value="partial">Partial payment</option>
-                  </select>
-                </div>
+              <div class="sf-group">
+                <label class="sf-label">Total price</label>
+                <input class="sf-input" type="number" id="trip-price" placeholder="e.g. 1500" min="0">
+              </div>
+              <div id="trip-payments-section" style="margin-top:12px;">
+                <p style="font-size:0.83rem;color:var(--muted);">Save the trip to log payments.</p>
               </div>
 
               <div class="card-section-title" style="margin-top:20px;">Crew</div>
