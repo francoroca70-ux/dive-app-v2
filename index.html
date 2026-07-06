@@ -790,6 +790,16 @@ body { background: var(--navy); color: var(--text); }
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--blue); display: inline-block; margin: 1px;
 }
+.month-day { min-height: 92px; }
+.month-mini-chip {
+  background: rgba(26,107,138,0.08); border-left: 2px solid var(--teal);
+  border-radius: 4px; padding: 2px 4px; margin-bottom: 2px;
+  font-size: 0.62rem; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer; transition: background 0.15s;
+}
+.month-mini-chip:hover { background: rgba(26,107,138,0.15); }
+.month-day-more { font-size: 0.62rem; color: var(--muted); cursor: pointer; }
 
 /* Modal */
 .modal-overlay {
@@ -2586,12 +2596,18 @@ async function renderMonthView() {
     const date = new Date(year, month, d);
     const dateStr = formatDate(date);
     const isToday = isSameDay(date, today);
-    const dayTrips = monthTrips.filter(t => t.trip_date === dateStr);
+    const dayTrips = monthTrips.filter(t => t.trip_date === dateStr).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
+    const shown = dayTrips.slice(0, 3);
+    const chips = shown.map(t => `
+      <div class="month-mini-chip" onclick="event.stopPropagation();openTrip('${t.id}')">
+        ${t.trip_time?.slice(0,5)||''} ${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}
+      </div>
+    `).join('');
     html += `
     <div class="month-day ${isToday?'today':''}" onclick="goToDay('${dateStr}')">
       <div class="month-day-num">${d}</div>
-      ${dayTrips.slice(0,3).map(() => `<span class="month-trip-dot"></span>`).join('')}
-      ${dayTrips.length > 3 ? `<div style="font-size:0.65rem;color:var(--muted)">+${dayTrips.length-3}</div>` : ''}
+      ${chips}
+      ${dayTrips.length > 3 ? `<div class="month-day-more">+${dayTrips.length-3} more</div>` : ''}
     </div>`;
   }
 
