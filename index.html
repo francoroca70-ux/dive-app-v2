@@ -2420,7 +2420,7 @@ async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
   const { data } = await sb
     .from('trips')
-    .select('*, boats(name), participants(id), trip_crew(staff(full_name))')
+    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name))')
     .eq('org_id', currentOrgId)
     .gte('trip_date', formatDate(start))
     .lte('trip_date', formatDate(end))
@@ -2538,7 +2538,7 @@ async function renderWeekView() {
       <div class="week-chip" onclick="event.stopPropagation();openTrip('${t.id}')">
         <div class="week-chip-time">${t.trip_time?.slice(0,5)||''}${t.arrival_time ? ' – ' + t.arrival_time.slice(0,5) : ''}</div>
         <div class="week-chip-title">${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}</div>
-        <div class="week-chip-meta">${t.boats?.name || 'No boat'}${t.max_guests ? ' · ' + t.max_guests + ' guests' : ''}</div>
+        <div class="week-chip-meta">${t.boats?.name || 'No boat'}${t.max_guests ? ' · ' + t.max_guests + (t.boats?.capacity ? '/' + t.boats.capacity : '') + ' guests' : ''}</div>
       </div>
     `).join('');
 
