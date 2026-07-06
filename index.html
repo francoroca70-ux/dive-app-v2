@@ -2527,56 +2527,30 @@ async function renderWeekView() {
   const start = getWeekStart(calDate);
   const weekTrips = await fetchTripsForRange(start, addDays(start, 6));
   const today = new Date();
-  const totalSlots = WEEK_END_HOUR - WEEK_START_HOUR;
   const days = Array.from({length:7}, (_,i) => addDays(start, i));
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-  // Time column
-  let timeCells = '<div class="week-time-header"></div>';
-  for (let h = WEEK_START_HOUR; h < WEEK_END_HOUR; h++) {
-    timeCells += `<div class="week-time-slot">${h}:00</div>`;
-  }
-
-  // Day columns
   const dayCols = days.map((d, i) => {
     const isToday = isSameDay(d, today);
-    const dayT = weekTrips.filter(t => t.trip_date === formatDate(d));
+    const dayT = weekTrips.filter(t => t.trip_date === formatDate(d)).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
 
-    // Hour rows
-    let hourRows = '';
-    for (let j = 0; j < totalSlots; j++) {
-      hourRows += `<div class="week-hour-row" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()"></div>`;
-    }
-
-    // Trip blocks — laid out side-by-side when they overlap
-    const laidOut = layoutDayTrips(dayT);
-    const tripBlocks = laidOut.map(item => {
-      const t = item.trip;
-      const showSub = item.height >= 52;
-      const width = 100 / item.totalCols;
-      const left = item.col * width;
-      return `<div class="week-trip-block-v2" style="top:${item.start}px;height:${item.height}px;left:${left}%;width:calc(${width}% - 4px);" onclick="event.stopPropagation();openTrip('${t.id}')">
-        <div class="wtb-time">${t.trip_time?.slice(0,5)||''}</div>
-        <div class="wtb-name">${t.trip_name||t.trip_type||'Trip'}</div>
-        ${showSub ? `<div class="wtb-sub">${t.max_guests ? t.max_guests+' guests' : ''}</div>` : ''}
-      </div>`;
-    }).join('');
-
-    return `<div class="week-day-col-v2">
-      <div class="week-day-col-header ${isToday?'today':''}">
-        <span>${dayNames[i]}</span>
-        <span class="wdnum">${d.getDate()}</span>
+    const chips = dayT.map(t => `
+      <div class="week-chip" onclick="event.stopPropagation();openTrip('${t.id}')">
+        <div class="week-chip-time">${t.trip_time?.slice(0,5)||''}${t.arrival_time ? ' – ' + t.arrival_time.slice(0,5) : ''}</div>
+        <div class="week-chip-title">${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}</div>
+        <div class="week-chip-meta">${t.boats?.name || 'No boat'}${t.max_guests ? ' · ' + t.max_guests + ' guests' : ''}</div>
       </div>
-      <div class="week-day-col-body" style="height:${totalSlots * SLOT_HEIGHT}px;position:relative;">
-        ${hourRows}${tripBlocks}
+    `).join('');
+
+    return `<div class="week-day-col-v3">
+      <div class="week-day-col-header-v3 ${isToday?'today':''}">${dayNames[i]} ${d.getDate()}</div>
+      <div class="week-day-col-body-v3" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
+        ${chips || '<div class="week-day-empty-v3">No trips</div>'}
       </div>
     </div>`;
   }).join('');
 
-  body.innerHTML = `<div class="week-grid-wrapper">
-    <div class="week-time-col">${timeCells}</div>
-    <div class="week-days-scroll">${dayCols}</div>
-  </div>`;
+  body.innerHTML = `<div class="week-grid-wrapper-v3">${dayCols}</div>`;
 }
 
 async function renderMonthView() {
