@@ -3055,6 +3055,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     return;
   }
 
+  await checkBoatConflict();
   if (window.currentBoatConflict) {
     feedback.textContent = 'Cannot save: resolve the boat conflict first.';
     feedback.className = 'save-feedback error visible';
