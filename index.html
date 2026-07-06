@@ -2878,55 +2878,46 @@ async function loadCashUp() {
   }
   noLocEl.style.display = 'none';
   const date = dateInput.value;
-  const { data: trips } = await sb.from('trips')
-    .select('*, boats(name)')
+  const { data: payments } = await sb.from('payments')
+    .select('*, trips(contact_name, trip_type, boats(name))')
     .eq('org_id', currentOrgId)
     .eq('location_id', currentLocationId)
-    .eq('trip_date', date)
-    .order('trip_time');
+    .eq('payment_date', date)
+    .order('created_at');
   const { data: existing } = await sb.from('cash_ups')
     .select('*')
     .eq('org_id', currentOrgId)
     .eq('location_id', currentLocationId)
     .eq('cash_up_date', date)
     .maybeSingle();
-  renderCashUp(trips || [], existing, date);
+  renderCashUp(payments || [], existing, date);
 }
 document.getElementById('cashup-date').addEventListener('change', loadCashUp);
 
-function renderCashUp(trips, existing, date) {
+function renderCashUp(payments, existing, date) {
   const el = document.getElementById('cashup-content');
-  if (!trips.length) {
-    el.innerHTML = '<p style="color:var(--muted);">No trips on this date.</p>';
+  if (!payments.length) {
+    el.innerHTML = '<p style="color:var(--muted);">No payments logged for this date.</p>';
     return;
   }
-  let cashTotal = 0, cardTotal = 0, transferTotal = 0, partialTotal = 0, pendingTotal = 0;
-  const rowsHtml = trips.map(t => {
-    const amount = t.payment_amount || 0;
-    const status = t.payment_status || 'pending';
-    const statusMap = {
-      pending: ['Pending', 'var(--error)'],
-      paid_cash: ['Cash', 'var(--success)'],
-      paid_card: ['Card', 'var(--teal)'],
-      paid_transfer: ['Transfer', 'var(--teal)'],
-      partial: ['Partial', 'var(--warning)']
-    };
-    const [statusLabel, statusColor] = statusMap[status] || statusMap.pending;
-    if (status === 'paid_cash') cashTotal += amount;
-    else if (status === 'paid_card') cardTotal += amount;
-    else if (status === 'paid_transfer') transferTotal += amount;
-    else if (status === 'partial') partialTotal += amount;
-    else pendingTotal += amount;
+  let cashTotal = 0, cardTotal = 0, transferTotal = 0;
+  const rowsHtml = payments.map(p => {
+    const method = (p.method || '').toLowerCase();
+    const amount = parseFloat(p.amount) || 0;
+    if (method === 'cash') cashTotal += amount;
+    else if (method === 'card') cardTotal += amount;
+    else if (method === 'transfer') transferTotal += amount;
+    const trip = p.trips;
     return `<div class="gear-item-row">
       <div class="gear-item-header">
-        <span class="gear-item-name">${t.contact_name || '—'}</span>
+        <span class="gear-item-name">${trip?.contact_name || '—'}</span>
         <span style="font-size:0.95rem;font-weight:700;">$${amount.toFixed(2)}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t.trip_type || ''}${t.boats ? ' · ' + t.boats.name : ''}${t.trip_time ? ' · ' + t.trip_time : ''}</div>
-      <div style="font-size:0.75rem;color:${statusColor};font-weight:600;margin-top:4px;">${statusLabel}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${trip?.trip_type || ''}${trip?.boats ? ' · ' + trip.boats.name : ''}</div>
+      <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:4px;text-transform:capitalize;">${method || 'unknown'}</div>
     </div>`;
   }).join('');
-  const takenToday = cashTotal + cardTotal + transferTotal + partialTotal;
+  const takenToday = cashTotal + cardTotal + transferTotal;
   const opening = existing?.opening_float || 0;
   const paidOut = existing?.cash_paid_out || 0;
   const expectedCash = opening + cashTotal - paidOut;
@@ -2940,8 +2931,6 @@ function renderCashUp(trips, existing, date) {
         <div><div class="gear-stock-label">Cash</div><div class="gear-stock-value-lg">$${cashTotal.toFixed(2)}</div></div>
         <div><div class="gear-stock-label">Card</div><div class="gear-stock-value-lg">$${cardTotal.toFixed(2)}</div></div>
         <div><div class="gear-stock-label">Transfer</div><div class="gear-stock-value-lg">$${transferTotal.toFixed(2)}</div></div>
-        <div><div class="gear-stock-label">Partial</div><div class="gear-stock-value-lg repair">$${partialTotal.toFixed(2)}</div></div>
-        <div><div class="gear-stock-label">Pending</div><div class="gear-stock-value-lg" style="color:var(--error);">$${pendingTotal.toFixed(2)}</div></div>
       </div>
       <div style="padding:14px;background:var(--foam);border-radius:10px;border:1px solid var(--border);">
         <span style="font-weight:600;">Total taken today: $${takenToday.toFixed(2)}</span>
@@ -2981,9 +2970,9 @@ function renderCashUp(trips, existing, date) {
       ${existing?.closed_by ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">Last closed by ${existing.closed_by} · ${new Date(existing.closed_at).toLocaleString()}</p>` : ''}
     </div>
   `;
-  document.getElementById('btn-save-cashup').addEventListener('click', () => saveCashUp(date, cashTotal, cardTotal, transferTotal, pendingTotal, partialTotal));
+  document.getElementById('btn-save-cashup').addEventListener('click', () => saveCashUp(date, cashTotal, cardTotal, transferTotal));
 }
-async function saveCashUp(date, cashTotal, cardTotal, transferTotal, pendingTotal, partialTotal) {
+async function saveCashUp(date, cashTotal, cardTotal, transferTotal) {
   const btn = document.getElementById('btn-save-cashup');
   const feedback = document.getElementById('cashup-save-feedback');
   const opening = parseFloat(document.getElementById('cashup-opening').value) || 0;
@@ -2996,7 +2985,6 @@ async function saveCashUp(date, cashTotal, cardTotal, transferTotal, pendingTota
   const { error } = await sb.from('cash_ups').upsert({
     org_id: currentOrgId, location_id: currentLocationId, cash_up_date: date,
     total_cash: cashTotal, total_card: cardTotal, total_transfer: transferTotal,
-    total_partial: partialTotal, total_pending: pendingTotal,
     opening_float: opening, cash_paid_out: paidOut, counted_cash: counted,
     notes: notes || null, closed_by: user.email, closed_at: new Date().toISOString()
   }, { onConflict: 'org_id,location_id,cash_up_date' });
