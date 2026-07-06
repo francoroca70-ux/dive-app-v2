@@ -2671,7 +2671,6 @@ function openNewTrip() {
   document.getElementById('trip-time').value = '08:00';
   document.getElementById('trip-arrival').value = '';
   document.getElementById('trip-price').value = '';
-  document.getElementById('trip-payment-status').value = 'pending';
   document.getElementById('trip-contact-name').value = '';
   document.getElementById('trip-contact-phone').value = '';
   document.getElementById('trip-contact-email').value = '';
@@ -2707,7 +2706,6 @@ async function openTrip(id) {
   document.getElementById('trip-arrival').value = trip.arrival_time?.slice(0,5) || '';
   document.getElementById('trip-max-guests').value = trip.max_guests || '';
   document.getElementById('trip-price').value = trip.payment_amount || trip.price_per_person || '';
-  document.getElementById('trip-payment-status').value = trip.payment_status || 'pending';
   document.getElementById('trip-contact-name').value = trip.contact_name || '';
   document.getElementById('trip-contact-phone').value = trip.contact_phone || '';
   document.getElementById('trip-contact-email').value = trip.contact_email || '';
@@ -2992,7 +2990,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const boatId = document.getElementById('trip-boat').value;
   const maxGuests = document.getElementById('trip-max-guests').value;
   const price = document.getElementById('trip-price').value;
-  const paymentStatus = document.getElementById('trip-payment-status').value;
+  const paymentStatus = 'pending';
   const contactName = document.getElementById('trip-contact-name').value.trim();
   const contactPhone = document.getElementById('trip-contact-phone').value.trim();
   const contactEmail = document.getElementById('trip-contact-email').value.trim();
@@ -3119,6 +3117,47 @@ async function addTripCrew(tripId) {
 async function removeTripCrew(id, tripId) {
   await sb.from('trip_crew').delete().eq('id', id);
   await loadTripCrewSection(tripId);
+}
+
+// ─── TRIP PAYMENTS ───
+async function loadTripPaymentsSection(tripId) {
+  const container = document.getElementById('trip-payments-section');
+  const { data: trip } = await sb.from('trips').select('price_per_person, payment_amount, contact_name').eq('id', tripId).single();
+  const { data: payments } = await sb.from('payments').select('*').eq('trip_id', tripId).order('payment_date');
+  const total = parseFloat(trip?.price_per_person || trip?.payment_amount || 0);
+  const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+  const balance = total - paid;
+  const paymentsHtml = (payments || []).map(p => `
+    <div class="crew-member-tag-v2">${p.method} — $${parseFloat(p.amount).toFixed(2)} · ${p.payment_date}
+      <button onclick="removeTripPayment('${p.id}', '${tripId}')">×</button>
+    </div>
+  `).join('');
+  const statusLabel = balance <= 0 && total > 0 ? 'Paid in full' : paid > 0 ? `Partial — $${balance.toFixed(2)} owed` : 'Nothing paid yet';
+  const statusColor = balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
+  container.innerHTML = `
+    <div style="font-size:0.83rem;font-weight:600;color:${statusColor};margin-bottom:8px;">${statusLabel}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${paymentsHtml || '<span style="font-size:0.8rem;color:var(--muted)">No payments logged yet.</span>'}</div>
+    <button class="btn-cancel" onclick="logTripPayment('${tripId}')">+ Log Payment</button>
+  `;
+}
+async function logTripPayment(tripId) {
+  const result = await showTwoFieldModal('Log a payment — enter amount and method (cash/card/transfer).', 'Amount', 'Method (cash/card/transfer)');
+  if (!result) return;
+  const amount = parseFloat(result.field1);
+  const method = result.field2.trim().toLowerCase();
+  if (!amount || amount <= 0) { await showAlertModal('Please enter a valid amount.'); return; }
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('payments').insert({
+    org_id: currentOrgId, location_id: currentLocationId, trip_id: tripId,
+    amount, method, payment_date: new Date().toISOString().split('T')[0],
+    logged_by: user.email
+  });
+  await loadTripPaymentsSection(tripId);
+}
+async function removeTripPayment(id, tripId) {
+  if (!(await showConfirmModal('Remove this payment record?'))) return;
+  await sb.from('payments').delete().eq('id', id);
+  await loadTripPaymentsSection(tripId);
 }
 
 // ─── PARTICIPANTS ───
