@@ -225,6 +225,8 @@ body { background: var(--navy); color: var(--text); }
   z-index: 30;
 }
 .sidebar:hover { width: 220px; overflow-y: auto; }
+.sidebar:not(:hover) .nav-item { font-size: 0; }
+.sidebar:not(:hover) .nav-icon { font-size: 1rem; }
 .nav-section-label {
   font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--muted);
