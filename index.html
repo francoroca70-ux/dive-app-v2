@@ -3157,7 +3157,7 @@ async function loadTripPaymentsSection(tripId) {
   const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
   const balance = total - paid;
   const paymentsHtml = (payments || []).map(p => `
-    <div class="crew-member-tag-v2">${p.method} — $${parseFloat(p.amount).toFixed(2)} · ${p.payment_date}
+    <div class="crew-member-tag-v2">${p.method} — $${parseFloat(p.amount).toFixed(2)} · ${p.payment_date}${p.note ? ' · ' + p.note : ''}
       <button onclick="removeTripPayment('${p.id}', '${tripId}')">×</button>
     </div>
   `).join('');
@@ -3166,20 +3166,72 @@ async function loadTripPaymentsSection(tripId) {
   container.innerHTML = `
     <div style="font-size:0.83rem;font-weight:600;color:${statusColor};margin-bottom:8px;">${statusLabel}</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${paymentsHtml || '<span style="font-size:0.8rem;color:var(--muted)">No payments logged yet.</span>'}</div>
-    <button class="btn-cancel" onclick="logTripPayment('${tripId}')">+ Log Payment</button>
+    <div id="log-payment-btn-wrap">
+      <button class="btn-cancel" onclick="showLogPaymentForm('${tripId}', ${total}, ${paid})">+ Log Payment</button>
+    </div>
+    <div id="log-payment-form" style="display:none;margin-top:10px;padding:12px;background:var(--foam);border-radius:10px;">
+      <div class="sf-group">
+        <label class="sf-label">Amount</label>
+        <input class="sf-input" type="number" step="0.01" id="new-payment-amount" placeholder="e.g. 50">
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Method</label>
+        <div class="radio-group">
+          <div class="radio-btn" id="pm-cash" onclick="selectPaymentMethod('cash')">Cash</div>
+          <div class="radio-btn" id="pm-card" onclick="selectPaymentMethod('card')">Card</div>
+          <div class="radio-btn" id="pm-transfer" onclick="selectPaymentMethod('transfer')">Transfer</div>
+        </div>
+      </div>
+      <div class="sf-group" id="payment-note-wrap" style="display:none;">
+        <label class="sf-label">Note (required — this exceeds what's owed)</label>
+        <input class="sf-input" type="text" id="new-payment-note" placeholder="e.g. Includes $10 tip">
+      </div>
+      <div class="settings-actions">
+        <button class="btn-save" onclick="confirmLogPayment('${tripId}', ${total}, ${paid})">Confirm</button>
+        <button class="btn-cancel" onclick="cancelLogPayment()">Cancel</button>
+      </div>
+      <span class="save-feedback" id="log-payment-feedback"></span>
+    </div>
   `;
 }
-async function logTripPayment(tripId) {
-  const result = await showTwoFieldModal('Log a payment — enter amount and method (cash/card/transfer).', 'Amount', 'Method (cash/card/transfer)');
-  if (!result) return;
-  const amount = parseFloat(result.field1);
-  const method = result.field2.trim().toLowerCase();
-  if (!amount || amount <= 0) { await showAlertModal('Please enter a valid amount.'); return; }
+window.currentPaymentMethod = null;
+function showLogPaymentForm(tripId, total, paid) {
+  document.getElementById('log-payment-btn-wrap').style.display = 'none';
+  document.getElementById('log-payment-form').style.display = 'block';
+  document.getElementById('new-payment-amount').value = '';
+  document.getElementById('new-payment-note').value = '';
+  document.getElementById('payment-note-wrap').style.display = 'none';
+  window.currentPaymentMethod = null;
+  ['pm-cash','pm-card','pm-transfer'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  document.getElementById('new-payment-amount').oninput = () => checkPaymentOverage(total, paid);
+}
+function selectPaymentMethod(method) {
+  window.currentPaymentMethod = method;
+  ['pm-cash','pm-card','pm-transfer'].forEach(id => document.getElementById(id).classList.toggle('selected', id === 'pm-' + method));
+}
+function checkPaymentOverage(total, paid) {
+  const amount = parseFloat(document.getElementById('new-payment-amount').value) || 0;
+  const wouldExceed = (paid + amount) > total;
+  document.getElementById('payment-note-wrap').style.display = wouldExceed ? 'block' : 'none';
+}
+function cancelLogPayment() {
+  document.getElementById('log-payment-btn-wrap').style.display = 'block';
+  document.getElementById('log-payment-form').style.display = 'none';
+}
+async function confirmLogPayment(tripId, total, paid) {
+  const feedback = document.getElementById('log-payment-feedback');
+  const amount = parseFloat(document.getElementById('new-payment-amount').value);
+  const method = window.currentPaymentMethod;
+  const note = document.getElementById('new-payment-note').value.trim();
+  if (!amount || amount <= 0) { feedback.textContent = 'Enter a valid amount.'; feedback.className = 'save-feedback error visible'; return; }
+  if (!method) { feedback.textContent = 'Select a payment method.'; feedback.className = 'save-feedback error visible'; return; }
+  const wouldExceed = (paid + amount) > total;
+  if (wouldExceed && !note) { feedback.textContent = "This exceeds what's owed — please add a note explaining why."; feedback.className = 'save-feedback error visible'; return; }
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('payments').insert({
     org_id: currentOrgId, location_id: currentLocationId, trip_id: tripId,
     amount, method, payment_date: new Date().toISOString().split('T')[0],
-    logged_by: user.email
+    logged_by: user.email, note: note || null
   });
   await loadTripPaymentsSection(tripId);
 }
