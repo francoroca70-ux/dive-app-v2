@@ -2261,6 +2261,8 @@ async function loadSettings(user) {
       document.getElementById('org-currency').value = org.currency || 'USD';
       document.getElementById('org-email').value = org.email || '';
       document.getElementById('org-notice-new').style.display = 'none';
+      document.getElementById('chk-captain-elevated').checked = org.captain_elevated_permissions || false;
+      window.currentCaptainElevated = org.captain_elevated_permissions || false;
     }
 
     // Load locations
