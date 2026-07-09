@@ -4134,6 +4134,12 @@ function showCrewView(view, el) {
 }
 async function loadDayOffRequests() {
   if (!currentOrgId) return;
+  const canManageRequests = currentUserRole === 'owner' || currentUserRole === 'manager' || (currentUserRole === 'captain' && window.currentCaptainElevated);
+  if (!canManageRequests) {
+    document.getElementById('dayoff-pending-list').innerHTML = '<p style="color:var(--muted);">You don\'t have access to this section.</p>';
+    document.getElementById('dayoff-decided-list').innerHTML = '';
+    return;
+  }
   const { data: staffList } = await sb.from('staff').select('id, full_name').eq('org_id', currentOrgId);
   const sel = document.getElementById('dayoff-staff-select');
   sel.innerHTML = (staffList || []).map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
