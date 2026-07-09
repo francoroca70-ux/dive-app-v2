@@ -2313,6 +2313,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
   const country = document.getElementById('org-country').value;
   const currency = document.getElementById('org-currency').value;
   const email = document.getElementById('org-email').value.trim();
+  const captainElevated = document.getElementById('chk-captain-elevated').checked;
 
   if (!name) {
     feedback.textContent = 'Operation name is required.';
@@ -2329,7 +2330,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     // Create new org
     const { data: org, error: orgErr } = await sb
       .from('organizations')
-      .insert({ name, country, currency, email })
+      .insert({ name, country, currency, email, captain_elevated_permissions: captainElevated })
       .select()
       .single();
 
@@ -2369,7 +2370,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     // Update existing org
     const { error } = await sb
       .from('organizations')
-      .update({ name, country, currency, email })
+      .update({ name, country, currency, email, captain_elevated_permissions: captainElevated })
       .eq('id', currentOrgId);
 
     if (error) {
