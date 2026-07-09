@@ -1584,6 +1584,41 @@ body { background: var(--navy); color: var(--text); }
         <div id="crew-list"></div>
         </div>
         <div id="crew-availability-view" class="cl-view" style="display:none;">
+          <div style="margin-bottom:20px;">
+            <button class="btn-save" id="btn-show-dayoff-request">+ Request Day Off</button>
+          </div>
+          <div class="inline-form" id="form-dayoff-request" style="display:none;margin-bottom:20px;">
+            <div class="card-section-title">Request Day Off</div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Crew member</label>
+                <select class="sf-input" id="dayoff-staff-select"></select>
+              </div>
+            </div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Start date</label>
+                <input class="sf-input" type="date" id="dayoff-start">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">End date</label>
+                <input class="sf-input" type="date" id="dayoff-end">
+              </div>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Reason</label>
+              <input class="sf-input" type="text" id="dayoff-reason" placeholder="Why do you need this time off?">
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-submit-dayoff">Submit request</button>
+              <button class="btn-cancel" id="btn-cancel-dayoff">Cancel</button>
+              <span class="save-feedback" id="dayoff-feedback"></span>
+            </div>
+          </div>
+          <div class="card-section-title">Pending requests</div>
+          <div id="dayoff-pending-list"></div>
+          <div class="card-section-title" style="margin-top:20px;">Recent decisions</div>
+          <div id="dayoff-decided-list"></div>
         </div>
       </div>
 
