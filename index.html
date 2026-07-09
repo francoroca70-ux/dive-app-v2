@@ -2226,6 +2226,8 @@ async function loadRoster() {
   if (!currentOrgId) return;
   const { data: staffList } = await sb.from('staff').select('id, full_name, staff_locations(location_id, locations(name))').eq('org_id', currentOrgId);
   rosterStaffAll = staffList || [];
+  const dayoffSel = document.getElementById('dayoff-staff-select');
+  if (dayoffSel) dayoffSel.innerHTML = rosterStaffAll.map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
   const saved = loadRosterFilterFromStorage();
   rosterSelectedStaffIds = saved ? saved.filter(id => rosterStaffAll.some(s => s.id === id)) : rosterStaffAll.map(s => s.id);
   renderRosterFilterCheckboxes();
