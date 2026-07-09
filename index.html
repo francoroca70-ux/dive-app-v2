@@ -2297,6 +2297,48 @@ async function renderRosterGrid() {
   html += `</tbody></table></div>`;
   container.innerHTML = html;
 }
+let rosterCellStaffId = null;
+let rosterCellDate = null;
+async function openRosterCellEditor(staffId, dateStr) {
+  const canEdit = currentUserRole === 'owner' || currentUserRole === 'manager' || (currentUserRole === 'captain' && window.currentCaptainElevated);
+  if (!canEdit) return;
+  rosterCellStaffId = staffId;
+  rosterCellDate = dateStr;
+  const staffObj = rosterStaffAll.find(s => s.id === staffId);
+  document.getElementById('roster-cell-title').textContent = `${staffObj?.full_name || 'Crew'} — ${dateStr}`;
+  const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId);
+  const sel = document.getElementById('roster-cell-location');
+  sel.innerHTML = (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  document.getElementById('modal-roster-cell').style.display = 'flex';
+}
+function closeRosterCellModal() {
+  document.getElementById('modal-roster-cell').style.display = 'none';
+}
+document.getElementById('btn-save-roster-location').addEventListener('click', async () => {
+  const locationId = document.getElementById('roster-cell-location').value;
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('staff_availability').delete().eq('staff_id', rosterCellStaffId).eq('start_date', rosterCellDate).eq('end_date', rosterCellDate);
+  await sb.from('staff_daily_location').upsert({
+    org_id: currentOrgId, staff_id: rosterCellStaffId, location_id: locationId, work_date: rosterCellDate, set_by: user.email
+  }, { onConflict: 'staff_id,work_date' });
+  closeRosterCellModal();
+  renderRosterGrid();
+});
+async function setRosterCellStatus(status) {
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('staff_daily_location').delete().eq('staff_id', rosterCellStaffId).eq('work_date', rosterCellDate);
+  await sb.from('staff_availability').insert({
+    org_id: currentOrgId, staff_id: rosterCellStaffId, status, start_date: rosterCellDate, end_date: rosterCellDate, set_by: user.email
+  });
+  closeRosterCellModal();
+  renderRosterGrid();
+}
+async function clearRosterCell() {
+  await sb.from('staff_daily_location').delete().eq('staff_id', rosterCellStaffId).eq('work_date', rosterCellDate);
+  await sb.from('staff_availability').delete().eq('staff_id', rosterCellStaffId).eq('start_date', rosterCellDate).eq('end_date', rosterCellDate);
+  closeRosterCellModal();
+  renderRosterGrid();
+}
 async function checkCrewNotifications() {
   const badge = document.getElementById('crew-notification-badge');
   if (!badge || !currentOrgId) return;
@@ -4028,6 +4070,7 @@ async function loadCrew() {
     return;
   }
   document.getElementById('btn-show-invite').style.display = 'inline-block';
+  await checkCrewNotifications();
 
   // Load staff
   const { data: staff } = await sb
