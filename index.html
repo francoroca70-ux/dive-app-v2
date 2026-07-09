@@ -1613,7 +1613,13 @@ body { background: var(--navy); color: var(--text); }
         <div id="crew-list"></div>
         </div>
         <div id="crew-availability-view" class="cl-view" style="display:none;">
-          <div style="margin-bottom:20px;">
+          <div class="card-section-title">Pending requests</div>
+          <div id="dayoff-pending-list"></div>
+          <div class="card-section-title" style="margin-top:20px;">Recent decisions</div>
+          <div id="dayoff-decided-list"></div>
+        </div>
+        <div id="crew-roster-view" class="cl-view" style="display:none;">
+          <div style="margin-bottom:16px;">
             <button class="btn-save" id="btn-show-dayoff-request">+ Request Day Off</button>
           </div>
           <div class="inline-form" id="form-dayoff-request" style="display:none;margin-bottom:20px;">
@@ -1644,12 +1650,6 @@ body { background: var(--navy); color: var(--text); }
               <span class="save-feedback" id="dayoff-feedback"></span>
             </div>
           </div>
-          <div class="card-section-title">Pending requests</div>
-          <div id="dayoff-pending-list"></div>
-          <div class="card-section-title" style="margin-top:20px;">Recent decisions</div>
-          <div id="dayoff-decided-list"></div>
-        </div>
-        <div id="crew-roster-view" class="cl-view" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
             <div class="cl-tab-row" style="margin-bottom:0;">
               <div class="cl-tab active" id="roster-view-week" onclick="setRosterView('week')">Week</div>
