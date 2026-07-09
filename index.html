@@ -2111,6 +2111,14 @@ async function loadCurrentUserRole() {
   const { data: s } = await sb.from('staff').select('role').eq('id', user.id).single();
   currentUserRole = s?.role || 'instructor';
 }
+async function checkCrewNotifications() {
+  const badge = document.getElementById('crew-notification-badge');
+  if (!badge || !currentOrgId) return;
+  const canSeeNotifications = currentUserRole === 'owner' || currentUserRole === 'manager' || (currentUserRole === 'captain' && window.currentCaptainElevated);
+  if (!canSeeNotifications) { badge.style.display = 'none'; return; }
+  const { count } = await sb.from('day_off_requests').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('status', 'pending');
+  badge.style.display = (count && count > 0) ? 'block' : 'none';
+}
 async function initAuth() {
   const { data: { session } } = await sb.auth.getSession();
 
@@ -2121,6 +2129,7 @@ async function initAuth() {
     loadCrew();
     renderCalendar();
     await loadCurrentUserRole();
+    await checkCrewNotifications();
     showScreen('app');
   } else {
     showScreen('login');
@@ -3974,6 +3983,7 @@ async function approveDayOffRequest(reqId, staffId, start, end) {
     org_id: currentOrgId, staff_id: staffId, status: 'dayoff', start_date: start, end_date: end, set_by: user.email
   });
   await loadDayOffRequests();
+  await checkCrewNotifications();
 }
 async function openDenyDayOffModal(reqId) {
   const note = await showPromptModal('Reason for denying this request', 'e.g. Needed for the Thursday charter');
@@ -3981,6 +3991,7 @@ async function openDenyDayOffModal(reqId) {
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('day_off_requests').update({ status: 'denied', manager_note: note, decided_by: user.email, decided_at: new Date().toISOString() }).eq('id', reqId);
   await loadDayOffRequests();
+  await checkCrewNotifications();
 }
 async function loadPendingInvites() {
   if (!currentOrgId) return;
