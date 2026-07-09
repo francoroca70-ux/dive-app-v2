@@ -3845,7 +3845,102 @@ async function loadCrew() {
   // Load pending invites
   await loadPendingInvites();
 }
+function showCrewView(view, el) {
+  document.querySelectorAll('#page-crew .cl-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('#page-crew .cl-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('crew-' + (view === 'staff' ? 'staff' : 'availability') + '-view').style.display = 'block';
+  el.classList.add('active');
+  if (view === 'availability') loadDayOffRequests();
+}
+async function loadDayOffRequests() {
+  if (!currentOrgId) return;
+  const { data: staffList } = await sb.from('staff').select('id, full_name').eq('org_id', currentOrgId);
+  const sel = document.getElementById('dayoff-staff-select');
+  sel.innerHTML = (staffList || []).map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
 
+  const { data: requests } = await sb.from('day_off_requests').select('*, staff(full_name)').eq('org_id', currentOrgId).order('requested_at', { ascending: false });
+
+  const pending = (requests || []).filter(r => r.status === 'pending');
+  const decided = (requests || []).filter(r => r.status !== 'pending').slice(0, 5);
+
+  document.getElementById('dayoff-pending-list').innerHTML = pending.length
+    ? pending.map(r => `
+      <div class="gear-item-row">
+        <div class="gear-item-header">
+          <span class="gear-item-name">${r.staff?.full_name || 'Unknown'} — ${r.start_date} to ${r.end_date}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Reason: ${r.reason}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="gear-action-btn" onclick="approveDayOffRequest('${r.id}','${r.staff_id}','${r.start_date}','${r.end_date}')">Approve</button>
+          <button class="gear-action-btn" onclick="openDenyDayOffModal('${r.id}')">Deny</button>
+        </div>
+      </div>
+    `).join('')
+    : '<p style="font-size:0.85rem;color:var(--muted);">No pending requests.</p>';
+
+  document.getElementById('dayoff-decided-list').innerHTML = decided.length
+    ? decided.map(r => {
+        const color = r.status === 'approved' ? 'var(--success)' : '#c0392b';
+        return `<div class="gear-item-row">
+          <div class="gear-item-header">
+            <span class="gear-item-name">${r.staff?.full_name || 'Unknown'} — ${r.start_date} to ${r.end_date}</span>
+            <span style="font-size:0.75rem;color:${color};font-weight:600;text-transform:capitalize;">${r.status}</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Reason: ${r.reason}</div>
+          ${r.manager_note ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Manager note: ${r.manager_note}</div>` : ''}
+        </div>`;
+      }).join('')
+    : '<p style="font-size:0.85rem;color:var(--muted);">No recent decisions.</p>';
+}
+document.getElementById('btn-show-dayoff-request').addEventListener('click', () => {
+  document.getElementById('form-dayoff-request').style.display = 'block';
+  document.getElementById('btn-show-dayoff-request').style.display = 'none';
+});
+document.getElementById('btn-cancel-dayoff').addEventListener('click', () => {
+  document.getElementById('form-dayoff-request').style.display = 'none';
+  document.getElementById('btn-show-dayoff-request').style.display = 'inline-block';
+});
+document.getElementById('btn-submit-dayoff').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-submit-dayoff');
+  const feedback = document.getElementById('dayoff-feedback');
+  const staffId = document.getElementById('dayoff-staff-select').value;
+  const start = document.getElementById('dayoff-start').value;
+  const end = document.getElementById('dayoff-end').value;
+  const reason = document.getElementById('dayoff-reason').value.trim();
+  if (!staffId || !start || !end || !reason) {
+    feedback.textContent = 'Please fill in crew member, dates, and reason.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  await sb.from('day_off_requests').insert({
+    org_id: currentOrgId, staff_id: staffId, start_date: start, end_date: end, reason, status: 'pending'
+  });
+  btn.disabled = false; btn.textContent = 'Submit request';
+  document.getElementById('dayoff-start').value = '';
+  document.getElementById('dayoff-end').value = '';
+  document.getElementById('dayoff-reason').value = '';
+  document.getElementById('form-dayoff-request').style.display = 'none';
+  document.getElementById('btn-show-dayoff-request').style.display = 'inline-block';
+  feedback.className = 'save-feedback';
+  await loadDayOffRequests();
+});
+async function approveDayOffRequest(reqId, staffId, start, end) {
+  if (!(await showConfirmModal('Approve this day-off request?'))) return;
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('day_off_requests').update({ status: 'approved', decided_by: user.email, decided_at: new Date().toISOString() }).eq('id', reqId);
+  await sb.from('staff_availability').insert({
+    org_id: currentOrgId, staff_id: staffId, status: 'dayoff', start_date: start, end_date: end, set_by: user.email
+  });
+  await loadDayOffRequests();
+}
+async function openDenyDayOffModal(reqId) {
+  const note = await showPromptModal('Reason for denying this request', 'e.g. Needed for the Thursday charter');
+  if (!note) return;
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('day_off_requests').update({ status: 'denied', manager_note: note, decided_by: user.email, decided_at: new Date().toISOString() }).eq('id', reqId);
+  await loadDayOffRequests();
+}
 async function loadPendingInvites() {
   if (!currentOrgId) return;
   const { data: invites } = await sb
