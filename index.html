@@ -3823,14 +3823,22 @@ function showChecklistView(view, el) {
 async function loadCrew() {
   if (!currentOrgId) return;
 
+  const canManageStaff = currentUserRole === 'owner' || currentUserRole === 'manager' || (currentUserRole === 'captain' && window.currentCaptainElevated);
+  const list = document.getElementById('crew-list');
+  if (!canManageStaff) {
+    list.innerHTML = '<p style="color:var(--muted);">You don\'t have access to this section.</p>';
+    document.getElementById('btn-show-invite').style.display = 'none';
+    document.getElementById('stat-crew').textContent = '—';
+    return;
+  }
+  document.getElementById('btn-show-invite').style.display = 'inline-block';
+
   // Load staff
   const { data: staff } = await sb
     .from('staff')
     .select('*, staff_locations(location_id, locations(name))')
     .eq('org_id', currentOrgId)
     .order('created_at');
-
-  const list = document.getElementById('crew-list');
   if (!staff || staff.length === 0) {
     list.innerHTML = '<div class="fleet-empty">No crew yet. Invite your first staff member above.</div>';
     document.getElementById('stat-crew').textContent = '0';
