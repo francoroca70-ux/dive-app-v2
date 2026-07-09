@@ -1503,6 +1503,11 @@ body { background: var(--navy); color: var(--text); }
           </div>
           <button class="btn-save" id="btn-show-invite">+ Invite staff</button>
         </div>
+        <div class="cl-tab-row">
+          <div class="cl-tab active" onclick="showCrewView('staff',this)">Staff</div>
+          <div class="cl-tab" onclick="showCrewView('availability',this)">Availability</div>
+        </div>
+        <div id="crew-staff-view" class="cl-view">
 
         <!-- Invite form -->
         <div class="inline-form" id="form-invite" style="display:none;margin-bottom:20px;">
@@ -1577,6 +1582,9 @@ body { background: var(--navy); color: var(--text); }
 
         <!-- Staff list -->
         <div id="crew-list"></div>
+        </div>
+        <div id="crew-availability-view" class="cl-view" style="display:none;">
+        </div>
       </div>
 
       <!-- CHECKLISTS -->
