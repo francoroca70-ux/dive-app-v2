@@ -1039,6 +1039,33 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-roster-cell" style="display:none;z-index:300;">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-body">
+      <p id="roster-cell-title" style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:16px;"></p>
+      <div class="sf-group">
+        <label class="sf-label">Assign location</label>
+        <select class="sf-input" id="roster-cell-location"></select>
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Or set status</label>
+        <div class="radio-group">
+          <div class="radio-btn" onclick="setRosterCellStatus('dayoff')">Day Off</div>
+          <div class="radio-btn" onclick="setRosterCellStatus('sick')">Sick</div>
+          <div class="radio-btn" onclick="setRosterCellStatus('personal')">Personal</div>
+          <div class="radio-btn" onclick="setRosterCellStatus('offduty')">Off Duty</div>
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-save" id="btn-save-roster-location">Save location</button>
+        <button class="btn-cancel" onclick="clearRosterCell()">Clear to default</button>
+        <button class="btn-cancel" onclick="closeRosterCellModal()">Cancel</button>
+      </div>
+      <span class="save-feedback" id="roster-cell-feedback"></span>
+    </div>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div id="loading">
   <div class="loading-logo">Seven<span>Seas</span></div>
