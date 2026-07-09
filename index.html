@@ -1915,6 +1915,20 @@ body { background: var(--navy); color: var(--text); }
           <div class="category-picker" id="add-category-picker"></div>
         </div>
 
+        <!-- Permissions card -->
+        <div class="card" id="card-permissions">
+          <div class="card-section-title">Permissions</div>
+          <p class="card-desc">Control what different roles can do across your operation.</p>
+          <div class="sf-group" style="display:flex;align-items:center;gap:12px;">
+            <input type="checkbox" id="chk-captain-elevated" style="width:18px;height:18px;">
+            <label class="sf-label" for="chk-captain-elevated" style="margin:0;">Give captains manager-level permissions (invite/remove staff, edit banked days)</label>
+          </div>
+          <p class="card-desc" style="margin-top:6px;">Off by default. Turn on if your captains carry management authority, common on charters and yachts.</p>
+          <div class="settings-actions" style="margin-top:12px;">
+            <span class="save-feedback" id="permissions-save-feedback"></span>
+          </div>
+        </div>
+
         <!-- Trip Types card -->
         <div class="card" id="card-trip-types">
           <div class="card-section-title">Trip Types</div>
