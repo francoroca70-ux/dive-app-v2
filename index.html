@@ -3822,6 +3822,7 @@ async function loadCrew() {
 
   document.getElementById('stat-crew').textContent = staff.length;
 
+  const canEditBanked = ['owner', 'manager'].includes(currentUserRole);
   list.innerHTML = staff.map(s => {
     const initials = s.full_name ? s.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : '?';
     const roleName = s.custom_role_name || s.role.replace('_', ' ');
@@ -3836,6 +3837,10 @@ async function loadCrew() {
           <div class="crew-meta">${s.email} · ${location}</div>
         </div>
       </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-right:12px;">
+        <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">Banked days</span>
+        <input class="sf-input" type="number" style="width:60px;text-align:center;padding:6px 4px;margin-bottom:0;" value="${s.banked_days || 0}" ${canEditBanked ? '' : 'disabled'} onchange="updateBankedDays('${s.id}', this.value)">
+      </div>
       <div class="boat-actions">
         ${!isOwner ? `<button class="btn-icon danger" onclick="removeStaff('${s.id}', '${s.full_name}')">Remove</button>` : '<span style="font-size:0.75rem;color:var(--muted)">Account owner</span>'}
       </div>
@@ -3844,6 +3849,16 @@ async function loadCrew() {
 
   // Load pending invites
   await loadPendingInvites();
+}
+async function updateBankedDays(staffId, newValue) {
+  const value = parseFloat(newValue) || 0;
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: current } = await sb.from('staff').select('banked_days').eq('id', staffId).single();
+  const delta = value - (current?.banked_days || 0);
+  await sb.from('staff').update({ banked_days: value }).eq('id', staffId);
+  await sb.from('staff_banked_days_log').insert({
+    org_id: currentOrgId, staff_id: staffId, delta, set_by: user.email
+  });
 }
 function showCrewView(view, el) {
   document.querySelectorAll('#page-crew .cl-view').forEach(v => v.style.display = 'none');
