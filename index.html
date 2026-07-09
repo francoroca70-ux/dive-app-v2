@@ -2136,6 +2136,74 @@ async function loadCurrentUserRole() {
   const { data: s } = await sb.from('staff').select('role').eq('id', user.id).single();
   currentUserRole = s?.role || 'instructor';
 }
+let rosterView = 'week';
+let rosterDate = new Date();
+let rosterStaffAll = [];
+let rosterSelectedStaffIds = [];
+
+function setRosterView(view) {
+  rosterView = view;
+  document.getElementById('roster-view-week').classList.toggle('active', view === 'week');
+  document.getElementById('roster-view-month').classList.toggle('active', view === 'month');
+  renderRosterGrid();
+}
+document.getElementById('roster-prev').addEventListener('click', () => {
+  rosterDate.setDate(rosterDate.getDate() - (rosterView === 'week' ? 7 : 30));
+  renderRosterGrid();
+});
+document.getElementById('roster-next').addEventListener('click', () => {
+  rosterDate.setDate(rosterDate.getDate() + (rosterView === 'week' ? 7 : 30));
+  renderRosterGrid();
+});
+document.getElementById('btn-toggle-roster-filter').addEventListener('click', () => {
+  const panel = document.getElementById('roster-filter-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+function loadRosterFilterFromStorage() {
+  try {
+    const saved = localStorage.getItem('seven_seas_roster_filter');
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) { return null; }
+}
+function saveRosterFilterToStorage() {
+  try { localStorage.setItem('seven_seas_roster_filter', JSON.stringify(rosterSelectedStaffIds)); } catch (e) {}
+}
+function rosterFilterAll() {
+  rosterSelectedStaffIds = rosterStaffAll.map(s => s.id);
+  saveRosterFilterToStorage();
+  renderRosterFilterCheckboxes();
+  renderRosterGrid();
+}
+function rosterFilterNone() {
+  rosterSelectedStaffIds = [];
+  saveRosterFilterToStorage();
+  renderRosterFilterCheckboxes();
+  renderRosterGrid();
+}
+function toggleRosterStaffFilter(staffId) {
+  const idx = rosterSelectedStaffIds.indexOf(staffId);
+  if (idx === -1) rosterSelectedStaffIds.push(staffId);
+  else rosterSelectedStaffIds.splice(idx, 1);
+  saveRosterFilterToStorage();
+  renderRosterGrid();
+}
+function renderRosterFilterCheckboxes() {
+  document.getElementById('roster-filter-checkboxes').innerHTML = rosterStaffAll.map(s => `
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
+      <input type="checkbox" ${rosterSelectedStaffIds.includes(s.id) ? 'checked' : ''} onchange="toggleRosterStaffFilter('${s.id}')">
+      ${s.full_name}
+    </label>
+  `).join('');
+}
+async function loadRoster() {
+  if (!currentOrgId) return;
+  const { data: staffList } = await sb.from('staff').select('id, full_name, staff_locations(location_id, locations(name))').eq('org_id', currentOrgId);
+  rosterStaffAll = staffList || [];
+  const saved = loadRosterFilterFromStorage();
+  rosterSelectedStaffIds = saved ? saved.filter(id => rosterStaffAll.some(s => s.id === id)) : rosterStaffAll.map(s => s.id);
+  renderRosterFilterCheckboxes();
+  renderRosterGrid();
+}
 async function checkCrewNotifications() {
   const badge = document.getElementById('crew-notification-badge');
   if (!badge || !currentOrgId) return;
@@ -3922,10 +3990,11 @@ async function updateBankedDays(staffId, newValue) {
 }
 function showCrewView(view, el) {
   document.querySelectorAll('#page-crew .cl-view').forEach(v => v.style.display = 'none');
-  document.querySelectorAll('#page-crew .cl-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('crew-' + (view === 'staff' ? 'staff' : 'availability') + '-view').style.display = 'block';
+  document.querySelectorAll('#page-crew > .cl-tab-row .cl-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('crew-' + view + '-view').style.display = 'block';
   el.classList.add('active');
   if (view === 'availability') loadDayOffRequests();
+  if (view === 'roster') loadRoster();
 }
 async function loadDayOffRequests() {
   if (!currentOrgId) return;
