@@ -3406,14 +3406,14 @@ async function loadGuestTabs() {
   }
   const today = formatDate(new Date());
   const rowsHtml = await Promise.all(tabs.map(async t => {
-    const { data: linkedTrips } = await sb.from('trips').select('id, price_per_person, payment_amount').eq('tab_id', t.id);
+    const { data: linkedTrips } = await sb.from('trips').select('id, price_per_person, payment_amount, max_guests').eq('tab_id', t.id);
     const tripIds = (linkedTrips || []).map(tr => tr.id);
     let paid = 0;
     if (tripIds.length) {
       const { data: payments } = await sb.from('payments').select('amount').in('trip_id', tripIds);
       paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
     }
-    const total = (linkedTrips || []).reduce((sum, tr) => sum + parseFloat(tr.price_per_person || tr.payment_amount || 0), 0) + parseFloat(t.deposit_amount || 0) * 0;
+    const total = (linkedTrips || []).reduce((sum, tr) => sum + (parseFloat(tr.price_per_person || tr.payment_amount || 0) * Math.max(1, parseInt(tr.max_guests) || 1)), 0);
     const owed = total - paid - parseFloat(t.deposit_amount || 0);
     const isOverdue = t.status === 'open' && t.settle_by_date < today;
     const statusLabel = t.status === 'closed' ? 'Settled' : isOverdue ? 'Overdue' : 'Open';
