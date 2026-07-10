@@ -2242,20 +2242,30 @@ async function renderRosterGrid() {
     document.getElementById('roster-title').textContent = '';
     return;
   }
-  let days = [];
+  let weekBlocks = [];
   if (rosterView === 'week') {
     const start = new Date(rosterDate);
     start.setDate(start.getDate() - start.getDay());
-    days = Array.from({length:7}, (_,i) => { const d = new Date(start); d.setDate(d.getDate()+i); return d; });
+    const days = Array.from({length:7}, (_,i) => { const d = new Date(start); d.setDate(d.getDate()+i); return d; });
+    weekBlocks = [{ label: null, days }];
     document.getElementById('roster-title').textContent = `${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
   } else {
     const year = rosterDate.getFullYear(), month = rosterDate.getMonth();
-    const lastDay = new Date(year, month+1, 0).getDate();
-    days = Array.from({length:lastDay}, (_,i) => new Date(year, month, i+1));
+    const firstOfMonth = new Date(year, month, 1);
+    const lastOfMonth = new Date(year, month + 1, 0);
+    const gridStart = new Date(firstOfMonth); gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+    const gridEnd = new Date(lastOfMonth); gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
+    let cursor = new Date(gridStart);
+    while (cursor <= gridEnd) {
+      const days = Array.from({length:7}, (_,i) => { const d = new Date(cursor); d.setDate(d.getDate()+i); return d; });
+      weekBlocks.push({ label: `${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString('en-US',{month:'short',day:'numeric'})}`, days });
+      cursor.setDate(cursor.getDate() + 7);
+    }
     document.getElementById('roster-title').textContent = rosterDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
   }
-  const rangeStart = formatDate(days[0]);
-  const rangeEnd = formatDate(days[days.length-1]);
+  const allDays = weekBlocks.flatMap(b => b.days);
+  const rangeStart = formatDate(allDays[0]);
+  const rangeEnd = formatDate(allDays[allDays.length-1]);
   const staffIds = selectedStaff.map(s => s.id);
 
   const { data: availability } = await sb.from('staff_availability').select('*').in('staff_id', staffIds).lte('start_date', rangeEnd).gte('end_date', rangeStart);
@@ -2274,30 +2284,32 @@ async function renderRosterGrid() {
     return { type: 'default', name: defaultLoc || 'On Duty' };
   }
 
-  const dayHeaderFmt = rosterView === 'week' ? {weekday:'short', day:'numeric'} : {day:'numeric'};
-  const colWidth = rosterView === 'week' ? 110 : 34;
-
-  let html = `<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;font-size:0.78rem;">`;
-  html += `<thead><tr><th style="position:sticky;left:0;background:var(--white);padding:8px;text-align:left;border-bottom:2px solid var(--border);min-width:120px;">Crew</th>`;
-  html += days.map(d => `<th style="padding:6px 4px;text-align:center;border-bottom:2px solid var(--border);min-width:${colWidth}px;color:var(--muted);font-weight:600;">${d.toLocaleDateString('en-US',dayHeaderFmt)}</th>`).join('');
-  html += `</tr></thead><tbody>`;
-
-  html += selectedStaff.map(s => {
-    const cells = days.map(d => {
-      const dateStr = formatDate(d);
-      const info = getCellInfo(s.id, dateStr);
-      if (info.type === 'status') {
-        const bg = statusColors[info.status] || 'var(--muted)';
-        return `<td style="padding:4px;text-align:center;border-bottom:1px solid var(--border);"><div onclick="openRosterCellEditor('${s.id}','${dateStr}')" style="cursor:pointer;background:${bg};color:white;border-radius:5px;padding:4px 2px;font-size:0.68rem;font-weight:600;">${statusLabels[info.status] || info.status}</div></td>`;
-      }
-      const label = info.name.length > 10 ? info.name.slice(0,9)+'…' : info.name;
-      return `<td style="padding:4px;text-align:center;border-bottom:1px solid var(--border);"><div onclick="openRosterCellEditor('${s.id}','${dateStr}')" style="cursor:pointer;background:rgba(47,133,90,0.12);color:var(--success);border-radius:5px;padding:4px 2px;font-size:0.68rem;font-weight:600;">${label}</div></td>`;
+  function buildOneWeekTable(days) {
+    let html = `<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;font-size:0.78rem;">`;
+    html += `<thead><tr><th style="position:sticky;left:0;background:var(--white);padding:8px;text-align:left;border-bottom:2px solid var(--border);min-width:120px;">Crew</th>`;
+    html += days.map(d => `<th style="padding:6px 4px;text-align:center;border-bottom:2px solid var(--border);min-width:110px;color:var(--muted);font-weight:600;">${d.toLocaleDateString('en-US',{weekday:'short', day:'numeric'})}</th>`).join('');
+    html += `</tr></thead><tbody>`;
+    html += selectedStaff.map(s => {
+      const cells = days.map(d => {
+        const dateStr = formatDate(d);
+        const info = getCellInfo(s.id, dateStr);
+        if (info.type === 'status') {
+          const bg = statusColors[info.status] || 'var(--muted)';
+          return `<td style="padding:4px;text-align:center;border-bottom:1px solid var(--border);"><div onclick="openRosterCellEditor('${s.id}','${dateStr}')" style="cursor:pointer;background:${bg};color:white;border-radius:5px;padding:4px 2px;font-size:0.68rem;font-weight:600;">${statusLabels[info.status] || info.status}</div></td>`;
+        }
+        const label = info.name.length > 10 ? info.name.slice(0,9)+'…' : info.name;
+        return `<td style="padding:4px;text-align:center;border-bottom:1px solid var(--border);"><div onclick="openRosterCellEditor('${s.id}','${dateStr}')" style="cursor:pointer;background:rgba(47,133,90,0.12);color:var(--success);border-radius:5px;padding:4px 2px;font-size:0.68rem;font-weight:600;">${label}</div></td>`;
+      }).join('');
+      return `<tr><td style="position:sticky;left:0;background:var(--white);padding:8px;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;">${s.full_name}</td>${cells}</tr>`;
     }).join('');
-    return `<tr><td style="position:sticky;left:0;background:var(--white);padding:8px;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;">${s.full_name}</td>${cells}</tr>`;
-  }).join('');
+    html += `</tbody></table></div>`;
+    return html;
+  }
 
-  html += `</tbody></table></div>`;
-  container.innerHTML = html;
+  container.innerHTML = weekBlocks.map(block => `
+    ${block.label ? `<div style="font-size:0.8rem;font-weight:700;color:var(--muted);margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.04em;">${block.label}</div>` : ''}
+    ${buildOneWeekTable(block.days)}
+  `).join('');
 }
 let rosterCellStaffId = null;
 let rosterCellDate = null;
