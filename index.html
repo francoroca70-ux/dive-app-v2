@@ -1826,21 +1826,34 @@ body { background: var(--navy); color: var(--text); }
 
       <!-- CASH-UP -->
       <div class="page" id="page-cashup">
-        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-          <div>
-            <h1>Daily Cash-Up</h1>
-            <p>Cash reconciliation and daily totals</p>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button class="btn-cancel" id="cashup-prev" style="padding:8px 12px;">←</button>
-            <input class="sf-input" type="date" id="cashup-date" style="width:auto;">
-            <button class="btn-cancel" id="cashup-next" style="padding:8px 12px;">→</button>
-          </div>
+        <div class="page-header">
+          <h1>Daily Cash-Up</h1>
+          <p>Cash reconciliation and guest tabs</p>
         </div>
-        <div id="cashup-no-location" style="display:none;">
-          <p style="color:var(--muted);">Select a location above to view cash-up.</p>
+        <div class="cl-tab-row">
+          <div class="cl-tab active" onclick="showCashupView('cashup',this)">Cash-Up</div>
+          <div class="cl-tab" onclick="showCashupView('tabs',this)">Guest Tabs</div>
         </div>
-        <div id="cashup-content"></div>
+        <div id="cashup-view" class="cl-view">
+          <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+            <div></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="btn-cancel" id="cashup-prev" style="padding:8px 12px;">←</button>
+              <input class="sf-input" type="date" id="cashup-date" style="width:auto;">
+              <button class="btn-cancel" id="cashup-next" style="padding:8px 12px;">→</button>
+            </div>
+          </div>
+          <div id="cashup-no-location" style="display:none;">
+            <p style="color:var(--muted);">Select a location above to view cash-up.</p>
+          </div>
+          <div id="cashup-content"></div>
+        </div>
+        <div id="guest-tabs-view" class="cl-view" style="display:none;">
+          <div style="margin-bottom:16px;">
+            <button class="btn-save" id="btn-show-open-tab">+ Open Tab</button>
+          </div>
+          <div id="guest-tabs-list"></div>
+        </div>
       </div>
 
       <!-- TASKS -->
