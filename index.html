@@ -3531,6 +3531,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   if (!time) errors.push('Departure time');
   if (!contactName) errors.push('Contact name');
   if (!contactPhone) errors.push('Contact phone');
+  if (!arrival) errors.push('Arrival time');
 
   if (errors.length) {
     feedback.textContent = 'Missing: ' + errors.join(', ');
