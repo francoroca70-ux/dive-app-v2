@@ -3368,6 +3368,116 @@ async function saveCashUp(date, cashTotal, cardTotal, transferTotal) {
   await loadCashUp();
 }
 
+// ─── GUEST TABS ───
+async function loadGuestTabs() {
+  const container = document.getElementById('guest-tabs-list');
+  if (!currentOrgId || !currentLocationId) {
+    container.innerHTML = '<p style="color:var(--muted);">Select a location above to view guest tabs.</p>';
+    return;
+  }
+  const { data: tabs } = await sb.from('guest_tabs')
+    .select('*')
+    .eq('org_id', currentOrgId)
+    .eq('location_id', currentLocationId)
+    .order('settle_by_date');
+  if (!tabs || !tabs.length) {
+    container.innerHTML = '<p style="color:var(--muted);">No guest tabs yet.</p>';
+    return;
+  }
+  const today = formatDate(new Date());
+  const rowsHtml = await Promise.all(tabs.map(async t => {
+    const { data: linkedTrips } = await sb.from('trips').select('id, price_per_person, payment_amount').eq('tab_id', t.id);
+    const tripIds = (linkedTrips || []).map(tr => tr.id);
+    let paid = 0;
+    if (tripIds.length) {
+      const { data: payments } = await sb.from('payments').select('amount').in('trip_id', tripIds);
+      paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+    }
+    const total = (linkedTrips || []).reduce((sum, tr) => sum + parseFloat(tr.price_per_person || tr.payment_amount || 0), 0) + parseFloat(t.deposit_amount || 0) * 0;
+    const owed = total - paid - parseFloat(t.deposit_amount || 0);
+    const isOverdue = t.status === 'open' && t.settle_by_date < today;
+    const statusLabel = t.status === 'closed' ? 'Settled' : isOverdue ? 'Overdue' : 'Open';
+    const statusColor = t.status === 'closed' ? 'var(--success)' : isOverdue ? 'var(--error)' : 'var(--warning)';
+    return `<div class="gear-item-row">
+      <div class="gear-item-header">
+        <span class="gear-item-name">${t.guest_name}</span>
+        <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${linkedTrips?.length || 0} trip(s) · Settle by ${t.settle_by_date}</div>
+      <div style="font-size:0.85rem;font-weight:600;margin-top:6px;">Owed: $${owed.toFixed(2)}</div>
+      ${t.status === 'open' ? `<button class="gear-action-btn" style="margin-top:8px;" onclick="openTabDetail('${t.id}')">View / Close Tab</button>` : ''}
+    </div>`;
+  }));
+  container.innerHTML = rowsHtml.join('');
+}
+document.getElementById('btn-show-open-tab').addEventListener('click', () => {
+  showOpenTabForm();
+});
+function showOpenTabForm() {
+  const container = document.getElementById('guest-tabs-list');
+  container.insertAdjacentHTML('afterbegin', `
+    <div class="inline-form" id="form-open-tab" style="margin-bottom:16px;">
+      <div class="card-section-title">Open a Guest Tab</div>
+      <div class="sf-row">
+        <div class="sf-group">
+          <label class="sf-label">Guest full name</label>
+          <input class="sf-input" type="text" id="tab-guest-name" placeholder="e.g. Maria Lopez">
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Settle by date</label>
+          <input class="sf-input" type="date" id="tab-settle-date">
+        </div>
+      </div>
+      <div class="sf-row">
+        <div class="sf-group">
+          <label class="sf-label">Email</label>
+          <input class="sf-input" type="email" id="tab-guest-email" placeholder="Optional">
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Phone</label>
+          <input class="sf-input" type="tel" id="tab-guest-phone" placeholder="Optional">
+        </div>
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Country of residence</label>
+        <input class="sf-input" type="text" id="tab-guest-country" placeholder="Optional">
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Notes</label>
+        <input class="sf-input" type="text" id="tab-notes" placeholder="Optional — e.g. ID reference if needed">
+      </div>
+      <div class="settings-actions">
+        <button class="btn-save" id="btn-confirm-open-tab">Open Tab</button>
+        <button class="btn-cancel" onclick="loadGuestTabs()">Cancel</button>
+        <span class="save-feedback" id="open-tab-feedback"></span>
+      </div>
+    </div>
+  `);
+  document.getElementById('btn-confirm-open-tab').addEventListener('click', confirmOpenTab);
+}
+async function confirmOpenTab() {
+  const feedback = document.getElementById('open-tab-feedback');
+  const name = document.getElementById('tab-guest-name').value.trim();
+  const settleDate = document.getElementById('tab-settle-date').value;
+  if (!name || !settleDate) {
+    feedback.textContent = 'Guest name and settle-by date are required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('guest_tabs').insert({
+    org_id: currentOrgId, location_id: currentLocationId,
+    guest_name: name,
+    guest_email: document.getElementById('tab-guest-email').value.trim() || null,
+    guest_phone: document.getElementById('tab-guest-phone').value.trim() || null,
+    guest_country: document.getElementById('tab-guest-country').value.trim() || null,
+    notes: document.getElementById('tab-notes').value.trim() || null,
+    settle_by_date: settleDate,
+    opened_by: user.email
+  });
+  await loadGuestTabs();
+}
+
 // Save trip
 async function resolveTripLocationId(boatId) {
   if (boatId) {
