@@ -3053,6 +3053,7 @@ function openNewTrip() {
   populateTripTypeSelect().then(onTripTypeChange);
   renderTripCrewSection();
   document.getElementById('modal-trip').style.display = 'flex';
+  document.querySelector('#modal-trip .modal-body').scrollTop = 0;
 }
 
 async function openTrip(id) {
@@ -3088,6 +3089,7 @@ async function openTrip(id) {
   document.getElementById('btn-save-trip').textContent = 'Update trip';
   document.getElementById('btn-delete-trip').style.display = 'inline-block';
   document.getElementById('modal-trip').style.display = 'flex';
+  document.querySelector('#modal-trip .modal-body').scrollTop = 0;
   await loadParticipants(id);
   const { data: existingCrew } = await sb.from('trip_crew').select('staff_id, staff(full_name)').eq('trip_id', id);
   tripCrewCache = (existingCrew || []).map(c => ({ staff_id: c.staff_id, full_name: c.staff?.full_name || 'Unknown' }));
