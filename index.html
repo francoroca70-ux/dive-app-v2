@@ -3391,6 +3391,13 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     feedback.className = 'save-feedback error visible';
     return;
   }
+  const { conflicted: crewConflicts } = await getEligibleCrewData();
+  const stillConflicted = tripCrewCache.filter(c => crewConflicts[c.staff_id]);
+  if (stillConflicted.length) {
+    feedback.textContent = `Cannot save: ${stillConflicted.map(c => c.full_name).join(', ')} is already crewed on an overlapping trip.`;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
 
   btn.disabled = true; btn.textContent = 'Saving...';
 
@@ -3443,7 +3450,11 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   document.getElementById('participants-section').style.display = 'block';
   document.getElementById('modal-trip-title').textContent = name;
   await loadParticipants(tripId);
-  await loadTripCrewSection(tripId);
+  await sb.from('trip_crew').delete().eq('trip_id', tripId);
+  if (tripCrewCache.length) {
+    await sb.from('trip_crew').insert(tripCrewCache.map(c => ({ trip_id: tripId, staff_id: c.staff_id, role: 'crew' })));
+  }
+  await renderTripCrewSection();
   await loadTripPaymentsSection(tripId);
 
   document.getElementById('stat-trips').textContent = '↑';
