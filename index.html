@@ -3215,6 +3215,14 @@ document.getElementById('trip-time').addEventListener('change', renderTripCrewSe
 document.getElementById('trip-arrival').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-boat').addEventListener('change', renderTripCrewSection);
 
+function showCashupView(view, el) {
+  document.querySelectorAll('#page-cashup .cl-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('#page-cashup .cl-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById((view === 'cashup' ? 'cashup-view' : 'guest-tabs-view')).style.display = 'block';
+  el.classList.add('active');
+  if (view === 'cashup') loadCashUp();
+  if (view === 'tabs') loadGuestTabs();
+}
 async function loadCashUp() {
   const noLocEl = document.getElementById('cashup-no-location');
   const contentEl = document.getElementById('cashup-content');
