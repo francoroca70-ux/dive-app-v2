@@ -1344,9 +1344,15 @@ body { background: var(--navy); color: var(--text); }
               </div>
 
               <div class="card-section-title" style="margin-top:20px;">Payment</div>
-              <div class="sf-group">
-                <label class="sf-label">Price per person</label>
-                <input class="sf-input" type="number" id="trip-price" placeholder="e.g. 1500" min="0">
+              <div class="sf-row">
+                <div class="sf-group" style="max-width:160px;">
+                  <label class="sf-label">Price per person</label>
+                  <input class="sf-input" type="number" id="trip-price" placeholder="e.g. 100" min="0">
+                </div>
+                <div class="sf-group">
+                  <label class="sf-label">Total</label>
+                  <input class="sf-input" type="text" id="trip-price-total" disabled style="background:var(--foam);font-weight:600;">
+                </div>
               </div>
               <div class="sf-group">
                 <label class="sf-label">Link to guest tab (optional)</label>
