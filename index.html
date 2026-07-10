@@ -3063,6 +3063,7 @@ async function openNewTrip() {
   document.getElementById('trip-time').value = '08:00';
   document.getElementById('trip-arrival').value = '';
   document.getElementById('trip-price').value = '';
+  document.getElementById('trip-price-total').value = '';
   document.getElementById('trip-contact-name').value = '';
   document.getElementById('trip-contact-phone').value = '';
   document.getElementById('trip-contact-email').value = '';
@@ -3111,6 +3112,7 @@ async function openTrip(id) {
   document.getElementById('trip-time').value = trip.trip_time?.slice(0,5) || '';
   document.getElementById('trip-arrival').value = trip.arrival_time?.slice(0,5) || '';
   document.getElementById('trip-max-guests').value = trip.max_guests || '';
+  updateTripPriceTotal();
   document.getElementById('trip-price').value = trip.payment_amount || trip.price_per_person || '';
   document.getElementById('trip-contact-name').value = trip.contact_name || '';
   document.getElementById('trip-contact-phone').value = trip.contact_phone || '';
