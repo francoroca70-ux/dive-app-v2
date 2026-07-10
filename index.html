@@ -3510,7 +3510,6 @@ async function renderTripCrewSection() {
     return;
   }
   const { eligibleStaff, availability, conflicted } = await getEligibleCrewData();
-  const statusLabels = { dayoff: 'Day Off', sick: 'Sick', personal: 'Personal', offduty: 'Off Duty' };
   const assignedIds = tripCrewCache.map(c => c.staff_id);
 
   const assignedHtml = tripCrewCache.map(c => `
@@ -3519,22 +3518,28 @@ async function renderTripCrewSection() {
     </span>
   `).join('');
 
-  const pickerHtml = eligibleStaff.filter(s => !assignedIds.includes(s.id)).map(s => {
-    const isConflicted = conflicted[s.id];
-    if (isConflicted) {
-      return `<div class="radio-btn" style="opacity:0.5;cursor:not-allowed;background:rgba(229,62,62,0.08);color:var(--error);border-color:transparent;" title="Already crewed on ${isConflicted}">${s.full_name} (busy)</div>`;
-    }
-    const avail = availability.find(a => a.staff_id === s.id);
-    if (avail) {
-      return `<div class="radio-btn" style="opacity:0.5;cursor:not-allowed;background:rgba(229,62,62,0.08);color:var(--error);border-color:transparent;" title="${statusLabels[avail.status] || avail.status}">${s.full_name} (${statusLabels[avail.status] || avail.status})</div>`;
-    }
-    return `<div class="radio-btn" style="background:rgba(47,133,90,0.12);color:var(--success);border-color:transparent;" onclick="addTripCrewToCache('${s.id}','${s.full_name.replace(/'/g,"\\'")}')">${s.full_name}</div>`;
-  }).join('');
+  const availableStaff = eligibleStaff.filter(s =>
+    !assignedIds.includes(s.id) && !conflicted[s.id] && !availability.find(a => a.staff_id === s.id)
+  );
+
+  const optionsHtml = availableStaff.map(s => `<option value="${s.id}" data-name="${s.full_name.replace(/"/g,'&quot;')}">${s.full_name}</option>`).join('');
 
   container.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${assignedHtml || '<span style="font-size:0.8rem;color:var(--muted)">No crew assigned yet.</span>'}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;">${pickerHtml || '<span style="font-size:0.8rem;color:var(--muted)">No eligible crew for this location.</span>'}</div>
+    <div style="display:flex;gap:8px;">
+      <select class="sf-input" id="trip-crew-select" style="margin-bottom:0;">
+        <option value="">${availableStaff.length ? 'Select crew member' : 'No one available for this date/time'}</option>
+        ${optionsHtml}
+      </select>
+      <button class="btn-cancel" onclick="addSelectedTripCrew()">Add</button>
+    </div>
   `;
+}
+function addSelectedTripCrew() {
+  const sel = document.getElementById('trip-crew-select');
+  if (!sel.value) return;
+  const name = sel.options[sel.selectedIndex].dataset.name;
+  addTripCrewToCache(sel.value, name);
 }
 function addTripCrewToCache(staffId, fullName) {
   tripCrewCache.push({ staff_id: staffId, full_name: fullName });
