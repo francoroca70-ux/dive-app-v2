@@ -3043,7 +3043,7 @@ function openNewTrip() {
   document.getElementById('trip-booked-by').value = '';
   document.getElementById('trip-notes').value = '';
   document.getElementById('trip-dive-sites').value = '';
-  document.getElementById('trip-crew-fields').innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Save the trip to assign crew.</p>';
+  tripCrewCache = [];
   document.getElementById('boat-conflict-warning').style.display = 'none';
   document.getElementById('save-conflict-warning').style.display = 'none';
   window.currentBoatConflict = false;
@@ -3051,6 +3051,7 @@ function openNewTrip() {
   document.getElementById('trip-save-feedback').className = 'save-feedback';
   populateTripBoats();
   populateTripTypeSelect().then(onTripTypeChange);
+  renderTripCrewSection();
   document.getElementById('modal-trip').style.display = 'flex';
 }
 
@@ -3088,7 +3089,9 @@ async function openTrip(id) {
   document.getElementById('btn-delete-trip').style.display = 'inline-block';
   document.getElementById('modal-trip').style.display = 'flex';
   await loadParticipants(id);
-  await loadTripCrewSection(id);
+  const { data: existingCrew } = await sb.from('trip_crew').select('staff_id, staff(full_name)').eq('trip_id', id);
+  tripCrewCache = (existingCrew || []).map(c => ({ staff_id: c.staff_id, full_name: c.staff?.full_name || 'Unknown' }));
+  await renderTripCrewSection();
 }
 
 document.getElementById('btn-new-trip').addEventListener('click', openNewTrip);
