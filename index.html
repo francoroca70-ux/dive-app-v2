@@ -2271,7 +2271,7 @@ async function renderRosterGrid() {
     if (loc) return { type: 'location', name: loc.locations?.name || 'Assigned' };
     const staffObj = selectedStaff.find(s => s.id === staffId);
     const defaultLoc = staffObj?.staff_locations?.[0]?.locations?.name;
-    return { type: 'default', name: defaultLoc || '—' };
+    return { type: 'default', name: defaultLoc || 'On Duty' };
   }
 
   const dayHeaderFmt = rosterView === 'week' ? {weekday:'short', day:'numeric'} : {day:'numeric'};
