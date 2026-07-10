@@ -3044,7 +3044,7 @@ async function onTripTypeChange() {
 
 document.getElementById('trip-type-select').addEventListener('change', onTripTypeChange);
 
-function openNewTrip() {
+async function openNewTrip() {
   currentTripId = null;
   tripParticipants_cache = [];
   document.getElementById('modal-trip-title').textContent = 'New trip';
