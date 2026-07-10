@@ -2366,10 +2366,10 @@ async function initAuth() {
 
   if (session) {
     initHome(session.user);
-    loadSettings(session.user);
+    await loadSettings(session.user);
     loadFleet();
     loadCrew();
-    renderCalendar();
+    await renderCalendar();
     await loadCurrentUserRole();
     await checkCrewNotifications();
     showScreen('app');
