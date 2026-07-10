@@ -1353,7 +1353,7 @@ body { background: var(--navy); color: var(--text); }
               </div>
 
               <div class="card-section-title" style="margin-top:20px;">Crew</div>
-              <div id="trip-crew-fields" style="font-size:0.83rem;color:var(--muted);">Save the trip to assign crew.</div>
+              <div id="trip-crew-fields"></div>
 
               <div class="sf-group" style="margin-top:20px;">
                 <label class="sf-label">Notes</label>
@@ -3444,53 +3444,85 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
 });
 
 // ─── TRIP CREW ───
-async function loadTripCrewSection(tripId) {
-  if (!currentOrgId) return;
-  const { data: tripLoc } = await sb.from('trips').select('location_id').eq('id', tripId).single();
-  const locId = tripLoc?.location_id || currentLocationId;
-  const { data: staffLocRows } = await sb
-    .from('staff_locations')
-    .select('staff(id, full_name, role)')
-    .eq('location_id', locId);
+let tripCrewCache = [];
+
+async function getEligibleCrewData() {
+  const date = document.getElementById('trip-date').value;
+  const boatId = document.getElementById('trip-boat').value;
+  const newStart = document.getElementById('trip-time').value || '00:00';
+  const newEnd = document.getElementById('trip-arrival').value || '23:59';
+
+  let locId = currentLocationId;
+  if (boatId) {
+    const { data: boat } = await sb.from('boats').select('location_id').eq('id', boatId).single();
+    if (boat?.location_id) locId = boat.location_id;
+  }
+
+  const { data: staffLocRows } = await sb.from('staff_locations').select('staff(id, full_name, role)').eq('location_id', locId);
   const { data: owners } = await sb.from('staff').select('id, full_name, role').eq('org_id', currentOrgId).eq('role', 'owner');
   const locStaff = (staffLocRows || []).map(r => r.staff).filter(Boolean);
-  const staffList = [...locStaff, ...(owners || []).filter(o => !locStaff.some(s => s.id === o.id))];
+  const eligibleStaff = [...locStaff, ...(owners || []).filter(o => !locStaff.some(s => s.id === o.id))];
 
-  const { data: assigned } = await sb
-    .from('trip_crew')
-    .select('*, staff(full_name, role)')
-    .eq('trip_id', tripId);
+  let availability = [], conflicted = {};
+  if (date) {
+    const availRes = await sb.from('staff_availability').select('*').lte('start_date', date).gte('end_date', date);
+    availability = availRes.data || [];
 
+    const { data: otherTripCrew } = await sb.from('trip_crew')
+      .select('staff_id, trip_id, trips!inner(trip_date, trip_time, arrival_time, contact_name)')
+      .eq('trips.trip_date', date)
+      .neq('trip_id', currentTripId || '00000000-0000-0000-0000-000000000000');
+
+    (otherTripCrew || []).forEach(tc => {
+      const tStart = tc.trips.trip_time?.slice(0,5) || '00:00';
+      const tEnd = tc.trips.arrival_time?.slice(0,5) || '23:59';
+      if (newStart < tEnd && newEnd > tStart) conflicted[tc.staff_id] = tc.trips.contact_name || 'another trip';
+    });
+  }
+  return { eligibleStaff, availability, conflicted };
+}
+
+async function renderTripCrewSection() {
   const container = document.getElementById('trip-crew-fields');
-  const assignedHtml = (assigned || []).map(a => `
-    <span class="crew-member-tag-v2">${a.staff?.full_name || 'Unknown'} (${a.role})
-      <button onclick="removeTripCrew('${a.id}', '${tripId}')">×</button>
+  const date = document.getElementById('trip-date').value;
+  if (!date) {
+    container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Set a date to see available crew.</p>';
+    return;
+  }
+  const { eligibleStaff, availability, conflicted } = await getEligibleCrewData();
+  const statusLabels = { dayoff: 'Day Off', sick: 'Sick', personal: 'Personal', offduty: 'Off Duty' };
+  const assignedIds = tripCrewCache.map(c => c.staff_id);
+
+  const assignedHtml = tripCrewCache.map(c => `
+    <span class="crew-member-tag-v2">${c.full_name}
+      <button onclick="removeTripCrewFromCache('${c.staff_id}')">×</button>
     </span>
   `).join('');
 
+  const pickerHtml = eligibleStaff.filter(s => !assignedIds.includes(s.id)).map(s => {
+    const isConflicted = conflicted[s.id];
+    if (isConflicted) {
+      return `<div class="radio-btn" style="opacity:0.5;cursor:not-allowed;background:rgba(229,62,62,0.08);color:var(--error);border-color:transparent;" title="Already crewed on ${isConflicted}">${s.full_name} (busy)</div>`;
+    }
+    const avail = availability.find(a => a.staff_id === s.id);
+    if (avail) {
+      return `<div class="radio-btn" style="opacity:0.5;cursor:not-allowed;background:rgba(229,62,62,0.08);color:var(--error);border-color:transparent;" title="${statusLabels[avail.status] || avail.status}">${s.full_name} (${statusLabels[avail.status] || avail.status})</div>`;
+    }
+    return `<div class="radio-btn" style="background:rgba(47,133,90,0.12);color:var(--success);border-color:transparent;" onclick="addTripCrewToCache('${s.id}','${s.full_name.replace(/'/g,"\\'")}')">${s.full_name}</div>`;
+  }).join('');
+
   container.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${assignedHtml || '<span style="font-size:0.8rem;color:var(--muted)">No crew assigned yet.</span>'}</div>
-    <div style="display:flex;gap:8px;">
-      <select class="sf-input" id="add-crew-select" style="margin-bottom:0;">
-        <option value="">Select crew member</option>
-        ${(staffList || []).map(s => `<option value="${s.id}" data-role="${s.role}">${s.full_name} (${s.role})</option>`).join('')}
-      </select>
-      <button class="btn-cancel" onclick="addTripCrew('${tripId}')">Add</button>
-    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">${pickerHtml || '<span style="font-size:0.8rem;color:var(--muted)">No eligible crew for this location.</span>'}</div>
   `;
 }
-
-async function addTripCrew(tripId) {
-  const sel = document.getElementById('add-crew-select');
-  if (!sel.value) return;
-  const role = sel.options[sel.selectedIndex].dataset.role;
-  await sb.from('trip_crew').insert({ trip_id: tripId, staff_id: sel.value, role });
-  await loadTripCrewSection(tripId);
+function addTripCrewToCache(staffId, fullName) {
+  tripCrewCache.push({ staff_id: staffId, full_name: fullName });
+  renderTripCrewSection();
 }
-
-async function removeTripCrew(id, tripId) {
-  await sb.from('trip_crew').delete().eq('id', id);
-  await loadTripCrewSection(tripId);
+function removeTripCrewFromCache(staffId) {
+  tripCrewCache = tripCrewCache.filter(c => c.staff_id !== staffId);
+  renderTripCrewSection();
 }
 
 // ─── TRIP PAYMENTS ───
