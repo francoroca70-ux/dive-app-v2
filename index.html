@@ -3452,7 +3452,9 @@ async function loadTripCrewSection(tripId) {
     .from('staff_locations')
     .select('staff(id, full_name, role)')
     .eq('location_id', locId);
-  const staffList = (staffLocRows || []).map(r => r.staff).filter(Boolean);
+  const { data: owners } = await sb.from('staff').select('id, full_name, role').eq('org_id', currentOrgId).eq('role', 'owner');
+  const locStaff = (staffLocRows || []).map(r => r.staff).filter(Boolean);
+  const staffList = [...locStaff, ...(owners || []).filter(o => !locStaff.some(s => s.id === o.id))];
 
   const { data: assigned } = await sb
     .from('trip_crew')
