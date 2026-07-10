@@ -3071,8 +3071,20 @@ function openNewTrip() {
   populateTripBoats();
   populateTripTypeSelect().then(onTripTypeChange);
   renderTripCrewSection();
+  await populateTripTabSelect();
   document.getElementById('modal-trip').style.display = 'flex';
   document.getElementById('modal-trip').scrollTop = 0;
+}
+async function populateTripTabSelect(selectedTabId) {
+  const sel = document.getElementById('trip-tab-select');
+  if (!currentOrgId || !currentLocationId) return;
+  const { data: openTabs } = await sb.from('guest_tabs')
+    .select('id, guest_name')
+    .eq('org_id', currentOrgId)
+    .eq('location_id', currentLocationId)
+    .eq('status', 'open');
+  sel.innerHTML = '<option value="">No tab — pay per trip</option>' +
+    (openTabs || []).map(t => `<option value="${t.id}" ${t.id === selectedTabId ? 'selected' : ''}>${t.guest_name}</option>`).join('');
 }
 
 async function openTrip(id) {
