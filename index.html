@@ -3236,6 +3236,13 @@ document.getElementById('trip-date').addEventListener('change', checkBoatConflic
 document.getElementById('trip-time').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-arrival').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-max-guests').addEventListener('input', checkBoatConflict);
+function updateTripPriceTotal() {
+  const perPerson = parseFloat(document.getElementById('trip-price').value) || 0;
+  const guests = Math.max(1, parseInt(document.getElementById('trip-max-guests').value) || 1);
+  document.getElementById('trip-price-total').value = (perPerson * guests).toFixed(2);
+}
+document.getElementById('trip-price').addEventListener('input', updateTripPriceTotal);
+document.getElementById('trip-max-guests').addEventListener('input', updateTripPriceTotal);
 document.getElementById('trip-date').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-time').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-arrival').addEventListener('change', renderTripCrewSection);
