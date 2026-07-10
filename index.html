@@ -3113,6 +3113,7 @@ async function openTrip(id) {
   document.getElementById('trip-dive-sites').value = trip.dive_sites || '';
   setBookingMode(trip.booking_mode || 'private');
   populateTripBoats(trip.boat_id);
+  await populateTripTabSelect(trip.tab_id);
   await loadTripPaymentsSection(trip.id);
 
   document.getElementById('trip-form-section').style.display = 'block';
