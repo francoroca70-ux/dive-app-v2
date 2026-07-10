@@ -808,6 +808,7 @@ body { background: var(--navy); color: var(--text); }
   justify-content: center; padding: 40px 20px; overflow-y: auto;
 }
 #modal-confirm { align-items: center; z-index: 300; }
+#modal-roster-cell { align-items: center; }
 .modal-box {
   background: var(--white); border-radius: 16px;
   width: 100%; max-width: 560px;
@@ -1050,15 +1051,14 @@ body { background: var(--navy); color: var(--text); }
       <div class="sf-group">
         <label class="sf-label">Or set status</label>
         <div class="radio-group">
-          <div class="radio-btn" onclick="setRosterCellStatus('dayoff')">Day Off</div>
-          <div class="radio-btn" onclick="setRosterCellStatus('sick')">Sick</div>
-          <div class="radio-btn" onclick="setRosterCellStatus('personal')">Personal</div>
-          <div class="radio-btn" onclick="setRosterCellStatus('offduty')">Off Duty</div>
+          <div class="radio-btn" style="background:rgba(47,133,90,0.12);color:var(--success);border-color:transparent;" onclick="clearRosterCell()">On Duty</div>
+          <div class="radio-btn" style="background:rgba(229,62,62,0.12);color:var(--error);border-color:transparent;" onclick="setRosterCellStatus('dayoff')">Day Off</div>
+          <div class="radio-btn" style="background:rgba(229,62,62,0.12);color:var(--error);border-color:transparent;" onclick="setRosterCellStatus('sick')">Sick</div>
+          <div class="radio-btn" style="background:rgba(194,118,12,0.12);color:var(--warning);border-color:transparent;" onclick="setRosterCellStatus('personal')">Personal</div>
         </div>
       </div>
       <div class="settings-actions">
         <button class="btn-save" id="btn-save-roster-location">Save location</button>
-        <button class="btn-cancel" onclick="clearRosterCell()">Clear to default</button>
         <button class="btn-cancel" onclick="closeRosterCellModal()">Cancel</button>
       </div>
       <span class="save-feedback" id="roster-cell-feedback"></span>
