@@ -3574,6 +3574,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     contact_email: contactEmail || null,
     booked_by: bookedBy || null,
     booking_mode: window.currentBookingMode || 'private',
+    tab_id: document.getElementById('trip-tab-select').value || null,
     notes: notes || null,
     status: 'scheduled',
     created_by: (await sb.auth.getUser()).data.user.id
