@@ -2450,6 +2450,7 @@ function showTaskView(view, el) {
 document.getElementById('btn-new-task-list').addEventListener('click', () => {
   taskListAssigneeIds = [];
   document.getElementById('tasklist-title').value = '';
+  document.getElementById('tasklist-date').value = formatDate(new Date());
   document.getElementById('tasklist-date').value = '';
   document.getElementById('tasklist-items').value = '';
   renderTaskListAssigneeTags();
