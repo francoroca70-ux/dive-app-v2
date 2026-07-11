@@ -2545,11 +2545,15 @@ async function renderTasksAll() {
       const done = listItems.filter(i => (completions || []).some(c => c.task_list_item_id === i.id && c.staff_id === a.staff_id)).length;
       return `${a.staff?.full_name || 'Unknown'} (${done}/${listItems.length})`;
     }).join(', ');
+    const notesHtml = listAssignees.filter(a => a.note).map(a =>
+      `<div style="font-size:0.78rem;color:var(--warning);margin-top:4px;">📝 ${a.staff?.full_name || 'Unknown'}: ${a.note}</div>`
+    ).join('');
     return `<div class="gear-item-row" onclick="openTaskDetail('${l.id}')" style="cursor:pointer;">
       <div class="gear-item-header">
         <span class="gear-item-name">${l.title}</span>
       </div>
       <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${l.due_date || 'No due date'} · ${perAssignee}</div>
+      ${notesHtml}
     </div>`;
   }).join('');
 }
