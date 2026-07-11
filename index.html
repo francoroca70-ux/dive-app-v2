@@ -3501,6 +3501,7 @@ async function openTabDetail(tabId) {
     </div>
   `;
 
+  let unpaidTrips = [];
   if (!linkedTrips || !linkedTrips.length) {
     html += `<p style="color:var(--muted);">No trips linked to this tab yet. Link a trip when creating or editing a booking.</p>`;
   } else {
@@ -3512,6 +3513,7 @@ async function openTabDetail(tabId) {
       const total = perPerson * guestCount;
       const paid = (allPayments || []).filter(p => p.trip_id === tr.id).reduce((sum, p) => sum + parseFloat(p.amount), 0);
       const owed = total - paid;
+      if (owed > 0.01) unpaidTrips.push({ ...tr, guestCount, owed });
       html += `
         <div class="gear-item-row">
           <div class="gear-item-header">
@@ -3524,11 +3526,73 @@ async function openTabDetail(tabId) {
     });
   }
 
+  const grandTotal = unpaidTrips.reduce((sum, tr) => sum + tr.owed, 0);
+
+  if (unpaidTrips.length) {
+    html += `
+      <div style="margin:16px 0;">
+        <button class="btn-save" id="btn-pay-tab-full">Pay Tab in Full — $${grandTotal.toFixed(2)}</button>
+      </div>
+      <div class="inline-form" id="form-pay-tab-full" style="display:none;margin-bottom:16px;">
+        <div class="card-section-title">Settle Full Balance</div>
+        ${unpaidTrips.map(tr => `
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:4px;">${tr.trip_type || 'Trip'} — ${tr.trip_date} · ${tr.guestCount} guest${tr.guestCount>1?'s':''} · $${tr.owed.toFixed(2)}</div>
+        `).join('')}
+        <div style="font-weight:700;font-size:1rem;margin:10px 0;">Total: $${grandTotal.toFixed(2)}</div>
+        <div class="sf-group">
+          <label class="sf-label">Method</label>
+          <div class="radio-group">
+            <div class="radio-btn" id="pm-tab-cash" onclick="selectTabPaymentMethod('cash')">Cash</div>
+            <div class="radio-btn" id="pm-tab-card" onclick="selectTabPaymentMethod('card')">Card</div>
+            <div class="radio-btn" id="pm-tab-transfer" onclick="selectTabPaymentMethod('transfer')">Transfer</div>
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button class="btn-save" id="btn-confirm-pay-tab-full">Confirm Payment</button>
+          <button class="btn-cancel" onclick="document.getElementById('form-pay-tab-full').style.display='none';document.getElementById('btn-pay-tab-full').style.display='inline-block';">Cancel</button>
+        </div>
+        <span class="save-feedback" id="pay-tab-feedback"></span>
+      </div>
+    `;
+  }
+
   html += `<button class="btn-save" id="btn-close-tab">Close Tab</button><span class="save-feedback" id="close-tab-feedback"></span>`;
 
   container.innerHTML = html;
 
+  if (unpaidTrips.length) {
+    document.getElementById('btn-pay-tab-full').addEventListener('click', () => {
+      document.getElementById('btn-pay-tab-full').style.display = 'none';
+      document.getElementById('form-pay-tab-full').style.display = 'block';
+    });
+    document.getElementById('btn-confirm-pay-tab-full').addEventListener('click', () => confirmPayTabFull(tabId, unpaidTrips));
+  }
+
   document.getElementById('btn-close-tab').addEventListener('click', () => closeGuestTab(tabId, linkedTrips || []));
+}
+window.currentTabPaymentMethod = null;
+function selectTabPaymentMethod(method) {
+  window.currentTabPaymentMethod = method;
+  ['pm-tab-cash','pm-tab-card','pm-tab-transfer'].forEach(id => document.getElementById(id).classList.toggle('selected', id === 'pm-tab-' + method));
+}
+async function confirmPayTabFull(tabId, unpaidTrips) {
+  const feedback = document.getElementById('pay-tab-feedback');
+  const method = window.currentTabPaymentMethod;
+  if (!method) {
+    feedback.textContent = 'Select a payment method.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  const today = new Date().toISOString().split('T')[0];
+  for (const tr of unpaidTrips) {
+    await sb.from('payments').insert({
+      org_id: currentOrgId, location_id: currentLocationId, trip_id: tr.id,
+      amount: tr.owed, method, payment_date: today,
+      logged_by: user.email, note: 'Tab settlement'
+    });
+  }
+  await openTabDetail(tabId);
 }
 async function closeGuestTab(tabId, linkedTrips) {
   const feedback = document.getElementById('close-tab-feedback');
