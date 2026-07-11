@@ -749,7 +749,8 @@ body { background: var(--navy); color: var(--text); }
 
 /* Week view v3 - list style, no hourly grid */
 .week-grid-wrapper-v3 { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; }
-.week-day-col-v3 { flex: 1; min-width: 150px; }
+.week-day-col-v3 { flex: 1; min-width: 150px; min-height: 200px; cursor: pointer; border-radius: 8px; transition: background 0.15s; }
+.week-day-col-v3:hover { background: var(--foam); }
 .week-day-col-header-v3 { font-size: 0.72rem; font-weight: 700; text-align: center; padding: 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 2px solid var(--border); margin-bottom: 8px; }
 .week-day-col-header-v3.today { color: var(--blue); }
 .week-day-col-body-v3 { display: flex; flex-direction: column; gap: 6px; padding: 0 4px; }
@@ -2904,7 +2905,9 @@ async function renderWeekView() {
       </div>
     `).join('');
 
-    return `<div class="week-day-col-v3">
+   return `<div class="week-day-col-v3" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
+      <div class="week-day-col-header-v3 ${isToday?'today':''}">${dayNames[i]} ${d.getDate()}</div>
+      <div class="week-day-col-body-v3">
       <div class="week-day-col-header-v3 ${isToday?'today':''}">${dayNames[i]} ${d.getDate()}</div>
       <div class="week-day-col-body-v3" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
         ${chips || '<div class="week-day-empty-v3">No trips</div>'}
