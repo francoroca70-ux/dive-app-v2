@@ -3285,13 +3285,14 @@ function renderCashUp(payments, existing, date) {
     else if (method === 'card') cardTotal += amount;
     else if (method === 'transfer') transferTotal += amount;
     const trip = p.trips;
+    const isTabPayment = (p.note || '').toLowerCase().includes('tab settlement');
     return `<div class="gear-item-row">
       <div class="gear-item-header">
         <span class="gear-item-name">${trip?.contact_name || '—'}</span>
         <span style="font-size:0.95rem;font-weight:700;">$${amount.toFixed(2)}</span>
       </div>
       <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${trip?.trip_type || ''}${trip?.boats ? ' · ' + trip.boats.name : ''}</div>
-      <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:4px;text-transform:capitalize;">${method || 'unknown'}</div>
+      <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:4px;text-transform:capitalize;">${method || 'unknown'}${isTabPayment ? ' <span style="background:rgba(26,107,138,0.12);color:var(--blue);padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;text-transform:none;margin-left:6px;">TAB</span>' : ''}</div>
     </div>`;
   }).join('');
   const takenToday = cashTotal + cardTotal + transferTotal;
