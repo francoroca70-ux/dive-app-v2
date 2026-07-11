@@ -1869,14 +1869,48 @@ body { background: var(--navy); color: var(--text); }
 
       <!-- TASKS -->
       <div class="page" id="page-tasks">
-        <div class="page-header">
-          <h1>Tasks</h1>
-          <p>Crew task management</p>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1>Tasks</h1>
+            <p>Crew task management</p>
+          </div>
+          <button class="btn-save" id="btn-new-task-list">+ New Task List</button>
         </div>
-        <div class="coming-soon">
-          <div class="icon">□</div>
-          <h3>Tasks coming soon</h3>
-          <p>Assign tasks to crew with priority and due dates.</p>
+        <div class="cl-tab-row">
+          <div class="cl-tab active" onclick="showTaskView('mine',this)">My Tasks</div>
+          <div class="cl-tab" onclick="showTaskView('all',this)">All Tasks</div>
+        </div>
+        <div id="tasks-mine-view" class="cl-view"></div>
+        <div id="tasks-all-view" class="cl-view" style="display:none;"></div>
+        <div class="inline-form" id="form-new-task-list" style="display:none;margin-top:16px;">
+          <div class="card-section-title">New Task List</div>
+          <div class="sf-row">
+            <div class="sf-group">
+              <label class="sf-label">Title</label>
+              <input class="sf-input" type="text" id="tasklist-title" placeholder="e.g. Morning boat check">
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Due date</label>
+              <input class="sf-input" type="date" id="tasklist-date">
+            </div>
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Tasks — one per line</label>
+            <textarea class="sf-input" id="tasklist-items" rows="5" placeholder="Check fuel level&#10;Test radio&#10;Inspect lines"></textarea>
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Assign to</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;" id="tasklist-assignee-tags"></div>
+            <div style="display:flex;gap:8px;">
+              <select class="sf-input" id="tasklist-assignee-select" style="margin-bottom:0;"></select>
+              <button class="btn-cancel" onclick="addTaskListAssignee()">Add</button>
+            </div>
+          </div>
+          <div class="settings-actions">
+            <button class="btn-save" id="btn-save-task-list">Save Task List</button>
+            <button class="btn-cancel" id="btn-cancel-task-list">Cancel</button>
+            <span class="save-feedback" id="tasklist-feedback"></span>
+          </div>
         </div>
       </div>
 
