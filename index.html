@@ -3114,6 +3114,7 @@ async function openTrip(id) {
   document.getElementById('trip-max-guests').value = trip.max_guests || '';
   updateTripPriceTotal();
   document.getElementById('trip-price').value = trip.payment_amount || trip.price_per_person || '';
+  updateTripPriceTotal();
   document.getElementById('trip-contact-name').value = trip.contact_name || '';
   document.getElementById('trip-contact-phone').value = trip.contact_phone || '';
   document.getElementById('trip-contact-email').value = trip.contact_email || '';
