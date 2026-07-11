@@ -3485,6 +3485,71 @@ async function confirmOpenTab() {
   });
   await loadGuestTabs();
 }
+async function openTabDetail(tabId) {
+  const container = document.getElementById('guest-tabs-list');
+  const { data: tab } = await sb.from('guest_tabs').select('*').eq('id', tabId).single();
+  if (!tab) return;
+  const { data: linkedTrips } = await sb.from('trips').select('id, trip_type, trip_date, price_per_person, payment_amount, max_guests').eq('tab_id', tabId).order('trip_date');
+
+  let html = `
+    <button class="btn-cancel" onclick="loadGuestTabs()" style="margin-bottom:16px;">← Back to tabs</button>
+    <div class="card-section-title">${tab.guest_name}</div>
+    <div style="font-size:0.8rem;color:var(--muted);margin-bottom:16px;">
+      ${tab.guest_email || ''}${tab.guest_email && tab.guest_phone ? ' · ' : ''}${tab.guest_phone || ''}
+      ${tab.guest_country ? ' · ' + tab.guest_country : ''}<br>
+      Settle by ${tab.settle_by_date}${tab.notes ? ' · ' + tab.notes : ''}
+    </div>
+  `;
+
+  if (!linkedTrips || !linkedTrips.length) {
+    html += `<p style="color:var(--muted);">No trips linked to this tab yet. Link a trip when creating or editing a booking.</p>`;
+  } else {
+    const tripIds = linkedTrips.map(tr => tr.id);
+    const { data: allPayments } = await sb.from('payments').select('trip_id, amount').in('trip_id', tripIds);
+    linkedTrips.forEach(tr => {
+      const perPerson = parseFloat(tr.price_per_person || tr.payment_amount || 0);
+      const guestCount = Math.max(1, parseInt(tr.max_guests) || 1);
+      const total = perPerson * guestCount;
+      const paid = (allPayments || []).filter(p => p.trip_id === tr.id).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      const owed = total - paid;
+      html += `
+        <div class="gear-item-row">
+          <div class="gear-item-header">
+            <span class="gear-item-name">${tr.trip_type || 'Trip'} — ${tr.trip_date}</span>
+            <span style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};font-weight:600;">${owed > 0 ? 'Owed $' + owed.toFixed(2) : 'Paid in full'}</span>
+          </div>
+          <button class="gear-action-btn" style="margin-top:8px;" onclick="openTrip('${tr.id}')">Open trip to log payment</button>
+        </div>
+      `;
+    });
+  }
+
+  html += `<button class="btn-save" id="btn-close-tab">Close Tab</button><span class="save-feedback" id="close-tab-feedback"></span>`;
+
+  container.innerHTML = html;
+
+  document.getElementById('btn-close-tab').addEventListener('click', () => closeGuestTab(tabId, linkedTrips || []));
+}
+async function closeGuestTab(tabId, linkedTrips) {
+  const feedback = document.getElementById('close-tab-feedback');
+  let totalOwed = 0;
+  for (const tr of linkedTrips) {
+    const perPerson = parseFloat(tr.price_per_person || tr.payment_amount || 0);
+    const guestCount = Math.max(1, parseInt(tr.max_guests) || 1);
+    const total = perPerson * guestCount;
+    const { data: payments } = await sb.from('payments').select('amount').eq('trip_id', tr.id);
+    const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+    totalOwed += (total - paid);
+  }
+  if (totalOwed > 0.01) {
+    feedback.textContent = `Cannot close: $${totalOwed.toFixed(2)} still owed across linked trips.`;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('guest_tabs').update({ status: 'closed', closed_by: user.email, closed_at: new Date().toISOString() }).eq('id', tabId);
+  await loadGuestTabs();
+}
 
 // Save trip
 async function resolveTripLocationId(boatId) {
