@@ -2552,6 +2552,71 @@ async function renderTasksAll() {
     </div>`;
   }).join('');
 }
+let currentTaskListId = null;
+let currentTaskStaffId = null;
+async function openTaskDetail(taskListId) {
+  currentTaskListId = taskListId;
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: staffRow } = await sb.from('staff').select('id').eq('id', user.id).single();
+  currentTaskStaffId = staffRow?.id;
+
+  const { data: list } = await sb.from('task_lists').select('*').eq('id', taskListId).single();
+  const { data: items } = await sb.from('task_list_items').select('*').eq('task_list_id', taskListId).order('sort_order');
+  const { data: assignees } = await sb.from('task_list_assignees').select('*, staff(full_name)').eq('task_list_id', taskListId);
+  const { data: completions } = await sb.from('task_item_completions').select('*').in('task_list_item_id', (items || []).map(i => i.id));
+
+  const isAssignedToMe = (assignees || []).some(a => a.staff_id === currentTaskStaffId);
+  const myCompletedIds = (completions || []).filter(c => c.staff_id === currentTaskStaffId).map(c => c.task_list_item_id);
+
+  document.getElementById('task-detail-title').textContent = list?.title || 'Task list';
+  document.getElementById('task-detail-meta').textContent = `${list?.due_date || 'No due date'} · Assigned to: ${(assignees || []).map(a => a.staff?.full_name).filter(Boolean).join(', ')}`;
+
+  document.getElementById('task-detail-items').innerHTML = (items || []).map(it => {
+    const isChecked = myCompletedIds.includes(it.id);
+    return `<div class="gear-item-row" style="cursor:${isAssignedToMe ? 'pointer' : 'default'};" ${isAssignedToMe ? `onclick="toggleTaskItem('${it.id}')"` : ''}>
+      <div class="gear-item-header">
+        <span class="gear-item-name" style="${isChecked ? 'text-decoration:line-through;color:var(--muted);' : ''}">${isChecked ? '✓ ' : ''}${it.text}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const myAssigneeRow = (assignees || []).find(a => a.staff_id === currentTaskStaffId);
+  document.getElementById('task-note-wrap').style.display = isAssignedToMe ? 'block' : 'none';
+  document.getElementById('task-note-input').value = myAssigneeRow?.note || '';
+  document.getElementById('task-detail-feedback').className = 'save-feedback';
+
+  document.getElementById('modal-task-detail').style.display = 'flex';
+}
+function closeTaskDetailModal() {
+  document.getElementById('modal-task-detail').style.display = 'none';
+  renderTasksMine();
+  renderTasksAll();
+}
+async function toggleTaskItem(itemId) {
+  if (!currentTaskStaffId) return;
+  const { data: existing } = await sb.from('task_item_completions').select('id').eq('task_list_item_id', itemId).eq('staff_id', currentTaskStaffId).maybeSingle();
+  if (existing) {
+    await sb.from('task_item_completions').delete().eq('id', existing.id);
+  } else {
+    await sb.from('task_item_completions').insert({ task_list_item_id: itemId, staff_id: currentTaskStaffId });
+  }
+  const { data: items } = await sb.from('task_list_items').select('id').eq('task_list_id', currentTaskListId);
+  const { data: completions } = await sb.from('task_item_completions').select('id').eq('staff_id', currentTaskStaffId).in('task_list_item_id', (items || []).map(i => i.id));
+  if (items && completions && items.length === completions.length) {
+    await sb.from('task_list_assignees').update({ completed_at: new Date().toISOString() }).eq('task_list_id', currentTaskListId).eq('staff_id', currentTaskStaffId);
+  } else {
+    await sb.from('task_list_assignees').update({ completed_at: null }).eq('task_list_id', currentTaskListId).eq('staff_id', currentTaskStaffId);
+  }
+  await openTaskDetail(currentTaskListId);
+}
+document.getElementById('btn-save-task-note').addEventListener('click', async () => {
+  const feedback = document.getElementById('task-detail-feedback');
+  const note = document.getElementById('task-note-input').value.trim();
+  await sb.from('task_list_assignees').update({ note: note || null }).eq('task_list_id', currentTaskListId).eq('staff_id', currentTaskStaffId);
+  feedback.textContent = 'Note saved.';
+  feedback.className = 'save-feedback visible';
+  setTimeout(() => feedback.className = 'save-feedback', 2000);
+});
 async function checkCrewNotifications() {
   const badge = document.getElementById('crew-notification-badge');
   if (!badge || !currentOrgId) return;
