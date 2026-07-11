@@ -1067,6 +1067,25 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-task-detail" style="display:none;z-index:300;">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h2 id="task-detail-title"></h2>
+      <button class="modal-close" onclick="closeTaskDetailModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p id="task-detail-meta" style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;"></p>
+      <div id="task-detail-items"></div>
+      <div class="sf-group" style="margin-top:16px;" id="task-note-wrap">
+        <label class="sf-label">Note for the manager</label>
+        <textarea class="sf-input" id="task-note-input" rows="3" placeholder="Optional"></textarea>
+        <button class="btn-cancel" id="btn-save-task-note" style="margin-top:8px;">Save Note</button>
+      </div>
+      <span class="save-feedback" id="task-detail-feedback"></span>
+    </div>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div id="loading">
   <div class="loading-logo">Seven<span>Seas</span></div>
