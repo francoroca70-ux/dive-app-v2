@@ -1335,9 +1335,11 @@ body { background: var(--navy); color: var(--text); }
               </div>
               <div class="card-section-title" style="margin-top:20px;">Guests</div>
               <div class="sf-group">
-                <label class="sf-label">Max guests</label>
+                <label class="sf-label">Number of guests</label>
                 <input class="sf-input" type="number" id="trip-max-guests" placeholder="e.g. 12" min="1">
+                <p id="guest-capacity-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></p>
               </div>
+              <div class="warning-banner caution" id="guest-capacity-warning" style="display:none;"></div>
 
               <div class="card-section-title" style="margin-top:20px;">Payment</div>
               <div class="sf-row">
