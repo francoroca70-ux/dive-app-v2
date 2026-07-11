@@ -2905,11 +2905,9 @@ async function renderWeekView() {
       </div>
     `).join('');
 
-   return `<div class="week-day-col-v3" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
+    return `<div class="week-day-col-v3" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
       <div class="week-day-col-header-v3 ${isToday?'today':''}">${dayNames[i]} ${d.getDate()}</div>
       <div class="week-day-col-body-v3">
-      <div class="week-day-col-header-v3 ${isToday?'today':''}">${dayNames[i]} ${d.getDate()}</div>
-      <div class="week-day-col-body-v3" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
         ${chips || '<div class="week-day-empty-v3">No trips</div>'}
       </div>
     </div>`;
@@ -2917,8 +2915,6 @@ async function renderWeekView() {
 
   body.innerHTML = `<div class="week-grid-wrapper-v3">${dayCols}</div>`;
 }
-
-async function renderMonthView() {
   const body = document.getElementById('cal-body');
   const year = calDate.getFullYear();
   const month = calDate.getMonth();
