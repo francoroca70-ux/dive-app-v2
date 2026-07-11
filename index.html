@@ -2575,10 +2575,9 @@ async function openTaskDetail(taskListId) {
 
   document.getElementById('task-detail-items').innerHTML = (items || []).map(it => {
     const isChecked = myCompletedIds.includes(it.id);
-    return `<div class="gear-item-row" style="cursor:${isAssignedToMe ? 'pointer' : 'default'};" ${isAssignedToMe ? `onclick="toggleTaskItem('${it.id}')"` : ''}>
-      <div class="gear-item-header">
-        <span class="gear-item-name" style="${isChecked ? 'text-decoration:line-through;color:var(--muted);' : ''}">${isChecked ? '✓ ' : ''}${it.text}</span>
-      </div>
+    return `<div class="cl-item ${isChecked ? 'checked' : ''}" ${isAssignedToMe ? `onclick="toggleTaskItem('${it.id}')"` : ''} style="cursor:${isAssignedToMe ? 'pointer' : 'default'};">
+      <div class="cl-checkbox">${isChecked ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
+      <div class="cl-item-text">${it.text}</div>
     </div>`;
   }).join('');
 
