@@ -2609,6 +2609,8 @@ async function toggleTaskItem(itemId) {
     await sb.from('task_list_assignees').update({ completed_at: null }).eq('task_list_id', currentTaskListId).eq('staff_id', currentTaskStaffId);
   }
   await openTaskDetail(currentTaskListId);
+  await renderTasksMine();
+  await renderTasksAll();
 }
 document.getElementById('btn-save-task-note').addEventListener('click', async () => {
   const feedback = document.getElementById('task-detail-feedback');
