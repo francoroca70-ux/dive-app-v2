@@ -2476,6 +2476,63 @@ document.getElementById('btn-save-task-list').addEventListener('click', async ()
   await renderTasksMine();
   await renderTasksAll();
 });
+async function renderTasksMine() {
+  const container = document.getElementById('tasks-mine-view');
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: staffRow } = await sb.from('staff').select('id').eq('id', user.id).single();
+  const myStaffId = staffRow?.id;
+  if (!myStaffId) { container.innerHTML = ''; return; }
+
+  const { data: myAssignments } = await sb.from('task_list_assignees').select('*, task_lists(*)').eq('staff_id', myStaffId);
+  if (!myAssignments || !myAssignments.length) {
+    container.innerHTML = '<p style="color:var(--muted);">No tasks assigned to you right now.</p>';
+    return;
+  }
+  const listIds = myAssignments.map(a => a.task_list_id);
+  const { data: allItems } = await sb.from('task_list_items').select('*').in('task_list_id', listIds);
+  const { data: myCompletions } = await sb.from('task_item_completions').select('*').eq('staff_id', myStaffId);
+
+  container.innerHTML = myAssignments.map(a => {
+    const items = (allItems || []).filter(i => i.task_list_id === a.task_list_id);
+    const doneCount = items.filter(i => (myCompletions || []).some(c => c.task_list_item_id === i.id)).length;
+    const isComplete = items.length > 0 && doneCount === items.length;
+    return `<div class="gear-item-row" onclick="openTaskDetail('${a.task_list_id}')" style="cursor:pointer;">
+      <div class="gear-item-header">
+        <span class="gear-item-name">${a.task_lists.title}</span>
+        <span style="font-size:0.75rem;color:${isComplete ? 'var(--success)' : 'var(--muted)'};font-weight:600;">${doneCount}/${items.length} complete</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${a.task_lists.due_date || 'No due date'}</div>
+    </div>`;
+  }).join('');
+}
+async function renderTasksAll() {
+  const container = document.getElementById('tasks-all-view');
+  if (!currentOrgId || !currentLocationId) { container.innerHTML = ''; return; }
+  const { data: lists } = await sb.from('task_lists').select('*').eq('org_id', currentOrgId).eq('location_id', currentLocationId).order('created_at', { ascending: false });
+  if (!lists || !lists.length) {
+    container.innerHTML = '<p style="color:var(--muted);">No task lists yet.</p>';
+    return;
+  }
+  const listIds = lists.map(l => l.id);
+  const { data: assignees } = await sb.from('task_list_assignees').select('*, staff(full_name)').in('task_list_id', listIds);
+  const { data: items } = await sb.from('task_list_items').select('*').in('task_list_id', listIds);
+  const { data: completions } = await sb.from('task_item_completions').select('*').in('task_list_item_id', (items || []).map(i => i.id));
+
+  container.innerHTML = lists.map(l => {
+    const listAssignees = (assignees || []).filter(a => a.task_list_id === l.id);
+    const listItems = (items || []).filter(i => i.task_list_id === l.id);
+    const perAssignee = listAssignees.map(a => {
+      const done = listItems.filter(i => (completions || []).some(c => c.task_list_item_id === i.id && c.staff_id === a.staff_id)).length;
+      return `${a.staff?.full_name || 'Unknown'} (${done}/${listItems.length})`;
+    }).join(', ');
+    return `<div class="gear-item-row" onclick="openTaskDetail('${l.id}')" style="cursor:pointer;">
+      <div class="gear-item-header">
+        <span class="gear-item-name">${l.title}</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${l.due_date || 'No due date'} · ${perAssignee}</div>
+    </div>`;
+  }).join('');
+}
 async function checkCrewNotifications() {
   const badge = document.getElementById('crew-notification-badge');
   if (!badge || !currentOrgId) return;
