@@ -3715,6 +3715,28 @@ function addTripCrewToCache(staffId, fullName) {
 function removeTripCrewFromCache(staffId) {
   tripCrewCache = tripCrewCache.filter(c => c.staff_id !== staffId);
   renderTripCrewSection();
+  checkGuestCapacity();
+}
+async function checkGuestCapacity() {
+  const hint = document.getElementById('guest-capacity-hint');
+  const warning = document.getElementById('guest-capacity-warning');
+  const boatId = document.getElementById('trip-boat').value;
+  const guests = parseInt(document.getElementById('trip-max-guests').value) || 0;
+  window.currentCapacityExceeded = false;
+  if (!boatId) { hint.textContent = ''; warning.style.display = 'none'; return; }
+  const { data: boat } = await sb.from('boats').select('capacity').eq('id', boatId).single();
+  const capacity = boat?.capacity;
+  if (!capacity) { hint.textContent = ''; warning.style.display = 'none'; return; }
+  const crewCount = tripCrewCache.length;
+  const available = capacity - crewCount;
+  hint.textContent = `Boat capacity: ${capacity} (not including captain) · ${crewCount} crew assigned · ${available} available for guests`;
+  if (guests > available) {
+    warning.textContent = `Too many guests: ${guests} requested, only ${available} seats available after ${crewCount} crew.`;
+    warning.style.display = 'block';
+    window.currentCapacityExceeded = true;
+  } else {
+    warning.style.display = 'none';
+  }
 }
 
 // ─── TRIP PAYMENTS ───
