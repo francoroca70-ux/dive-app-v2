@@ -1900,9 +1900,7 @@ body { background: var(--navy); color: var(--text); }
           <div class="cl-tab active" onclick="showTaskView('mine',this)">My Tasks</div>
           <div class="cl-tab" onclick="showTaskView('all',this)">All Tasks</div>
         </div>
-        <div id="tasks-mine-view" class="cl-view"></div>
-        <div id="tasks-all-view" class="cl-view" style="display:none;"></div>
-        <div class="inline-form" id="form-new-task-list" style="display:none;margin-top:16px;">
+        <div class="inline-form" id="form-new-task-list" style="display:none;margin-bottom:16px;">
           <div class="card-section-title">New Task List</div>
           <div class="sf-row">
             <div class="sf-group">
@@ -1921,8 +1919,8 @@ body { background: var(--navy); color: var(--text); }
           <div class="sf-group">
             <label class="sf-label">Assign to</label>
             <div style="display:flex;gap:8px;margin-bottom:8px;">
-              <select class="sf-input" id="tasklist-assignee-select" style="margin-bottom:0;"></select>
-              <button class="btn-save" onclick="addTaskListAssignee()" style="white-space:nowrap;">+ Add crew member</button>
+              <select class="sf-input" id="tasklist-assignee-select" style="margin-bottom:0;max-width:220px;"></select>
+              <button class="btn-save" onclick="addTaskListAssignee()" style="white-space:nowrap;">+ Add</button>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:6px;" id="tasklist-assignee-tags"></div>
           </div>
@@ -1932,6 +1930,8 @@ body { background: var(--navy); color: var(--text); }
             <span class="save-feedback" id="tasklist-feedback"></span>
           </div>
         </div>
+        <div id="tasks-mine-view" class="cl-view"></div>
+        <div id="tasks-all-view" class="cl-view" style="display:none;"></div>
       </div>
 
       <!-- MAINTENANCE -->
