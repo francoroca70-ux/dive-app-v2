@@ -2814,7 +2814,7 @@ function tripCard(t) {
     <div class="trip-card-footer">
       <div class="trip-stat"><strong>${guestCount}</strong> guests</div>
       ${t.trip_crew?.length ? `<div class="trip-stat">Crew: <strong>${t.trip_crew.map(c => c.staff?.full_name).filter(Boolean).join(', ')}</strong></div>` : ''}
-      ${t.max_guests ? `<div class="trip-stat">Max <strong>${t.max_guests}</strong></div>` : ''}
+      ${t.max_guests ? `<div class="trip-stat">Guests booked: <strong>${t.max_guests}</strong></div>` : ''}
       ${isDive && tanks ? `<div class="trip-stat"><strong>${tanks}</strong> tanks needed</div>` : ''}
       ${t.price_per_person ? `<div class="trip-stat"><strong>${t.currency || ''} ${t.price_per_person}</strong> /person</div>` : ''}
     </div>
