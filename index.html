@@ -3569,6 +3569,12 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     feedback.className = 'save-feedback error visible';
     return;
   }
+  await checkGuestCapacity();
+  if (window.currentCapacityExceeded) {
+    feedback.textContent = 'Cannot save: too many guests for this boat once crew is accounted for.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
 
   btn.disabled = true; btn.textContent = 'Saving...';
 
