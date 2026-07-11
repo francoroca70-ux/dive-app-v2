@@ -2791,13 +2791,22 @@ async function renderDayView() {
     return;
   }
 
-  body.innerHTML = dayTrips.map(t => tripCard(t)).join('');
+  const tripIds = dayTrips.map(t => t.id);
+  const { data: payments } = await sb.from('payments').select('trip_id, amount').in('trip_id', tripIds);
+  const paidByTrip = {};
+  (payments || []).forEach(p => { paidByTrip[p.trip_id] = (paidByTrip[p.trip_id] || 0) + parseFloat(p.amount); });
+
+  body.innerHTML = dayTrips.map(t => tripCard(t, paidByTrip[t.id] || 0)).join('');
 }
 
-function tripCard(t) {
-  const guestCount = t.participants?.length || 0;
+function tripCard(t, paid) {
+  const guestCount = t.max_guests || 0;
+  const capacity = t.boats?.capacity;
   const tanks = t.num_dives ? guestCount * t.num_dives : null;
   const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(t.trip_type);
+  const perPerson = parseFloat(t.price_per_person || t.payment_amount || 0);
+  const total = perPerson * guestCount;
+  const owed = total - (paid || 0);
   return `
   <div class="trip-card ${t.status}" onclick="event.stopPropagation();openTrip('${t.id}')">
     <div class="trip-card-header">
@@ -2812,11 +2821,10 @@ function tripCard(t) {
       <span class="trip-status-badge ${t.status}">${t.status}</span>
     </div>
     <div class="trip-card-footer">
-      <div class="trip-stat"><strong>${guestCount}</strong> guests</div>
+      <div class="trip-stat">Guests: <strong>${guestCount}${capacity ? '/' + capacity : ''}</strong></div>
       ${t.trip_crew?.length ? `<div class="trip-stat">Crew: <strong>${t.trip_crew.map(c => c.staff?.full_name).filter(Boolean).join(', ')}</strong></div>` : ''}
-      ${t.max_guests ? `<div class="trip-stat">Guests booked: <strong>${t.max_guests}</strong></div>` : ''}
       ${isDive && tanks ? `<div class="trip-stat"><strong>${tanks}</strong> tanks needed</div>` : ''}
-      ${t.price_per_person ? `<div class="trip-stat"><strong>${t.currency || ''} ${t.price_per_person}</strong> /person</div>` : ''}
+      ${total > 0 ? `<div class="trip-stat" style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};">${owed > 0 ? 'Owed' : 'Paid'}: <strong>${t.currency || ''} ${Math.abs(owed).toFixed(2)}</strong></div>` : ''}
     </div>
   </div>`;
 }
