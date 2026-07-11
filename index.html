@@ -1920,11 +1920,11 @@ body { background: var(--navy); color: var(--text); }
           </div>
           <div class="sf-group">
             <label class="sf-label">Assign to</label>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;" id="tasklist-assignee-tags"></div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
               <select class="sf-input" id="tasklist-assignee-select" style="margin-bottom:0;"></select>
-              <button class="btn-cancel" onclick="addTaskListAssignee()">Add</button>
+              <button class="btn-save" onclick="addTaskListAssignee()" style="white-space:nowrap;">+ Add crew member</button>
             </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;" id="tasklist-assignee-tags"></div>
           </div>
           <div class="settings-actions">
             <button class="btn-save" id="btn-save-task-list">Save Task List</button>
@@ -2451,7 +2451,6 @@ document.getElementById('btn-new-task-list').addEventListener('click', () => {
   taskListAssigneeIds = [];
   document.getElementById('tasklist-title').value = '';
   document.getElementById('tasklist-date').value = formatDate(new Date());
-  document.getElementById('tasklist-date').value = '';
   document.getElementById('tasklist-items').value = '';
   renderTaskListAssigneeTags();
   document.getElementById('form-new-task-list').style.display = 'block';
