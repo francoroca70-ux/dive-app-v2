@@ -3061,6 +3061,7 @@ async function openNewTrip() {
   document.getElementById('btn-delete-trip').style.display = 'none';
   document.getElementById('trip-date').value = formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
+  document.getElementById('trip-max-guests').value = '';
   document.getElementById('trip-arrival').value = '';
   document.getElementById('trip-price').value = '';
   document.getElementById('trip-price-total').value = '';
@@ -3112,7 +3113,6 @@ async function openTrip(id) {
   document.getElementById('trip-time').value = trip.trip_time?.slice(0,5) || '';
   document.getElementById('trip-arrival').value = trip.arrival_time?.slice(0,5) || '';
   document.getElementById('trip-max-guests').value = trip.max_guests || '';
-  updateTripPriceTotal();
   document.getElementById('trip-price').value = trip.payment_amount || trip.price_per_person || '';
   updateTripPriceTotal();
   document.getElementById('trip-contact-name').value = trip.contact_name || '';
