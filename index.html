@@ -3134,6 +3134,7 @@ async function openTrip(id) {
   const { data: existingCrew } = await sb.from('trip_crew').select('staff_id, staff(full_name)').eq('trip_id', id);
   tripCrewCache = (existingCrew || []).map(c => ({ staff_id: c.staff_id, full_name: c.staff?.full_name || 'Unknown' }));
   await renderTripCrewSection();
+  await checkGuestCapacity();
 }
 
 document.getElementById('btn-new-trip').addEventListener('click', openNewTrip);
@@ -3248,6 +3249,8 @@ document.getElementById('trip-date').addEventListener('change', renderTripCrewSe
 document.getElementById('trip-time').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-arrival').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-boat').addEventListener('change', renderTripCrewSection);
+document.getElementById('trip-boat').addEventListener('change', checkGuestCapacity);
+document.getElementById('trip-max-guests').addEventListener('input', checkGuestCapacity);
 
 function showCashupView(view, el) {
   document.querySelectorAll('#page-cashup .cl-view').forEach(v => v.style.display = 'none');
