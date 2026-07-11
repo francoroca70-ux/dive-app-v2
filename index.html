@@ -2124,7 +2124,7 @@ function showPage(id) {
   if (id === 'gear') loadCompressors();
   if (id === 'crew') loadCrew();
   if (id === 'cashup') { loadCashUp(); loadGuestTabs(); }
-  if (id === 'cashup') loadCashUp();
+  if (id === 'tasks') loadTasks();
 }
 
 // ─── NAV ITEMS ───
@@ -2412,6 +2412,70 @@ async function clearRosterCell() {
   closeRosterCellModal();
   renderRosterGrid();
 }
+let taskListAssigneeIds = [];
+async function loadTasks() {
+  if (!currentOrgId) return;
+  const { data: staffList } = await sb.from('staff').select('id, full_name').eq('org_id', currentOrgId);
+  const sel = document.getElementById('tasklist-assignee-select');
+  sel.innerHTML = '<option value="">Select crew member</option>' + (staffList || []).map(s => `<option value="${s.id}" data-name="${s.full_name}">${s.full_name}</option>`).join('');
+  await renderTasksMine();
+  await renderTasksAll();
+}
+function showTaskView(view, el) {
+  document.querySelectorAll('#page-tasks .cl-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('#page-tasks .cl-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tasks-' + view + '-view').style.display = 'block';
+  el.classList.add('active');
+}
+document.getElementById('btn-new-task-list').addEventListener('click', () => {
+  taskListAssigneeIds = [];
+  document.getElementById('tasklist-title').value = '';
+  document.getElementById('tasklist-date').value = '';
+  document.getElementById('tasklist-items').value = '';
+  renderTaskListAssigneeTags();
+  document.getElementById('form-new-task-list').style.display = 'block';
+});
+document.getElementById('btn-cancel-task-list').addEventListener('click', () => {
+  document.getElementById('form-new-task-list').style.display = 'none';
+});
+function addTaskListAssignee() {
+  const sel = document.getElementById('tasklist-assignee-select');
+  if (!sel.value || taskListAssigneeIds.some(a => a.id === sel.value)) return;
+  taskListAssigneeIds.push({ id: sel.value, name: sel.options[sel.selectedIndex].dataset.name });
+  renderTaskListAssigneeTags();
+  sel.value = '';
+}
+function removeTaskListAssignee(id) {
+  taskListAssigneeIds = taskListAssigneeIds.filter(a => a.id !== id);
+  renderTaskListAssigneeTags();
+}
+function renderTaskListAssigneeTags() {
+  document.getElementById('tasklist-assignee-tags').innerHTML = taskListAssigneeIds.map(a => `
+    <span class="crew-member-tag-v2">${a.name}<button onclick="removeTaskListAssignee('${a.id}')">×</button></span>
+  `).join('');
+}
+document.getElementById('btn-save-task-list').addEventListener('click', async () => {
+  const feedback = document.getElementById('tasklist-feedback');
+  const title = document.getElementById('tasklist-title').value.trim();
+  const date = document.getElementById('tasklist-date').value;
+  const itemsRaw = document.getElementById('tasklist-items').value.trim();
+  if (!title || !itemsRaw || !taskListAssigneeIds.length) {
+    feedback.textContent = 'Title, at least one task, and at least one assignee are required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: list, error } = await sb.from('task_lists').insert({
+    org_id: currentOrgId, location_id: currentLocationId, title, due_date: date || null, created_by: user.email
+  }).select().single();
+  if (error) { feedback.textContent = 'Error saving.'; feedback.className = 'save-feedback error visible'; return; }
+  const items = itemsRaw.split('\n').map(l => l.trim()).filter(Boolean).map((text, i) => ({ task_list_id: list.id, text, sort_order: i }));
+  await sb.from('task_list_items').insert(items);
+  await sb.from('task_list_assignees').insert(taskListAssigneeIds.map(a => ({ task_list_id: list.id, staff_id: a.id })));
+  document.getElementById('form-new-task-list').style.display = 'none';
+  await renderTasksMine();
+  await renderTasksAll();
+});
 async function checkCrewNotifications() {
   const badge = document.getElementById('crew-notification-badge');
   if (!badge || !currentOrgId) return;
