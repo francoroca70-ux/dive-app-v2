@@ -2832,7 +2832,7 @@ function tripCard(t, paid) {
 
 const WEEK_START_HOUR = 6;
 const WEEK_END_HOUR = 21;
-const SLOT_HEIGHT = 56; // px per hour
+const SLOT_HEIGHT = 56;
 
 function timeToY(timeStr) {
   if (!timeStr) return 0;
@@ -2846,43 +2846,6 @@ function durationH(start, end) {
   const [sh, sm] = start.split(':').map(Number);
   const [eh, em] = end ? end.split(':').map(Number) : [sh+1, sm];
   return Math.max(0.5, (eh + em/60) - (sh + sm/60));
-}
-
-function layoutDayTrips(dayT) {
-  const items = dayT.map(t => {
-    const start = timeToY(t.trip_time?.slice(0,5));
-    const height = Math.max(durationH(t.trip_time?.slice(0,5), t.arrival_time?.slice(0,5)) * SLOT_HEIGHT, 36);
-    return { trip: t, start, end: start + height, height };
-  });
-  items.sort((a,b) => a.start - b.start);
-  const clusters = [];
-  let currentCluster = [];
-  let clusterEnd = -Infinity;
-  items.forEach(item => {
-    if (currentCluster.length && item.start >= clusterEnd) {
-      clusters.push(currentCluster);
-      currentCluster = [];
-      clusterEnd = -Infinity;
-    }
-    currentCluster.push(item);
-    clusterEnd = Math.max(clusterEnd, item.end);
-  });
-  if (currentCluster.length) clusters.push(currentCluster);
-  clusters.forEach(cluster => {
-    const columnEnds = [];
-    cluster.forEach(item => {
-      let placedCol = -1;
-      for (let c = 0; c < columnEnds.length; c++) {
-        if (item.start >= columnEnds[c]) { placedCol = c; break; }
-      }
-      if (placedCol === -1) { placedCol = columnEnds.length; columnEnds.push(0); }
-      columnEnds[placedCol] = item.end;
-      item.col = placedCol;
-    });
-    const totalCols = columnEnds.length;
-    cluster.forEach(item => { item.totalCols = totalCols; });
-  });
-  return items;
 }
 
 async function renderWeekView() {
@@ -2915,6 +2878,8 @@ async function renderWeekView() {
 
   body.innerHTML = `<div class="week-grid-wrapper-v3">${dayCols}</div>`;
 }
+
+async function renderMonthView() {
   const body = document.getElementById('cal-body');
   const year = calDate.getFullYear();
   const month = calDate.getMonth();
@@ -2927,14 +2892,12 @@ async function renderWeekView() {
   let html = `<div class="month-grid">`;
   html += dayNames.map(d => `<div class="month-day-header">${d}</div>`).join('');
 
-  // Pad start
   const startPad = firstDay.getDay();
   for (let i = 0; i < startPad; i++) {
     const d = addDays(firstDay, -(startPad - i));
     html += `<div class="month-day other-month"><div class="month-day-num">${d.getDate()}</div></div>`;
   }
 
-  // Days of month
   for (let d = 1; d <= lastDay.getDate(); d++) {
     const date = new Date(year, month, d);
     const dateStr = formatDate(date);
