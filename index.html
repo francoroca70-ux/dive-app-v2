@@ -3381,7 +3381,7 @@ document.getElementById('modal-trip').addEventListener('click', function(e) {
 });
 
 window.currentBookingMode = 'private';
-function setBookingMode(mode) {
+async function setBookingMode(mode) {
   document.getElementById('mode-private').classList.toggle('selected', mode === 'private');
   document.getElementById('mode-shared').classList.toggle('selected', mode === 'shared');
   window.currentBookingMode = mode;
@@ -3389,6 +3389,9 @@ function setBookingMode(mode) {
   hint.textContent = mode === 'private'
     ? 'This boat will be exclusively reserved for this time slot.'
     : 'Other independent bookings can share this boat, up to its max capacity.';
+  if (currentTripId) {
+    await sb.from('trips').update({ booking_mode: mode }).eq('id', currentTripId);
+  }
   checkBoatConflict();
   renderSharedGroupsPanel();
 }
