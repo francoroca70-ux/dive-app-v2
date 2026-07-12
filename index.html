@@ -3388,7 +3388,58 @@ function setBookingMode(mode) {
     ? 'This boat will be exclusively reserved for this time slot.'
     : 'Other independent bookings can share this boat, up to its max capacity.';
   checkBoatConflict();
+  renderSharedGroupsPanel();
 }
+async function renderSharedGroupsPanel() {
+  const section = document.getElementById('shared-groups-section');
+  const boatId = document.getElementById('trip-boat').value;
+  const date = document.getElementById('trip-date').value;
+  if (window.currentBookingMode !== 'shared' || !boatId || !date) {
+    section.style.display = 'none';
+    return;
+  }
+  const newStart = document.getElementById('trip-time').value || '00:00';
+  const newEnd = document.getElementById('trip-arrival').value || '23:59';
+  const { data: others } = await sb.from('trips')
+    .select('id, contact_name, trip_time, arrival_time, max_guests')
+    .eq('boat_id', boatId).eq('trip_date', date)
+    .neq('id', currentTripId || '00000000-0000-0000-0000-000000000000');
+  const overlapping = (others || []).filter(t => {
+    const tStart = t.trip_time?.slice(0,5) || '00:00';
+    const tEnd = t.arrival_time?.slice(0,5) || '23:59';
+    return newStart < tEnd && newEnd > tStart;
+  });
+  document.getElementById('shared-groups-title').textContent = overlapping.length
+    ? `Other groups sharing this boat (${overlapping.length})`
+    : 'No other groups on this boat yet';
+  document.getElementById('shared-groups-list').innerHTML = overlapping.map(t => `
+    <div class="gear-item-row" style="cursor:pointer;" onclick="openTrip('${t.id}')">
+      <div class="gear-item-header">
+        <span class="gear-item-name">${t.contact_name || 'Unnamed'}</span>
+        <span style="font-size:0.78rem;color:var(--muted);">${t.max_guests || 0} guests</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);">${t.trip_time?.slice(0,5)||''}${t.arrival_time ? ' – ' + t.arrival_time.slice(0,5) : ''}</div>
+    </div>
+  `).join('');
+  section.style.display = 'block';
+}
+document.getElementById('btn-add-shared-group').addEventListener('click', () => {
+  const boatId = document.getElementById('trip-boat').value;
+  const date = document.getElementById('trip-date').value;
+  const time = document.getElementById('trip-time').value;
+  const arrival = document.getElementById('trip-arrival').value;
+  openNewTrip();
+  setTimeout(() => {
+    document.getElementById('trip-boat').value = boatId;
+    document.getElementById('trip-date').value = date;
+    document.getElementById('trip-time').value = time;
+    document.getElementById('trip-arrival').value = arrival;
+    setBookingMode('shared');
+    checkBoatConflict();
+    renderTripCrewSection();
+    checkGuestCapacity();
+  }, 900);
+});
 
 async function populateTripBoats(selectedId) {
   if (!currentOrgId) return;
@@ -3400,7 +3451,7 @@ async function populateTripBoats(selectedId) {
   const sel = document.getElementById('trip-boat');
   sel.innerHTML = '<option value="">No boat / select a boat</option>' +
     (boats || []).map(b => `<option value="${b.id}" data-capacity="${b.capacity||''}" ${b.id===selectedId?'selected':''}>${b.name}${b.capacity ? ' · Max ' + b.capacity : ''}</option>`).join('');
-  sel.onchange = checkBoatConflict;
+  sel.onchange = () => { checkBoatConflict(); renderSharedGroupsPanel(); };
 }
 
 async function checkBoatConflict() {
