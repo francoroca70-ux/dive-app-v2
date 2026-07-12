@@ -2661,6 +2661,7 @@ async function initAuth() {
     await renderCalendar();
     await loadCurrentUserRole();
     await checkCrewNotifications();
+    await checkTasksNotifications();
     showScreen('app');
   } else {
     showScreen('login');
