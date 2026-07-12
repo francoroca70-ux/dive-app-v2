@@ -2595,6 +2595,11 @@ async function openTaskDetail(taskListId) {
   document.getElementById('task-note-input').value = myAssigneeRow?.note || '';
   document.getElementById('task-detail-feedback').className = 'save-feedback';
 
+  if (isAssignedToMe && myAssigneeRow && !myAssigneeRow.seen_at) {
+    await sb.from('task_list_assignees').update({ seen_at: new Date().toISOString() }).eq('id', myAssigneeRow.id);
+    await checkTasksNotifications();
+  }
+
   document.getElementById('modal-task-detail').style.display = 'flex';
 }
 function closeTaskDetailModal() {
