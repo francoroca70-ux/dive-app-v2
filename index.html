@@ -3342,6 +3342,7 @@ async function openTrip(id) {
   document.getElementById('trip-dive-sites').value = trip.dive_sites || '';
   setBookingMode(trip.booking_mode || 'private');
   populateTripBoats(trip.boat_id);
+  await renderSharedGroupsPanel();
   await populateTripTabSelect(trip.tab_id);
   await loadTripPaymentsSection(trip.id);
 
