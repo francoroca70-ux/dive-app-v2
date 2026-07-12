@@ -2629,6 +2629,14 @@ document.getElementById('btn-save-task-note').addEventListener('click', async ()
   feedback.className = 'save-feedback visible';
   setTimeout(() => feedback.className = 'save-feedback', 2000);
 });
+async function checkTasksNotifications() {
+  const badge = document.getElementById('tasks-notification-badge');
+  if (!badge) return;
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { badge.style.display = 'none'; return; }
+  const { count } = await sb.from('task_list_assignees').select('id', { count: 'exact', head: true }).eq('staff_id', user.id).is('seen_at', null);
+  badge.style.display = (count && count > 0) ? 'block' : 'none';
+}
 async function checkCrewNotifications() {
   const badge = document.getElementById('crew-notification-badge');
   if (!badge || !currentOrgId) return;
