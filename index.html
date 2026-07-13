@@ -1092,100 +1092,6 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-boat-detail" style="display:none;z-index:300;">
-  <div class="modal-box" style="max-width:600px;">
-    <div class="modal-header">
-      <h2 id="boat-detail-title">Boat</h2>
-      <button class="modal-close" id="modal-boat-detail-close">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p id="boat-detail-summary" style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;"></p>
-
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div class="card-section-title" style="margin-bottom:0;">Engines</div>
-        <button class="btn-save" id="btn-show-add-boat-engine" style="padding:6px 12px;font-size:0.82rem;">+ Add engine</button>
-      </div>
-      <div class="inline-form" id="form-add-boat-engine" style="display:none;margin-bottom:16px;">
-        <div class="sf-row">
-          <div class="sf-group">
-            <label class="sf-label">Engine name</label>
-            <input class="sf-input" type="text" id="bde-engine-name" placeholder="e.g. Main Engine, Port Engine">
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">Service interval (hours)</label>
-            <input class="sf-input" type="number" id="bde-engine-interval" placeholder="e.g. 100" min="1">
-          </div>
-        </div>
-        <div class="settings-actions">
-          <button class="btn-save" id="btn-save-boat-engine">Add engine</button>
-          <button class="btn-cancel" id="btn-cancel-boat-engine">Cancel</button>
-          <span class="save-feedback" id="bde-engine-feedback"></span>
-        </div>
-      </div>
-      <div id="boat-detail-engines-list"></div>
-
-      <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;">
-        <div class="card-section-title" style="margin-bottom:0;">Maintenance</div>
-        <button class="btn-save" id="btn-show-add-boat-maintenance" style="padding:6px 12px;font-size:0.82rem;">+ Log maintenance</button>
-      </div>
-      <div class="inline-form" id="form-add-boat-maintenance" style="display:none;margin-bottom:16px;">
-        <div class="sf-row">
-          <div class="sf-group">
-            <label class="sf-label">Engine (optional)</label>
-            <select class="sf-input" id="bdm-engine"><option value="">— Not engine-specific —</option></select>
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">Registered gear item (optional)</label>
-            <select class="sf-input" id="bdm-gear"><option value="">— Not linked to registered gear —</option></select>
-          </div>
-        </div>
-        <div class="sf-group">
-          <label class="sf-label">Title</label>
-          <input class="sf-input" type="text" id="bdm-title" placeholder="e.g. Anchor rope replacement">
-        </div>
-        <div class="sf-group">
-          <label class="sf-label">What was done</label>
-          <textarea class="sf-input" id="bdm-description" rows="2" placeholder="e.g. Replaced anchor rope"></textarea>
-        </div>
-        <div class="sf-group">
-          <label class="sf-label">Parts used (optional)</label>
-          <input class="sf-input" type="text" id="bdm-parts" placeholder="e.g. 10m anchor rope, shackle">
-        </div>
-        <div class="sf-row">
-          <div class="sf-group">
-            <label class="sf-label">Cost (optional)</label>
-            <input class="sf-input" type="number" id="bdm-cost" placeholder="0.00" step="0.01" min="0">
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">Currency</label>
-            <input class="sf-input" type="text" id="bdm-currency" value="USD" maxlength="3" style="text-transform:uppercase;">
-          </div>
-        </div>
-        <div class="sf-row">
-          <div class="sf-group">
-            <label class="sf-label">Done by</label>
-            <input class="sf-input" type="text" id="bdm-performed-by" placeholder="Name">
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">Date performed</label>
-            <input class="sf-input" type="date" id="bdm-date">
-          </div>
-        </div>
-        <div class="sf-group">
-          <label class="sf-label">Next due (optional)</label>
-          <input class="sf-input" type="date" id="bdm-next-due">
-        </div>
-        <div class="settings-actions">
-          <button class="btn-save" id="btn-save-boat-maintenance">Save entry</button>
-          <button class="btn-cancel" id="btn-cancel-boat-maintenance">Cancel</button>
-          <span class="save-feedback" id="bdm-feedback"></span>
-        </div>
-      </div>
-      <div id="boat-detail-maintenance-list"></div>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modal-gear-detail" style="display:none;z-index:300;">
   <div class="modal-box" style="max-width:600px;">
     <div class="modal-header">
@@ -1438,9 +1344,6 @@ body { background: var(--navy); color: var(--text); }
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Daily Cash-Up
       </div>
       <div class="nav-section-label">Manage</div>
-      <div class="nav-item" data-page="maintenance">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span> Maintenance
-      </div>
       <div class="nav-item" data-page="settings">
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span> Settings
       </div>
@@ -1596,12 +1499,21 @@ body { background: var(--navy); color: var(--text); }
         <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
           <div>
             <h1>Fleet</h1>
-            <p>Boats and vessel management</p>
+            <p>Boats, engines and maintenance</p>
           </div>
-          <button class="btn-save" id="btn-show-add-boat">+ Add boat</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-save" id="btn-show-add-boat">+ Add boat</button>
+            <button class="btn-save" id="btn-show-add-boat-engine">+ Add engine</button>
+            <button class="btn-save" id="btn-show-add-boat-hours">+ Log engine hours</button>
+          </div>
         </div>
 
-        <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;">Click a boat to view and log its engines and maintenance history.</p>
+        <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">Click a boat, or choose one below, to manage its engines and maintenance history.</p>
+
+        <div class="sf-group" style="max-width:320px;margin-bottom:20px;">
+          <label class="sf-label">Manage boat</label>
+          <select class="sf-input" id="fleet-manage-boat-select"><option value="">— Choose a boat —</option></select>
+        </div>
 
         <div id="fleet-boats-view" class="cl-view">
         <div class="inline-form" id="form-add-boat" style="display:none;margin-bottom:20px;">
@@ -1670,6 +1582,106 @@ body { background: var(--navy); color: var(--text); }
 
         <!-- Boats list -->
         <div id="fleet-list"></div>
+        </div>
+
+        <div id="fleet-boat-detail-section" style="display:none;margin-top:28px;border-top:1px solid var(--border);padding-top:24px;">
+          <h2 id="boat-detail-title" style="margin-bottom:2px;">Boat</h2>
+          <p id="boat-detail-summary" style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;"></p>
+
+          <div class="inline-form" id="form-add-boat-engine" style="display:none;margin-bottom:20px;">
+            <div class="card-section-title">Add engine</div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Engine name</label>
+                <input class="sf-input" type="text" id="bde-engine-name" placeholder="e.g. Main Engine, Port Engine">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Service interval (hours)</label>
+                <input class="sf-input" type="number" id="bde-engine-interval" placeholder="e.g. 100" min="1">
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-boat-engine">Add engine</button>
+              <button class="btn-cancel" id="btn-cancel-boat-engine">Cancel</button>
+              <span class="save-feedback" id="bde-engine-feedback"></span>
+            </div>
+          </div>
+
+          <div class="inline-form" id="form-add-boat-hours" style="display:none;margin-bottom:20px;">
+            <div class="card-section-title">Log engine hours</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;">Applies to every engine on this boat — the usual case, since engines on the same boat run together. Use an engine's own "Service Completed" button below if only one needs resetting.</p>
+            <div class="sf-row">
+              <input class="sf-input" type="text" id="bdh-logged-by" placeholder="Logged by">
+              <input class="sf-input" type="number" id="bdh-hours-run" placeholder="Hours run (e.g. 2.5)" step="0.1">
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-boat-hours">Log hours</button>
+              <button class="btn-cancel" id="btn-cancel-boat-hours">Cancel</button>
+              <span class="save-feedback" id="bdh-feedback"></span>
+            </div>
+          </div>
+
+          <div class="card-section-title">Engines</div>
+          <div id="boat-detail-engines-list"></div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;">
+            <div class="card-section-title" style="margin-bottom:0;">Maintenance</div>
+            <button class="btn-save" id="btn-show-add-boat-maintenance" style="padding:6px 12px;font-size:0.82rem;">+ Log maintenance</button>
+          </div>
+          <div class="inline-form" id="form-add-boat-maintenance" style="display:none;margin-bottom:16px;">
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Engine (optional)</label>
+                <select class="sf-input" id="bdm-engine"><option value="">— Not engine-specific —</option></select>
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Registered gear item (optional)</label>
+                <select class="sf-input" id="bdm-gear"><option value="">— Not linked to registered gear —</option></select>
+              </div>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Title</label>
+              <input class="sf-input" type="text" id="bdm-title" placeholder="e.g. Anchor rope replacement">
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">What was done</label>
+              <textarea class="sf-input" id="bdm-description" rows="2" placeholder="e.g. Replaced anchor rope"></textarea>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Parts used (optional)</label>
+              <input class="sf-input" type="text" id="bdm-parts" placeholder="e.g. 10m anchor rope, shackle">
+            </div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Cost (optional)</label>
+                <input class="sf-input" type="number" id="bdm-cost" placeholder="0.00" step="0.01" min="0">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Currency</label>
+                <input class="sf-input" type="text" id="bdm-currency" value="USD" maxlength="3" style="text-transform:uppercase;">
+              </div>
+            </div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Done by</label>
+                <input class="sf-input" type="text" id="bdm-performed-by" placeholder="Name">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Date performed</label>
+                <input class="sf-input" type="date" id="bdm-date">
+              </div>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Next due (optional)</label>
+              <input class="sf-input" type="date" id="bdm-next-due">
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-boat-maintenance">Save entry</button>
+              <button class="btn-cancel" id="btn-cancel-boat-maintenance">Cancel</button>
+              <span class="save-feedback" id="bdm-feedback"></span>
+            </div>
+          </div>
+          <div id="boat-detail-maintenance-list"></div>
         </div>
 
       </div>
@@ -2174,83 +2186,6 @@ body { background: var(--navy); color: var(--text); }
         <div id="tasks-all-view" class="cl-view" style="display:none;"></div>
       </div>
 
-      <!-- MAINTENANCE -->
-      <div class="page" id="page-maintenance">
-        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-          <div>
-            <h1>Maintenance</h1>
-            <p>Repairs, part replacements, and general service history</p>
-          </div>
-          <button class="btn-save" id="btn-show-add-maintenance">+ Log maintenance</button>
-        </div>
-
-        <div class="inline-form" id="form-add-maintenance" style="display:none;margin-bottom:20px;">
-          <div class="card-section-title">Log maintenance</div>
-          <div class="sf-row">
-            <div class="sf-group">
-              <label class="sf-label">Boat (optional)</label>
-              <select class="sf-input" id="maint-boat"><option value="">— Not boat-specific —</option></select>
-            </div>
-            <div class="sf-group">
-              <label class="sf-label">Engine (optional)</label>
-              <select class="sf-input" id="maint-engine"><option value="">— Not engine-specific —</option></select>
-            </div>
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">Registered gear item (optional)</label>
-            <select class="sf-input" id="maint-gear"><option value="">— Not linked to registered gear —</option></select>
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">Title</label>
-            <input class="sf-input" type="text" id="maint-title" placeholder="e.g. Anchor rope replacement">
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">What was done</label>
-            <textarea class="sf-input" id="maint-description" rows="3" placeholder="e.g. Replaced anchor rope, worn through near the shackle"></textarea>
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">Parts used (optional)</label>
-            <input class="sf-input" type="text" id="maint-parts" placeholder="e.g. 10m anchor rope, shackle">
-          </div>
-          <div class="sf-row">
-            <div class="sf-group">
-              <label class="sf-label">Cost (optional)</label>
-              <input class="sf-input" type="number" id="maint-cost" placeholder="0.00" step="0.01" min="0">
-            </div>
-            <div class="sf-group">
-              <label class="sf-label">Currency</label>
-              <input class="sf-input" type="text" id="maint-currency" value="USD" maxlength="3" style="text-transform:uppercase;">
-            </div>
-          </div>
-          <div class="sf-row">
-            <div class="sf-group">
-              <label class="sf-label">Done by</label>
-              <input class="sf-input" type="text" id="maint-performed-by" placeholder="Name">
-            </div>
-            <div class="sf-group">
-              <label class="sf-label">Date performed</label>
-              <input class="sf-input" type="date" id="maint-date">
-            </div>
-          </div>
-          <div class="sf-group">
-            <label class="sf-label">Next due (optional)</label>
-            <input class="sf-input" type="date" id="maint-next-due">
-          </div>
-          <div class="settings-actions">
-            <button class="btn-save" id="btn-save-maintenance">Save entry</button>
-            <button class="btn-cancel" id="btn-cancel-maintenance">Cancel</button>
-            <span class="save-feedback" id="maintenance-save-feedback"></span>
-          </div>
-        </div>
-
-        <div class="sf-group" style="max-width:280px;margin-bottom:16px;">
-          <label class="sf-label">Filter by boat</label>
-          <select class="sf-input" id="maint-filter-boat"><option value="">All boats and general</option></select>
-        </div>
-
-        <div id="maintenance-list"></div>
-      </div>
-
       <!-- SETTINGS -->
       <div class="page" id="page-settings">
         <div class="page-header">
@@ -2486,7 +2421,6 @@ function showPage(id) {
   if (id === 'fleet') loadFleet();
   if (id === 'gear') loadCompressors();
   if (id === 'crew') loadCrew();
-  if (id === 'maintenance') loadMaintenanceLogs();
   if (id === 'cashup') { loadCashUp(); loadGuestTabs(); }
   if (id === 'tasks') loadTasks();
   if (id === 'waivers') loadWaivers();
@@ -6407,13 +6341,20 @@ async function loadFleet() {
     .order('created_at');
 
   const list = document.getElementById('fleet-list');
+  const manageSel = document.getElementById('fleet-manage-boat-select');
   if (!boats || boats.length === 0) {
     list.innerHTML = '<div class="fleet-empty">No boats yet. Add your first vessel above.</div>';
     document.getElementById('stat-boats').textContent = '0';
+    manageSel.innerHTML = '<option value="">— Choose a boat —</option>';
+    document.getElementById('fleet-boat-detail-section').style.display = 'none';
     return;
   }
 
   document.getElementById('stat-boats').textContent = boats.filter(b => b.active).length;
+
+  const prevSelected = manageSel.value;
+  manageSel.innerHTML = '<option value="">— Choose a boat —</option>' + boats.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  if (prevSelected && boats.some(b => b.id === prevSelected)) manageSel.value = prevSelected;
 
   const boatIds = boats.map(b => b.id);
   const safeIds = boatIds.length ? boatIds : ['00000000-0000-0000-0000-000000000000'];
@@ -6553,6 +6494,18 @@ async function deleteBoat(id) {
 window.currentBoatDetailId = null;
 
 async function openBoatDetail(boatId) {
+  await selectFleetBoat(boatId);
+}
+
+async function selectFleetBoat(boatId) {
+  const section = document.getElementById('fleet-boat-detail-section');
+  const sel = document.getElementById('fleet-manage-boat-select');
+  if (!boatId) {
+    window.currentBoatDetailId = null;
+    section.style.display = 'none';
+    if (sel.value !== '') sel.value = '';
+    return;
+  }
   window.currentBoatDetailId = boatId;
   const { data: boat } = await sb.from('boats').select('*, locations(name)').eq('id', boatId).single();
   if (!boat) return;
@@ -6566,28 +6519,27 @@ async function openBoatDetail(boatId) {
   ].filter(Boolean).join(' · ');
 
   document.getElementById('form-add-boat-engine').style.display = 'none';
-  document.getElementById('btn-show-add-boat-engine').style.display = 'inline-block';
+  document.getElementById('form-add-boat-hours').style.display = 'none';
   document.getElementById('form-add-boat-maintenance').style.display = 'none';
-  document.getElementById('btn-show-add-boat-maintenance').style.display = 'inline-block';
 
-  document.getElementById('modal-boat-detail').style.display = 'flex';
+  section.style.display = 'block';
+  if (sel.value !== boatId) sel.value = boatId;
+
   await loadBoatDetailEngines(boatId);
   await loadBoatDetailMaintenance(boatId);
 }
 
-document.getElementById('modal-boat-detail-close').addEventListener('click', () => {
-  document.getElementById('modal-boat-detail').style.display = 'none';
-  window.currentBoatDetailId = null;
-  loadFleet();
+document.getElementById('fleet-manage-boat-select').addEventListener('change', function () {
+  selectFleetBoat(this.value);
 });
 
 document.getElementById('btn-show-add-boat-engine').addEventListener('click', () => {
+  if (!window.currentBoatDetailId) { showAlertModal('Choose a boat first.'); return; }
+  document.getElementById('form-add-boat-hours').style.display = 'none';
   document.getElementById('form-add-boat-engine').style.display = 'block';
-  document.getElementById('btn-show-add-boat-engine').style.display = 'none';
 });
 document.getElementById('btn-cancel-boat-engine').addEventListener('click', () => {
   document.getElementById('form-add-boat-engine').style.display = 'none';
-  document.getElementById('btn-show-add-boat-engine').style.display = 'inline-block';
 });
 
 document.getElementById('btn-save-boat-engine').addEventListener('click', async () => {
@@ -6616,8 +6568,43 @@ document.getElementById('btn-save-boat-engine').addEventListener('click', async 
   document.getElementById('bde-engine-interval').value = '';
   feedback.className = 'save-feedback';
   document.getElementById('form-add-boat-engine').style.display = 'none';
-  document.getElementById('btn-show-add-boat-engine').style.display = 'inline-block';
   await loadBoatDetailEngines(boatId);
+  await loadFleet();
+});
+
+document.getElementById('btn-show-add-boat-hours').addEventListener('click', () => {
+  if (!window.currentBoatDetailId) { showAlertModal('Choose a boat first.'); return; }
+  document.getElementById('form-add-boat-engine').style.display = 'none';
+  document.getElementById('form-add-boat-hours').style.display = 'block';
+});
+document.getElementById('btn-cancel-boat-hours').addEventListener('click', () => {
+  document.getElementById('form-add-boat-hours').style.display = 'none';
+});
+
+document.getElementById('btn-save-boat-hours').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-boat-hours');
+  const feedback = document.getElementById('bdh-feedback');
+  const boatId = window.currentBoatDetailId;
+  const loggedBy = document.getElementById('bdh-logged-by').value.trim();
+  const hours = parseFloat(document.getElementById('bdh-hours-run').value);
+  if (!boatId || !loggedBy || !hours) {
+    feedback.textContent = 'Logged by and hours run are required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { data: engines } = await sb.from('engines').select('id, current_hours').eq('boat_id', boatId);
+  for (const e of (engines || [])) {
+    await sb.from('engines').update({ current_hours: (e.current_hours || 0) + hours }).eq('id', e.id);
+    await sb.from('engine_hour_logs').insert({ engine_id: e.id, logged_by: loggedBy, hours_run: hours, event_type: 'log' });
+  }
+  btn.disabled = false; btn.textContent = 'Log hours';
+  document.getElementById('bdh-logged-by').value = '';
+  document.getElementById('bdh-hours-run').value = '';
+  feedback.className = 'save-feedback';
+  document.getElementById('form-add-boat-hours').style.display = 'none';
+  await loadBoatDetailEngines(boatId);
+  await loadFleet();
 });
 
 async function loadBoatDetailEngines(boatId) {
@@ -6653,13 +6640,7 @@ function renderEngineCard(e, logs, maintLogs) {
     <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
       ${e.current_hours}h / ${e.service_interval_hours}h since service — ${remaining}h remaining
     </p>
-    <div class="card-section-title">Log Hours</div>
-    <div class="sf-row">
-      <input class="sf-input" type="text" id="engine-logby-${e.id}" placeholder="Logged by">
-      <input class="sf-input" type="number" id="engine-hoursrun-${e.id}" placeholder="Hours run (e.g. 2.5)" step="0.1">
-    </div>
     <div class="settings-actions">
-      <button class="btn-save" onclick="logEngineHours('${e.id}')">Log Hours</button>
       <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">Service Completed — Reset Counter</button>
     </div>
     <div class="card-section-title" style="margin-top:16px;">Recent Logs</div>
@@ -6678,23 +6659,14 @@ function renderEngineCard(e, logs, maintLogs) {
   </div>`;
 }
 
-async function logEngineHours(id) {
-  const loggedBy = document.getElementById(`engine-logby-${id}`).value.trim();
-  const hours = parseFloat(document.getElementById(`engine-hoursrun-${id}`).value);
- if (!loggedBy || !hours) { await showAlertModal('Enter who logged and hours run.'); return; }
-  const { data: engine } = await sb.from('engines').select('current_hours').eq('id', id).single();
-  await sb.from('engines').update({ current_hours: (engine.current_hours || 0) + hours }).eq('id', id);
-  await sb.from('engine_hour_logs').insert({ engine_id: id, logged_by: loggedBy, hours_run: hours, event_type: 'log' });
-  await loadBoatDetailEngines(window.currentBoatDetailId);
-}
-
 async function resetEngine(id) {
   if (!(await showConfirmModal('Log this as a completed service and reset the hour counter to zero?'))) return;
-  const loggedBy = document.getElementById(`engine-logby-${id}`)?.value.trim() || await showPromptModal('Who completed the service?', 'Your name');
+  const loggedBy = await showPromptModal('Who completed the service?', 'Your name');
   if (!loggedBy) return;
   await sb.from('engines').update({ current_hours: 0 }).eq('id', id);
   await sb.from('engine_hour_logs').insert({ engine_id: id, logged_by: loggedBy, hours_run: 0, event_type: 'service' });
   await loadBoatDetailEngines(window.currentBoatDetailId);
+  await loadFleet();
 }
 
 async function deleteEngine(id) {
@@ -6702,6 +6674,7 @@ async function deleteEngine(id) {
   await sb.from('engine_hour_logs').delete().eq('engine_id', id);
   await sb.from('engines').delete().eq('id', id);
   await loadBoatDetailEngines(window.currentBoatDetailId);
+  await loadFleet();
 }
 
 document.getElementById('btn-show-add-boat-maintenance').addEventListener('click', () => {
@@ -6796,6 +6769,7 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   document.getElementById('btn-show-add-boat-maintenance').style.display = 'inline-block';
   await loadBoatDetailEngines(boatId);
   await loadBoatDetailMaintenance(boatId);
+  await loadFleet();
 });
 
 async function loadBoatDetailMaintenance(boatId) {
@@ -7417,157 +7391,6 @@ async function deleteCompressor(id) {
 
 // ─── MAINTENANCE ───
 
-async function populateMaintenanceBoatSelects() {
-  if (!currentOrgId) return;
-  const { data: boats } = await sb.from('boats').select('id, name').eq('org_id', currentOrgId).eq('active', true).order('name');
-  const formSel = document.getElementById('maint-boat');
-  const filterSel = document.getElementById('maint-filter-boat');
-  const boatOpts = (boats || []).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-  formSel.innerHTML = '<option value="">— Not boat-specific —</option>' + boatOpts;
-  const keepFilter = filterSel.value;
-  filterSel.innerHTML = '<option value="">All boats and general</option>' + boatOpts;
-  filterSel.value = keepFilter;
-}
-
-async function populateMaintenanceEngineSelect(boatId) {
-  const sel = document.getElementById('maint-engine');
-  if (!boatId) {
-    sel.innerHTML = '<option value="">— Not engine-specific —</option>';
-    return;
-  }
-  const { data: engines } = await sb.from('engines').select('id, name').eq('boat_id', boatId).order('name');
-  sel.innerHTML = '<option value="">— Not engine-specific —</option>' + (engines || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-}
-
-document.getElementById('maint-boat').addEventListener('change', function() {
-  populateMaintenanceEngineSelect(this.value);
-});
-
-async function populateMaintenanceGearSelect() {
-  if (!currentOrgId) return;
-  const { data: gear } = await sb.from('gear').select('id, name, category, serial_number').eq('org_id', currentOrgId).order('name');
-  const sel = document.getElementById('maint-gear');
-  window._maintenanceGearMap = {};
-  (gear || []).forEach(g => { window._maintenanceGearMap[g.id] = g; });
-  sel.innerHTML = '<option value="">— Not linked to registered gear —</option>' +
-    (gear || []).map(g => `<option value="${g.id}">${g.name}${g.serial_number ? ' (' + g.serial_number + ')' : ''}</option>`).join('');
-}
-
-document.getElementById('btn-show-add-maintenance').addEventListener('click', () => {
-  document.getElementById('form-add-maintenance').style.display = 'block';
-  document.getElementById('btn-show-add-maintenance').style.display = 'none';
-  if (!document.getElementById('maint-date').value) {
-    document.getElementById('maint-date').value = new Date().toISOString().split('T')[0];
-  }
-});
-
-document.getElementById('btn-cancel-maintenance').addEventListener('click', () => {
-  document.getElementById('form-add-maintenance').style.display = 'none';
-  document.getElementById('btn-show-add-maintenance').style.display = 'inline-block';
-});
-
-document.getElementById('btn-save-maintenance').addEventListener('click', async () => {
-  const btn = document.getElementById('btn-save-maintenance');
-  const feedback = document.getElementById('maintenance-save-feedback');
-  const boatId = document.getElementById('maint-boat').value || null;
-  const engineId = document.getElementById('maint-engine').value || null;
-  const gearId = document.getElementById('maint-gear').value || null;
-  const title = document.getElementById('maint-title').value.trim();
-  const date = document.getElementById('maint-date').value;
-  const description = document.getElementById('maint-description').value.trim();
-  const parts = document.getElementById('maint-parts').value.trim();
-  const cost = document.getElementById('maint-cost').value;
-  const currency = document.getElementById('maint-currency').value.trim().toUpperCase();
-  const performedBy = document.getElementById('maint-performed-by').value.trim();
-  const nextDue = document.getElementById('maint-next-due').value;
-
-  if (!title || !description || !date) {
-    feedback.textContent = 'Title, date and description are required.';
-    feedback.className = 'save-feedback error visible';
-    return;
-  }
-
-  btn.disabled = true; btn.textContent = 'Saving...';
-  const { data: { user } } = await sb.auth.getUser();
-  const { error } = await sb.from('maintenance_logs').insert({
-    org_id: currentOrgId,
-    boat_id: boatId,
-    engine_id: engineId,
-    gear_id: gearId,
-    title: title,
-    performed_date: date,
-    description: description,
-    parts_used: parts || null,
-    cost: cost ? parseFloat(cost) : null,
-    currency: currency || 'USD',
-    performed_by: performedBy || null,
-    next_due_date: nextDue || null,
-    created_by: user?.id || null
-  });
-  btn.disabled = false; btn.textContent = 'Save entry';
-
-  if (error) {
-    feedback.textContent = 'Error: ' + error.message;
-    feedback.className = 'save-feedback error visible';
-    return;
-  }
-
-  document.getElementById('maint-title').value = '';
-  document.getElementById('maint-description').value = '';
-  document.getElementById('maint-parts').value = '';
-  document.getElementById('maint-cost').value = '';
-  document.getElementById('maint-currency').value = 'USD';
-  document.getElementById('maint-performed-by').value = '';
-  document.getElementById('maint-next-due').value = '';
-  document.getElementById('maint-boat').value = '';
-  document.getElementById('maint-gear').value = '';
-  await populateMaintenanceEngineSelect('');
-  document.getElementById('form-add-maintenance').style.display = 'none';
-  document.getElementById('btn-show-add-maintenance').style.display = 'inline-block';
-  await loadMaintenanceLogs();
-});
-
-document.getElementById('maint-filter-boat').addEventListener('change', loadMaintenanceLogs);
-
-async function loadMaintenanceLogs() {
-  if (!currentOrgId) return;
-  await populateMaintenanceBoatSelects();
-  await populateMaintenanceGearSelect();
-  const boatFilter = document.getElementById('maint-filter-boat').value;
-  let query = sb.from('maintenance_logs').select('*, boats(name), engines(name), gear(name)').eq('org_id', currentOrgId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
-  if (boatFilter) query = query.eq('boat_id', boatFilter);
-  const { data: logs } = await query;
-  renderMaintenanceLogs(logs || []);
-}
-
-function renderMaintenanceLogs(logs) {
-  const list = document.getElementById('maintenance-list');
-  if (!logs.length) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No maintenance logged yet.</p>';
-    return;
-  }
-  const today = new Date().toISOString().split('T')[0];
-  list.innerHTML = logs.map(l => {
-    const context = [l.boats?.name, l.engines?.name, l.gear?.name].filter(Boolean).join(' · ') || 'General';
-    const dueSoon = l.next_due_date && l.next_due_date <= today;
-    return `
-    <div class="card" style="margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div>
-          <h2 style="margin-bottom:2px;">${l.title}</h2>
-          <p style="font-size:0.8rem;color:var(--muted);">${context} · ${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
-        </div>
-        <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}')">Remove</button>
-      </div>
-      <p style="font-size:0.85rem;margin-top:8px;">${l.description}</p>
-      ${l.parts_used ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:6px;">Parts: ${l.parts_used}</p>` : ''}
-      ${l.cost ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Cost: ${l.currency || 'USD'} ${parseFloat(l.cost).toFixed(2)}</p>` : ''}
-      ${l.next_due_date ? `<p style="font-size:0.8rem;margin-top:2px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">Next due: ${new Date(l.next_due_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? ' — due now' : ''}</p>` : ''}
-    </div>
-  `;
-  }).join('');
-}
-
 async function deleteMaintenanceLog(id, fromBoatModal, fromGearModal) {
   if (!(await showConfirmModal('Remove this maintenance entry?'))) return;
   await sb.from('maintenance_logs').delete().eq('id', id);
@@ -7575,8 +7398,7 @@ async function deleteMaintenanceLog(id, fromBoatModal, fromGearModal) {
     await loadGearDetailMaintenance(window.currentGearDetailId);
   } else if (fromBoatModal && window.currentBoatDetailId) {
     await loadBoatDetailMaintenance(window.currentBoatDetailId);
-  } else {
-    await loadMaintenanceLogs();
+    await loadFleet();
   }
 }
 // ─── END MAINTENANCE ───
