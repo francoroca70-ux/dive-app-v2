@@ -3706,14 +3706,14 @@ async function loadGuestTabs() {
   }
   const today = formatDate(new Date());
   const rowsHtml = await Promise.all(tabs.map(async t => {
-    const { data: linkedTrips } = await sb.from('trips').select('id, price_per_person, payment_amount, max_guests').eq('tab_id', t.id);
-    const tripIds = (linkedTrips || []).map(tr => tr.id);
+    const { data: linkedGroups } = await sb.from('trip_groups').select('id, price_per_person, participants(id)').eq('tab_id', t.id);
+    const groupIds = (linkedGroups || []).map(g => g.id);
     let paid = 0;
-    if (tripIds.length) {
-      const { data: payments } = await sb.from('payments').select('amount').in('trip_id', tripIds);
+    if (groupIds.length) {
+      const { data: payments } = await sb.from('payments').select('amount').in('group_id', groupIds);
       paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
     }
-    const total = (linkedTrips || []).reduce((sum, tr) => sum + (parseFloat(tr.price_per_person || tr.payment_amount || 0) * Math.max(1, parseInt(tr.max_guests) || 1)), 0);
+    const total = (linkedGroups || []).reduce((sum, g) => sum + (parseFloat(g.price_per_person) || 0) * Math.max(1, g.participants?.length || 0), 0);
     const owed = total - paid - parseFloat(t.deposit_amount || 0);
     const isOverdue = t.status === 'open' && t.settle_by_date < today;
     const statusLabel = t.status === 'closed' ? 'Settled' : isOverdue ? 'Overdue' : 'Open';
@@ -3723,7 +3723,7 @@ async function loadGuestTabs() {
         <span class="gear-item-name">${t.guest_name}</span>
         <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${linkedTrips?.length || 0} trip(s) · Settle by ${t.settle_by_date}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${linkedGroups?.length || 0} booking(s) · Settle by ${t.settle_by_date}</div>
       <div style="font-size:0.85rem;font-weight:600;margin-top:6px;">Owed: $${owed.toFixed(2)}</div>
       ${t.status === 'open' ? `<button class="gear-action-btn" style="margin-top:8px;" onclick="openTabDetail('${t.id}')">View / Close Tab</button>` : ''}
     </div>`;
@@ -3801,7 +3801,10 @@ async function openTabDetail(tabId) {
   const container = document.getElementById('guest-tabs-list');
   const { data: tab } = await sb.from('guest_tabs').select('*').eq('id', tabId).single();
   if (!tab) return;
-  const { data: linkedTrips } = await sb.from('trips').select('id, trip_type, trip_date, price_per_person, payment_amount, max_guests').eq('tab_id', tabId).order('trip_date');
+  const { data: linkedGroups } = await sb.from('trip_groups')
+    .select('id, trip_id, contact_name, price_per_person, participants(id), trips(trip_type, trip_date)')
+    .eq('tab_id', tabId)
+    .order('created_at');
 
   let html = `
     <button class="btn-cancel" onclick="loadGuestTabs()" style="margin-bottom:16px;">← Back to tabs</button>
@@ -3813,42 +3816,44 @@ async function openTabDetail(tabId) {
     </div>
   `;
 
-  let unpaidTrips = [];
-  if (!linkedTrips || !linkedTrips.length) {
-    html += `<p style="color:var(--muted);">No trips linked to this tab yet. Link a trip when creating or editing a booking.</p>`;
+  let unpaidGroups = [];
+  if (!linkedGroups || !linkedGroups.length) {
+    html += `<p style="color:var(--muted);">No bookings linked to this tab yet. Link a group when creating or editing a booking.</p>`;
   } else {
-    const tripIds = linkedTrips.map(tr => tr.id);
-    const { data: allPayments } = await sb.from('payments').select('trip_id, amount').in('trip_id', tripIds);
-    linkedTrips.forEach(tr => {
-      const perPerson = parseFloat(tr.price_per_person || tr.payment_amount || 0);
-      const guestCount = Math.max(1, parseInt(tr.max_guests) || 1);
+    const groupIds = linkedGroups.map(g => g.id);
+    const { data: allPayments } = await sb.from('payments').select('group_id, amount').in('group_id', groupIds);
+    linkedGroups.forEach(g => {
+      const perPerson = parseFloat(g.price_per_person) || 0;
+      const guestCount = Math.max(1, g.participants?.length || 0);
       const total = perPerson * guestCount;
-      const paid = (allPayments || []).filter(p => p.trip_id === tr.id).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      const paid = (allPayments || []).filter(p => p.group_id === g.id).reduce((sum, p) => sum + parseFloat(p.amount), 0);
       const owed = total - paid;
-      if (owed > 0.01) unpaidTrips.push({ ...tr, guestCount, owed });
+      const tripType = g.trips?.trip_type || 'Trip';
+      const tripDate = g.trips?.trip_date || '';
+      if (owed > 0.01) unpaidGroups.push({ id: g.id, trip_id: g.trip_id, trip_type: tripType, trip_date: tripDate, guestCount, owed });
       html += `
         <div class="gear-item-row">
           <div class="gear-item-header">
-            <span class="gear-item-name">${tr.trip_type || 'Trip'} — ${tr.trip_date}</span>
+            <span class="gear-item-name">${g.contact_name || tripType} — ${tripDate}</span>
             <span style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};font-weight:600;">${owed > 0 ? 'Owed $' + owed.toFixed(2) : 'Paid in full'}</span>
           </div>
-          <button class="gear-action-btn" style="margin-top:8px;" onclick="openTrip('${tr.id}')">Open trip to log payment</button>
+          <button class="gear-action-btn" style="margin-top:8px;" onclick="openTrip('${g.trip_id}')">Open trip to log payment</button>
         </div>
       `;
     });
   }
 
-  const grandTotal = unpaidTrips.reduce((sum, tr) => sum + tr.owed, 0);
+  const grandTotal = unpaidGroups.reduce((sum, g) => sum + g.owed, 0);
 
-  if (unpaidTrips.length) {
+  if (unpaidGroups.length) {
     html += `
       <div style="margin:16px 0;">
         <button class="btn-save" id="btn-pay-tab-full">Pay Tab in Full — $${grandTotal.toFixed(2)}</button>
       </div>
       <div class="inline-form" id="form-pay-tab-full" style="display:none;margin-bottom:16px;">
         <div class="card-section-title">Settle Full Balance</div>
-        ${unpaidTrips.map(tr => `
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:4px;">${tr.trip_type || 'Trip'} — ${tr.trip_date} · ${tr.guestCount} guest${tr.guestCount>1?'s':''} · $${tr.owed.toFixed(2)}</div>
+        ${unpaidGroups.map(g => `
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:4px;">${g.trip_type} — ${g.trip_date} · ${g.guestCount} guest${g.guestCount>1?'s':''} · $${g.owed.toFixed(2)}</div>
         `).join('')}
         <div style="font-weight:700;font-size:1rem;margin:10px 0;">Total: $${grandTotal.toFixed(2)}</div>
         <div class="sf-group">
@@ -3872,22 +3877,22 @@ async function openTabDetail(tabId) {
 
   container.innerHTML = html;
 
-  if (unpaidTrips.length) {
+  if (unpaidGroups.length) {
     document.getElementById('btn-pay-tab-full').addEventListener('click', () => {
       document.getElementById('btn-pay-tab-full').style.display = 'none';
       document.getElementById('form-pay-tab-full').style.display = 'block';
     });
-    document.getElementById('btn-confirm-pay-tab-full').addEventListener('click', () => confirmPayTabFull(tabId, unpaidTrips));
+    document.getElementById('btn-confirm-pay-tab-full').addEventListener('click', () => confirmPayTabFull(tabId, unpaidGroups));
   }
 
-  document.getElementById('btn-close-tab').addEventListener('click', () => closeGuestTab(tabId, linkedTrips || []));
+  document.getElementById('btn-close-tab').addEventListener('click', () => closeGuestTab(tabId, linkedGroups || []));
 }
 window.currentTabPaymentMethod = null;
 function selectTabPaymentMethod(method) {
   window.currentTabPaymentMethod = method;
   ['pm-tab-cash','pm-tab-card','pm-tab-transfer'].forEach(id => document.getElementById(id).classList.toggle('selected', id === 'pm-tab-' + method));
 }
-async function confirmPayTabFull(tabId, unpaidTrips) {
+async function confirmPayTabFull(tabId, unpaidGroups) {
   const feedback = document.getElementById('pay-tab-feedback');
   const method = window.currentTabPaymentMethod;
   if (!method) {
@@ -3897,28 +3902,28 @@ async function confirmPayTabFull(tabId, unpaidTrips) {
   }
   const { data: { user } } = await sb.auth.getUser();
   const today = new Date().toISOString().split('T')[0];
-  for (const tr of unpaidTrips) {
+  for (const g of unpaidGroups) {
     await sb.from('payments').insert({
-      org_id: currentOrgId, location_id: currentLocationId, trip_id: tr.id,
-      amount: tr.owed, method, payment_date: today,
+      org_id: currentOrgId, location_id: currentLocationId, trip_id: g.trip_id, group_id: g.id,
+      amount: g.owed, method, payment_date: today,
       logged_by: user.email, note: 'Tab settlement'
     });
   }
   await openTabDetail(tabId);
 }
-async function closeGuestTab(tabId, linkedTrips) {
+async function closeGuestTab(tabId, linkedGroups) {
   const feedback = document.getElementById('close-tab-feedback');
   let totalOwed = 0;
-  for (const tr of linkedTrips) {
-    const perPerson = parseFloat(tr.price_per_person || tr.payment_amount || 0);
-    const guestCount = Math.max(1, parseInt(tr.max_guests) || 1);
+  for (const g of linkedGroups) {
+    const perPerson = parseFloat(g.price_per_person) || 0;
+    const guestCount = Math.max(1, g.participants?.length || 0);
     const total = perPerson * guestCount;
-    const { data: payments } = await sb.from('payments').select('amount').eq('trip_id', tr.id);
+    const { data: payments } = await sb.from('payments').select('amount').eq('group_id', g.id);
     const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
     totalOwed += (total - paid);
   }
   if (totalOwed > 0.01) {
-    feedback.textContent = `Cannot close: $${totalOwed.toFixed(2)} still owed across linked trips.`;
+    feedback.textContent = `Cannot close: $${totalOwed.toFixed(2)} still owed across linked bookings.`;
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -4144,12 +4149,13 @@ async function checkGuestCapacity() {
   const capacity = boat?.capacity;
   if (!capacity) { hint.textContent = ''; warning.style.display = 'none'; return; }
   const crewCount = tripCrewCache.length;
-  const available = capacity - crewCount;
   let guests = 0;
   tripGroups_cache.forEach(g => { if (g.id) guests += (groupParticipants_cache[g.id] || []).length; });
-  hint.textContent = `Boat capacity: ${capacity} (not including captain) · ${crewCount} crew assigned · ${available} available for guests`;
-  if (guests > available) {
-    warning.textContent = `Too many guests: ${guests} booked, only ${available} seats available after ${crewCount} crew.`;
+  const seatsForGuests = capacity - crewCount;
+  const remaining = seatsForGuests - guests;
+  hint.textContent = `Boat capacity: ${capacity} (not including captain) · ${crewCount} crew · ${guests} guest${guests!==1?'s':''} booked · ${remaining} seat${remaining!==1?'s':''} remaining`;
+  if (guests > seatsForGuests) {
+    warning.textContent = `Too many guests: ${guests} booked, only ${seatsForGuests} seats available after ${crewCount} crew.`;
     warning.style.display = 'block';
     window.currentCapacityExceeded = true;
   } else {
@@ -4274,10 +4280,18 @@ async function loadGroupParticipants(groupId) {
   return groupParticipants_cache[groupId];
 }
 
+function gearDisplayString(gear) {
+  if (!gear || !Object.keys(gear).length) return 'No gear requests';
+  const parts = Object.entries(gear).filter(([k, v]) => v).map(([k, v]) => {
+    const field = selectedTripTypeFields.find(f => f.field_key === k);
+    return field ? `${field.label}: ${v}` : `${k}: ${v}`;
+  });
+  return parts.length ? parts.join(' · ') : 'No gear requests';
+}
+
 function renderGroupParticipantsBlock(groupId, participants) {
   const listHtml = participants.length ? participants.map(p => {
-    const gear = p.gear || {};
-    const gearStr = Object.values(gear).filter(Boolean).join(' · ') || 'No gear requests';
+    const gearStr = gearDisplayString(p.gear);
     return `
     <div class="participant-row">
       <div>
