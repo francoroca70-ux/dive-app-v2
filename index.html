@@ -3423,7 +3423,7 @@ async function groupCardHTML(g, index) {
 // ─── CHECK-IN ───
 function checkInButtonHTML(groupId, participants) {
   const total = participants.length;
-  if (total === 0) return '';
+  if (total === 0) return `<button class="btn-cancel" style="font-size:0.8rem;padding:6px 12px;opacity:0.5;cursor:default;" disabled title="Add guests first">Check In</button>`;
   const checkedInCount = participants.filter(p => p.checked_in_at).length;
   let label, style;
   if (checkedInCount === 0) {
@@ -3642,7 +3642,13 @@ async function loadCashUp() {
     .eq('location_id', currentLocationId)
     .eq('cash_up_date', date)
     .maybeSingle();
-  renderCashUp(payments || [], existing, date);
+  const { data: expenses } = await sb.from('cash_expenses')
+    .select('*')
+    .eq('org_id', currentOrgId)
+    .eq('location_id', currentLocationId)
+    .eq('expense_date', date)
+    .order('created_at');
+  renderCashUp(payments || [], existing, date, expenses || []);
 }
 document.getElementById('cashup-date').addEventListener('change', loadCashUp);
 document.getElementById('cashup-prev').addEventListener('click', () => {
@@ -3658,12 +3664,8 @@ document.getElementById('cashup-next').addEventListener('click', () => {
   loadCashUp();
 });
 
-function renderCashUp(payments, existing, date) {
+function renderCashUp(payments, existing, date, expenses) {
   const el = document.getElementById('cashup-content');
-  if (!payments.length) {
-    el.innerHTML = '<p style="color:var(--muted);">No payments logged for this date.</p>';
-    return;
-  }
   let cashTotal = 0, cardTotal = 0, transferTotal = 0;
   const rowsHtml = payments.map(p => {
     const method = (p.method || '').toLowerCase();
@@ -3682,14 +3684,33 @@ function renderCashUp(payments, existing, date) {
       <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:4px;text-transform:capitalize;">${method || 'unknown'}${isTabPayment ? ' <span style="background:rgba(26,107,138,0.12);color:var(--blue);padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;text-transform:none;margin-left:6px;">TAB</span>' : ''}</div>
     </div>`;
   }).join('');
+  const paymentsSection = rowsHtml || '<p style="font-size:0.83rem;color:var(--muted);padding:4px 0;">No payments logged for this date.</p>';
+
+  const expensesTotal = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+  const expensesRowsHtml = expenses.map(e => `
+    <div class="gear-item-row">
+      <div class="gear-item-header">
+        <span class="gear-item-name">${e.description}</span>
+        <span style="font-size:0.95rem;font-weight:700;">-$${parseFloat(e.amount).toFixed(2)}</span>
+      </div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;display:flex;justify-content:space-between;align-items:center;">
+        <span>${e.logged_by || ''}</span>
+        <button class="btn-icon danger" onclick="removeCashExpense('${e.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+
   const takenToday = cashTotal + cardTotal + transferTotal;
   const opening = existing?.opening_float || 0;
-  const paidOut = existing?.cash_paid_out || 0;
+  const paidOut = expensesTotal;
   const expectedCash = opening + cashTotal - paidOut;
   const counted = existing?.counted_cash;
   const discrepancy = (counted !== null && counted !== undefined) ? counted - expectedCash : null;
   el.innerHTML = `
-    <div class="inline-form" style="margin-bottom:20px;">${rowsHtml}</div>
+    <div class="inline-form" style="margin-bottom:20px;">
+      <div class="card-section-title">Payments</div>
+      ${paymentsSection}
+    </div>
     <div class="inline-form" style="margin-bottom:20px;">
       <div class="card-section-title">Totals</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
@@ -3701,6 +3722,31 @@ function renderCashUp(payments, existing, date) {
         <span style="font-weight:600;">Total taken today: $${takenToday.toFixed(2)}</span>
       </div>
     </div>
+    <div class="inline-form" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="card-section-title" style="margin-bottom:0;">Cash Expenses</div>
+        <button class="btn-save" style="font-size:0.8rem;padding:6px 12px;" onclick="showAddExpenseForm()">+ Add Expense</button>
+      </div>
+      <div id="cashup-expenses-list">${expensesRowsHtml || '<p style="font-size:0.83rem;color:var(--muted);padding:4px 0;">No expenses logged for this date.</p>'}</div>
+      <div class="inline-form" id="form-add-expense" style="display:none;margin-top:12px;padding:12px;background:var(--foam);border-radius:10px;">
+        <div class="sf-row">
+          <div class="sf-group">
+            <label class="sf-label">What was bought</label>
+            <input class="sf-input" type="text" autocomplete="off" id="expense-description" placeholder="e.g. Fuel, first aid kit">
+          </div>
+          <div class="sf-group" style="max-width:140px;">
+            <label class="sf-label">Amount</label>
+            <input class="sf-input" type="number" step="0.01" min="0" id="expense-amount" placeholder="0">
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button class="btn-save" onclick="confirmAddExpense('${date}')">Save Expense</button>
+          <button class="btn-cancel" onclick="document.getElementById('form-add-expense').style.display='none';">Cancel</button>
+          <span class="save-feedback" id="expense-save-feedback"></span>
+        </div>
+      </div>
+      <div style="padding:10px 14px;background:var(--foam);border-radius:10px;margin-top:10px;font-weight:600;">Total expenses today: $${expensesTotal.toFixed(2)}</div>
+    </div>
     <div class="inline-form">
       <div class="card-section-title">Cash Reconciliation</div>
       <div class="sf-row">
@@ -3710,7 +3756,7 @@ function renderCashUp(payments, existing, date) {
         </div>
         <div class="sf-group">
           <label class="sf-label">Cash paid out (expenses)</label>
-          <input class="sf-input" type="number" step="0.01" id="cashup-paidout" value="${paidOut}">
+          <input class="sf-input" type="text" value="$${paidOut.toFixed(2)}" disabled style="background:var(--foam);font-weight:600;">
         </div>
       </div>
       <div class="sf-row">
@@ -3735,13 +3781,50 @@ function renderCashUp(payments, existing, date) {
       ${existing?.closed_by ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">Last closed by ${existing.closed_by} · ${new Date(existing.closed_at).toLocaleString()}</p>` : ''}
     </div>
   `;
-  document.getElementById('btn-save-cashup').addEventListener('click', () => saveCashUp(date, cashTotal, cardTotal, transferTotal));
+  document.getElementById('btn-save-cashup').addEventListener('click', () => saveCashUp(date, cashTotal, cardTotal, transferTotal, expensesTotal));
 }
-async function saveCashUp(date, cashTotal, cardTotal, transferTotal) {
+function showAddExpenseForm() {
+  const form = document.getElementById('form-add-expense');
+  form.style.display = 'block';
+  document.getElementById('expense-description').value = '';
+  document.getElementById('expense-amount').value = '';
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+async function confirmAddExpense(date) {
+  const feedback = document.getElementById('expense-save-feedback');
+  const description = document.getElementById('expense-description').value.trim();
+  const amount = parseFloat(document.getElementById('expense-amount').value);
+  if (!description) {
+    feedback.textContent = 'Description required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!amount || amount <= 0) {
+    feedback.textContent = 'Enter a valid amount.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  const { error } = await sb.from('cash_expenses').insert({
+    org_id: currentOrgId, location_id: currentLocationId, expense_date: date,
+    description, amount, logged_by: user.email
+  });
+  if (error) {
+    feedback.textContent = 'Error saving.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  await loadCashUp();
+}
+async function removeCashExpense(id) {
+  if (!(await showConfirmModal('Remove this expense?'))) return;
+  await sb.from('cash_expenses').delete().eq('id', id);
+  await loadCashUp();
+}
+async function saveCashUp(date, cashTotal, cardTotal, transferTotal, paidOut) {
   const btn = document.getElementById('btn-save-cashup');
   const feedback = document.getElementById('cashup-save-feedback');
   const opening = parseFloat(document.getElementById('cashup-opening').value) || 0;
-  const paidOut = parseFloat(document.getElementById('cashup-paidout').value) || 0;
   const countedInput = document.getElementById('cashup-counted').value;
   const counted = countedInput ? parseFloat(countedInput) : null;
   const notes = document.getElementById('cashup-notes').value.trim();
