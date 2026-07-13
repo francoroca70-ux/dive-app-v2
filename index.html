@@ -2070,13 +2070,21 @@ body { background: var(--navy); color: var(--text); }
 
         <!-- Waivers card -->
         <div class="card" id="card-waivers-toggle">
-          <div class="card-section-title">Waivers</div>
-          <p class="card-desc">This is a digital signature collection tool only. Seven Seas does not provide, verify, or take responsibility for waiver content or legal validity.</p>
-          <p class="card-desc" style="margin-top:6px;">Enforceability of digital signatures varies by country and jurisdiction. <strong>Consult a local lawyer before relying on these documents legally.</strong> By enabling this feature you confirm your operation takes full responsibility for the legal validity of your forms.</p>
-          <div class="sf-group" style="display:flex;align-items:center;gap:12px;margin-top:10px;">
-            <input type="checkbox" id="chk-waivers-enabled" style="width:18px;height:18px;">
-            <label class="sf-label" for="chk-waivers-enabled" style="margin:0;">Enable Waivers for this operation</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div class="card-section-title" style="margin-bottom:0;">Waivers</div>
+            <span class="role-badge owner">Owner only</span>
           </div>
+          <p class="card-desc" style="margin-top:8px;">This is a digital signature collection tool only. Seven Seas does not provide, verify, or take responsibility for waiver content or legal validity.</p>
+          <p class="card-desc" style="margin-top:6px;">Enforceability of digital signatures varies by country and jurisdiction. <strong>Consult a local lawyer before relying on these documents legally.</strong> By enabling this feature you confirm your operation takes full responsibility for the legal validity of your forms.</p>
+          <p class="card-desc" style="margin-top:6px;">Signed waivers are stored securely, but we recommend exporting each day's waivers to your own computer as a local backup — use the Export tool at the top of the Waivers page. It takes seconds and gives you a copy on hand whenever you need one.</p>
+          <div id="waivers-toggle-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <input type="checkbox" id="chk-waivers-enabled" style="width:20px;height:20px;">
+              <label class="sf-label" for="chk-waivers-enabled" style="margin:0;font-size:0.92rem;">Enable Waivers for this operation</label>
+            </div>
+            <span id="waivers-status-badge" class="role-badge"></span>
+          </div>
+          <p class="card-desc" id="waivers-owner-only-note" style="margin-top:8px;display:none;">Only the account owner can change this setting. Ask your owner or manager if you'd like Waivers turned on.</p>
           <span class="save-feedback" id="waivers-toggle-feedback"></span>
         </div>
 
@@ -2822,6 +2830,12 @@ async function loadSettings(user) {
       window.currentCaptainElevated = org.captain_elevated_permissions || false;
       document.getElementById('chk-waivers-enabled').checked = org.waivers_enabled || false;
       window.waiversEnabled = org.waivers_enabled || false;
+      updateWaiversStatusBadge();
+      const waiversCheckbox = document.getElementById('chk-waivers-enabled');
+      const isOwnerRole = staffRow.role === 'owner';
+      waiversCheckbox.disabled = !isOwnerRole;
+      document.getElementById('waivers-toggle-row').style.opacity = isOwnerRole ? '1' : '0.6';
+      document.getElementById('waivers-owner-only-note').style.display = isOwnerRole ? 'none' : 'block';
     }
 
     // Load locations
@@ -2864,13 +2878,29 @@ async function loadLocations() {
   document.getElementById('stat-boats').textContent = locs.length;
 }
 
+function updateWaiversStatusBadge() {
+  const badge = document.getElementById('waivers-status-badge');
+  if (!badge) return;
+  const on = !!window.waiversEnabled;
+  badge.textContent = on ? 'Enabled' : 'Disabled';
+  badge.style.background = on ? 'rgba(47,133,90,0.12)' : 'rgba(148,163,184,0.18)';
+  badge.style.color = on ? 'var(--success)' : 'var(--muted)';
+}
+
 // Save org
 document.getElementById('chk-waivers-enabled').addEventListener('change', async function() {
   const feedback = document.getElementById('waivers-toggle-feedback');
+  if (currentUserRole !== 'owner') {
+    this.checked = window.waiversEnabled || false;
+    feedback.textContent = 'Only the account owner can change this setting.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
   window.waiversEnabled = this.checked;
   if (currentOrgId) {
     await sb.from('organizations').update({ waivers_enabled: this.checked }).eq('id', currentOrgId);
   }
+  updateWaiversStatusBadge();
   feedback.textContent = 'Saved';
   feedback.className = 'save-feedback visible';
   setTimeout(() => feedback.className = 'save-feedback', 2000);
@@ -4672,8 +4702,9 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
 
   const { error } = await sb.from('waivers').insert(payload);
   if (error) {
-    feedback.textContent = 'Error saving waiver.';
+    feedback.textContent = 'Error saving waiver: ' + (error.message || 'unknown error');
     feedback.className = 'save-feedback error visible';
+    console.error('Waiver save error:', error);
     return;
   }
   document.getElementById('modal-signature').style.display = 'none';
