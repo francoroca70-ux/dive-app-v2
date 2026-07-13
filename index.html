@@ -279,6 +279,14 @@ body { background: var(--navy); color: var(--text); }
   border: 1px solid var(--border); padding: 24px;
   margin-bottom: 20px;
 }
+.group-card {
+  background: var(--foam); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px; margin-bottom: 16px;
+  position: relative;
+}
+.group-card-remove {
+  position: absolute; top: 14px; right: 14px;
+}
 .card h2 {
   font-size: 1rem; font-weight: 700; color: var(--navy);
   margin-bottom: 4px;
@@ -1311,21 +1319,6 @@ body { background: var(--navy); color: var(--text); }
               </div>
               <div class="warning-banner caution" id="boat-conflict-warning" style="display:none;"></div>
 
-              <div class="card-section-title" style="margin-top:20px;">Booking Mode</div>
-              <div class="sf-group">
-                <label class="sf-label">Is this boat private or shared?</label>
-                <div class="radio-group">
-                  <div class="radio-btn selected" id="mode-private" onclick="setBookingMode('private')">Private boat</div>
-                  <div class="radio-btn" id="mode-shared" onclick="setBookingMode('shared')">Shared boat</div>
-                </div>
-                <p id="booking-mode-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;">This boat will be exclusively reserved for this time slot.</p>
-              </div>
-              <div id="shared-groups-section" style="display:none;">
-                <div class="card-section-title" style="margin-top:20px;" id="shared-groups-title">Other groups sharing this boat</div>
-                <div id="shared-groups-list"></div>
-                <button class="btn-cancel" id="btn-add-shared-group" style="margin-top:8px;">+ Add another group to this boat</button>
-              </div>
-
               <!-- Dynamic tank/dive info -->
               <div id="trip-tank-fields" style="display:none;">
                 <div class="sf-group">
@@ -1334,107 +1327,30 @@ body { background: var(--navy); color: var(--text); }
                 </div>
               </div>
 
-              <div class="card-section-title" style="margin-top:20px;">Contact</div>
-              <div class="sf-row">
-                <div class="sf-group">
-                  <label class="sf-label">Lead contact name <span class="required-star">*</span></label>
-                  <input class="sf-input" type="text" id="trip-contact-name" placeholder="e.g. John Smith">
-                </div>
-                <div class="sf-group">
-                  <label class="sf-label">Phone <span class="required-star">*</span></label>
-                  <input class="sf-input" type="tel" id="trip-contact-phone" placeholder="+1 555 000 0000">
-                </div>
-              </div>
-              <div class="sf-row">
-                <div class="sf-group">
-                  <label class="sf-label">Email</label>
-                  <input class="sf-input" type="email" id="trip-contact-email" placeholder="john@email.com">
-                </div>
-                <div class="sf-group">
-                  <label class="sf-label">Booked by</label>
-                  <input class="sf-input" type="text" id="trip-booked-by" placeholder="Staff member name">
-                </div>
-              </div>
-
-              <div class="card-section-title" style="margin-top:20px;">Guests</div>
-              <div class="sf-group">
-                <label class="sf-label">Number of guests</label>
-                <input class="sf-input" type="number" id="trip-max-guests" placeholder="e.g. 12" min="1">
-                <p id="guest-capacity-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></p>
-              </div>
-              <div class="warning-banner caution" id="guest-capacity-warning" style="display:none;"></div>
-
-              <div class="card-section-title" style="margin-top:20px;">Payment</div>
-              <div class="sf-row">
-                <div class="sf-group" style="max-width:160px;">
-                  <label class="sf-label">Price per person</label>
-                  <input class="sf-input" type="number" id="trip-price" placeholder="e.g. 100" min="0">
-                </div>
-                <div class="sf-group">
-                  <label class="sf-label">Total</label>
-                  <input class="sf-input" type="text" id="trip-price-total" disabled style="background:var(--foam);font-weight:600;">
-                </div>
-              </div>
-              <div class="sf-group">
-                <label class="sf-label">Link to guest tab (optional)</label>
-                <select class="sf-input" id="trip-tab-select">
-                  <option value="">No tab — pay per trip</option>
-                </select>
-              </div>
-              <div id="trip-payments-section" style="margin-top:12px;">
-                <p style="font-size:0.83rem;color:var(--muted);">Save the trip to log payments.</p>
-              </div>
-
               <div class="card-section-title" style="margin-top:20px;">Crew</div>
               <div id="trip-crew-fields"></div>
 
-              <div class="sf-group" style="margin-top:20px;">
-                <label class="sf-label">Notes</label>
-                <input class="sf-input" type="text" id="trip-notes" placeholder="Any additional info">
+              <div class="card-section-title" style="margin-top:20px;">Booking Mode</div>
+              <div class="sf-group">
+                <label class="sf-label">Is this boat private or shared?</label>
+                <div class="radio-group">
+                  <div class="radio-btn selected" id="mode-private" onclick="setBookingMode('private')">Private boat</div>
+                  <div class="radio-btn" id="mode-shared" onclick="setBookingMode('shared')">Shared boat</div>
+                </div>
+                <p id="booking-mode-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;">This boat will be exclusively reserved for this time slot.</p>
+                <p id="guest-capacity-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></p>
               </div>
+
+              <div class="card-section-title" style="margin-top:24px;" id="groups-title">Group</div>
+              <div id="groups-list"></div>
+              <button class="btn-cancel" id="btn-add-group" style="margin-top:4px;display:none;">+ Add another group to this trip</button>
+
+              <div class="warning-banner caution" id="guest-capacity-warning" style="display:none;margin-top:16px;"></div>
               <div class="warning-banner caution" id="save-conflict-warning" style="display:none;"></div>
-              <div class="settings-actions">
+              <div class="settings-actions" style="margin-top:20px;">
                 <button class="btn-save" id="btn-save-trip">Save trip</button>
                 <button class="btn-cancel" id="btn-delete-trip" style="display:none;color:var(--error);border-color:rgba(229,62,62,0.3);">Delete trip</button>
                 <span class="save-feedback" id="trip-save-feedback"></span>
-              </div>
-            </div>
-
-            <!-- Participants section (shown after trip saved) -->
-            <div id="participants-section" style="display:none;">
-              <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-                <div>
-                  <div class="card-section-title" style="margin-bottom:4px;">Participants</div>
-                  <div id="trip-tank-summary" style="font-size:0.8rem;color:var(--blue);font-weight:600;"></div>
-                </div>
-                <button class="btn-save" id="btn-add-participant" style="font-size:0.8rem;padding:8px 14px;">+ Add guest</button>
-              </div>
-              <div id="participants-list"></div>
-
-              <!-- Add participant form -->
-              <div class="inline-form" id="form-add-participant" style="display:none;margin-top:16px;">
-                <div class="sf-row">
-                  <div class="sf-group">
-                    <label class="sf-label">Full name <span class="required-star">*</span></label>
-                    <input class="sf-input" type="text" id="p-name" placeholder="Guest name">
-                  </div>
-                  <div class="sf-group">
-                    <label class="sf-label">Phone</label>
-                    <input class="sf-input" type="tel" id="p-phone" placeholder="Optional">
-                  </div>
-                </div>
-                <!-- Dynamic gear fields render here based on trip type -->
-                <div id="dynamic-gear-fields"></div>
-                <div class="sf-group">
-                  <label class="sf-label">Notes</label>
-                  <input class="sf-input" type="text" id="p-notes" placeholder="Allergies, special requirements...">
-                </div>
-                <div class="settings-actions">
-                  <button class="btn-save" id="btn-save-participant">Save guest</button>
-                  <button class="btn-cancel" id="btn-cancel-participant">Cancel</button>
-                  <span class="save-feedback" id="p-save-feedback"></span>
-                </div>
               </div>
             </div>
           </div>
@@ -3256,9 +3172,11 @@ async function onTripTypeChange() {
   const tripType = currentTripTypes.find(t => t.id === typeId);
   if (!tripType) return;
 
-  // Auto-fill price
-  const priceInput = document.getElementById('trip-price');
-  if (tripType.default_price && !priceInput.value) priceInput.value = tripType.default_price;
+  // Auto-fill price on the primary group, only before it's been saved/edited
+  if (!currentTripId && tripGroups_cache[0] && tripType.default_price && !tripGroups_cache[0].price_per_person) {
+    tripGroups_cache[0].price_per_person = tripType.default_price;
+    await renderGroupsPanel();
+  }
 
   // Tank/dive fields
   document.getElementById('trip-tank-fields').style.display = tripType.needs_tank_count ? 'block' : 'none';
@@ -3277,50 +3195,42 @@ async function onTripTypeChange() {
 
 document.getElementById('trip-type-select').addEventListener('change', onTripTypeChange);
 
+// ─── GROUPS STATE ───
+let tripGroups_cache = [];
+let groupParticipants_cache = {};
+
+function blankGroup() {
+  return { id: null, contact_name: '', contact_phone: '', contact_email: '', booked_by: '', price_per_person: '', tab_id: '', notes: '', _localKey: 'new' };
+}
+function gKey(g) { return g.id || g._localKey; }
+function findGroupByKey(key) { return tripGroups_cache.find(g => gKey(g) === key); }
+
 async function openNewTrip() {
   currentTripId = null;
-  tripParticipants_cache = [];
+  tripGroups_cache = [blankGroup()];
+  groupParticipants_cache = {};
   document.getElementById('modal-trip-title').textContent = 'New trip';
   document.getElementById('trip-form-section').style.display = 'block';
-  document.getElementById('participants-section').style.display = 'none';
   document.getElementById('btn-save-trip').textContent = 'Save trip';
   document.getElementById('btn-delete-trip').style.display = 'none';
   document.getElementById('trip-date').value = formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
-  document.getElementById('trip-max-guests').value = '';
-  document.getElementById('trip-payments-section').innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Save the trip to log payments.</p>';
   document.getElementById('trip-arrival').value = '';
-  document.getElementById('trip-price').value = '';
-  document.getElementById('trip-price-total').value = '';
-  document.getElementById('trip-contact-name').value = '';
-  document.getElementById('trip-contact-phone').value = '';
-  document.getElementById('trip-contact-email').value = '';
-  document.getElementById('trip-booked-by').value = '';
-  document.getElementById('trip-notes').value = '';
   document.getElementById('trip-dive-sites').value = '';
   tripCrewCache = [];
   document.getElementById('boat-conflict-warning').style.display = 'none';
   document.getElementById('save-conflict-warning').style.display = 'none';
+  document.getElementById('guest-capacity-warning').style.display = 'none';
+  document.getElementById('guest-capacity-hint').textContent = '';
   window.currentBoatConflict = false;
   setBookingMode('private');
   document.getElementById('trip-save-feedback').className = 'save-feedback';
   populateTripBoats();
   populateTripTypeSelect().then(onTripTypeChange);
   renderTripCrewSection();
-  await populateTripTabSelect();
+  await renderGroupsPanel();
   document.getElementById('modal-trip').style.display = 'flex';
   document.getElementById('modal-trip').scrollTop = 0;
-}
-async function populateTripTabSelect(selectedTabId) {
-  const sel = document.getElementById('trip-tab-select');
-  if (!currentOrgId || !currentLocationId) return;
-  const { data: openTabs } = await sb.from('guest_tabs')
-    .select('id, guest_name')
-    .eq('org_id', currentOrgId)
-    .eq('location_id', currentLocationId)
-    .eq('status', 'open');
-  sel.innerHTML = '<option value="">No tab — pay per trip</option>' +
-    (openTabs || []).map(t => `<option value="${t.id}" ${t.id === selectedTabId ? 'selected' : ''}>${t.guest_name}</option>`).join('');
 }
 
 async function openTrip(id) {
@@ -3332,38 +3242,31 @@ async function openTrip(id) {
     .single();
   if (!trip) return;
 
-  document.getElementById('modal-trip-title').textContent = trip.contact_name || 'Trip details';
+  const { data: groups } = await sb.from('trip_groups').select('*').eq('trip_id', id).order('created_at');
+  tripGroups_cache = (groups && groups.length) ? groups : [blankGroup()];
+  groupParticipants_cache = {};
+
+  document.getElementById('modal-trip-title').textContent = tripGroups_cache[0]?.contact_name || 'Trip details';
   await populateTripTypeSelect(trip.trip_type_id);
   await onTripTypeChange();
 
   document.getElementById('trip-date').value = trip.trip_date || '';
   document.getElementById('trip-time').value = trip.trip_time?.slice(0,5) || '';
   document.getElementById('trip-arrival').value = trip.arrival_time?.slice(0,5) || '';
-  document.getElementById('trip-max-guests').value = trip.max_guests || '';
-  document.getElementById('trip-price').value = trip.payment_amount || trip.price_per_person || '';
-  updateTripPriceTotal();
-  document.getElementById('trip-contact-name').value = trip.contact_name || '';
-  document.getElementById('trip-contact-phone').value = trip.contact_phone || '';
-  document.getElementById('trip-contact-email').value = trip.contact_email || '';
-  document.getElementById('trip-booked-by').value = trip.booked_by || '';
-  document.getElementById('trip-notes').value = trip.notes || '';
   document.getElementById('trip-dive-sites').value = trip.dive_sites || '';
   setBookingMode(trip.booking_mode || 'private');
   populateTripBoats(trip.boat_id);
-  await renderSharedGroupsPanel();
-  await populateTripTabSelect(trip.tab_id);
-  await loadTripPaymentsSection(trip.id);
 
   document.getElementById('trip-form-section').style.display = 'block';
-  document.getElementById('participants-section').style.display = 'block';
   document.getElementById('btn-save-trip').textContent = 'Update trip';
   document.getElementById('btn-delete-trip').style.display = 'inline-block';
   document.getElementById('modal-trip').style.display = 'flex';
   document.getElementById('modal-trip').scrollTop = 0;
-  await loadParticipants(id);
+
   const { data: existingCrew } = await sb.from('trip_crew').select('staff_id, staff(full_name)').eq('trip_id', id);
   tripCrewCache = (existingCrew || []).map(c => ({ staff_id: c.staff_id, full_name: c.staff?.full_name || 'Unknown' }));
   await renderTripCrewSection();
+  await renderGroupsPanel();
   await checkGuestCapacity();
 }
 
@@ -3372,7 +3275,12 @@ document.getElementById('btn-new-trip').addEventListener('click', openNewTrip);
 document.getElementById('btn-delete-trip').addEventListener('click', async () => {
   if (!currentTripId) return;
    if (!(await showConfirmModal('Delete this trip? This cannot be undone.', { danger: true }))) return;
-  await sb.from('participants').delete().eq('trip_id', currentTripId);
+  const groupIds = tripGroups_cache.map(g => g.id).filter(Boolean);
+  if (groupIds.length) {
+    await sb.from('payments').delete().in('group_id', groupIds);
+    await sb.from('participants').delete().in('group_id', groupIds);
+  }
+  await sb.from('trip_groups').delete().eq('trip_id', currentTripId);
   await sb.from('trip_crew').delete().eq('trip_id', currentTripId);
   await sb.from('trips').delete().eq('id', currentTripId);
   document.getElementById('modal-trip').style.display = 'none';
@@ -3395,63 +3303,162 @@ async function setBookingMode(mode) {
   const hint = document.getElementById('booking-mode-hint');
   hint.textContent = mode === 'private'
     ? 'This boat will be exclusively reserved for this time slot.'
-    : 'Other independent bookings can share this boat, up to its max capacity.';
+    : 'Multiple independent groups can share this boat, up to its combined capacity.';
   if (currentTripId) {
     await sb.from('trips').update({ booking_mode: mode }).eq('id', currentTripId);
   }
+  document.getElementById('btn-add-group').style.display = (mode === 'shared' && currentTripId) ? 'inline-block' : 'none';
   checkBoatConflict();
-  renderSharedGroupsPanel();
 }
-async function renderSharedGroupsPanel() {
-  const section = document.getElementById('shared-groups-section');
-  const boatId = document.getElementById('trip-boat').value;
-  const date = document.getElementById('trip-date').value;
-  if (window.currentBookingMode !== 'shared' || !boatId || !date) {
-    section.style.display = 'none';
-    return;
+
+// ─── GROUPS PANEL ───
+async function renderGroupsPanel() {
+  const list = document.getElementById('groups-list');
+  document.getElementById('groups-title').textContent = tripGroups_cache.length > 1 ? `Groups (${tripGroups_cache.length})` : 'Group';
+  document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared' && currentTripId) ? 'inline-block' : 'none';
+  const cardsHtml = await Promise.all(tripGroups_cache.map((g, i) => groupCardHTML(g, i)));
+  list.innerHTML = cardsHtml.join('');
+}
+
+async function buildTabOptionsHtml(selectedTabId) {
+  if (!currentOrgId || !currentLocationId) return '<option value="">No tab — pay per trip</option>';
+  const { data: openTabs } = await sb.from('guest_tabs')
+    .select('id, guest_name')
+    .eq('org_id', currentOrgId)
+    .eq('location_id', currentLocationId)
+    .eq('status', 'open');
+  return '<option value="">No tab — pay per trip</option>' +
+    (openTabs || []).map(t => `<option value="${t.id}" ${t.id === selectedTabId ? 'selected' : ''}>${t.guest_name}</option>`).join('');
+}
+
+async function groupCardHTML(g, index) {
+  const key = gKey(g);
+  const isSaved = !!g.id;
+  const removeBtn = tripGroups_cache.length > 1 && isSaved
+    ? `<button class="btn-icon danger group-card-remove" onclick="removeGroup('${g.id}')">✕</button>`
+    : '';
+
+  let guestsHtml, paymentHtml, tabOptionsHtml, guestCount = 0;
+
+  if (isSaved) {
+    const participants = groupParticipants_cache[g.id] || await loadGroupParticipants(g.id);
+    guestCount = participants.length;
+    guestsHtml = renderGroupParticipantsBlock(g.id, participants);
+    tabOptionsHtml = await buildTabOptionsHtml(g.tab_id);
+    paymentHtml = await groupPaymentHTML(g, guestCount);
+  } else {
+    guestsHtml = `<p style="font-size:0.83rem;color:var(--muted);">Save the trip to add guests.</p>`;
+    tabOptionsHtml = '<option value="">No tab — pay per trip</option>';
+    paymentHtml = `<p style="font-size:0.83rem;color:var(--muted);">Save the trip to log payments.</p>`;
   }
-  const newStart = document.getElementById('trip-time').value || '00:00';
-  const newEnd = document.getElementById('trip-arrival').value || '23:59';
-  const { data: others } = await sb.from('trips')
-    .select('id, contact_name, trip_time, arrival_time, max_guests')
-    .eq('boat_id', boatId).eq('trip_date', date)
-    .neq('id', currentTripId || '00000000-0000-0000-0000-000000000000');
-  const overlapping = (others || []).filter(t => {
-    const tStart = t.trip_time?.slice(0,5) || '00:00';
-    const tEnd = t.arrival_time?.slice(0,5) || '23:59';
-    return newStart < tEnd && newEnd > tStart;
-  });
-  document.getElementById('shared-groups-title').textContent = overlapping.length
-    ? `Other groups sharing this boat (${overlapping.length})`
-    : 'No other groups on this boat yet';
-  document.getElementById('shared-groups-list').innerHTML = overlapping.map(t => `
-    <div class="gear-item-row" style="cursor:pointer;" onclick="openTrip('${t.id}')">
-      <div class="gear-item-header">
-        <span class="gear-item-name">${t.contact_name || 'Unnamed'}</span>
-        <span style="font-size:0.78rem;color:var(--muted);">${t.max_guests || 0} guests</span>
+
+  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * Math.max(guestCount, 1)).toFixed(2);
+
+  return `
+  <div class="group-card" data-group-key="${key}">
+    ${removeBtn}
+    <div class="card-section-title" style="margin-top:0;">${index === 0 ? 'Contact' : `Group ${index+1} — Contact`}</div>
+    <div class="sf-row">
+      <div class="sf-group">
+        <label class="sf-label">Lead contact name <span class="required-star">*</span></label>
+        <input class="sf-input" type="text" autocomplete="off" value="${(g.contact_name||'').replace(/"/g,'&quot;')}" placeholder="e.g. John Smith" onblur="updateGroupField('${key}','contact_name', this.value)">
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);">${t.trip_time?.slice(0,5)||''}${t.arrival_time ? ' – ' + t.arrival_time.slice(0,5) : ''}</div>
+      <div class="sf-group">
+        <label class="sf-label">Phone <span class="required-star">*</span></label>
+        <input class="sf-input" type="tel" autocomplete="off" value="${(g.contact_phone||'').replace(/"/g,'&quot;')}" placeholder="+1 555 000 0000" onblur="updateGroupField('${key}','contact_phone', this.value)">
+      </div>
     </div>
-  `).join('');
-  section.style.display = 'block';
+    <div class="sf-row">
+      <div class="sf-group">
+        <label class="sf-label">Email</label>
+        <input class="sf-input" type="email" autocomplete="off" value="${(g.contact_email||'').replace(/"/g,'&quot;')}" placeholder="john@email.com" onblur="updateGroupField('${key}','contact_email', this.value)">
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Booked by</label>
+        <input class="sf-input" type="text" autocomplete="off" value="${(g.booked_by||'').replace(/"/g,'&quot;')}" placeholder="Staff member name" onblur="updateGroupField('${key}','booked_by', this.value)">
+      </div>
+    </div>
+
+    <div class="card-section-title" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;">
+      <span>Guests${guestCount ? ` (${guestCount})` : ''}</span>
+      ${isSaved ? `<button class="btn-save" style="font-size:0.8rem;padding:6px 12px;" onclick="showAddGuestForm('${g.id}')">+ Add guest</button>` : ''}
+    </div>
+    ${guestsHtml}
+
+    <div class="sf-group" style="margin-top:16px;">
+      <label class="sf-label">Notes</label>
+      <input class="sf-input" type="text" autocomplete="off" value="${(g.notes||'').replace(/"/g,'&quot;')}" placeholder="Any additional info for this group" onblur="updateGroupField('${key}','notes', this.value)">
+    </div>
+
+    <div class="card-section-title" style="margin-top:20px;">Payment</div>
+    <div class="sf-row">
+      <div class="sf-group" style="max-width:160px;">
+        <label class="sf-label">Price per person</label>
+        <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * Math.max(${Math.max(guestCount,1)},1)).toFixed(2)">
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Total</label>
+        <input class="sf-input" type="text" disabled style="background:var(--white);font-weight:600;" id="group-total-${key}" value="${totalDisplay}">
+      </div>
+    </div>
+    ${isSaved ? `
+    <div class="sf-group">
+      <label class="sf-label">Link to guest tab (optional)</label>
+      <select class="sf-input" onchange="updateGroupField('${key}','tab_id', this.value)">
+        ${tabOptionsHtml}
+      </select>
+    </div>` : ''}
+    <div id="group-payments-${g.id || 'new'}">${paymentHtml}</div>
+  </div>`;
 }
-document.getElementById('btn-add-shared-group').addEventListener('click', () => {
-  const boatId = document.getElementById('trip-boat').value;
-  const date = document.getElementById('trip-date').value;
-  const time = document.getElementById('trip-time').value;
-  const arrival = document.getElementById('trip-arrival').value;
-  openNewTrip();
-  setTimeout(() => {
-    document.getElementById('trip-boat').value = boatId;
-    document.getElementById('trip-date').value = date;
-    document.getElementById('trip-time').value = time;
-    document.getElementById('trip-arrival').value = arrival;
-    setBookingMode('shared');
-    checkBoatConflict();
-    renderTripCrewSection();
-    checkGuestCapacity();
-  }, 900);
+
+async function updateGroupField(key, field, value) {
+  const g = findGroupByKey(key);
+  if (!g) return;
+  const val = field === 'price_per_person' ? (value === '' ? null : parseFloat(value)) : (typeof value === 'string' ? value.trim() : value);
+  g[field] = val;
+  if (g.id) {
+    await sb.from('trip_groups').update({ [field]: val }).eq('id', g.id);
+    if (field === 'price_per_person') await refreshGroupPaymentSection(g.id);
+    if (field === 'contact_name' && tripGroups_cache[0]?.id === g.id) {
+      document.getElementById('modal-trip-title').textContent = val || 'Trip details';
+    }
+  }
+}
+
+document.getElementById('btn-add-group').addEventListener('click', async () => {
+  if (!currentTripId) return;
+  const { data, error } = await sb.from('trip_groups').insert({ trip_id: currentTripId, contact_name: '', contact_phone: '' }).select().single();
+  if (error) return;
+  tripGroups_cache.push(data);
+  await renderGroupsPanel();
 });
+
+async function removeGroup(groupId) {
+  if (tripGroups_cache.length <= 1) return;
+  if (!(await showConfirmModal('Remove this group and its guests/payments? This cannot be undone.', { danger: true }))) return;
+  await sb.from('payments').delete().eq('group_id', groupId);
+  await sb.from('participants').delete().eq('group_id', groupId);
+  await sb.from('trip_groups').delete().eq('id', groupId);
+  tripGroups_cache = tripGroups_cache.filter(g => g.id !== groupId);
+  delete groupParticipants_cache[groupId];
+  await recalcTripGuestCount(currentTripId);
+  await renderGroupsPanel();
+  await checkGuestCapacity();
+}
+
+async function recalcTripGuestCount(tripId) {
+  if (!tripId) return 0;
+  const { data: groups } = await sb.from('trip_groups').select('id').eq('trip_id', tripId);
+  const groupIds = (groups || []).map(g => g.id);
+  let count = 0;
+  if (groupIds.length) {
+    const { count: c } = await sb.from('participants').select('id', { count: 'exact', head: true }).in('group_id', groupIds);
+    count = c || 0;
+  }
+  await sb.from('trips').update({ max_guests: count }).eq('id', tripId);
+  return count;
+}
 
 async function populateTripBoats(selectedId) {
   if (!currentOrgId) return;
@@ -3463,7 +3470,7 @@ async function populateTripBoats(selectedId) {
   const sel = document.getElementById('trip-boat');
   sel.innerHTML = '<option value="">No boat / select a boat</option>' +
     (boats || []).map(b => `<option value="${b.id}" data-capacity="${b.capacity||''}" ${b.id===selectedId?'selected':''}>${b.name}${b.capacity ? ' · Max ' + b.capacity : ''}</option>`).join('');
-  sel.onchange = () => { checkBoatConflict(); renderSharedGroupsPanel(); };
+  sel.onchange = () => { checkBoatConflict(); };
 }
 
 async function checkBoatConflict() {
@@ -3505,7 +3512,8 @@ async function checkBoatConflict() {
   const boatSelect = document.getElementById('trip-boat');
   const selectedOption = boatSelect.options[boatSelect.selectedIndex];
   const capacity = parseInt(selectedOption?.dataset.capacity) || null;
-  const newGuests = parseInt(document.getElementById('trip-max-guests').value) || 0;
+  let newGuests = 0;
+  tripGroups_cache.forEach(g => { if (g.id) newGuests += (groupParticipants_cache[g.id] || []).length; });
   const existingGuests = overlaps.reduce((sum, t) => sum + (t.max_guests || 0), 0);
   const totalGuests = existingGuests + newGuests;
 
@@ -3521,23 +3529,11 @@ async function checkBoatConflict() {
 document.getElementById('trip-date').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-time').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-arrival').addEventListener('change', checkBoatConflict);
-document.getElementById('trip-max-guests').addEventListener('input', checkBoatConflict);
-function updateTripPriceTotal() {
-  const perPerson = parseFloat(document.getElementById('trip-price').value) || 0;
-  const guests = Math.max(1, parseInt(document.getElementById('trip-max-guests').value) || 1);
-  document.getElementById('trip-price-total').value = (perPerson * guests).toFixed(2);
-}
-document.getElementById('trip-price').addEventListener('input', updateTripPriceTotal);
-document.getElementById('trip-max-guests').addEventListener('input', updateTripPriceTotal);
 document.getElementById('trip-date').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-time').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-arrival').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-boat').addEventListener('change', renderTripCrewSection);
-document.getElementById('trip-date').addEventListener('change', renderSharedGroupsPanel);
-document.getElementById('trip-time').addEventListener('change', renderSharedGroupsPanel);
-document.getElementById('trip-arrival').addEventListener('change', renderSharedGroupsPanel);
 document.getElementById('trip-boat').addEventListener('change', checkGuestCapacity);
-document.getElementById('trip-max-guests').addEventListener('input', checkGuestCapacity);
 
 function showCashupView(view, el) {
   document.querySelectorAll('#page-cashup .cl-view').forEach(v => v.style.display = 'none');
@@ -3944,28 +3940,20 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-trip');
   const feedback = document.getElementById('trip-save-feedback');
   const typeId = document.getElementById('trip-type-select').value;
-  const name = '';
   const date = document.getElementById('trip-date').value;
   const time = document.getElementById('trip-time').value;
   const arrival = document.getElementById('trip-arrival').value;
   const boatId = document.getElementById('trip-boat').value;
-  const maxGuests = document.getElementById('trip-max-guests').value;
-  const price = document.getElementById('trip-price').value;
-  const paymentStatus = 'pending';
-  const contactName = document.getElementById('trip-contact-name').value.trim();
-  const contactPhone = document.getElementById('trip-contact-phone').value.trim();
-  const contactEmail = document.getElementById('trip-contact-email').value.trim();
-  const bookedBy = document.getElementById('trip-booked-by').value.trim();
-  const notes = document.getElementById('trip-notes').value.trim();
   const diveSites = document.getElementById('trip-dive-sites').value.trim();
   const tripType = currentTripTypes.find(t => t.id === typeId);
+  const primaryGroup = tripGroups_cache[0] || blankGroup();
 
   const errors = [];
   if (!date) errors.push('Date');
   if (!time) errors.push('Departure time');
-  if (!contactName) errors.push('Contact name');
-  if (!contactPhone) errors.push('Contact phone');
   if (!arrival) errors.push('Arrival time');
+  if (!primaryGroup.contact_name) errors.push('Contact name');
+  if (!primaryGroup.contact_phone) errors.push('Contact phone');
 
   if (errors.length) {
     feedback.textContent = 'Missing: ' + errors.join(', ');
@@ -3998,26 +3986,19 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const payload = {
     org_id: currentOrgId,
     trip_type_id: typeId || null,
-    trip_name: name,
+    trip_name: '',
     trip_type: tripType ? tripType.name : null,
     trip_date: date,
     trip_time: time,
     arrival_time: arrival || null,
     boat_id: boatId || null,
     location_id: await resolveTripLocationId(boatId),
-    max_guests: maxGuests ? parseInt(maxGuests) : null,
     num_dives: tripType?.num_tanks || null,
     dive_sites: diveSites || null,
-    price_per_person: price ? parseFloat(price) : null,
-    payment_amount: price ? parseFloat(price) : 0,
-    payment_status: paymentStatus,
-    contact_name: contactName,
-    contact_phone: contactPhone,
-    contact_email: contactEmail || null,
-    booked_by: bookedBy || null,
+    payment_amount: 0,
+    payment_status: 'pending',
+    contact_name: primaryGroup.contact_name || null,
     booking_mode: window.currentBookingMode || 'private',
-    tab_id: document.getElementById('trip-tab-select').value || null,
-    notes: notes || null,
     status: 'scheduled',
     created_by: (await sb.auth.getUser()).data.user.id
   };
@@ -4034,23 +4015,34 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     }
     tripId = data.id;
     currentTripId = tripId;
+
+    const { data: newGroup, error: groupError } = await sb.from('trip_groups').insert({
+      trip_id: tripId,
+      contact_name: primaryGroup.contact_name || '',
+      contact_phone: primaryGroup.contact_phone || '',
+      contact_email: primaryGroup.contact_email || null,
+      booked_by: primaryGroup.booked_by || null,
+      price_per_person: primaryGroup.price_per_person || null,
+      notes: primaryGroup.notes || null
+    }).select().single();
+    if (!groupError) tripGroups_cache = [newGroup];
   } else {
     await sb.from('trips').update(payload).eq('id', currentTripId);
   }
 
-  feedback.textContent = 'Saved';
-  feedback.className = 'save-feedback visible';
-  btn.disabled = false; btn.textContent = 'Update trip';
-
-  document.getElementById('participants-section').style.display = 'block';
-  document.getElementById('modal-trip-title').textContent = name;
-  await loadParticipants(tripId);
   await sb.from('trip_crew').delete().eq('trip_id', tripId);
   if (tripCrewCache.length) {
     await sb.from('trip_crew').insert(tripCrewCache.map(c => ({ trip_id: tripId, staff_id: c.staff_id, role: 'crew' })));
   }
   await renderTripCrewSection();
-  await loadTripPaymentsSection(tripId);
+  await renderGroupsPanel();
+
+  feedback.textContent = 'Saved';
+  feedback.className = 'save-feedback visible';
+  btn.disabled = false; btn.textContent = 'Update trip';
+  document.getElementById('btn-delete-trip').style.display = 'inline-block';
+  document.getElementById('modal-trip-title').textContent = primaryGroup.contact_name || 'Trip details';
+  document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared') ? 'inline-block' : 'none';
 
   document.getElementById('stat-trips').textContent = '↑';
   setTimeout(() => feedback.className = 'save-feedback', 3000);
@@ -4147,7 +4139,6 @@ async function checkGuestCapacity() {
   const hint = document.getElementById('guest-capacity-hint');
   const warning = document.getElementById('guest-capacity-warning');
   const boatId = document.getElementById('trip-boat').value;
-  const guests = parseInt(document.getElementById('trip-max-guests').value) || 0;
   window.currentCapacityExceeded = false;
   if (!boatId) { hint.textContent = ''; warning.style.display = 'none'; return; }
   const { data: boat } = await sb.from('boats').select('capacity').eq('id', boatId).single();
@@ -4155,9 +4146,11 @@ async function checkGuestCapacity() {
   if (!capacity) { hint.textContent = ''; warning.style.display = 'none'; return; }
   const crewCount = tripCrewCache.length;
   const available = capacity - crewCount;
+  let guests = 0;
+  tripGroups_cache.forEach(g => { if (g.id) guests += (groupParticipants_cache[g.id] || []).length; });
   hint.textContent = `Boat capacity: ${capacity} (not including captain) · ${crewCount} crew assigned · ${available} available for guests`;
   if (guests > available) {
-    warning.textContent = `Too many guests: ${guests} requested, only ${available} seats available after ${crewCount} crew.`;
+    warning.textContent = `Too many guests: ${guests} booked, only ${available} seats available after ${crewCount} crew.`;
     warning.style.display = 'block';
     window.currentCapacityExceeded = true;
   } else {
@@ -4165,119 +4158,176 @@ async function checkGuestCapacity() {
   }
 }
 
-// ─── TRIP PAYMENTS ───
-async function loadTripPaymentsSection(tripId) {
-  const container = document.getElementById('trip-payments-section');
-  const { data: trip } = await sb.from('trips').select('price_per_person, payment_amount, max_guests, contact_name').eq('id', tripId).single();
-  const { data: payments } = await sb.from('payments').select('*').eq('trip_id', tripId).order('payment_date');
-  const perPerson = parseFloat(trip?.price_per_person || trip?.payment_amount || 0);
-  const guestCount = Math.max(1, parseInt(trip?.max_guests) || 1);
-  const total = perPerson * guestCount;
+// ─── GROUP PAYMENTS ───
+async function groupPaymentHTML(g, guestCount) {
+  const { data: payments } = await sb.from('payments').select('*').eq('group_id', g.id).order('payment_date');
+  const perPerson = parseFloat(g.price_per_person) || 0;
+  const guests = Math.max(guestCount, 1);
+  const total = perPerson * guests;
   const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
   const balance = total - paid;
   const paymentsHtml = (payments || []).map(p => `
     <div class="crew-member-tag-v2">${p.method} — $${parseFloat(p.amount).toFixed(2)} · ${p.payment_date}${p.note ? ' · ' + p.note : ''}
-      <button onclick="removeTripPayment('${p.id}', '${tripId}')">×</button>
+      <button onclick="removeGroupPayment('${p.id}','${g.id}')">×</button>
     </div>
   `).join('');
   const statusLabel = balance <= 0 && total > 0 ? 'Paid in full' : paid > 0 ? `Partial — $${balance.toFixed(2)} owed` : 'Nothing paid yet';
   const statusColor = balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
-  container.innerHTML = `
+  return `
     <div style="font-size:0.83rem;font-weight:600;color:${statusColor};margin-bottom:8px;">${statusLabel}</div>
-    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">$${perPerson.toFixed(2)}/person × ${guestCount} guest${guestCount>1?'s':''} = $${total.toFixed(2)}</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">$${perPerson.toFixed(2)}/person × ${guests} guest${guests>1?'s':''} = $${total.toFixed(2)}</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${paymentsHtml || '<span style="font-size:0.8rem;color:var(--muted)">No payments logged yet.</span>'}</div>
-    <div id="log-payment-btn-wrap">
-      <button class="btn-cancel" onclick="showLogPaymentForm('${tripId}', ${total}, ${paid})">+ Log Payment</button>
+    <div id="log-payment-btn-wrap-${g.id}">
+      <button class="btn-cancel" onclick="showLogPaymentForm('${g.id}', ${total}, ${paid})">+ Log Payment</button>
     </div>
-    <div id="log-payment-form" style="display:none;margin-top:10px;padding:12px;background:var(--foam);border-radius:10px;">
+    <div id="log-payment-form-${g.id}" style="display:none;margin-top:10px;padding:12px;background:var(--white);border-radius:10px;">
       <div class="sf-group">
         <label class="sf-label">Amount</label>
         <div style="display:flex;gap:8px;align-items:center;">
-          <input class="sf-input" type="number" step="0.01" id="new-payment-amount" placeholder="e.g. 50" style="max-width:140px;margin-bottom:0;">
-          <button type="button" class="gear-action-btn" onclick="fillTotalAmount(${balance})">Total Amount</button>
+          <input class="sf-input" type="number" step="0.01" autocomplete="off" id="new-payment-amount-${g.id}" placeholder="e.g. 50" style="max-width:140px;margin-bottom:0;">
+          <button type="button" class="gear-action-btn" onclick="fillTotalAmount('${g.id}', ${balance})">Total Amount</button>
         </div>
       </div>
       <div class="sf-group">
         <label class="sf-label">Method</label>
         <div class="radio-group">
-          <div class="radio-btn" id="pm-cash" onclick="selectPaymentMethod('cash')">Cash</div>
-          <div class="radio-btn" id="pm-card" onclick="selectPaymentMethod('card')">Card</div>
-          <div class="radio-btn" id="pm-transfer" onclick="selectPaymentMethod('transfer')">Transfer</div>
+          <div class="radio-btn" id="pm-cash-${g.id}" onclick="selectPaymentMethod('${g.id}','cash')">Cash</div>
+          <div class="radio-btn" id="pm-card-${g.id}" onclick="selectPaymentMethod('${g.id}','card')">Card</div>
+          <div class="radio-btn" id="pm-transfer-${g.id}" onclick="selectPaymentMethod('${g.id}','transfer')">Transfer</div>
         </div>
       </div>
-      <div class="sf-group" id="payment-note-wrap" style="display:none;">
+      <div class="sf-group" id="payment-note-wrap-${g.id}" style="display:none;">
         <label class="sf-label">Note (required — this exceeds what's owed)</label>
-        <input class="sf-input" type="text" id="new-payment-note" placeholder="e.g. Includes $10 tip">
+        <input class="sf-input" type="text" autocomplete="off" id="new-payment-note-${g.id}" placeholder="e.g. Includes $10 tip">
       </div>
       <div class="settings-actions">
-        <button class="btn-save" onclick="confirmLogPayment('${tripId}', ${total}, ${paid})">Confirm</button>
-        <button class="btn-cancel" onclick="cancelLogPayment()">Cancel</button>
+        <button class="btn-save" onclick="confirmLogPayment('${g.id}', ${total}, ${paid})">Confirm</button>
+        <button class="btn-cancel" onclick="cancelLogPayment('${g.id}')">Cancel</button>
       </div>
-      <span class="save-feedback" id="log-payment-feedback"></span>
+      <span class="save-feedback" id="log-payment-feedback-${g.id}"></span>
     </div>
   `;
 }
-window.currentPaymentMethod = null;
-function showLogPaymentForm(tripId, total, paid) {
-  document.getElementById('log-payment-btn-wrap').style.display = 'none';
-  document.getElementById('log-payment-form').style.display = 'block';
-  document.getElementById('new-payment-amount').value = '';
-  document.getElementById('new-payment-note').value = '';
-  document.getElementById('payment-note-wrap').style.display = 'none';
-  window.currentPaymentMethod = null;
-  ['pm-cash','pm-card','pm-transfer'].forEach(id => document.getElementById(id).classList.remove('selected'));
-  document.getElementById('new-payment-amount').oninput = () => checkPaymentOverage(total, paid);
+async function refreshGroupPaymentSection(groupId) {
+  const g = tripGroups_cache.find(gr => gr.id === groupId);
+  if (!g) return;
+  const participants = groupParticipants_cache[groupId] || await loadGroupParticipants(groupId);
+  const html = await groupPaymentHTML(g, participants.length);
+  const container = document.getElementById('group-payments-' + groupId);
+  if (container) container.innerHTML = html;
+  const totalEl = document.getElementById('group-total-' + groupId);
+  if (totalEl) totalEl.value = ((parseFloat(g.price_per_person)||0) * Math.max(participants.length,1)).toFixed(2);
 }
-function selectPaymentMethod(method) {
-  window.currentPaymentMethod = method;
-  ['pm-cash','pm-card','pm-transfer'].forEach(id => document.getElementById(id).classList.toggle('selected', id === 'pm-' + method));
+window.currentPaymentMethod = {};
+function showLogPaymentForm(groupId, total, paid) {
+  document.getElementById('log-payment-btn-wrap-' + groupId).style.display = 'none';
+  document.getElementById('log-payment-form-' + groupId).style.display = 'block';
+  document.getElementById('new-payment-amount-' + groupId).value = '';
+  document.getElementById('new-payment-note-' + groupId).value = '';
+  document.getElementById('payment-note-wrap-' + groupId).style.display = 'none';
+  window.currentPaymentMethod[groupId] = null;
+  ['cash','card','transfer'].forEach(m => document.getElementById(`pm-${m}-${groupId}`).classList.remove('selected'));
+  document.getElementById('new-payment-amount-' + groupId).oninput = () => checkPaymentOverage(groupId, total, paid);
 }
-function fillTotalAmount(balance) {
-  document.getElementById('new-payment-amount').value = balance > 0 ? balance.toFixed(2) : 0;
+function selectPaymentMethod(groupId, method) {
+  window.currentPaymentMethod[groupId] = method;
+  ['cash','card','transfer'].forEach(m => document.getElementById(`pm-${m}-${groupId}`).classList.toggle('selected', m === method));
 }
-function checkPaymentOverage(total, paid) {
-  const amount = parseFloat(document.getElementById('new-payment-amount').value) || 0;
+function fillTotalAmount(groupId, balance) {
+  document.getElementById('new-payment-amount-' + groupId).value = balance > 0 ? balance.toFixed(2) : 0;
+}
+function checkPaymentOverage(groupId, total, paid) {
+  const amount = parseFloat(document.getElementById('new-payment-amount-' + groupId).value) || 0;
   const wouldExceed = (paid + amount) > total;
-  document.getElementById('payment-note-wrap').style.display = wouldExceed ? 'block' : 'none';
+  document.getElementById('payment-note-wrap-' + groupId).style.display = wouldExceed ? 'block' : 'none';
 }
-function cancelLogPayment() {
-  document.getElementById('log-payment-btn-wrap').style.display = 'block';
-  document.getElementById('log-payment-form').style.display = 'none';
+function cancelLogPayment(groupId) {
+  document.getElementById('log-payment-btn-wrap-' + groupId).style.display = 'block';
+  document.getElementById('log-payment-form-' + groupId).style.display = 'none';
 }
-async function confirmLogPayment(tripId, total, paid) {
-  const feedback = document.getElementById('log-payment-feedback');
-  const amount = parseFloat(document.getElementById('new-payment-amount').value);
-  const method = window.currentPaymentMethod;
-  const note = document.getElementById('new-payment-note').value.trim();
+async function confirmLogPayment(groupId, total, paid) {
+  const feedback = document.getElementById('log-payment-feedback-' + groupId);
+  const amount = parseFloat(document.getElementById('new-payment-amount-' + groupId).value);
+  const method = window.currentPaymentMethod[groupId];
+  const note = document.getElementById('new-payment-note-' + groupId).value.trim();
   if (!amount || amount <= 0) { feedback.textContent = 'Enter a valid amount.'; feedback.className = 'save-feedback error visible'; return; }
   if (!method) { feedback.textContent = 'Select a payment method.'; feedback.className = 'save-feedback error visible'; return; }
   const wouldExceed = (paid + amount) > total;
   if (wouldExceed && !note) { feedback.textContent = "This exceeds what's owed — please add a note explaining why."; feedback.className = 'save-feedback error visible'; return; }
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('payments').insert({
-    org_id: currentOrgId, location_id: currentLocationId, trip_id: tripId,
+    org_id: currentOrgId, location_id: currentLocationId, trip_id: currentTripId, group_id: groupId,
     amount, method, payment_date: new Date().toISOString().split('T')[0],
     logged_by: user.email, note: note || null
   });
-  await loadTripPaymentsSection(tripId);
+  await refreshGroupPaymentSection(groupId);
 }
-async function removeTripPayment(id, tripId) {
+async function removeGroupPayment(id, groupId) {
   if (!(await showConfirmModal('Remove this payment record?'))) return;
   await sb.from('payments').delete().eq('id', id);
-  await loadTripPaymentsSection(tripId);
+  await refreshGroupPaymentSection(groupId);
 }
 
-// ─── PARTICIPANTS ───
-let tripParticipants_cache = [];
+// ─── GROUP PARTICIPANTS ───
+async function loadGroupParticipants(groupId) {
+  const { data } = await sb.from('participants').select('*').eq('group_id', groupId).order('created_at');
+  groupParticipants_cache[groupId] = data || [];
+  return groupParticipants_cache[groupId];
+}
 
-function renderDynamicGearFields() {
-  const container = document.getElementById('dynamic-gear-fields');
+function renderGroupParticipantsBlock(groupId, participants) {
+  const listHtml = participants.length ? participants.map(p => {
+    const gear = p.gear || {};
+    const gearStr = Object.values(gear).filter(Boolean).join(' · ') || 'No gear requests';
+    return `
+    <div class="participant-row">
+      <div>
+        <div class="p-name">${p.full_name}${p.phone ? ' · ' + p.phone : ''}</div>
+        <div class="p-meta">${gearStr}</div>
+        ${p.notes ? `<div class="p-meta">${p.notes}</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn-icon danger" onclick="removeGroupParticipant('${p.id}','${groupId}')">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<p style="font-size:0.83rem;color:var(--muted);padding:8px 0;">No guests yet.</p>';
+
+  return `
+    <div id="participants-list-${groupId}">${listHtml}</div>
+    <div class="inline-form" id="form-add-participant-${groupId}" style="display:none;margin-top:12px;">
+      <div class="sf-row">
+        <div class="sf-group">
+          <label class="sf-label">Full name <span class="required-star">*</span></label>
+          <input class="sf-input" type="text" autocomplete="off" id="p-name-${groupId}" placeholder="Guest name">
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Phone</label>
+          <input class="sf-input" type="tel" autocomplete="off" id="p-phone-${groupId}" placeholder="Optional">
+        </div>
+      </div>
+      <div id="dynamic-gear-fields-${groupId}"></div>
+      <div class="sf-group">
+        <label class="sf-label">Notes</label>
+        <input class="sf-input" type="text" autocomplete="off" id="p-notes-${groupId}" placeholder="Allergies, special requirements...">
+      </div>
+      <div class="settings-actions">
+        <button class="btn-save" onclick="saveGroupParticipant('${groupId}')">Save guest</button>
+        <button class="btn-cancel" onclick="cancelAddGuest('${groupId}')">Cancel</button>
+        <span class="save-feedback" id="p-save-feedback-${groupId}"></span>
+      </div>
+    </div>
+  `;
+}
+
+function renderDynamicGearFieldsFor(groupId) {
+  const container = document.getElementById('dynamic-gear-fields-' + groupId);
+  if (!container) return;
   if (!selectedTripTypeFields.length) {
     container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No gear fields for this trip type.</p>';
     return;
   }
   container.innerHTML = selectedTripTypeFields.map(f => {
-    const inputId = 'pgear-' + f.field_key;
+    const inputId = `pgear-${groupId}-${f.field_key}`;
     if (f.field_type === 'select') {
       const opts = Array.isArray(f.options) ? f.options : (f.options ? JSON.parse(f.options) : []);
       return `<div class="sf-group">
@@ -4300,113 +4350,64 @@ function renderDynamicGearFields() {
   }).join('');
 }
 
-async function loadParticipants(tripId) {
-  const { data: parts } = await sb
-    .from('participants')
-    .select('*')
-    .eq('trip_id', tripId)
-    .order('created_at');
-
-  tripParticipants_cache = parts || [];
-  const list = document.getElementById('participants-list');
-  const summary = document.getElementById('trip-tank-summary');
-  const count = parts?.length || 0;
-  const typeId = document.getElementById('trip-type-select').value;
-  const tripType = currentTripTypes.find(t => t.id === typeId);
-
-  if (tripType?.needs_tank_count && count > 0) {
-    summary.textContent = `${count} guests · ${count * (tripType.num_tanks || 1)} tanks needed`;
-  } else {
-    summary.textContent = count > 0 ? `${count} guests` : '';
-  }
-
-  if (!parts || parts.length === 0) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);padding:8px 0;">No guests yet. Add the first one below.</p>';
-    return;
-  }
-
-  list.innerHTML = parts.map(p => {
-    const gear = p.gear || {};
-    const gearStr = Object.values(gear).filter(Boolean).join(' · ') || 'No gear requests';
-    return `
-    <div class="participant-row">
-      <div>
-        <div class="p-name">${p.full_name}${p.phone ? ' · ' + p.phone : ''}</div>
-        <div class="p-meta">${gearStr}</div>
-        ${p.notes ? `<div class="p-meta">${p.notes}</div>` : ''}
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button class="btn-icon danger" onclick="removeParticipant('${p.id}')">✕</button>
-      </div>
-    </div>`;
-  }).join('');
+function showAddGuestForm(groupId) {
+  const form = document.getElementById('form-add-participant-' + groupId);
+  form.style.display = 'block';
+  document.getElementById('p-name-' + groupId).value = '';
+  document.getElementById('p-phone-' + groupId).value = '';
+  document.getElementById('p-notes-' + groupId).value = '';
+  renderDynamicGearFieldsFor(groupId);
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function cancelAddGuest(groupId) {
+  document.getElementById('form-add-participant-' + groupId).style.display = 'none';
 }
 
-document.getElementById('btn-add-participant').addEventListener('click', () => {
-  document.getElementById('form-add-participant').style.display = 'block';
-  document.getElementById('btn-add-participant').style.display = 'none';
-  document.getElementById('p-name').value = '';
-  document.getElementById('p-phone').value = '';
-  document.getElementById('p-notes').value = '';
-  renderDynamicGearFields();
-});
-document.getElementById('btn-cancel-participant').addEventListener('click', () => {
-  document.getElementById('form-add-participant').style.display = 'none';
-  document.getElementById('btn-add-participant').style.display = 'inline-block';
-});
-
-document.getElementById('btn-save-participant').addEventListener('click', async () => {
-  const btn = document.getElementById('btn-save-participant');
-  const feedback = document.getElementById('p-save-feedback');
-  const name = document.getElementById('p-name').value.trim();
+async function saveGroupParticipant(groupId) {
+  const feedback = document.getElementById('p-save-feedback-' + groupId);
+  const name = document.getElementById('p-name-' + groupId).value.trim();
 
   if (!name) {
     feedback.textContent = 'Name required.';
     feedback.className = 'save-feedback error visible';
     return;
   }
-  if (!currentTripId) {
-    feedback.textContent = 'Save the trip first.';
-    feedback.className = 'save-feedback error visible';
-    return;
-  }
 
-  btn.disabled = true; btn.textContent = 'Saving...';
-
-  // Collect dynamic gear field values
   const gear = {};
   selectedTripTypeFields.forEach(f => {
-    const el = document.getElementById('pgear-' + f.field_key);
+    const el = document.getElementById(`pgear-${groupId}-${f.field_key}`);
     if (el && el.value) gear[f.field_key] = el.value;
   });
 
   const { error } = await sb.from('participants').insert({
     trip_id: currentTripId,
+    group_id: groupId,
     full_name: name,
-    phone: document.getElementById('p-phone').value.trim() || null,
+    phone: document.getElementById('p-phone-' + groupId).value.trim() || null,
     gear: gear,
-    notes: document.getElementById('p-notes').value.trim() || null
+    notes: document.getElementById('p-notes-' + groupId).value.trim() || null
   });
 
   if (error) {
     feedback.textContent = 'Error saving.';
     feedback.className = 'save-feedback error visible';
-    btn.disabled = false; btn.textContent = 'Save guest';
     return;
   }
 
-  document.getElementById('form-add-participant').style.display = 'none';
-  document.getElementById('btn-add-participant').style.display = 'inline-block';
-  btn.disabled = false; btn.textContent = 'Save guest';
   feedback.className = 'save-feedback';
+  await loadGroupParticipants(groupId);
+  await recalcTripGuestCount(currentTripId);
+  await renderGroupsPanel();
+  await checkGuestCapacity();
+}
 
-  await loadParticipants(currentTripId);
-});
-
-async function removeParticipant(id) {
-   if (!(await showConfirmModal('Remove this guest?'))) return;
-  await sb.from('participants').delete().eq('id', id);
-  await loadParticipants(currentTripId);
+async function removeGroupParticipant(participantId, groupId) {
+  if (!(await showConfirmModal('Remove this guest?'))) return;
+  await sb.from('participants').delete().eq('id', participantId);
+  await loadGroupParticipants(groupId);
+  await recalcTripGuestCount(currentTripId);
+  await renderGroupsPanel();
+  await checkGuestCapacity();
 }
 // ─── END CALENDAR ───
 
