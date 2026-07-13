@@ -1200,7 +1200,7 @@ body { background: var(--navy); color: var(--text); }
         <div class="sf-group">
           <label class="sf-label">Status</label>
           <select class="sf-input" id="gd-status">
-            <option value="active">Active</option>
+            <option value="available">Active</option>
             <option value="in_repair">In repair</option>
             <option value="retired">Retired</option>
           </select>
@@ -2036,7 +2036,7 @@ body { background: var(--navy); color: var(--text); }
               <label class="sf-label">Status</label>
               <select class="sf-input" id="reg-filter-status">
                 <option value="">All statuses</option>
-                <option value="active">Active</option>
+                <option value="available">Active</option>
                 <option value="in_repair">In repair</option>
                 <option value="retired">Retired</option>
               </select>
@@ -6832,7 +6832,7 @@ function renderBoatDetailMaintenance(logs) {
 // ─── END BOAT DETAIL ───
 
 // ─── GEAR REGISTRY ───
-const gearRegistryStatusLabels = { active: 'Active', in_repair: 'In repair', retired: 'Retired' };
+const gearRegistryStatusLabels = { available: 'Active', in_repair: 'In repair', retired: 'Retired' };
 
 async function populateRegistryLocationSelect() {
   if (!currentOrgId) return;
@@ -6875,7 +6875,7 @@ document.getElementById('btn-save-gear-item').addEventListener('click', async ()
     name: name,
     size: size || null,
     serial_number: serial || null,
-    status: 'active',
+    status: 'available',
     notes: notes || null
   });
   btn.disabled = false; btn.textContent = 'Register item';
@@ -6949,7 +6949,7 @@ async function openGearDetail(gearId) {
   if (!g) return;
   document.getElementById('gear-detail-title').textContent = g.name;
   document.getElementById('gear-detail-summary').textContent = [g.category, g.size, g.serial_number ? 'SN ' + g.serial_number : null, g.locations?.name].filter(Boolean).join(' · ');
-  document.getElementById('gd-status').value = g.status || 'active';
+  document.getElementById('gd-status').value = g.status || 'available';
   document.getElementById('gd-last-service').value = g.last_service_date || '';
   document.getElementById('gd-next-service').value = g.next_service_date || '';
   document.getElementById('gd-repair-notes').value = g.repair_notes || '';
