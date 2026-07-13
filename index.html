@@ -1349,6 +1349,7 @@ body { background: var(--navy); color: var(--text); }
               <div class="warning-banner caution" id="save-conflict-warning" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:20px;">
                 <button class="btn-save" id="btn-save-trip">Save trip</button>
+                <button class="btn-cancel" id="btn-print-manifest" style="display:none;" onclick="printManifest()">Print Manifest</button>
                 <button class="btn-cancel" id="btn-delete-trip" style="display:none;color:var(--error);border-color:rgba(229,62,62,0.3);">Delete trip</button>
                 <span class="save-feedback" id="trip-save-feedback"></span>
               </div>
@@ -3215,6 +3216,7 @@ async function openNewTrip() {
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('btn-save-trip').textContent = 'Save trip';
   document.getElementById('btn-delete-trip').style.display = 'none';
+  document.getElementById('btn-print-manifest').style.display = 'none';
   document.getElementById('trip-date').value = formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
   document.getElementById('trip-arrival').value = '';
@@ -3262,6 +3264,7 @@ async function openTrip(id) {
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('btn-save-trip').textContent = 'Update trip';
   document.getElementById('btn-delete-trip').style.display = 'inline-block';
+  document.getElementById('btn-print-manifest').style.display = 'inline-block';
   document.getElementById('modal-trip').style.display = 'flex';
   document.getElementById('modal-trip').scrollTop = 0;
 
@@ -3340,7 +3343,7 @@ async function groupCardHTML(g, index) {
     ? `<button class="btn-icon danger group-card-remove" onclick="removeGroup('${g.id}')">✕</button>`
     : '';
 
-  let guestsHtml, paymentHtml, tabOptionsHtml, guestCount = 0, rentalTotal = 0;
+  let guestsHtml, paymentHtml, tabOptionsHtml, checkInHtml = '', guestCount = 0, rentalTotal = 0;
 
   if (isSaved) {
     const participants = groupParticipants_cache[g.id] || await loadGroupParticipants(g.id);
@@ -3349,6 +3352,7 @@ async function groupCardHTML(g, index) {
     guestsHtml = renderGroupParticipantsBlock(g.id, participants);
     tabOptionsHtml = await buildTabOptionsHtml(g.tab_id);
     paymentHtml = await groupPaymentHTML(g, participants);
+    checkInHtml = checkInButtonHTML(g.id, participants);
   } else {
     guestsHtml = `<p style="font-size:0.83rem;color:var(--muted);">Save the trip to add guests.</p>`;
     tabOptionsHtml = '<option value="">No tab — pay per trip</option>';
@@ -3381,6 +3385,7 @@ async function groupCardHTML(g, index) {
         <input class="sf-input" type="text" autocomplete="off" value="${(g.booked_by||'').replace(/"/g,'&quot;')}" placeholder="Staff member name" onblur="updateGroupField('${key}','booked_by', this.value)">
       </div>
     </div>
+    ${checkInHtml ? `<div style="margin-top:14px;">${checkInHtml}</div><div id="checkin-panel-${g.id}" style="display:none;margin-top:10px;"></div>` : ''}
 
     <div class="card-section-title" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;">
       <span>Guests${guestCount ? ` (${guestCount})` : ''}</span>
@@ -3413,6 +3418,68 @@ async function groupCardHTML(g, index) {
     </div>` : ''}
     <div id="group-payments-${g.id || 'new'}">${paymentHtml}</div>
   </div>`;
+}
+
+// ─── CHECK-IN ───
+function checkInButtonHTML(groupId, participants) {
+  const total = participants.length;
+  if (total === 0) return '';
+  const checkedInCount = participants.filter(p => p.checked_in_at).length;
+  let label, style;
+  if (checkedInCount === 0) {
+    label = 'Check In';
+    style = '';
+  } else if (checkedInCount < total) {
+    label = `Checked In (${checkedInCount}/${total})`;
+    style = 'color:#b7791f;border-color:#b7791f;';
+  } else {
+    label = 'Checked In ✓';
+    style = 'color:var(--success);border-color:var(--success);';
+  }
+  return `<button class="btn-cancel" style="font-size:0.8rem;padding:6px 12px;${style}" onclick="showCheckInPanel('${groupId}')">${label}</button>`;
+}
+
+function showCheckInPanel(groupId) {
+  const g = tripGroups_cache.find(gr => gr.id === groupId);
+  const participants = groupParticipants_cache[groupId] || [];
+  const panel = document.getElementById('checkin-panel-' + groupId);
+  if (!panel) return;
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div style="background:var(--foam);border-radius:10px;padding:14px;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Confirm check-in</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">Verify against: <strong>${g?.contact_name || '—'}</strong>${g?.contact_phone ? ' · ' + g.contact_phone : ''}</div>
+      ${participants.map(p => `
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-bottom:8px;">
+          <input type="checkbox" class="checkin-box-${groupId}" data-pid="${p.id}" checked style="width:16px;height:16px;">
+          ${p.full_name}${p.checked_in_at ? ' <span style="color:var(--success);font-size:0.72rem;">(already checked in)</span>' : ''}
+        </label>
+      `).join('')}
+      <div class="settings-actions" style="margin-top:8px;">
+        <button class="btn-save" onclick="confirmCheckIn('${groupId}')">Confirm Check-In</button>
+        <button class="btn-cancel" onclick="document.getElementById('checkin-panel-${groupId}').style.display='none';">Cancel</button>
+        <span class="save-feedback" id="checkin-feedback-${groupId}"></span>
+      </div>
+    </div>
+  `;
+}
+
+async function confirmCheckIn(groupId) {
+  const boxes = document.querySelectorAll(`.checkin-box-${groupId}`);
+  const { data: { user } } = await sb.auth.getUser();
+  const now = new Date().toISOString();
+  for (const box of boxes) {
+    const pid = box.dataset.pid;
+    if (box.checked) {
+      await sb.from('participants').update({ checked_in_at: now, checked_in_by: user.email }).eq('id', pid);
+    } else {
+      await sb.from('participants').update({ checked_in_at: null, checked_in_by: null }).eq('id', pid);
+    }
+  }
+  const panel = document.getElementById('checkin-panel-' + groupId);
+  if (panel) panel.style.display = 'none';
+  await loadGroupParticipants(groupId);
+  await renderGroupsPanel();
 }
 
 async function updateGroupField(key, field, value) {
@@ -3708,7 +3775,7 @@ async function loadGuestTabs() {
     .select('*')
     .eq('org_id', currentOrgId)
     .eq('location_id', currentLocationId)
-    .order('settle_by_date');
+    .order('created_at', { ascending: false });
   if (!tabs || !tabs.length) {
     container.innerHTML = '<p style="color:var(--muted);">No guest tabs yet.</p>';
     return;
@@ -4059,12 +4126,95 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   feedback.className = 'save-feedback visible';
   btn.disabled = false; btn.textContent = 'Update trip';
   document.getElementById('btn-delete-trip').style.display = 'inline-block';
+  document.getElementById('btn-print-manifest').style.display = 'inline-block';
   document.getElementById('modal-trip-title').textContent = primaryGroup.contact_name || 'Trip details';
   document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared') ? 'inline-block' : 'none';
 
   document.getElementById('stat-trips').textContent = '↑';
   setTimeout(() => feedback.className = 'save-feedback', 3000);
 });
+
+// ─── PRINT MANIFEST ───
+async function printManifest() {
+  if (!currentTripId) return;
+  const typeId = document.getElementById('trip-type-select').value;
+  const tripType = currentTripTypes.find(t => t.id === typeId);
+  const date = document.getElementById('trip-date').value;
+  const time = document.getElementById('trip-time').value;
+  const arrival = document.getElementById('trip-arrival').value;
+  const boatSelect = document.getElementById('trip-boat');
+  const boatName = boatSelect.options[boatSelect.selectedIndex]?.text || 'No boat';
+
+  for (const g of tripGroups_cache) {
+    if (g.id) await loadGroupParticipants(g.id);
+  }
+
+  const activeFieldKeys = new Set();
+  tripGroups_cache.forEach(g => {
+    (groupParticipants_cache[g.id] || []).forEach(p => {
+      Object.entries(p.gear || {}).forEach(([k, v]) => {
+        if (v && v !== 'Own gear' && v !== 'None') activeFieldKeys.add(k);
+      });
+    });
+  });
+  const gearColumns = selectedTripTypeFields.filter(f => activeFieldKeys.has(f.field_key));
+
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  const groupsHtml = tripGroups_cache.map((g, i) => {
+    const participants = groupParticipants_cache[g.id] || [];
+    const rows = participants.map(p => {
+      const gear = p.gear || {};
+      return `<tr>
+        <td>${escapeHtml(p.full_name)}${p.checked_in_at ? ' ✓' : ''}</td>
+        ${gearColumns.map(f => {
+          const v = gear[f.field_key];
+          const show = (v && v !== 'Own gear' && v !== 'None') ? v : '—';
+          return `<td>${escapeHtml(show)}</td>`;
+        }).join('')}
+        <td>${escapeHtml(p.notes)}</td>
+      </tr>`;
+    }).join('');
+    return `
+      <div class="manifest-group">
+        <h3>${escapeHtml(g.contact_name) || 'Group ' + (i + 1)}${g.contact_phone ? ' · ' + escapeHtml(g.contact_phone) : ''}</h3>
+        ${g.notes ? `<p class="manifest-group-notes">${escapeHtml(g.notes)}</p>` : ''}
+        <table>
+          <thead><tr><th>Guest</th>${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}<th>Notes</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="${gearColumns.length + 2}">No guests</td></tr>`}</tbody>
+        </table>
+      </div>
+    `;
+  }).join('');
+
+  const crewNames = tripCrewCache.map(c => c.full_name).join(', ') || 'No crew assigned';
+
+  const html = `<!DOCTYPE html>
+<html><head><title>Trip Manifest — ${date}</title>
+<style>
+  body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+  h3 { font-size: 15px; margin: 20px 0 4px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+  .manifest-group-notes { font-size: 13px; color: #555; margin: 4px 0 8px; font-style: italic; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; text-align: left; }
+  th { background: #f2f6fa; }
+  @media print { body { padding: 10px; } }
+</style>
+</head><body>
+  <h1>${escapeHtml(tripType ? tripType.name : 'Trip')} Manifest</h1>
+  <div class="meta">${date} · ${time ? time.slice(0,5) : ''}${arrival ? ' – ' + arrival.slice(0,5) : ''} · ${escapeHtml(boatName)} · Crew: ${escapeHtml(crewNames)}</div>
+  ${groupsHtml || '<p>No groups on this trip.</p>'}
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { alert('Please allow pop-ups to print the manifest.'); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+}
 
 // ─── TRIP CREW ───
 let tripCrewCache = [];
