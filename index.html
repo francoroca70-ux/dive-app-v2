@@ -2151,17 +2151,25 @@ body { background: var(--navy); color: var(--text); }
         </div>
 
         <div id="reports-no-location" style="display:none;">
-          <p style="color:var(--muted);">Select a location above to view reports.</p>
+          <p style="color:var(--muted);">Set up your organisation in Settings first.</p>
         </div>
 
         <div id="reports-content">
           <div class="inline-form" style="margin-bottom:20px;">
+            <div class="sf-group" style="max-width:340px;margin-bottom:0;">
+              <label class="sf-label">Viewing</label>
+              <select class="sf-input" id="reports-scope-select"><option value="all">All shops (combined)</option></select>
+            </div>
+          </div>
+
+          <div class="inline-form" style="margin-bottom:20px;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
               <div class="card-section-title" style="margin-bottom:0;">Date range</div>
-              <div style="display:flex;gap:6px;">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 <button class="btn-cancel" id="reports-range-7" style="padding:6px 12px;font-size:0.8rem;">7 days</button>
                 <button class="btn-save" id="reports-range-30" style="padding:6px 12px;font-size:0.8rem;">30 days</button>
                 <button class="btn-cancel" id="reports-range-90" style="padding:6px 12px;font-size:0.8rem;">90 days</button>
+                <button class="btn-cancel" id="reports-range-365" style="padding:6px 12px;font-size:0.8rem;">1 year</button>
               </div>
             </div>
             <div class="sf-row" style="margin-top:12px;">
@@ -2192,14 +2200,20 @@ body { background: var(--navy); color: var(--text); }
             </div>
           </div>
 
-          <div class="card">
+          <div class="card" id="rep-location-pie-wrap" style="display:none;">
+            <div class="card-section-title">Revenue by shop</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Which shop is bringing in the most revenue in this range.</p>
+            <div id="rep-location-pie"></div>
+          </div>
+
+          <div class="card" id="rep-discrepancy-card">
             <div class="card-section-title">Cash discrepancies</div>
             <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Counted cash vs expected cash on days the register was closed out. Bars above the line are cash over, below the line is cash short.</p>
             <div id="rep-discrepancy-chart"></div>
             <div id="rep-discrepancy-list" style="margin-top:14px;"></div>
           </div>
 
-          <div class="card">
+          <div class="card" id="rep-missed-card">
             <div class="card-section-title">Missed cash-ups</div>
             <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Days with payments logged but no register close-out.</p>
             <div id="rep-missed-list"></div>
@@ -2213,12 +2227,18 @@ body { background: var(--navy); color: var(--text); }
 
           <div class="card">
             <div class="card-section-title">Revenue by trip type</div>
-            <div id="rep-trip-type-bars"></div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:220px;" id="rep-trip-type-bars"></div>
+              <div style="flex:1;min-width:220px;" id="rep-trip-type-pie"></div>
+            </div>
           </div>
 
           <div class="card">
             <div class="card-section-title">Revenue by boat</div>
-            <div id="rep-boat-bars"></div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:220px;" id="rep-boat-bars"></div>
+              <div style="flex:1;min-width:220px;" id="rep-boat-pie"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -4751,7 +4771,7 @@ function setReportsPresetRange(days) {
   const { start, end } = reportsDefaultRange(days);
   document.getElementById('reports-start-date').value = start;
   document.getElementById('reports-end-date').value = end;
-  [7, 30, 90].forEach(d => {
+  [7, 30, 90, 365].forEach(d => {
     const btn = document.getElementById('reports-range-' + d);
     btn.className = d === days ? 'btn-save' : 'btn-cancel';
     btn.style.padding = '6px 12px';
@@ -4762,8 +4782,24 @@ function setReportsPresetRange(days) {
 document.getElementById('reports-range-7').addEventListener('click', () => setReportsPresetRange(7));
 document.getElementById('reports-range-30').addEventListener('click', () => setReportsPresetRange(30));
 document.getElementById('reports-range-90').addEventListener('click', () => setReportsPresetRange(90));
+document.getElementById('reports-range-365').addEventListener('click', () => setReportsPresetRange(365));
 document.getElementById('reports-start-date').addEventListener('change', loadReports);
 document.getElementById('reports-end-date').addEventListener('change', loadReports);
+
+window.reportsScope = 'all';
+async function populateReportsScopeSelect() {
+  if (!currentOrgId) return;
+  const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId).order('name');
+  const sel = document.getElementById('reports-scope-select');
+  const prev = sel.value || window.reportsScope || 'all';
+  sel.innerHTML = '<option value="all">All shops (combined)</option>' + (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  window.reportsScope = sel.value;
+}
+document.getElementById('reports-scope-select').addEventListener('change', function () {
+  window.reportsScope = this.value;
+  loadReports();
+});
 
 function reportsDateBuckets(startDate, endDate) {
   const buckets = [];
@@ -4775,7 +4811,11 @@ function reportsDateBuckets(startDate, endDate) {
   }
   return buckets;
 }
-function reportsShouldGroupWeekly(buckets) { return buckets.length > 31; }
+function reportsBucketMode(buckets) {
+  if (buckets.length > 180) return 'monthly';
+  if (buckets.length > 31) return 'weekly';
+  return 'daily';
+}
 function reportsWeekBucketLabel(dateStr) {
   const d = new Date(dateStr + 'T12:00:00');
   const day = d.getDay();
@@ -4784,10 +4824,57 @@ function reportsWeekBucketLabel(dateStr) {
   monday.setDate(d.getDate() + diffToMonday);
   return monday.toISOString().split('T')[0];
 }
-function reportsFormatBucketLabel(key, isWeekly) {
+function reportsMonthBucketLabel(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+}
+function reportsBucketKey(dateStr, mode) {
+  if (mode === 'weekly') return reportsWeekBucketLabel(dateStr);
+  if (mode === 'monthly') return reportsMonthBucketLabel(dateStr);
+  return dateStr;
+}
+function reportsFormatBucketLabel(key, mode) {
   const d = new Date(key + 'T12:00:00');
+  if (mode === 'monthly') return d.toLocaleDateString([], { month: 'short', year: '2-digit' });
   const label = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  return isWeekly ? 'Wk ' + label : label;
+  return mode === 'weekly' ? 'Wk ' + label : label;
+}
+
+const PIE_PALETTE = ['var(--blue)', 'var(--teal)', '#f6ad55', '#68d391', '#fc8181', '#b794f4', '#63b3ed', '#f6e05e', '#4fd1c5', '#ed64a6'];
+function pieColor(i) { return PIE_PALETTE[i % PIE_PALETTE.length]; }
+function reportsPolarPoint(cx, cy, r, angleDeg) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+function svgPieChart(entries) {
+  const total = entries.reduce((s, e) => s + e.value, 0);
+  if (total <= 0) return '<p style="font-size:0.83rem;color:var(--muted)">No data in this range.</p>';
+  const size = 160, cx = size / 2, cy = size / 2, r = size / 2 - 4;
+  let angle = 0;
+  let slices = '';
+  entries.forEach(e => {
+    const sliceAngle = (e.value / total) * 360;
+    if (sliceAngle > 0.5) {
+      const start = reportsPolarPoint(cx, cy, r, angle + sliceAngle);
+      const end = reportsPolarPoint(cx, cy, r, angle);
+      const largeArc = sliceAngle > 180 ? 1 : 0;
+      slices += `<path d="M ${cx} ${cy} L ${end.x.toFixed(2)} ${end.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${start.x.toFixed(2)} ${start.y.toFixed(2)} Z" fill="${e.color}"></path>`;
+    }
+    angle += sliceAngle;
+  });
+  const legend = entries.map(e => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.78rem;padding:3px 0;">
+      <span style="display:flex;align-items:center;gap:6px;overflow:hidden;">
+        <span style="width:9px;height:9px;border-radius:2px;background:${e.color};flex-shrink:0;"></span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.label}</span>
+      </span>
+      <span style="font-weight:600;flex-shrink:0;">${(e.value / total * 100).toFixed(0)}%</span>
+    </div>
+  `).join('');
+  return `<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+    <svg viewBox="0 0 ${size} ${size}" style="width:140px;height:140px;flex-shrink:0;">${slices}</svg>
+    <div style="flex:1;min-width:140px;">${legend}</div>
+  </div>`;
 }
 
 function svgStackedBarChart(data) {
@@ -4862,13 +4949,21 @@ function renderHorizontalBars(map) {
 async function loadReports() {
   const noLocEl = document.getElementById('reports-no-location');
   const contentEl = document.getElementById('reports-content');
-  if (!currentOrgId || !currentLocationId) {
+  if (!currentOrgId) {
     noLocEl.style.display = 'block';
     contentEl.style.display = 'none';
     return;
   }
   noLocEl.style.display = 'none';
   contentEl.style.display = 'block';
+
+  await populateReportsScopeSelect();
+  const scope = window.reportsScope || 'all';
+  const isAllShops = scope === 'all';
+
+  document.getElementById('rep-discrepancy-card').style.display = isAllShops ? 'none' : 'block';
+  document.getElementById('rep-missed-card').style.display = isAllShops ? 'none' : 'block';
+  document.getElementById('rep-location-pie-wrap').style.display = isAllShops ? 'block' : 'none';
 
   const startInput = document.getElementById('reports-start-date');
   const endInput = document.getElementById('reports-end-date');
@@ -4880,44 +4975,50 @@ async function loadReports() {
   const startDate = startInput.value;
   const endDate = endInput.value;
 
-  const [{ data: payments }, { data: cashUps }, { data: expenses }] = await Promise.all([
-    sb.from('payments').select('amount, method, payment_date, trips(trip_type, boats(name))')
-      .eq('org_id', currentOrgId).eq('location_id', currentLocationId)
-      .gte('payment_date', startDate).lte('payment_date', endDate),
-    sb.from('cash_ups').select('*')
-      .eq('org_id', currentOrgId).eq('location_id', currentLocationId)
-      .gte('cash_up_date', startDate).lte('cash_up_date', endDate),
-    sb.from('cash_expenses').select('*')
-      .eq('org_id', currentOrgId).eq('location_id', currentLocationId)
-      .gte('expense_date', startDate).lte('expense_date', endDate)
-  ]);
+  let paymentsQuery = sb.from('payments').select('amount, method, payment_date, location_id, locations(name), trips(trip_type, boats(name))')
+    .eq('org_id', currentOrgId).gte('payment_date', startDate).lte('payment_date', endDate);
+  let expensesQuery = sb.from('cash_expenses').select('*')
+    .eq('org_id', currentOrgId).gte('expense_date', startDate).lte('expense_date', endDate);
+  if (!isAllShops) {
+    paymentsQuery = paymentsQuery.eq('location_id', scope);
+    expensesQuery = expensesQuery.eq('location_id', scope);
+  }
+  const queries = [paymentsQuery, expensesQuery];
+  if (!isAllShops) {
+    queries.push(sb.from('cash_ups').select('*').eq('org_id', currentOrgId).eq('location_id', scope)
+      .gte('cash_up_date', startDate).lte('cash_up_date', endDate));
+  }
+  const results = await Promise.all(queries);
+  const payments = results[0].data || [];
+  const expenses = results[1].data || [];
+  const cashUps = isAllShops ? [] : (results[2].data || []);
 
-  renderRevenueReport(payments || [], startDate, endDate);
-  renderDiscrepancyReport(cashUps || []);
-  renderMissedCashUps(payments || [], cashUps || []);
-  renderExpenseReport(expenses || [], startDate, endDate);
-  renderTripTypeAndBoatBreakdown(payments || []);
+  renderRevenueReport(payments, startDate, endDate);
+  if (isAllShops) {
+    renderLocationBreakdown(payments);
+  } else {
+    renderDiscrepancyReport(cashUps);
+    renderMissedCashUps(payments, cashUps);
+  }
+  renderExpenseReport(expenses, startDate, endDate);
+  renderTripTypeAndBoatBreakdown(payments);
 }
 
 function renderRevenueReport(payments, startDate, endDate) {
   const dayBuckets = reportsDateBuckets(startDate, endDate);
-  const groupWeekly = reportsShouldGroupWeekly(dayBuckets);
+  const mode = reportsBucketMode(dayBuckets);
   const bucketMap = {};
   const bucketKeys = [];
-  if (groupWeekly) {
-    const seen = new Set();
-    dayBuckets.forEach(d => {
-      const wk = reportsWeekBucketLabel(d);
-      if (!seen.has(wk)) { seen.add(wk); bucketKeys.push(wk); bucketMap[wk] = { cash: 0, card: 0, transfer: 0 }; }
-    });
-  } else {
-    dayBuckets.forEach(d => { bucketKeys.push(d); bucketMap[d] = { cash: 0, card: 0, transfer: 0 }; });
-  }
+  const seen = new Set();
+  dayBuckets.forEach(d => {
+    const key = reportsBucketKey(d, mode);
+    if (!seen.has(key)) { seen.add(key); bucketKeys.push(key); bucketMap[key] = { cash: 0, card: 0, transfer: 0 }; }
+  });
   let totalCash = 0, totalCard = 0, totalTransfer = 0;
   payments.forEach(p => {
     const amount = parseFloat(p.amount) || 0;
     const method = (p.method || '').toLowerCase();
-    const key = groupWeekly ? reportsWeekBucketLabel(p.payment_date) : p.payment_date;
+    const key = reportsBucketKey(p.payment_date, mode);
     if (!bucketMap[key]) bucketMap[key] = { cash: 0, card: 0, transfer: 0 };
     if (method === 'cash') { bucketMap[key].cash += amount; totalCash += amount; }
     else if (method === 'card') { bucketMap[key].card += amount; totalCard += amount; }
@@ -4929,7 +5030,7 @@ function renderRevenueReport(payments, startDate, endDate) {
   document.getElementById('rep-total-revenue').textContent = '$' + (totalCash + totalCard + totalTransfer).toFixed(2);
 
   const chartData = bucketKeys.map(k => ({
-    label: reportsFormatBucketLabel(k, groupWeekly),
+    label: reportsFormatBucketLabel(k, mode),
     segments: [
       { value: bucketMap[k].cash, color: 'var(--blue)' },
       { value: bucketMap[k].card, color: 'var(--teal)' },
@@ -4939,6 +5040,17 @@ function renderRevenueReport(payments, startDate, endDate) {
   document.getElementById('rep-revenue-chart').innerHTML = chartData.every(d => d.segments.every(s => s.value === 0))
     ? '<p style="font-size:0.83rem;color:var(--muted)">No payments logged in this range.</p>'
     : svgStackedBarChart(chartData);
+}
+
+function renderLocationBreakdown(payments) {
+  const byLocation = {};
+  payments.forEach(p => {
+    const amount = parseFloat(p.amount) || 0;
+    const locName = p.locations?.name || 'Unknown shop';
+    byLocation[locName] = (byLocation[locName] || 0) + amount;
+  });
+  const entries = Object.entries(byLocation).sort((a, b) => b[1] - a[1]).map(([label, value], i) => ({ label, value, color: pieColor(i) }));
+  document.getElementById('rep-location-pie').innerHTML = svgPieChart(entries);
 }
 
 function renderDiscrepancyReport(cashUps) {
@@ -4998,28 +5110,24 @@ function renderMissedCashUps(payments, cashUps) {
 
 function renderExpenseReport(expenses, startDate, endDate) {
   const dayBuckets = reportsDateBuckets(startDate, endDate);
-  const groupWeekly = reportsShouldGroupWeekly(dayBuckets);
+  const mode = reportsBucketMode(dayBuckets);
   const bucketMap = {};
   const bucketKeys = [];
-  if (groupWeekly) {
-    const seen = new Set();
-    dayBuckets.forEach(d => {
-      const wk = reportsWeekBucketLabel(d);
-      if (!seen.has(wk)) { seen.add(wk); bucketKeys.push(wk); bucketMap[wk] = 0; }
-    });
-  } else {
-    dayBuckets.forEach(d => { bucketKeys.push(d); bucketMap[d] = 0; });
-  }
+  const seen = new Set();
+  dayBuckets.forEach(d => {
+    const key = reportsBucketKey(d, mode);
+    if (!seen.has(key)) { seen.add(key); bucketKeys.push(key); bucketMap[key] = 0; }
+  });
   let total = 0;
   expenses.forEach(e => {
     const amount = parseFloat(e.amount) || 0;
     total += amount;
-    const key = groupWeekly ? reportsWeekBucketLabel(e.expense_date) : e.expense_date;
+    const key = reportsBucketKey(e.expense_date, mode);
     if (bucketMap[key] === undefined) bucketMap[key] = 0;
     bucketMap[key] += amount;
   });
   const chartData = bucketKeys.map(k => ({
-    label: reportsFormatBucketLabel(k, groupWeekly),
+    label: reportsFormatBucketLabel(k, mode),
     segments: [{ value: bucketMap[k], color: 'var(--error)' }]
   }));
   document.getElementById('rep-expense-chart').innerHTML = total === 0
@@ -5040,6 +5148,10 @@ function renderTripTypeAndBoatBreakdown(payments) {
   });
   document.getElementById('rep-trip-type-bars').innerHTML = renderHorizontalBars(byTripType);
   document.getElementById('rep-boat-bars').innerHTML = renderHorizontalBars(byBoat);
+  const tripTypeEntries = Object.entries(byTripType).sort((a, b) => b[1] - a[1]).map(([label, value], i) => ({ label, value, color: pieColor(i) }));
+  const boatEntries = Object.entries(byBoat).sort((a, b) => b[1] - a[1]).map(([label, value], i) => ({ label, value, color: pieColor(i) }));
+  document.getElementById('rep-trip-type-pie').innerHTML = svgPieChart(tripTypeEntries);
+  document.getElementById('rep-boat-pie').innerHTML = svgPieChart(boatEntries);
 }
 // ─── END REPORTS ───
 
