@@ -1289,10 +1289,6 @@ body { background: var(--navy); color: var(--text); }
                 <select class="sf-input" id="trip-type-select"></select>
               </div>
 
-              <div class="warning-banner" id="private-charter-warning" style="display:none;">
-                Private Charter — this boat will be exclusively reserved for these hours.
-              </div>
-
               <div class="sf-group">
                 <label class="sf-label">Date <span class="required-star">*</span></label>
                 <input class="sf-input" type="date" id="trip-date">
@@ -3263,9 +3259,6 @@ async function onTripTypeChange() {
   // Auto-fill price
   const priceInput = document.getElementById('trip-price');
   if (tripType.default_price && !priceInput.value) priceInput.value = tripType.default_price;
-
-  // Private charter warning
-  document.getElementById('private-charter-warning').style.display = tripType.can_be_private ? 'block' : 'none';
 
   // Tank/dive fields
   document.getElementById('trip-tank-fields').style.display = tripType.needs_tank_count ? 'block' : 'none';
