@@ -1134,6 +1134,10 @@ body { background: var(--navy); color: var(--text); }
           <select class="sf-input" id="bdm-gear"><option value="">— Not linked to registered gear —</option></select>
         </div>
         <div class="sf-group">
+          <label class="sf-label">Title</label>
+          <input class="sf-input" type="text" id="bdm-title" placeholder="e.g. Anchor rope replacement">
+        </div>
+        <div class="sf-group">
           <label class="sf-label">What was done</label>
           <textarea class="sf-input" id="bdm-description" rows="2" placeholder="e.g. Replaced anchor rope"></textarea>
         </div>
@@ -2018,6 +2022,10 @@ body { background: var(--navy); color: var(--text); }
               <label class="sf-label">Registered gear item (optional)</label>
               <select class="sf-input" id="maint-gear"><option value="">— Not linked to registered gear —</option></select>
             </div>
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Title</label>
+            <input class="sf-input" type="text" id="maint-title" placeholder="e.g. Anchor rope replacement">
           </div>
           <div class="sf-group">
             <label class="sf-label">What was done</label>
@@ -6535,6 +6543,7 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   const feedback = document.getElementById('bdm-feedback');
   const boatId = window.currentBoatDetailId;
   const gearId = document.getElementById('bdm-gear').value || null;
+  const title = document.getElementById('bdm-title').value.trim();
   const date = document.getElementById('bdm-date').value;
   const description = document.getElementById('bdm-description').value.trim();
   const parts = document.getElementById('bdm-parts').value.trim();
@@ -6543,8 +6552,8 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   const performedBy = document.getElementById('bdm-performed-by').value.trim();
   const nextDue = document.getElementById('bdm-next-due').value;
 
-  if (!description || !date) {
-    feedback.textContent = 'Date and description are required.';
+  if (!title || !description || !date) {
+    feedback.textContent = 'Title, date and description are required.';
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -6555,6 +6564,7 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
     org_id: currentOrgId,
     boat_id: boatId,
     gear_id: gearId,
+    title: title,
     performed_date: date,
     description: description,
     parts_used: parts || null,
@@ -6572,6 +6582,7 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
     return;
   }
 
+  document.getElementById('bdm-title').value = '';
   document.getElementById('bdm-description').value = '';
   document.getElementById('bdm-parts').value = '';
   document.getElementById('bdm-cost').value = '';
@@ -6602,8 +6613,8 @@ function renderBoatDetailMaintenance(logs) {
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div>
-          <h2 style="margin-bottom:2px;">${l.gear?.name || 'General'}</h2>
-          <p style="font-size:0.8rem;color:var(--muted);">${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
+          <h2 style="margin-bottom:2px;">${l.title}</h2>
+          <p style="font-size:0.8rem;color:var(--muted);">${l.gear?.name ? l.gear.name + ' · ' : ''}${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
         </div>
         <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', true)">Remove</button>
       </div>
@@ -6962,6 +6973,7 @@ document.getElementById('btn-save-maintenance').addEventListener('click', async 
   const feedback = document.getElementById('maintenance-save-feedback');
   const boatId = document.getElementById('maint-boat').value || null;
   const gearId = document.getElementById('maint-gear').value || null;
+  const title = document.getElementById('maint-title').value.trim();
   const date = document.getElementById('maint-date').value;
   const description = document.getElementById('maint-description').value.trim();
   const parts = document.getElementById('maint-parts').value.trim();
@@ -6970,8 +6982,8 @@ document.getElementById('btn-save-maintenance').addEventListener('click', async 
   const performedBy = document.getElementById('maint-performed-by').value.trim();
   const nextDue = document.getElementById('maint-next-due').value;
 
-  if (!description || !date) {
-    feedback.textContent = 'Date and description are required.';
+  if (!title || !description || !date) {
+    feedback.textContent = 'Title, date and description are required.';
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -6982,6 +6994,7 @@ document.getElementById('btn-save-maintenance').addEventListener('click', async 
     org_id: currentOrgId,
     boat_id: boatId,
     gear_id: gearId,
+    title: title,
     performed_date: date,
     description: description,
     parts_used: parts || null,
@@ -6999,6 +7012,7 @@ document.getElementById('btn-save-maintenance').addEventListener('click', async 
     return;
   }
 
+  document.getElementById('maint-title').value = '';
   document.getElementById('maint-description').value = '';
   document.getElementById('maint-parts').value = '';
   document.getElementById('maint-cost').value = '';
@@ -7033,14 +7047,14 @@ function renderMaintenanceLogs(logs) {
   }
   const today = new Date().toISOString().split('T')[0];
   list.innerHTML = logs.map(l => {
-    const label = l.gear?.name || l.boats?.name || 'General';
+    const context = [l.boats?.name, l.gear?.name].filter(Boolean).join(' · ') || 'General';
     const dueSoon = l.next_due_date && l.next_due_date <= today;
     return `
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div>
-          <h2 style="margin-bottom:2px;">${label}</h2>
-          <p style="font-size:0.8rem;color:var(--muted);">${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.boats?.name && l.gear?.name ? ' · ' + l.boats.name : ''}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
+          <h2 style="margin-bottom:2px;">${l.title}</h2>
+          <p style="font-size:0.8rem;color:var(--muted);">${context} · ${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
         </div>
         <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}')">Remove</button>
       </div>
