@@ -1129,9 +1129,15 @@ body { background: var(--navy); color: var(--text); }
         <button class="btn-save" id="btn-show-add-boat-maintenance" style="padding:6px 12px;font-size:0.82rem;">+ Log maintenance</button>
       </div>
       <div class="inline-form" id="form-add-boat-maintenance" style="display:none;margin-bottom:16px;">
-        <div class="sf-group">
-          <label class="sf-label">Registered gear item (optional)</label>
-          <select class="sf-input" id="bdm-gear"><option value="">— Not linked to registered gear —</option></select>
+        <div class="sf-row">
+          <div class="sf-group">
+            <label class="sf-label">Engine (optional)</label>
+            <select class="sf-input" id="bdm-engine"><option value="">— Not engine-specific —</option></select>
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Registered gear item (optional)</label>
+            <select class="sf-input" id="bdm-gear"><option value="">— Not linked to registered gear —</option></select>
+          </div>
         </div>
         <div class="sf-group">
           <label class="sf-label">Title</label>
@@ -2186,9 +2192,13 @@ body { background: var(--navy); color: var(--text); }
               <select class="sf-input" id="maint-boat"><option value="">— Not boat-specific —</option></select>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Registered gear item (optional)</label>
-              <select class="sf-input" id="maint-gear"><option value="">— Not linked to registered gear —</option></select>
+              <label class="sf-label">Engine (optional)</label>
+              <select class="sf-input" id="maint-engine"><option value="">— Not engine-specific —</option></select>
             </div>
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Registered gear item (optional)</label>
+            <select class="sf-input" id="maint-gear"><option value="">— Not linked to registered gear —</option></select>
           </div>
           <div class="sf-group">
             <label class="sf-label">Title</label>
@@ -6620,11 +6630,13 @@ async function loadBoatDetailEngines(boatId) {
   list.innerHTML = '';
   for (const e of engines) {
     const { data: logs } = await sb.from('engine_hour_logs').select('*').eq('engine_id', e.id).order('logged_at', {ascending:false}).limit(5);
-    list.innerHTML += renderEngineCard(e, logs || []);
+    const { data: maintLogs } = await sb.from('maintenance_logs').select('*').eq('engine_id', e.id).order('performed_date', {ascending:false}).limit(5);
+    list.innerHTML += renderEngineCard(e, logs || [], maintLogs || []);
   }
 }
 
-function renderEngineCard(e, logs) {
+function renderEngineCard(e, logs, maintLogs) {
+  maintLogs = maintLogs || [];
   const pct = Math.min(100, (e.current_hours / e.service_interval_hours) * 100);
   const remaining = Math.max(0, e.service_interval_hours - e.current_hours).toFixed(1);
   const warn = remaining <= 10;
@@ -6655,6 +6667,14 @@ function renderEngineCard(e, logs) {
       <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?' · <strong style="color:var(--success)">Serviced</strong>':''}</span>
       <span>${l.event_type==='service' ? '' : l.hours_run+'h'}</span>
     </div>`).join('') : '<p style="font-size:0.8rem;color:var(--muted)">No logs yet.</p>'}
+    <div class="card-section-title" style="margin-top:16px;">Maintenance</div>
+    ${maintLogs.length ? maintLogs.map(m => `<div style="font-size:0.8rem;padding:6px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;">
+        <strong>${m.title}</strong>
+        <span style="color:var(--muted);">${new Date(m.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+      </div>
+      <div style="color:var(--muted);margin-top:2px;">${m.description}${m.performed_by ? ' · ' + m.performed_by : ''}</div>
+    </div>`).join('') : '<p style="font-size:0.8rem;color:var(--muted)">No maintenance logged for this engine yet.</p>'}
   </div>`;
 }
 
@@ -6691,6 +6711,7 @@ document.getElementById('btn-show-add-boat-maintenance').addEventListener('click
     document.getElementById('bdm-date').value = new Date().toISOString().split('T')[0];
   }
   populateBoatDetailMaintenanceGearSelect();
+  populateBoatDetailMaintenanceEngineSelect();
 });
 document.getElementById('btn-cancel-boat-maintenance').addEventListener('click', () => {
   document.getElementById('form-add-boat-maintenance').style.display = 'none';
@@ -6705,10 +6726,22 @@ async function populateBoatDetailMaintenanceGearSelect() {
     (gear || []).map(g => `<option value="${g.id}">${g.name}${g.serial_number ? ' (' + g.serial_number + ')' : ''}</option>`).join('');
 }
 
+async function populateBoatDetailMaintenanceEngineSelect() {
+  const boatId = window.currentBoatDetailId;
+  const sel = document.getElementById('bdm-engine');
+  if (!boatId) {
+    sel.innerHTML = '<option value="">— Not engine-specific —</option>';
+    return;
+  }
+  const { data: engines } = await sb.from('engines').select('id, name').eq('boat_id', boatId).order('name');
+  sel.innerHTML = '<option value="">— Not engine-specific —</option>' + (engines || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+}
+
 document.getElementById('btn-save-boat-maintenance').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-boat-maintenance');
   const feedback = document.getElementById('bdm-feedback');
   const boatId = window.currentBoatDetailId;
+  const engineId = document.getElementById('bdm-engine').value || null;
   const gearId = document.getElementById('bdm-gear').value || null;
   const title = document.getElementById('bdm-title').value.trim();
   const date = document.getElementById('bdm-date').value;
@@ -6730,6 +6763,7 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   const { error } = await sb.from('maintenance_logs').insert({
     org_id: currentOrgId,
     boat_id: boatId,
+    engine_id: engineId,
     gear_id: gearId,
     title: title,
     performed_date: date,
@@ -6757,13 +6791,15 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   document.getElementById('bdm-performed-by').value = '';
   document.getElementById('bdm-next-due').value = '';
   document.getElementById('bdm-gear').value = '';
+  document.getElementById('bdm-engine').value = '';
   document.getElementById('form-add-boat-maintenance').style.display = 'none';
   document.getElementById('btn-show-add-boat-maintenance').style.display = 'inline-block';
+  await loadBoatDetailEngines(boatId);
   await loadBoatDetailMaintenance(boatId);
 });
 
 async function loadBoatDetailMaintenance(boatId) {
-  const { data: logs } = await sb.from('maintenance_logs').select('*, gear(name)').eq('boat_id', boatId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
+  const { data: logs } = await sb.from('maintenance_logs').select('*, engines(name), gear(name)').eq('boat_id', boatId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
   renderBoatDetailMaintenance(logs || []);
 }
 
@@ -6781,7 +6817,7 @@ function renderBoatDetailMaintenance(logs) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div>
           <h2 style="margin-bottom:2px;">${l.title}</h2>
-          <p style="font-size:0.8rem;color:var(--muted);">${l.gear?.name ? l.gear.name + ' · ' : ''}${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
+          <p style="font-size:0.8rem;color:var(--muted);">${[l.engines?.name, l.gear?.name].filter(Boolean).join(' · ')}${l.engines?.name || l.gear?.name ? ' · ' : ''}${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
         </div>
         <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', true)">Remove</button>
       </div>
@@ -7393,6 +7429,20 @@ async function populateMaintenanceBoatSelects() {
   filterSel.value = keepFilter;
 }
 
+async function populateMaintenanceEngineSelect(boatId) {
+  const sel = document.getElementById('maint-engine');
+  if (!boatId) {
+    sel.innerHTML = '<option value="">— Not engine-specific —</option>';
+    return;
+  }
+  const { data: engines } = await sb.from('engines').select('id, name').eq('boat_id', boatId).order('name');
+  sel.innerHTML = '<option value="">— Not engine-specific —</option>' + (engines || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+}
+
+document.getElementById('maint-boat').addEventListener('change', function() {
+  populateMaintenanceEngineSelect(this.value);
+});
+
 async function populateMaintenanceGearSelect() {
   if (!currentOrgId) return;
   const { data: gear } = await sb.from('gear').select('id, name, category, serial_number').eq('org_id', currentOrgId).order('name');
@@ -7420,6 +7470,7 @@ document.getElementById('btn-save-maintenance').addEventListener('click', async 
   const btn = document.getElementById('btn-save-maintenance');
   const feedback = document.getElementById('maintenance-save-feedback');
   const boatId = document.getElementById('maint-boat').value || null;
+  const engineId = document.getElementById('maint-engine').value || null;
   const gearId = document.getElementById('maint-gear').value || null;
   const title = document.getElementById('maint-title').value.trim();
   const date = document.getElementById('maint-date').value;
@@ -7441,6 +7492,7 @@ document.getElementById('btn-save-maintenance').addEventListener('click', async 
   const { error } = await sb.from('maintenance_logs').insert({
     org_id: currentOrgId,
     boat_id: boatId,
+    engine_id: engineId,
     gear_id: gearId,
     title: title,
     performed_date: date,
@@ -7469,6 +7521,7 @@ document.getElementById('btn-save-maintenance').addEventListener('click', async 
   document.getElementById('maint-next-due').value = '';
   document.getElementById('maint-boat').value = '';
   document.getElementById('maint-gear').value = '';
+  await populateMaintenanceEngineSelect('');
   document.getElementById('form-add-maintenance').style.display = 'none';
   document.getElementById('btn-show-add-maintenance').style.display = 'inline-block';
   await loadMaintenanceLogs();
@@ -7481,7 +7534,7 @@ async function loadMaintenanceLogs() {
   await populateMaintenanceBoatSelects();
   await populateMaintenanceGearSelect();
   const boatFilter = document.getElementById('maint-filter-boat').value;
-  let query = sb.from('maintenance_logs').select('*, boats(name), gear(name)').eq('org_id', currentOrgId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
+  let query = sb.from('maintenance_logs').select('*, boats(name), engines(name), gear(name)').eq('org_id', currentOrgId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
   if (boatFilter) query = query.eq('boat_id', boatFilter);
   const { data: logs } = await query;
   renderMaintenanceLogs(logs || []);
@@ -7495,7 +7548,7 @@ function renderMaintenanceLogs(logs) {
   }
   const today = new Date().toISOString().split('T')[0];
   list.innerHTML = logs.map(l => {
-    const context = [l.boats?.name, l.gear?.name].filter(Boolean).join(' · ') || 'General';
+    const context = [l.boats?.name, l.engines?.name, l.gear?.name].filter(Boolean).join(' · ') || 'General';
     const dueSoon = l.next_due_date && l.next_due_date <= today;
     return `
     <div class="card" style="margin-bottom:12px;">
