@@ -1049,6 +1049,47 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-signature" style="display:none;z-index:300;">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h2>Sign Waiver</h2>
+      <button class="modal-close" id="modal-signature-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p id="signature-guest-name" style="font-weight:600;color:var(--navy);margin-bottom:12px;"></p>
+      <div class="sf-group">
+        <label class="sf-label">Waiver type</label>
+        <select class="sf-input" id="signature-waiver-type">
+          <option value="liability">Liability Waiver</option>
+          <option value="minor">Minor / Youth Waiver</option>
+          <option value="freediving">Freediving / Apnea Waiver</option>
+          <option value="snorkel">Snorkel / Charter Waiver</option>
+          <option value="custom">Other</option>
+        </select>
+      </div>
+      <div class="radio-group" style="margin-top:6px;">
+        <div class="radio-btn selected" id="sig-method-digital" onclick="setSignMethod('digital')">Sign digitally</div>
+        <div class="radio-btn" id="sig-method-paper" onclick="setSignMethod('paper')">Logged on paper</div>
+      </div>
+      <div id="sig-canvas-wrap" style="margin-top:14px;">
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
+          <canvas id="signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
+        </div>
+        <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearSignatureCanvas()">Clear</button>
+      </div>
+      <div class="sf-group" style="margin-top:14px;">
+        <label class="sf-label">Notes (optional)</label>
+        <input class="sf-input" type="text" autocomplete="off" id="sig-notes" placeholder="e.g. Paper copy filed at front desk">
+      </div>
+      <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;">Enforceability of digital signatures varies by country and jurisdiction. Consult a local lawyer before relying on these documents legally.</div>
+      <div class="settings-actions" style="margin-top:14px;">
+        <button class="btn-save" id="btn-confirm-signature">Save Waiver</button>
+        <span class="save-feedback" id="signature-save-feedback"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-roster-cell" style="display:none;z-index:300;">
   <div class="modal-box" style="max-width:420px;">
     <div class="modal-body">
@@ -1774,6 +1815,54 @@ body { background: var(--navy); color: var(--text); }
         </div>
       </div>
 
+      <!-- WAIVERS -->
+      <div class="page" id="page-waivers">
+        <div class="page-header">
+          <h1>Waivers</h1>
+          <p>Digital signature collection for guests</p>
+        </div>
+        <div id="waivers-disabled-notice" style="display:none;">
+          <div class="coming-soon">
+            <div class="icon">📝</div>
+            <h3>Waivers aren't enabled yet</h3>
+            <p>Turn them on in Settings to start collecting digital signatures.</p>
+            <button class="btn-setup" onclick="showPage('settings')">Go to Settings</button>
+          </div>
+        </div>
+        <div id="waivers-main" style="display:none;">
+          <div class="card" id="card-waiver-export">
+            <h2>Export / Backup</h2>
+            <p class="card-desc">Download all signed waivers for a day as a single file you can save to your own computer.</p>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+              <input class="sf-input" type="date" id="waiver-export-date" style="width:auto;">
+              <button class="btn-save" id="btn-export-waivers">Export day's waivers</button>
+              <span class="save-feedback" id="waiver-export-feedback"></span>
+            </div>
+            <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;">For safety, export and save a copy of each day's waivers to your own computer at the end of every day.</div>
+          </div>
+          <div class="card" id="card-pending-waivers">
+            <h2>Pending Signatures — Today</h2>
+            <div id="pending-waivers-list"></div>
+          </div>
+          <div class="card" id="card-waiver-log">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <h2 style="margin-bottom:0;">Waiver Log</h2>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button class="btn-cancel" id="waiver-log-prev" style="padding:8px 12px;">←</button>
+                <input class="sf-input" type="date" id="waiver-log-date" style="width:auto;">
+                <button class="btn-cancel" id="waiver-log-next" style="padding:8px 12px;">→</button>
+              </div>
+            </div>
+            <div class="cl-tab-row" style="margin-top:10px;">
+              <div class="cl-tab active" id="waiver-log-view-daily" onclick="setWaiverLogView('daily')">Daily</div>
+              <div class="cl-tab" id="waiver-log-view-weekly" onclick="setWaiverLogView('weekly')">Weekly</div>
+            </div>
+            <input class="sf-input" type="text" id="waiver-log-search" placeholder="Search by guest name..." autocomplete="off" style="margin-top:10px;">
+            <div id="waiver-log-list" style="margin-top:12px;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- CASH-UP -->
       <div class="page" id="page-cashup">
         <div class="page-header">
@@ -1979,6 +2068,18 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
 
+        <!-- Waivers card -->
+        <div class="card" id="card-waivers-toggle">
+          <div class="card-section-title">Waivers</div>
+          <p class="card-desc">This is a digital signature collection tool only. Seven Seas does not provide, verify, or take responsibility for waiver content or legal validity.</p>
+          <p class="card-desc" style="margin-top:6px;">Enforceability of digital signatures varies by country and jurisdiction. <strong>Consult a local lawyer before relying on these documents legally.</strong> By enabling this feature you confirm your operation takes full responsibility for the legal validity of your forms.</p>
+          <div class="sf-group" style="display:flex;align-items:center;gap:12px;margin-top:10px;">
+            <input type="checkbox" id="chk-waivers-enabled" style="width:18px;height:18px;">
+            <label class="sf-label" for="chk-waivers-enabled" style="margin:0;">Enable Waivers for this operation</label>
+          </div>
+          <span class="save-feedback" id="waivers-toggle-feedback"></span>
+        </div>
+
         <!-- Trip Types card -->
         <div class="card" id="card-trip-types">
           <div class="card-section-title">Trip Types</div>
@@ -2064,6 +2165,7 @@ function showPage(id) {
   if (id === 'crew') loadCrew();
   if (id === 'cashup') { loadCashUp(); loadGuestTabs(); }
   if (id === 'tasks') loadTasks();
+  if (id === 'waivers') loadWaivers();
 }
 
 // ─── NAV ITEMS ───
@@ -2718,6 +2820,8 @@ async function loadSettings(user) {
       document.getElementById('org-notice-new').style.display = 'none';
       document.getElementById('chk-captain-elevated').checked = org.captain_elevated_permissions || false;
       window.currentCaptainElevated = org.captain_elevated_permissions || false;
+      document.getElementById('chk-waivers-enabled').checked = org.waivers_enabled || false;
+      window.waiversEnabled = org.waivers_enabled || false;
     }
 
     // Load locations
@@ -2761,6 +2865,17 @@ async function loadLocations() {
 }
 
 // Save org
+document.getElementById('chk-waivers-enabled').addEventListener('change', async function() {
+  const feedback = document.getElementById('waivers-toggle-feedback');
+  window.waiversEnabled = this.checked;
+  if (currentOrgId) {
+    await sb.from('organizations').update({ waivers_enabled: this.checked }).eq('id', currentOrgId);
+  }
+  feedback.textContent = 'Saved';
+  feedback.className = 'save-feedback visible';
+  setTimeout(() => feedback.className = 'save-feedback', 2000);
+});
+
 document.getElementById('btn-save-org').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-org');
   const feedback = document.getElementById('org-save-feedback');
@@ -4297,6 +4412,348 @@ async function printManifest() {
   win.document.close();
   win.focus();
   setTimeout(() => win.print(), 300);
+}
+
+// ─── WAIVERS ───
+const waiverTypeLabels = { liability: 'Liability Waiver', minor: 'Minor / Youth Waiver', freediving: 'Freediving / Apnea Waiver', snorkel: 'Snorkel / Charter Waiver', custom: 'Other' };
+
+async function loadWaivers() {
+  const disabledEl = document.getElementById('waivers-disabled-notice');
+  const mainEl = document.getElementById('waivers-main');
+  if (!window.waiversEnabled) {
+    disabledEl.style.display = 'block';
+    mainEl.style.display = 'none';
+    return;
+  }
+  disabledEl.style.display = 'none';
+  mainEl.style.display = 'block';
+
+  const exportDateEl = document.getElementById('waiver-export-date');
+  if (exportDateEl && !exportDateEl.value) exportDateEl.value = new Date().toISOString().split('T')[0];
+
+  if (!currentOrgId) return;
+  const today = new Date().toISOString().split('T')[0];
+
+  let tripsQuery = sb.from('trips').select('id, trip_time, trip_type, contact_name').eq('org_id', currentOrgId).eq('trip_date', today);
+  if (currentLocationId) tripsQuery = tripsQuery.eq('location_id', currentLocationId);
+  const { data: todaysTrips } = await tripsQuery;
+  const tripIds = (todaysTrips || []).map(t => t.id);
+  const tripById = {};
+  (todaysTrips || []).forEach(t => tripById[t.id] = t);
+
+  let participants = [];
+  if (tripIds.length) {
+    const { data } = await sb.from('participants').select('id, full_name, trip_id, group_id').in('trip_id', tripIds);
+    participants = data || [];
+  }
+
+  const participantIds = participants.map(p => p.id);
+  const signedIds = new Set();
+  if (participantIds.length) {
+    const { data: signed } = await sb.from('waivers').select('participant_id').in('participant_id', participantIds);
+    (signed || []).forEach(s => { if (s.participant_id) signedIds.add(s.participant_id); });
+  }
+
+  const pending = participants.filter(p => !signedIds.has(p.id));
+  const pendingListEl = document.getElementById('pending-waivers-list');
+  pendingListEl.innerHTML = pending.length ? pending.map(p => {
+    const trip = tripById[p.trip_id];
+    const tripLabel = trip ? `${trip.trip_type || 'Trip'}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
+    const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
+    return `<div class="participant-row">
+      <div>
+        <div class="p-name">${p.full_name}</div>
+        <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}</div>
+      </div>
+      <button class="btn-save" style="padding:6px 12px;font-size:0.82rem;" onclick="openSignWaiverModal('${p.id}','${p.trip_id}','${p.group_id || ''}','${nameEsc}')">Sign Waiver</button>
+    </div>`;
+  }).join('') : '<p style="font-size:0.85rem;color:var(--muted);">No pending guests for today\'s trips.</p>';
+
+  await renderWaiverLog();
+}
+
+function waiverLogRowHtml(w) {
+  return `<div class="participant-row">
+    <div>
+      <div class="p-name">${w.participants?.full_name || 'Unknown guest'}</div>
+      <div style="font-size:0.78rem;color:var(--muted);">${waiverTypeLabels[w.waiver_type] || w.waiver_type} · ${w.method === 'paper' ? 'Paper' : 'Digital'} · ${new Date(w.signed_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + w.signed_by_name : ''}</div>
+    </div>
+  </div>`;
+}
+
+window.waiverLogView = 'daily';
+
+function setWaiverLogView(view) {
+  window.waiverLogView = view;
+  document.getElementById('waiver-log-view-daily').classList.toggle('active', view === 'daily');
+  document.getElementById('waiver-log-view-weekly').classList.toggle('active', view === 'weekly');
+  document.getElementById('waiver-log-search').value = '';
+  renderWaiverLog();
+}
+
+async function renderWaiverLog() {
+  if (!currentOrgId) return;
+  const dateEl = document.getElementById('waiver-log-date');
+  if (!dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+  const date = dateEl.value;
+  const logListEl = document.getElementById('waiver-log-list');
+
+  let rangeStart, rangeEnd;
+  if (window.waiverLogView === 'weekly') {
+    const d = new Date(date + 'T12:00:00');
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    rangeStart = monday.toISOString().split('T')[0];
+    rangeEnd = sunday.toISOString().split('T')[0];
+  } else {
+    rangeStart = date;
+    rangeEnd = date;
+  }
+
+  let query = sb.from('waivers').select('*, participants(full_name)')
+    .eq('org_id', currentOrgId)
+    .gte('signed_at', rangeStart + 'T00:00:00')
+    .lte('signed_at', rangeEnd + 'T23:59:59')
+    .order('signed_at', { ascending: false });
+  if (currentLocationId) query = query.eq('location_id', currentLocationId);
+  const { data: log } = await query;
+
+  if (!log || !log.length) {
+    logListEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">No waivers signed ${window.waiverLogView === 'weekly' ? 'this week' : 'on this date'}.</p>`;
+    return;
+  }
+
+  if (window.waiverLogView === 'daily') {
+    logListEl.innerHTML = log.map(w => waiverLogRowHtml(w)).join('');
+  } else {
+    const byDate = {};
+    log.forEach(w => {
+      const d = w.signed_at.split('T')[0];
+      (byDate[d] = byDate[d] || []).push(w);
+    });
+    const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+    logListEl.innerHTML = dates.map(d => `
+      <div class="card-section-title" style="margin-top:14px;">${new Date(d + 'T12:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · ${byDate[d].length}</div>
+      ${byDate[d].map(w => waiverLogRowHtml(w)).join('')}
+    `).join('');
+  }
+}
+
+document.getElementById('waiver-log-date').addEventListener('change', renderWaiverLog);
+document.getElementById('waiver-log-prev').addEventListener('click', () => {
+  const el = document.getElementById('waiver-log-date');
+  const d = new Date(el.value + 'T12:00:00');
+  d.setDate(d.getDate() - (window.waiverLogView === 'weekly' ? 7 : 1));
+  el.value = d.toISOString().split('T')[0];
+  renderWaiverLog();
+});
+document.getElementById('waiver-log-next').addEventListener('click', () => {
+  const el = document.getElementById('waiver-log-date');
+  const d = new Date(el.value + 'T12:00:00');
+  d.setDate(d.getDate() + (window.waiverLogView === 'weekly' ? 7 : 1));
+  el.value = d.toISOString().split('T')[0];
+  renderWaiverLog();
+});
+
+document.getElementById('waiver-log-search').addEventListener('input', (e) => {
+  const term = e.target.value.trim();
+  clearTimeout(window._waiverSearchDebounce);
+  window._waiverSearchDebounce = setTimeout(() => {
+    if (term) searchWaiverLog(term);
+    else renderWaiverLog();
+  }, 250);
+});
+
+async function searchWaiverLog(term) {
+  if (!currentOrgId) return;
+  const logListEl = document.getElementById('waiver-log-list');
+  let query = sb.from('waivers').select('*, participants!inner(full_name)')
+    .eq('org_id', currentOrgId)
+    .ilike('participants.full_name', `%${term}%`)
+    .order('signed_at', { ascending: false })
+    .limit(50);
+  if (currentLocationId) query = query.eq('location_id', currentLocationId);
+  const { data: results } = await query;
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  if (!results || !results.length) {
+    logListEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">No waivers found for "${escapeHtml(term)}".</p>`;
+    return;
+  }
+  logListEl.innerHTML = results.map(w => waiverLogRowHtml(w)).join('');
+}
+
+window.currentSignatureParticipant = null;
+window.currentSignMethod = 'digital';
+
+function openSignWaiverModal(participantId, tripId, groupId, guestName) {
+  window.currentSignatureParticipant = { id: participantId, trip_id: tripId || null, group_id: groupId || null, full_name: guestName };
+  document.getElementById('signature-guest-name').textContent = guestName;
+  document.getElementById('signature-waiver-type').value = 'liability';
+  document.getElementById('sig-notes').value = '';
+  const feedback = document.getElementById('signature-save-feedback');
+  feedback.textContent = '';
+  feedback.className = 'save-feedback';
+  setSignMethod('digital');
+  document.getElementById('modal-signature').style.display = 'flex';
+  setTimeout(initSignatureCanvas, 50);
+}
+
+document.getElementById('modal-signature-close').addEventListener('click', () => {
+  document.getElementById('modal-signature').style.display = 'none';
+});
+
+function setSignMethod(method) {
+  window.currentSignMethod = method;
+  document.getElementById('sig-method-digital').classList.toggle('selected', method === 'digital');
+  document.getElementById('sig-method-paper').classList.toggle('selected', method === 'paper');
+  document.getElementById('sig-canvas-wrap').style.display = method === 'digital' ? 'block' : 'none';
+}
+
+let sigCanvas, sigCtx, sigDrawing = false, sigHasStroke = false;
+function initSignatureCanvas() {
+  sigCanvas = document.getElementById('signature-canvas');
+  if (!sigCanvas) return;
+  sigCtx = sigCanvas.getContext('2d');
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigCtx.strokeStyle = '#1a2b3c';
+  sigCtx.lineWidth = 2;
+  sigCtx.lineCap = 'round';
+  sigHasStroke = false;
+
+  const getPos = (e) => {
+    const rect = sigCanvas.getBoundingClientRect();
+    const scaleX = sigCanvas.width / rect.width;
+    const scaleY = sigCanvas.height / rect.height;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  };
+  const start = (e) => { sigDrawing = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); e.preventDefault(); };
+  const move = (e) => { if (!sigDrawing) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); sigHasStroke = true; e.preventDefault(); };
+  const end = () => { sigDrawing = false; };
+
+  sigCanvas.onmousedown = start; sigCanvas.onmousemove = move; sigCanvas.onmouseup = end; sigCanvas.onmouseleave = end;
+  sigCanvas.ontouchstart = start; sigCanvas.ontouchmove = move; sigCanvas.ontouchend = end;
+}
+
+function clearSignatureCanvas() {
+  if (!sigCtx || !sigCanvas) return;
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigHasStroke = false;
+}
+
+document.getElementById('btn-confirm-signature').addEventListener('click', async () => {
+  const feedback = document.getElementById('signature-save-feedback');
+  const sp = window.currentSignatureParticipant;
+  if (!sp) return;
+  const method = window.currentSignMethod || 'digital';
+  if (method === 'digital' && !sigHasStroke) {
+    feedback.textContent = 'Please draw a signature, or switch to "Logged on paper".';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: staffRow } = await sb.from('staff').select('full_name').eq('id', user.id).single();
+
+  const payload = {
+    org_id: currentOrgId,
+    location_id: currentLocationId || null,
+    participant_id: sp.id,
+    group_id: sp.group_id || null,
+    trip_id: sp.trip_id || null,
+    waiver_type: document.getElementById('signature-waiver-type').value,
+    method: method,
+    signature_data: method === 'digital' ? sigCanvas.toDataURL('image/png') : null,
+    notes: document.getElementById('sig-notes').value.trim() || null,
+    signed_by_name: staffRow?.full_name || null
+  };
+
+  const { error } = await sb.from('waivers').insert(payload);
+  if (error) {
+    feedback.textContent = 'Error saving waiver.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  document.getElementById('modal-signature').style.display = 'none';
+  await loadWaivers();
+});
+
+document.getElementById('btn-export-waivers').addEventListener('click', () => {
+  const date = document.getElementById('waiver-export-date').value || new Date().toISOString().split('T')[0];
+  exportWaiversForDay(date);
+});
+
+async function exportWaiversForDay(date) {
+  const feedback = document.getElementById('waiver-export-feedback');
+  feedback.textContent = 'Preparing export...';
+  feedback.className = 'save-feedback visible';
+
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  let query = sb.from('waivers').select('*, participants(full_name)')
+    .eq('org_id', currentOrgId)
+    .gte('signed_at', date + 'T00:00:00')
+    .lte('signed_at', date + 'T23:59:59')
+    .order('signed_at');
+  if (currentLocationId) query = query.eq('location_id', currentLocationId);
+  const { data, error } = await query;
+
+  if (error) {
+    feedback.textContent = 'Error loading waivers.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!data || !data.length) {
+    feedback.textContent = 'No waivers signed on this date.';
+    feedback.className = 'save-feedback visible';
+    return;
+  }
+
+  const rowsHtml = data.map(w => `
+    <div class="waiver-entry">
+      <div class="waiver-entry-header">
+        <strong>${escapeHtml(w.participants?.full_name || 'Unknown guest')}</strong>
+        <span>${waiverTypeLabels[w.waiver_type] || escapeHtml(w.waiver_type)}</span>
+        <span>${w.method === 'paper' ? 'Logged on paper' : 'Signed digitally'}</span>
+        <span>${new Date(w.signed_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+        <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
+      </div>
+      ${w.notes ? `<p class="waiver-entry-notes">${escapeHtml(w.notes)}</p>` : ''}
+      ${w.method === 'digital' && w.signature_data ? `<img src="${w.signature_data}" style="max-width:280px;border:1px solid #ccc;margin-top:6px;">` : '<p style="font-size:12px;color:#888;">Paper copy on file — no digital signature.</p>'}
+    </div>
+  `).join('');
+
+  const html = `<!DOCTYPE html>
+<html><head><title>Waivers — ${date}</title>
+<style>
+  body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+  .waiver-entry { border-bottom: 1px solid #ddd; padding: 14px 0; page-break-inside: avoid; }
+  .waiver-entry-header { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; align-items:baseline; }
+  .waiver-entry-notes { font-size: 12px; color: #555; font-style: italic; margin: 4px 0 0; }
+  @media print { body { padding: 10px; } }
+</style>
+</head><body>
+  <h1>Signed Waivers</h1>
+  <div class="meta">${date} · ${data.length} waiver${data.length === 1 ? '' : 's'}</div>
+  ${rowsHtml}
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    feedback.textContent = 'Please allow pop-ups to export.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+  feedback.textContent = '';
+  feedback.className = 'save-feedback';
 }
 
 // ─── TRIP CREW ───
