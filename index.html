@@ -6632,13 +6632,13 @@ function renderEngineCard(e, logs, maintLogs) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <h2>${e.name}</h2>
-        <p>Total hours: ${e.current_hours}h</p>
+        <p>Total hours: ${parseFloat(e.current_hours || 0).toFixed(1)}h</p>
       </div>
       <button class="btn-icon danger" onclick="deleteEngine('${e.id}')">Remove</button>
     </div>
     <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
     <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
-      ${e.current_hours}h / ${e.service_interval_hours}h since service — ${remaining}h remaining
+      ${parseFloat(e.current_hours || 0).toFixed(1)}h / ${e.service_interval_hours}h since service — ${remaining}h remaining
     </p>
     <div class="settings-actions">
       <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">Service Completed — Reset Counter</button>
@@ -7327,11 +7327,14 @@ function renderCompressorCard(c, logs) {
     ${warn ? `<div class="warning-banner caution" style="margin-top:12px;">Filter change due soon — ${remaining}h remaining. Plan it in.</div>` : ''}
     <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
     <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
-      ${c.current_hours}h / ${c.filter_interval_hours}h used — ${remaining}h remaining
+      ${parseFloat(c.current_hours || 0).toFixed(1)}h / ${c.filter_interval_hours}h used — ${remaining}h remaining
     </p>
     <div class="card-section-title">Log a Fill</div>
-    <input class="sf-input" type="text" id="comp-logby-${c.id}" placeholder="Who filled">
-    <div class="sf-row" style="margin-top:8px;">
+    <div class="sf-row">
+      <div class="sf-group">
+        <label class="sf-label">Who filled</label>
+        <input class="sf-input" type="text" id="comp-logby-${c.id}" placeholder="Name">
+      </div>
       <div class="sf-group">
         <label class="sf-label">Start time</label>
         <input class="sf-input" type="time" id="comp-start-${c.id}">
