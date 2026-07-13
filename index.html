@@ -1180,6 +1180,102 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-gear-detail" style="display:none;z-index:300;">
+  <div class="modal-box" style="max-width:600px;">
+    <div class="modal-header">
+      <h2 id="gear-detail-title">Gear item</h2>
+      <button class="modal-close" id="modal-gear-detail-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p id="gear-detail-summary" style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;"></p>
+
+      <div class="card-section-title">Status &amp; service dates</div>
+      <div class="sf-row">
+        <div class="sf-group">
+          <label class="sf-label">Status</label>
+          <select class="sf-input" id="gd-status">
+            <option value="active">Active</option>
+            <option value="in_repair">In repair</option>
+            <option value="retired">Retired</option>
+          </select>
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Last service</label>
+          <input class="sf-input" type="date" id="gd-last-service">
+        </div>
+      </div>
+      <div class="sf-row">
+        <div class="sf-group">
+          <label class="sf-label">Next service due</label>
+          <input class="sf-input" type="date" id="gd-next-service">
+        </div>
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Repair notes</label>
+        <textarea class="sf-input" id="gd-repair-notes" rows="2" placeholder="Optional"></textarea>
+      </div>
+      <div class="sf-group">
+        <label class="sf-label">Notes</label>
+        <textarea class="sf-input" id="gd-notes" rows="2" placeholder="Optional"></textarea>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-save" id="btn-save-gear-detail">Save</button>
+        <button class="btn-cancel" id="btn-delete-gear-item" style="color:var(--error);border-color:rgba(229,62,62,0.3);">Remove item</button>
+        <span class="save-feedback" id="gear-detail-feedback"></span>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;">
+        <div class="card-section-title" style="margin-bottom:0;">Maintenance history</div>
+        <button class="btn-save" id="btn-show-add-gear-maintenance" style="padding:6px 12px;font-size:0.82rem;">+ Log maintenance</button>
+      </div>
+      <div class="inline-form" id="form-add-gear-maintenance" style="display:none;margin-bottom:16px;">
+        <div class="sf-group">
+          <label class="sf-label">Title</label>
+          <input class="sf-input" type="text" id="gdm-title" placeholder="e.g. Annual service">
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">What was done</label>
+          <textarea class="sf-input" id="gdm-description" rows="2" placeholder="e.g. Full service, replaced HP hose"></textarea>
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Parts used (optional)</label>
+          <input class="sf-input" type="text" id="gdm-parts" placeholder="e.g. HP hose, o-rings">
+        </div>
+        <div class="sf-row">
+          <div class="sf-group">
+            <label class="sf-label">Cost (optional)</label>
+            <input class="sf-input" type="number" id="gdm-cost" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Currency</label>
+            <input class="sf-input" type="text" id="gdm-currency" value="USD" maxlength="3" style="text-transform:uppercase;">
+          </div>
+        </div>
+        <div class="sf-row">
+          <div class="sf-group">
+            <label class="sf-label">Done by</label>
+            <input class="sf-input" type="text" id="gdm-performed-by" placeholder="Name">
+          </div>
+          <div class="sf-group">
+            <label class="sf-label">Date performed</label>
+            <input class="sf-input" type="date" id="gdm-date">
+          </div>
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Next due (optional)</label>
+          <input class="sf-input" type="date" id="gdm-next-due">
+        </div>
+        <div class="settings-actions">
+          <button class="btn-save" id="btn-save-gear-maintenance">Save entry</button>
+          <button class="btn-cancel" id="btn-cancel-gear-maintenance">Cancel</button>
+          <span class="save-feedback" id="gdm-feedback"></span>
+        </div>
+      </div>
+      <div id="gear-detail-maintenance-list"></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-roster-cell" style="display:none;z-index:300;">
   <div class="modal-box" style="max-width:420px;">
     <div class="modal-body">
@@ -1822,6 +1918,7 @@ body { background: var(--navy); color: var(--text); }
           <div class="cl-tab active" onclick="showGearView('compressors',this)">Compressors</div>
           <div class="cl-tab" onclick="showGearView('inventory',this)">Inventory</div>
           <div class="cl-tab" onclick="showGearView('inspection',this)">Inspection</div>
+          <div class="cl-tab" onclick="showGearView('registry',this)">Registry</div>
         </div>
 
         <div id="gear-compressors-view" class="cl-view">
@@ -1871,6 +1968,76 @@ body { background: var(--navy); color: var(--text); }
           </div>
           <div class="cl-tab-row" id="inspection-tabs"></div>
           <div id="inspection-categories"></div>
+        </div>
+
+        <div id="gear-registry-view" class="cl-view" style="display:none;">
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;">Individually tracked safety-critical or high-value gear — regulators, dive computers, tanks, cameras and the like. Click an item for its full service history.</p>
+          <div style="margin-bottom:16px;">
+            <button class="btn-save" id="btn-show-add-gear-item">+ Register item</button>
+          </div>
+          <div class="inline-form" id="form-add-gear-item" style="display:none;margin-bottom:20px;">
+            <div class="card-section-title">Register gear item</div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Name</label>
+                <input class="sf-input" type="text" id="reg-name" placeholder="e.g. Scubapro MK25 #3">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Category</label>
+                <select class="sf-input" id="reg-category">
+                  <option value="Regulator">Regulator</option>
+                  <option value="Dive computer">Dive computer</option>
+                  <option value="BCD">BCD</option>
+                  <option value="Tank / Cylinder">Tank / Cylinder</option>
+                  <option value="Underwater camera">Underwater camera</option>
+                  <option value="Radio / Communication">Radio / Communication</option>
+                  <option value="Rebreather">Rebreather</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="sf-row">
+              <div class="sf-group">
+                <label class="sf-label">Size (optional)</label>
+                <input class="sf-input" type="text" id="reg-size" placeholder="e.g. M, XL, 12L">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">Serial number</label>
+                <input class="sf-input" type="text" id="reg-serial" placeholder="Optional but recommended">
+              </div>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Location</label>
+              <select class="sf-input" id="reg-location"></select>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Notes (optional)</label>
+              <input class="sf-input" type="text" id="reg-notes" placeholder="Optional">
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-gear-item">Register item</button>
+              <button class="btn-cancel" id="btn-cancel-gear-item">Cancel</button>
+              <span class="save-feedback" id="reg-save-feedback"></span>
+            </div>
+          </div>
+
+          <div class="sf-row" style="max-width:560px;margin-bottom:16px;">
+            <div class="sf-group">
+              <label class="sf-label">Category</label>
+              <select class="sf-input" id="reg-filter-category"><option value="">All categories</option></select>
+            </div>
+            <div class="sf-group">
+              <label class="sf-label">Status</label>
+              <select class="sf-input" id="reg-filter-status">
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="in_repair">In repair</option>
+                <option value="retired">Retired</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="gear-registry-list"></div>
         </div>
       </div>
 
@@ -6628,6 +6795,286 @@ function renderBoatDetailMaintenance(logs) {
 }
 // ─── END BOAT DETAIL ───
 
+// ─── GEAR REGISTRY ───
+const gearRegistryStatusLabels = { active: 'Active', in_repair: 'In repair', retired: 'Retired' };
+
+async function populateRegistryLocationSelect() {
+  if (!currentOrgId) return;
+  const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId);
+  const sel = document.getElementById('reg-location');
+  sel.innerHTML = (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('') || '<option value="">No locations — add one in Settings</option>';
+}
+
+document.getElementById('btn-show-add-gear-item').addEventListener('click', () => {
+  document.getElementById('form-add-gear-item').style.display = 'block';
+  document.getElementById('btn-show-add-gear-item').style.display = 'none';
+  populateRegistryLocationSelect();
+});
+document.getElementById('btn-cancel-gear-item').addEventListener('click', () => {
+  document.getElementById('form-add-gear-item').style.display = 'none';
+  document.getElementById('btn-show-add-gear-item').style.display = 'inline-block';
+});
+
+document.getElementById('btn-save-gear-item').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-gear-item');
+  const feedback = document.getElementById('reg-save-feedback');
+  const name = document.getElementById('reg-name').value.trim();
+  const category = document.getElementById('reg-category').value;
+  const size = document.getElementById('reg-size').value.trim();
+  const serial = document.getElementById('reg-serial').value.trim();
+  const locationId = document.getElementById('reg-location').value || null;
+  const notes = document.getElementById('reg-notes').value.trim();
+
+  if (!name) {
+    feedback.textContent = 'Name is required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { error } = await sb.from('gear').insert({
+    org_id: currentOrgId,
+    location_id: locationId,
+    category: category,
+    name: name,
+    size: size || null,
+    serial_number: serial || null,
+    status: 'active',
+    notes: notes || null
+  });
+  btn.disabled = false; btn.textContent = 'Register item';
+
+  if (error) {
+    feedback.textContent = 'Error: ' + error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  document.getElementById('reg-name').value = '';
+  document.getElementById('reg-size').value = '';
+  document.getElementById('reg-serial').value = '';
+  document.getElementById('reg-notes').value = '';
+  document.getElementById('form-add-gear-item').style.display = 'none';
+  document.getElementById('btn-show-add-gear-item').style.display = 'inline-block';
+  await loadGearRegistry();
+});
+
+document.getElementById('reg-filter-category').addEventListener('change', loadGearRegistry);
+document.getElementById('reg-filter-status').addEventListener('change', loadGearRegistry);
+
+const gearRegistryCategories = ['Regulator', 'Dive computer', 'BCD', 'Tank / Cylinder', 'Underwater camera', 'Radio / Communication', 'Rebreather', 'Other'];
+
+async function loadGearRegistry() {
+  if (!currentOrgId) return;
+  const catFilterEl = document.getElementById('reg-filter-category');
+  if (!catFilterEl.options.length || catFilterEl.options.length === 1) {
+    catFilterEl.innerHTML = '<option value="">All categories</option>' + gearRegistryCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+  const catFilter = catFilterEl.value;
+  const statusFilter = document.getElementById('reg-filter-status').value;
+
+  let query = sb.from('gear').select('*, locations(name)').eq('org_id', currentOrgId).order('category').order('name');
+  if (catFilter) query = query.eq('category', catFilter);
+  if (statusFilter) query = query.eq('status', statusFilter);
+  const { data: items } = await query;
+  renderGearRegistry(items || []);
+}
+
+function renderGearRegistry(items) {
+  const list = document.getElementById('gear-registry-list');
+  if (!items.length) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No gear registered yet.</p>';
+    return;
+  }
+  const today = new Date().toISOString().split('T')[0];
+  list.innerHTML = items.map(g => {
+    const dueSoon = g.next_service_date && g.next_service_date <= today;
+    const statusColor = g.status === 'retired' ? 'var(--muted)' : g.status === 'in_repair' ? 'var(--warning)' : 'var(--success)';
+    return `
+    <div class="card" style="margin-bottom:12px;cursor:pointer;" onclick="openGearDetail('${g.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div>
+          <h2 style="margin-bottom:2px;">${g.name}${dueSoon ? ' <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">Service due</span>' : ''}</h2>
+          <p style="font-size:0.8rem;color:var(--muted);">${g.category}${g.size ? ' · ' + g.size : ''}${g.serial_number ? ' · SN ' + g.serial_number : ''}${g.locations?.name ? ' · ' + g.locations.name : ''}</p>
+        </div>
+        <span class="role-badge" style="background:rgba(0,0,0,0.06);color:${statusColor};">${gearRegistryStatusLabels[g.status] || g.status}</span>
+      </div>
+      ${g.next_service_date ? `<p style="font-size:0.8rem;margin-top:8px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">Next service: ${new Date(g.next_service_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? ' — due now' : ''}</p>` : ''}
+    </div>
+  `;
+  }).join('');
+}
+
+window.currentGearDetailId = null;
+
+async function openGearDetail(gearId) {
+  window.currentGearDetailId = gearId;
+  const { data: g } = await sb.from('gear').select('*, locations(name)').eq('id', gearId).single();
+  if (!g) return;
+  document.getElementById('gear-detail-title').textContent = g.name;
+  document.getElementById('gear-detail-summary').textContent = [g.category, g.size, g.serial_number ? 'SN ' + g.serial_number : null, g.locations?.name].filter(Boolean).join(' · ');
+  document.getElementById('gd-status').value = g.status || 'active';
+  document.getElementById('gd-last-service').value = g.last_service_date || '';
+  document.getElementById('gd-next-service').value = g.next_service_date || '';
+  document.getElementById('gd-repair-notes').value = g.repair_notes || '';
+  document.getElementById('gd-notes').value = g.notes || '';
+  document.getElementById('gear-detail-feedback').textContent = '';
+  document.getElementById('gear-detail-feedback').className = 'save-feedback';
+
+  document.getElementById('form-add-gear-maintenance').style.display = 'none';
+  document.getElementById('btn-show-add-gear-maintenance').style.display = 'inline-block';
+
+  document.getElementById('modal-gear-detail').style.display = 'flex';
+  await loadGearDetailMaintenance(gearId);
+}
+
+document.getElementById('modal-gear-detail-close').addEventListener('click', () => {
+  document.getElementById('modal-gear-detail').style.display = 'none';
+  window.currentGearDetailId = null;
+  loadGearRegistry();
+});
+
+document.getElementById('btn-save-gear-detail').addEventListener('click', async () => {
+  const feedback = document.getElementById('gear-detail-feedback');
+  const gearId = window.currentGearDetailId;
+  const { error } = await sb.from('gear').update({
+    status: document.getElementById('gd-status').value,
+    last_service_date: document.getElementById('gd-last-service').value || null,
+    next_service_date: document.getElementById('gd-next-service').value || null,
+    repair_notes: document.getElementById('gd-repair-notes').value.trim() || null,
+    notes: document.getElementById('gd-notes').value.trim() || null
+  }).eq('id', gearId);
+  if (error) {
+    feedback.textContent = 'Error: ' + error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  feedback.textContent = 'Saved';
+  feedback.className = 'save-feedback visible';
+  setTimeout(() => feedback.className = 'save-feedback', 2000);
+});
+
+document.getElementById('btn-delete-gear-item').addEventListener('click', async () => {
+  const feedback = document.getElementById('gear-detail-feedback');
+  if (!(await showConfirmModal('Remove this gear item? Its maintenance history will stay on file but will no longer be linked to a named item.'))) return;
+  const { error } = await sb.from('gear').delete().eq('id', window.currentGearDetailId);
+  if (error) {
+    feedback.textContent = 'Error: ' + error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  document.getElementById('modal-gear-detail').style.display = 'none';
+  window.currentGearDetailId = null;
+  await loadGearRegistry();
+});
+
+document.getElementById('btn-show-add-gear-maintenance').addEventListener('click', () => {
+  document.getElementById('form-add-gear-maintenance').style.display = 'block';
+  document.getElementById('btn-show-add-gear-maintenance').style.display = 'none';
+  if (!document.getElementById('gdm-date').value) {
+    document.getElementById('gdm-date').value = new Date().toISOString().split('T')[0];
+  }
+});
+document.getElementById('btn-cancel-gear-maintenance').addEventListener('click', () => {
+  document.getElementById('form-add-gear-maintenance').style.display = 'none';
+  document.getElementById('btn-show-add-gear-maintenance').style.display = 'inline-block';
+});
+
+document.getElementById('btn-save-gear-maintenance').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-gear-maintenance');
+  const feedback = document.getElementById('gdm-feedback');
+  const gearId = window.currentGearDetailId;
+  const title = document.getElementById('gdm-title').value.trim();
+  const date = document.getElementById('gdm-date').value;
+  const description = document.getElementById('gdm-description').value.trim();
+  const parts = document.getElementById('gdm-parts').value.trim();
+  const cost = document.getElementById('gdm-cost').value;
+  const currency = document.getElementById('gdm-currency').value.trim().toUpperCase();
+  const performedBy = document.getElementById('gdm-performed-by').value.trim();
+  const nextDue = document.getElementById('gdm-next-due').value;
+
+  if (!title || !description || !date) {
+    feedback.textContent = 'Title, date and description are required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { data: { user } } = await sb.auth.getUser();
+  const { error } = await sb.from('maintenance_logs').insert({
+    org_id: currentOrgId,
+    gear_id: gearId,
+    title: title,
+    performed_date: date,
+    description: description,
+    parts_used: parts || null,
+    cost: cost ? parseFloat(cost) : null,
+    currency: currency || 'USD',
+    performed_by: performedBy || null,
+    next_due_date: nextDue || null,
+    created_by: user?.id || null
+  });
+  btn.disabled = false; btn.textContent = 'Save entry';
+
+  if (error) {
+    feedback.textContent = 'Error: ' + error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  // Keep the gear item's own service dates in sync with its latest logged entry
+  await sb.from('gear').update({
+    last_service_date: date,
+    next_service_date: nextDue || null
+  }).eq('id', gearId);
+  document.getElementById('gd-last-service').value = date;
+  document.getElementById('gd-next-service').value = nextDue || '';
+
+  document.getElementById('gdm-title').value = '';
+  document.getElementById('gdm-description').value = '';
+  document.getElementById('gdm-parts').value = '';
+  document.getElementById('gdm-cost').value = '';
+  document.getElementById('gdm-currency').value = 'USD';
+  document.getElementById('gdm-performed-by').value = '';
+  document.getElementById('gdm-next-due').value = '';
+  document.getElementById('form-add-gear-maintenance').style.display = 'none';
+  document.getElementById('btn-show-add-gear-maintenance').style.display = 'inline-block';
+  await loadGearDetailMaintenance(gearId);
+});
+
+async function loadGearDetailMaintenance(gearId) {
+  const { data: logs } = await sb.from('maintenance_logs').select('*').eq('gear_id', gearId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
+  renderGearDetailMaintenance(logs || []);
+}
+
+function renderGearDetailMaintenance(logs) {
+  const list = document.getElementById('gear-detail-maintenance-list');
+  if (!logs.length) {
+    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No maintenance logged for this item yet.</p>';
+    return;
+  }
+  const today = new Date().toISOString().split('T')[0];
+  list.innerHTML = logs.map(l => {
+    const dueSoon = l.next_due_date && l.next_due_date <= today;
+    return `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div>
+          <h2 style="margin-bottom:2px;">${l.title}</h2>
+          <p style="font-size:0.8rem;color:var(--muted);">${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
+        </div>
+        <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', false, true)">Remove</button>
+      </div>
+      <p style="font-size:0.85rem;margin-top:8px;">${l.description}</p>
+      ${l.parts_used ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:6px;">Parts: ${l.parts_used}</p>` : ''}
+      ${l.cost ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Cost: ${l.currency || 'USD'} ${parseFloat(l.cost).toFixed(2)}</p>` : ''}
+      ${l.next_due_date ? `<p style="font-size:0.8rem;margin-top:2px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">Next due: ${new Date(l.next_due_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? ' — due now' : ''}</p>` : ''}
+    </div>
+  `;
+  }).join('');
+}
+// ─── END GEAR REGISTRY ───
+
 
 // ─── COMPRESSORS ───
 function showGearView(view, el) {
@@ -6638,6 +7085,7 @@ function showGearView(view, el) {
   if (view === 'compressors') loadCompressors();
   if (view === 'inventory') loadGearInventory();
   if (view === 'inspection') loadInspectionChecklist();
+  if (view === 'registry') loadGearRegistry();
 }
 
 async function loadGearInventory() {
@@ -7067,10 +7515,12 @@ function renderMaintenanceLogs(logs) {
   }).join('');
 }
 
-async function deleteMaintenanceLog(id, fromBoatModal) {
+async function deleteMaintenanceLog(id, fromBoatModal, fromGearModal) {
   if (!(await showConfirmModal('Remove this maintenance entry?'))) return;
   await sb.from('maintenance_logs').delete().eq('id', id);
-  if (fromBoatModal && window.currentBoatDetailId) {
+  if (fromGearModal && window.currentGearDetailId) {
+    await loadGearDetailMaintenance(window.currentGearDetailId);
+  } else if (fromBoatModal && window.currentBoatDetailId) {
     await loadBoatDetailMaintenance(window.currentBoatDetailId);
   } else {
     await loadMaintenanceLogs();
