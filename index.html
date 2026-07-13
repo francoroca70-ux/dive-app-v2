@@ -1064,10 +1064,12 @@ body { background: var(--navy); color: var(--text); }
           <option value="minor">Minor / Youth Waiver</option>
           <option value="freediving">Freediving / Apnea Waiver</option>
           <option value="snorkel">Snorkel / Charter Waiver</option>
+          <option value="medical">Medical</option>
           <option value="custom">Other</option>
         </select>
       </div>
-      <div class="radio-group" style="margin-top:6px;">
+      <div id="sig-template-content" style="margin-top:10px;"></div>
+      <div class="radio-group" style="margin-top:6px;" id="sig-method-row">
         <div class="radio-btn selected" id="sig-method-digital" onclick="setSignMethod('digital')">Sign digitally</div>
         <div class="radio-btn" id="sig-method-paper" onclick="setSignMethod('paper')">Logged on paper</div>
       </div>
@@ -2088,6 +2090,25 @@ body { background: var(--navy); color: var(--text); }
           <span class="save-feedback" id="waivers-toggle-feedback"></span>
         </div>
 
+        <!-- Waiver Templates card -->
+        <div class="card" id="card-waiver-templates">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div class="card-section-title" style="margin-bottom:0;">Waiver Templates</div>
+            <span class="role-badge owner">Owner only</span>
+          </div>
+          <p class="card-desc" style="margin-top:8px;">Write the actual wording guests will read and sign for each waiver type. A type can't be signed by staff until it has a template here.</p>
+          <div class="cl-tab-row" id="waiver-template-tabs" style="margin-top:12px;">
+            <div class="cl-tab active" data-wt="liability" onclick="switchWaiverTemplateTab('liability', this)">Liability</div>
+            <div class="cl-tab" data-wt="minor" onclick="switchWaiverTemplateTab('minor', this)">Minor / Youth</div>
+            <div class="cl-tab" data-wt="freediving" onclick="switchWaiverTemplateTab('freediving', this)">Freediving</div>
+            <div class="cl-tab" data-wt="snorkel" onclick="switchWaiverTemplateTab('snorkel', this)">Snorkel / Charter</div>
+            <div class="cl-tab" data-wt="custom" onclick="switchWaiverTemplateTab('custom', this)">Other</div>
+            <div class="cl-tab" data-wt="medical" onclick="switchWaiverTemplateTab('medical', this)">Medical</div>
+          </div>
+          <div id="waiver-template-editor" style="margin-top:16px;"></div>
+          <p class="card-desc" id="waiver-templates-owner-only-note" style="margin-top:8px;display:none;">Only the account owner can edit waiver templates.</p>
+        </div>
+
         <!-- Trip Types card -->
         <div class="card" id="card-trip-types">
           <div class="card-section-title">Trip Types</div>
@@ -2836,6 +2857,11 @@ async function loadSettings(user) {
       waiversCheckbox.disabled = !isOwnerRole;
       document.getElementById('waivers-toggle-row').style.opacity = isOwnerRole ? '1' : '0.6';
       document.getElementById('waivers-owner-only-note').style.display = isOwnerRole ? 'none' : 'block';
+
+      document.getElementById('waiver-template-tabs').style.display = isOwnerRole ? 'flex' : 'none';
+      document.getElementById('waiver-template-editor').style.display = isOwnerRole ? 'block' : 'none';
+      document.getElementById('waiver-templates-owner-only-note').style.display = isOwnerRole ? 'none' : 'block';
+      if (isOwnerRole) loadWaiverTemplateEditor(window.waiverTemplateType || 'liability');
     }
 
     // Load locations
@@ -2905,6 +2931,158 @@ document.getElementById('chk-waivers-enabled').addEventListener('change', async 
   feedback.className = 'save-feedback visible';
   setTimeout(() => feedback.className = 'save-feedback', 2000);
 });
+
+// ─── WAIVER TEMPLATES ───
+window.waiverTemplateType = 'liability';
+
+function switchWaiverTemplateTab(type, el) {
+  window.waiverTemplateType = type;
+  document.querySelectorAll('#waiver-template-tabs .cl-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadWaiverTemplateEditor(type);
+}
+
+async function loadWaiverTemplateEditor(type) {
+  const container = document.getElementById('waiver-template-editor');
+  container.innerHTML = '<p style="font-size:0.85rem;color:var(--muted);">Loading...</p>';
+  if (!currentOrgId) return;
+  const { data: template } = await sb.from('waiver_templates').select('*').eq('org_id', currentOrgId).eq('waiver_type', type).maybeSingle();
+
+  if (type === 'medical') {
+    let questions = [];
+    if (template) {
+      const { data: qs } = await sb.from('waiver_template_questions').select('*').eq('template_id', template.id).order('sort_order');
+      questions = qs || [];
+    }
+    renderMedicalTemplateEditor(template, questions);
+  } else {
+    renderTextTemplateEditor(type, template);
+  }
+}
+
+function renderTextTemplateEditor(type, template) {
+  const container = document.getElementById('waiver-template-editor');
+  const statusHtml = template && template.body_text
+    ? `<span class="role-badge" style="background:rgba(47,133,90,0.12);color:var(--success);">Template on file</span>`
+    : `<span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);">No template yet — this type can't be signed</span>`;
+  container.innerHTML = `
+    <div style="margin-bottom:10px;">${statusHtml}</div>
+    <div class="sf-group">
+      <label class="sf-label">Title (optional)</label>
+      <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="e.g. Liability Waiver">
+    </div>
+    <div class="sf-group">
+      <label class="sf-label">Waiver text</label>
+      <textarea class="sf-input" id="wt-body" rows="10" placeholder="Write the full waiver text guests will read before signing...">${template?.body_text || ''}</textarea>
+    </div>
+    <div class="settings-actions">
+      <button class="btn-save" onclick="saveTextWaiverTemplate('${type}')">Save template</button>
+      <span class="save-feedback" id="wt-save-feedback"></span>
+    </div>
+    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">Last updated ${new Date(template.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
+  `;
+}
+
+async function saveTextWaiverTemplate(type) {
+  const feedback = document.getElementById('wt-save-feedback');
+  const title = document.getElementById('wt-title').value.trim() || null;
+  const body = document.getElementById('wt-body').value.trim();
+  if (!body) {
+    feedback.textContent = 'Waiver text is required.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const { error } = await sb.from('waiver_templates').upsert({
+    org_id: currentOrgId,
+    waiver_type: type,
+    title: title,
+    body_text: body,
+    active: true,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'org_id,waiver_type' });
+  if (error) {
+    feedback.textContent = 'Error: ' + error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  feedback.textContent = 'Saved';
+  feedback.className = 'save-feedback visible';
+  await loadWaiverTemplateEditor(type);
+}
+
+function renderMedicalTemplateEditor(template, questions) {
+  const container = document.getElementById('waiver-template-editor');
+  const statusHtml = questions.length
+    ? `<span class="role-badge" style="background:rgba(47,133,90,0.12);color:var(--success);">${questions.length} question${questions.length === 1 ? '' : 's'} on file</span>`
+    : `<span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);">No questions yet — Medical can't be signed</span>`;
+  window._medicalQuestionsDraft = questions.map(q => q.question_text);
+  container.innerHTML = `
+    <div style="margin-bottom:10px;">${statusHtml}</div>
+    <div class="sf-group">
+      <label class="sf-label">Title (optional)</label>
+      <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="e.g. Dive Medical Statement">
+    </div>
+    <p class="card-desc" style="margin-bottom:8px;">List the conditions or questions guests must tick if they apply to them. Each one becomes a checkbox on the sign form.</p>
+    <div id="medical-questions-list"></div>
+    <button class="btn-add" onclick="addMedicalQuestionRow()">+ Add question</button>
+    <div class="settings-actions" style="margin-top:14px;">
+      <button class="btn-save" onclick="saveMedicalWaiverTemplate()">Save template</button>
+      <span class="save-feedback" id="wt-save-feedback"></span>
+    </div>
+    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">Last updated ${new Date(template.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
+  `;
+  renderMedicalQuestionsDraft();
+}
+
+function renderMedicalQuestionsDraft() {
+  const list = document.getElementById('medical-questions-list');
+  const qs = window._medicalQuestionsDraft || [];
+  list.innerHTML = qs.length ? qs.map((q, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <input class="sf-input" type="text" value="${(q || '').replace(/"/g, '&quot;')}" oninput="window._medicalQuestionsDraft[${i}] = this.value">
+      <button class="btn-icon danger" onclick="removeMedicalQuestionRow(${i})">&times;</button>
+    </div>
+  `).join('') : '<p style="font-size:0.83rem;color:var(--muted);margin-bottom:8px;">No questions added yet.</p>';
+}
+
+function addMedicalQuestionRow() {
+  window._medicalQuestionsDraft = window._medicalQuestionsDraft || [];
+  window._medicalQuestionsDraft.push('');
+  renderMedicalQuestionsDraft();
+}
+
+function removeMedicalQuestionRow(i) {
+  window._medicalQuestionsDraft.splice(i, 1);
+  renderMedicalQuestionsDraft();
+}
+
+async function saveMedicalWaiverTemplate() {
+  const feedback = document.getElementById('wt-save-feedback');
+  const title = document.getElementById('wt-title').value.trim() || null;
+  const questions = (window._medicalQuestionsDraft || []).map(q => q.trim()).filter(Boolean);
+  if (!questions.length) {
+    feedback.textContent = 'Add at least one question.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const { data: template, error } = await sb.from('waiver_templates').upsert({
+    org_id: currentOrgId,
+    waiver_type: 'medical',
+    title: title,
+    active: true,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'org_id,waiver_type' }).select().single();
+  if (error) {
+    feedback.textContent = 'Error: ' + error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  await sb.from('waiver_template_questions').delete().eq('template_id', template.id);
+  await sb.from('waiver_template_questions').insert(questions.map((q, i) => ({ template_id: template.id, question_text: q, sort_order: i })));
+  feedback.textContent = 'Saved';
+  feedback.className = 'save-feedback visible';
+  await loadWaiverTemplateEditor('medical');
+}
 
 document.getElementById('btn-save-org').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-org');
@@ -4445,7 +4623,7 @@ async function printManifest() {
 }
 
 // ─── WAIVERS ───
-const waiverTypeLabels = { liability: 'Liability Waiver', minor: 'Minor / Youth Waiver', freediving: 'Freediving / Apnea Waiver', snorkel: 'Snorkel / Charter Waiver', custom: 'Other' };
+const waiverTypeLabels = { liability: 'Liability Waiver', minor: 'Minor / Youth Waiver', freediving: 'Freediving / Apnea Waiver', snorkel: 'Snorkel / Charter Waiver', medical: 'Medical', custom: 'Other' };
 
 async function loadWaivers() {
   const disabledEl = document.getElementById('waivers-disabled-notice');
@@ -4628,17 +4806,93 @@ function openSignWaiverModal(participantId, tripId, groupId, guestName) {
   setSignMethod('digital');
   document.getElementById('modal-signature').style.display = 'flex';
   setTimeout(initSignatureCanvas, 50);
+  loadSignTemplate('liability');
 }
 
-document.getElementById('modal-signature-close').addEventListener('click', () => {
+function closeSignatureModal() {
   document.getElementById('modal-signature').style.display = 'none';
+}
+
+document.getElementById('modal-signature-close').addEventListener('click', closeSignatureModal);
+
+document.getElementById('signature-waiver-type').addEventListener('change', (e) => {
+  loadSignTemplate(e.target.value);
 });
+
+window.currentSignTemplate = null;
+window.currentSignQuestions = [];
+window.currentSignResponses = {};
+window.currentSignBlocked = false;
+
+async function loadSignTemplate(type) {
+  const container = document.getElementById('sig-template-content');
+  container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Loading waiver...</p>';
+  window.currentSignTemplate = null;
+  window.currentSignQuestions = [];
+
+  const { data: template } = await sb.from('waiver_templates').select('*').eq('org_id', currentOrgId).eq('waiver_type', type).maybeSingle();
+  window.currentSignTemplate = template;
+
+  let questions = [];
+  if (type === 'medical' && template) {
+    const { data: qs } = await sb.from('waiver_template_questions').select('*').eq('template_id', template.id).order('sort_order');
+    questions = qs || [];
+  }
+  window.currentSignQuestions = questions;
+  renderSignTemplateContent(type, template, questions);
+}
+
+function renderSignTemplateContent(type, template, questions) {
+  const container = document.getElementById('sig-template-content');
+  const methodRow = document.getElementById('sig-method-row');
+  const saveBtn = document.getElementById('btn-confirm-signature');
+
+  const blocked = type === 'medical' ? !questions.length : !(template && template.body_text);
+  window.currentSignBlocked = blocked;
+
+  if (blocked) {
+    const ownerNote = currentUserRole === 'owner'
+      ? `Add one in <a href="#" onclick="closeSignatureModal();showPage('settings');return false;">Settings → Waiver Templates</a>.`
+      : `Ask your owner or manager to add one in Settings before this can be signed.`;
+    container.innerHTML = `<div class="warning-banner caution" style="font-size:0.82rem;">No waiver template is set up for this type yet. ${ownerNote}</div>`;
+    methodRow.style.display = 'none';
+    document.getElementById('sig-canvas-wrap').style.display = 'none';
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = '0.5';
+    return;
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.style.opacity = '1';
+  methodRow.style.display = 'flex';
+
+  if (type === 'medical') {
+    window.currentSignResponses = {};
+    container.innerHTML = `
+      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : 'Medical questionnaire'} — tick anything that applies</p>
+      <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto;background:var(--foam);">
+        ${questions.map(q => `
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.85rem;padding:6px 0;cursor:pointer;">
+            <input type="checkbox" style="margin-top:2px;" onchange="window.currentSignResponses['${q.id}'] = this.checked">
+            <span>${q.question_text}</span>
+          </label>
+        `).join('')}
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
+      <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
+    `;
+  }
+  setSignMethod(window.currentSignMethod || 'digital');
+}
 
 function setSignMethod(method) {
   window.currentSignMethod = method;
   document.getElementById('sig-method-digital').classList.toggle('selected', method === 'digital');
   document.getElementById('sig-method-paper').classList.toggle('selected', method === 'paper');
-  document.getElementById('sig-canvas-wrap').style.display = method === 'digital' ? 'block' : 'none';
+  document.getElementById('sig-canvas-wrap').style.display = (method === 'digital' && !window.currentSignBlocked) ? 'block' : 'none';
 }
 
 let sigCanvas, sigCtx, sigDrawing = false, sigHasStroke = false;
@@ -4678,6 +4932,12 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
   const feedback = document.getElementById('signature-save-feedback');
   const sp = window.currentSignatureParticipant;
   if (!sp) return;
+  if (window.currentSignBlocked) {
+    feedback.textContent = 'No waiver template is set up for this type yet.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const type = document.getElementById('signature-waiver-type').value;
   const method = window.currentSignMethod || 'digital';
   if (method === 'digital' && !sigHasStroke) {
     feedback.textContent = 'Please draw a signature, or switch to "Logged on paper".';
@@ -4687,17 +4947,21 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
   const { data: { user } } = await sb.auth.getUser();
   const { data: staffRow } = await sb.from('staff').select('full_name').eq('id', user.id).single();
 
+  const isMedical = type === 'medical';
   const payload = {
     org_id: currentOrgId,
     location_id: currentLocationId || null,
     participant_id: sp.id,
     group_id: sp.group_id || null,
     trip_id: sp.trip_id || null,
-    waiver_type: document.getElementById('signature-waiver-type').value,
+    waiver_type: type,
     method: method,
     signature_data: method === 'digital' ? sigCanvas.toDataURL('image/png') : null,
     notes: document.getElementById('sig-notes').value.trim() || null,
-    signed_by_name: staffRow?.full_name || null
+    signed_by_name: staffRow?.full_name || null,
+    template_id: window.currentSignTemplate?.id || null,
+    body_snapshot: isMedical ? null : (window.currentSignTemplate?.body_text || null),
+    responses: isMedical ? window.currentSignQuestions.map(q => ({ question: q.question_text, checked: !!window.currentSignResponses[q.id] })) : null
   };
 
   const { error } = await sb.from('waivers').insert(payload);
@@ -4707,7 +4971,7 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     console.error('Waiver save error:', error);
     return;
   }
-  document.getElementById('modal-signature').style.display = 'none';
+  closeSignatureModal();
   await loadWaivers();
 });
 
@@ -4752,6 +5016,12 @@ async function exportWaiversForDay(date) {
         <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
       </div>
       ${w.notes ? `<p class="waiver-entry-notes">${escapeHtml(w.notes)}</p>` : ''}
+      ${w.responses && w.responses.length ? `
+        <div class="waiver-entry-responses">
+          ${w.responses.map(r => `<div>${r.checked ? '☑' : '☐'} ${escapeHtml(r.question)}</div>`).join('')}
+        </div>
+      ` : ''}
+      ${w.body_snapshot ? `<div class="waiver-entry-body">${escapeHtml(w.body_snapshot)}</div>` : ''}
       ${w.method === 'digital' && w.signature_data ? `<img src="${w.signature_data}" style="max-width:280px;border:1px solid #ccc;margin-top:6px;">` : '<p style="font-size:12px;color:#888;">Paper copy on file — no digital signature.</p>'}
     </div>
   `).join('');
@@ -4765,6 +5035,9 @@ async function exportWaiversForDay(date) {
   .waiver-entry { border-bottom: 1px solid #ddd; padding: 14px 0; page-break-inside: avoid; }
   .waiver-entry-header { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; align-items:baseline; }
   .waiver-entry-notes { font-size: 12px; color: #555; font-style: italic; margin: 4px 0 0; }
+  .waiver-entry-responses { font-size: 12px; color: #333; margin: 6px 0 0; }
+  .waiver-entry-responses div { padding: 1px 0; }
+  .waiver-entry-body { font-size: 12px; color: #333; white-space: pre-wrap; line-height: 1.5; margin: 6px 0 0; border-left: 2px solid #ddd; padding-left: 10px; }
   @media print { body { padding: 10px; } }
 </style>
 </head><body>
