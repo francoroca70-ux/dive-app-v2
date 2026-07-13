@@ -1345,6 +1345,9 @@ body { background: var(--navy); color: var(--text); }
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Daily Cash-Up
       </div>
       <div class="nav-section-label">Manage</div>
+      <div class="nav-item" data-page="reports" id="nav-item-reports" style="display:none;">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Reports
+      </div>
       <div class="nav-item" data-page="settings">
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span> Settings
       </div>
@@ -2140,6 +2143,86 @@ body { background: var(--navy); color: var(--text); }
         </div>
       </div>
 
+      <!-- REPORTS -->
+      <div class="page" id="page-reports">
+        <div class="page-header">
+          <h1>Reports</h1>
+          <p>Revenue trends and cash accountability — owner only</p>
+        </div>
+
+        <div id="reports-no-location" style="display:none;">
+          <p style="color:var(--muted);">Select a location above to view reports.</p>
+        </div>
+
+        <div id="reports-content">
+          <div class="inline-form" style="margin-bottom:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div class="card-section-title" style="margin-bottom:0;">Date range</div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn-cancel" id="reports-range-7" style="padding:6px 12px;font-size:0.8rem;">7 days</button>
+                <button class="btn-save" id="reports-range-30" style="padding:6px 12px;font-size:0.8rem;">30 days</button>
+                <button class="btn-cancel" id="reports-range-90" style="padding:6px 12px;font-size:0.8rem;">90 days</button>
+              </div>
+            </div>
+            <div class="sf-row" style="margin-top:12px;">
+              <div class="sf-group">
+                <label class="sf-label">From</label>
+                <input class="sf-input" type="date" id="reports-start-date">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label">To</label>
+                <input class="sf-input" type="date" id="reports-end-date">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-section-title">Revenue</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+              <div><div class="gear-stock-label">Cash</div><div class="gear-stock-value-lg" id="rep-total-cash">$0.00</div></div>
+              <div><div class="gear-stock-label">Card</div><div class="gear-stock-value-lg" id="rep-total-card">$0.00</div></div>
+              <div><div class="gear-stock-label">Transfer</div><div class="gear-stock-value-lg" id="rep-total-transfer">$0.00</div></div>
+              <div><div class="gear-stock-label">Total</div><div class="gear-stock-value-lg" id="rep-total-revenue">$0.00</div></div>
+            </div>
+            <div id="rep-revenue-chart"></div>
+            <div style="display:flex;gap:16px;margin-top:10px;font-size:0.75rem;color:var(--muted);">
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Cash</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--teal);border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Card</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:#a0aec0;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Transfer</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-section-title">Cash discrepancies</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Counted cash vs expected cash on days the register was closed out. Bars above the line are cash over, below the line is cash short.</p>
+            <div id="rep-discrepancy-chart"></div>
+            <div id="rep-discrepancy-list" style="margin-top:14px;"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-section-title">Missed cash-ups</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Days with payments logged but no register close-out.</p>
+            <div id="rep-missed-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-section-title">Expenses</div>
+            <div id="rep-expense-chart"></div>
+            <div style="padding:10px 14px;background:var(--foam);border-radius:10px;margin-top:10px;font-weight:600;" id="rep-expense-total">Total expenses: $0.00</div>
+          </div>
+
+          <div class="card">
+            <div class="card-section-title">Revenue by trip type</div>
+            <div id="rep-trip-type-bars"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-section-title">Revenue by boat</div>
+            <div id="rep-boat-bars"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- TASKS -->
       <div class="page" id="page-tasks">
         <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
@@ -2425,6 +2508,7 @@ function showPage(id) {
   if (id === 'cashup') { loadCashUp(); loadGuestTabs(); }
   if (id === 'tasks') loadTasks();
   if (id === 'waivers') loadWaivers();
+  if (id === 'reports') loadReports();
 }
 
 // ─── NAV ITEMS ───
@@ -2511,6 +2595,10 @@ function refreshCurrentView() {
   const inspectionView = document.getElementById('gear-inspection-view');
   if (inspectionView && inspectionView.style.display !== 'none') {
     loadInspectionChecklist();
+  }
+  const reportsPage = document.getElementById('page-reports');
+  if (reportsPage && reportsPage.classList.contains('active')) {
+    loadReports();
   }
   // Add more location-aware view refreshes here as new pages become location-aware
 }
@@ -2934,6 +3022,7 @@ async function initAuth() {
     loadCrew();
     await renderCalendar();
     await loadCurrentUserRole();
+    document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
     await checkCrewNotifications();
     await checkTasksNotifications();
     showScreen('app');
@@ -4648,6 +4737,311 @@ async function closeGuestTab(tabId, linkedGroups) {
   await sb.from('guest_tabs').update({ status: 'closed', closed_by: user.email, closed_at: new Date().toISOString() }).eq('id', tabId);
   await loadGuestTabs();
 }
+// ─── END GUEST TABS ───
+
+// ─── REPORTS ───
+function reportsDefaultRange(days) {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - (days - 1));
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+}
+
+function setReportsPresetRange(days) {
+  const { start, end } = reportsDefaultRange(days);
+  document.getElementById('reports-start-date').value = start;
+  document.getElementById('reports-end-date').value = end;
+  [7, 30, 90].forEach(d => {
+    const btn = document.getElementById('reports-range-' + d);
+    btn.className = d === days ? 'btn-save' : 'btn-cancel';
+    btn.style.padding = '6px 12px';
+    btn.style.fontSize = '0.8rem';
+  });
+  loadReports();
+}
+document.getElementById('reports-range-7').addEventListener('click', () => setReportsPresetRange(7));
+document.getElementById('reports-range-30').addEventListener('click', () => setReportsPresetRange(30));
+document.getElementById('reports-range-90').addEventListener('click', () => setReportsPresetRange(90));
+document.getElementById('reports-start-date').addEventListener('change', loadReports);
+document.getElementById('reports-end-date').addEventListener('change', loadReports);
+
+function reportsDateBuckets(startDate, endDate) {
+  const buckets = [];
+  let d = new Date(startDate + 'T12:00:00');
+  const end = new Date(endDate + 'T12:00:00');
+  while (d <= end) {
+    buckets.push(d.toISOString().split('T')[0]);
+    d.setDate(d.getDate() + 1);
+  }
+  return buckets;
+}
+function reportsShouldGroupWeekly(buckets) { return buckets.length > 31; }
+function reportsWeekBucketLabel(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay();
+  const diffToMonday = (day === 0 ? -6 : 1 - day);
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diffToMonday);
+  return monday.toISOString().split('T')[0];
+}
+function reportsFormatBucketLabel(key, isWeekly) {
+  const d = new Date(key + 'T12:00:00');
+  const label = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return isWeekly ? 'Wk ' + label : label;
+}
+
+function svgStackedBarChart(data) {
+  const height = 160;
+  const width = Math.max(320, data.length * 36);
+  const padding = { top: 10, right: 10, bottom: 26, left: 10 };
+  const chartH = height - padding.top - padding.bottom;
+  const maxVal = Math.max(1, ...data.map(d => d.segments.reduce((s, seg) => s + seg.value, 0)));
+  const barSlot = (width - padding.left - padding.right) / data.length;
+  const barWidth = Math.min(28, barSlot * 0.6);
+  const labelStep = Math.ceil(data.length / 15);
+  let bars = '';
+  data.forEach((d, i) => {
+    const x = padding.left + i * barSlot + (barSlot - barWidth) / 2;
+    let y = padding.top + chartH;
+    d.segments.forEach(seg => {
+      const segH = (seg.value / maxVal) * chartH;
+      y -= segH;
+      if (segH > 0.3) bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${segH.toFixed(1)}" fill="${seg.color}" rx="2"></rect>`;
+    });
+    if (i % labelStep === 0) {
+      bars += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" font-size="9" fill="var(--muted)" text-anchor="middle">${d.label}</text>`;
+    }
+  });
+  return `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:${height}px;overflow:visible;">
+    <line x1="${padding.left}" y1="${padding.top + chartH}" x2="${width - padding.right}" y2="${padding.top + chartH}" stroke="var(--border)" stroke-width="1"></line>
+    ${bars}
+  </svg>`;
+}
+
+function svgDivergingBarChart(data) {
+  const height = 160;
+  const width = Math.max(320, data.length * 36);
+  const padding = { top: 10, right: 10, bottom: 26, left: 10 };
+  const chartH = height - padding.top - padding.bottom;
+  const zeroY = padding.top + chartH / 2;
+  const maxAbs = Math.max(1, ...data.map(d => Math.abs(d.value)));
+  const barSlot = (width - padding.left - padding.right) / data.length;
+  const barWidth = Math.min(28, barSlot * 0.6);
+  const labelStep = Math.ceil(data.length / 15);
+  let bars = '';
+  data.forEach((d, i) => {
+    const x = padding.left + i * barSlot + (barSlot - barWidth) / 2;
+    const segH = (Math.abs(d.value) / maxAbs) * (chartH / 2);
+    const y = d.value >= 0 ? zeroY - segH : zeroY;
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${Math.max(segH, 1).toFixed(1)}" fill="${d.color}" rx="2"></rect>`;
+    if (i % labelStep === 0) {
+      bars += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" font-size="9" fill="var(--muted)" text-anchor="middle">${d.label}</text>`;
+    }
+  });
+  return `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:${height}px;overflow:visible;">
+    <line x1="${padding.left}" y1="${zeroY}" x2="${width - padding.right}" y2="${zeroY}" stroke="var(--border)" stroke-width="1"></line>
+    ${bars}
+  </svg>`;
+}
+
+function renderHorizontalBars(map) {
+  const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) return '<p style="font-size:0.83rem;color:var(--muted)">No revenue in this range.</p>';
+  const max = Math.max(...entries.map(e => e[1]));
+  return entries.map(([label, value]) => `
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:4px;">
+        <span>${label}</span>
+        <span style="font-weight:600;">$${value.toFixed(2)}</span>
+      </div>
+      <div class="cl-progress-bar"><div class="cl-progress-fill" style="width:${(value / max * 100).toFixed(1)}%;background:var(--blue);"></div></div>
+    </div>
+  `).join('');
+}
+
+async function loadReports() {
+  const noLocEl = document.getElementById('reports-no-location');
+  const contentEl = document.getElementById('reports-content');
+  if (!currentOrgId || !currentLocationId) {
+    noLocEl.style.display = 'block';
+    contentEl.style.display = 'none';
+    return;
+  }
+  noLocEl.style.display = 'none';
+  contentEl.style.display = 'block';
+
+  const startInput = document.getElementById('reports-start-date');
+  const endInput = document.getElementById('reports-end-date');
+  if (!startInput.value || !endInput.value) {
+    const { start, end } = reportsDefaultRange(30);
+    startInput.value = start;
+    endInput.value = end;
+  }
+  const startDate = startInput.value;
+  const endDate = endInput.value;
+
+  const [{ data: payments }, { data: cashUps }, { data: expenses }] = await Promise.all([
+    sb.from('payments').select('amount, method, payment_date, trips(trip_type, boats(name))')
+      .eq('org_id', currentOrgId).eq('location_id', currentLocationId)
+      .gte('payment_date', startDate).lte('payment_date', endDate),
+    sb.from('cash_ups').select('*')
+      .eq('org_id', currentOrgId).eq('location_id', currentLocationId)
+      .gte('cash_up_date', startDate).lte('cash_up_date', endDate),
+    sb.from('cash_expenses').select('*')
+      .eq('org_id', currentOrgId).eq('location_id', currentLocationId)
+      .gte('expense_date', startDate).lte('expense_date', endDate)
+  ]);
+
+  renderRevenueReport(payments || [], startDate, endDate);
+  renderDiscrepancyReport(cashUps || []);
+  renderMissedCashUps(payments || [], cashUps || []);
+  renderExpenseReport(expenses || [], startDate, endDate);
+  renderTripTypeAndBoatBreakdown(payments || []);
+}
+
+function renderRevenueReport(payments, startDate, endDate) {
+  const dayBuckets = reportsDateBuckets(startDate, endDate);
+  const groupWeekly = reportsShouldGroupWeekly(dayBuckets);
+  const bucketMap = {};
+  const bucketKeys = [];
+  if (groupWeekly) {
+    const seen = new Set();
+    dayBuckets.forEach(d => {
+      const wk = reportsWeekBucketLabel(d);
+      if (!seen.has(wk)) { seen.add(wk); bucketKeys.push(wk); bucketMap[wk] = { cash: 0, card: 0, transfer: 0 }; }
+    });
+  } else {
+    dayBuckets.forEach(d => { bucketKeys.push(d); bucketMap[d] = { cash: 0, card: 0, transfer: 0 }; });
+  }
+  let totalCash = 0, totalCard = 0, totalTransfer = 0;
+  payments.forEach(p => {
+    const amount = parseFloat(p.amount) || 0;
+    const method = (p.method || '').toLowerCase();
+    const key = groupWeekly ? reportsWeekBucketLabel(p.payment_date) : p.payment_date;
+    if (!bucketMap[key]) bucketMap[key] = { cash: 0, card: 0, transfer: 0 };
+    if (method === 'cash') { bucketMap[key].cash += amount; totalCash += amount; }
+    else if (method === 'card') { bucketMap[key].card += amount; totalCard += amount; }
+    else if (method === 'transfer') { bucketMap[key].transfer += amount; totalTransfer += amount; }
+  });
+  document.getElementById('rep-total-cash').textContent = '$' + totalCash.toFixed(2);
+  document.getElementById('rep-total-card').textContent = '$' + totalCard.toFixed(2);
+  document.getElementById('rep-total-transfer').textContent = '$' + totalTransfer.toFixed(2);
+  document.getElementById('rep-total-revenue').textContent = '$' + (totalCash + totalCard + totalTransfer).toFixed(2);
+
+  const chartData = bucketKeys.map(k => ({
+    label: reportsFormatBucketLabel(k, groupWeekly),
+    segments: [
+      { value: bucketMap[k].cash, color: 'var(--blue)' },
+      { value: bucketMap[k].card, color: 'var(--teal)' },
+      { value: bucketMap[k].transfer, color: '#a0aec0' }
+    ]
+  }));
+  document.getElementById('rep-revenue-chart').innerHTML = chartData.every(d => d.segments.every(s => s.value === 0))
+    ? '<p style="font-size:0.83rem;color:var(--muted)">No payments logged in this range.</p>'
+    : svgStackedBarChart(chartData);
+}
+
+function renderDiscrepancyReport(cashUps) {
+  const closed = cashUps.filter(c => c.counted_cash !== null && c.counted_cash !== undefined);
+  const sorted = closed.slice().sort((a, b) => a.cash_up_date.localeCompare(b.cash_up_date));
+  const withDiff = sorted.map(c => {
+    const expected = (parseFloat(c.opening_float) || 0) + (parseFloat(c.total_cash) || 0) - (parseFloat(c.cash_paid_out) || 0);
+    const diff = (parseFloat(c.counted_cash) || 0) - expected;
+    return { c, diff };
+  });
+  const chartEl = document.getElementById('rep-discrepancy-chart');
+  if (!withDiff.length) {
+    chartEl.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No closed-out days with counted cash in this range yet.</p>';
+  } else {
+    const chartData = withDiff.map(({ c, diff }) => ({
+      label: new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' }),
+      value: diff,
+      color: Math.abs(diff) < 0.01 ? 'var(--success)' : 'var(--error)'
+    }));
+    chartEl.innerHTML = svgDivergingBarChart(chartData);
+  }
+  const flagged = withDiff.filter(({ diff }) => Math.abs(diff) >= 0.01);
+  const listEl = document.getElementById('rep-discrepancy-list');
+  if (!flagged.length) {
+    listEl.innerHTML = '<p style="font-size:0.83rem;color:var(--success);font-weight:600;">No discrepancies in this range.</p>';
+  } else {
+    listEl.innerHTML = flagged.map(({ c, diff }) => `<div class="gear-item-row">
+        <div class="gear-item-header">
+          <span class="gear-item-name">${new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          <span style="color:var(--error);font-weight:700;">${diff > 0 ? '+' : ''}$${diff.toFixed(2)}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Closed by ${c.closed_by || '—'}${c.notes ? ' · ' + c.notes : ''}</div>
+      </div>`).join('');
+  }
+}
+
+function renderMissedCashUps(payments, cashUps) {
+  const closedDates = new Set(cashUps.filter(c => c.closed_by).map(c => c.cash_up_date));
+  const paymentDates = {};
+  payments.forEach(p => {
+    paymentDates[p.payment_date] = (paymentDates[p.payment_date] || 0) + (parseFloat(p.amount) || 0);
+  });
+  const today = new Date().toISOString().split('T')[0];
+  const missed = Object.keys(paymentDates).filter(d => d < today && !closedDates.has(d)).sort();
+  const listEl = document.getElementById('rep-missed-list');
+  if (!missed.length) {
+    listEl.innerHTML = '<p style="font-size:0.83rem;color:var(--success);font-weight:600;">No missed cash-ups in this range.</p>';
+  } else {
+    listEl.innerHTML = missed.map(d => `<div class="gear-item-row">
+        <div class="gear-item-header">
+          <span class="gear-item-name">${new Date(d + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          <span style="color:var(--error);font-weight:600;">$${paymentDates[d].toFixed(2)} taken, not closed out</span>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function renderExpenseReport(expenses, startDate, endDate) {
+  const dayBuckets = reportsDateBuckets(startDate, endDate);
+  const groupWeekly = reportsShouldGroupWeekly(dayBuckets);
+  const bucketMap = {};
+  const bucketKeys = [];
+  if (groupWeekly) {
+    const seen = new Set();
+    dayBuckets.forEach(d => {
+      const wk = reportsWeekBucketLabel(d);
+      if (!seen.has(wk)) { seen.add(wk); bucketKeys.push(wk); bucketMap[wk] = 0; }
+    });
+  } else {
+    dayBuckets.forEach(d => { bucketKeys.push(d); bucketMap[d] = 0; });
+  }
+  let total = 0;
+  expenses.forEach(e => {
+    const amount = parseFloat(e.amount) || 0;
+    total += amount;
+    const key = groupWeekly ? reportsWeekBucketLabel(e.expense_date) : e.expense_date;
+    if (bucketMap[key] === undefined) bucketMap[key] = 0;
+    bucketMap[key] += amount;
+  });
+  const chartData = bucketKeys.map(k => ({
+    label: reportsFormatBucketLabel(k, groupWeekly),
+    segments: [{ value: bucketMap[k], color: 'var(--error)' }]
+  }));
+  document.getElementById('rep-expense-chart').innerHTML = total === 0
+    ? '<p style="font-size:0.83rem;color:var(--muted)">No expenses logged in this range.</p>'
+    : svgStackedBarChart(chartData);
+  document.getElementById('rep-expense-total').textContent = 'Total expenses: $' + total.toFixed(2);
+}
+
+function renderTripTypeAndBoatBreakdown(payments) {
+  const byTripType = {};
+  const byBoat = {};
+  payments.forEach(p => {
+    const amount = parseFloat(p.amount) || 0;
+    const tripType = p.trips?.trip_type || 'Other';
+    const boatName = p.trips?.boats?.name || 'No boat / shore-based';
+    byTripType[tripType] = (byTripType[tripType] || 0) + amount;
+    byBoat[boatName] = (byBoat[boatName] || 0) + amount;
+  });
+  document.getElementById('rep-trip-type-bars').innerHTML = renderHorizontalBars(byTripType);
+  document.getElementById('rep-boat-bars').innerHTML = renderHorizontalBars(byBoat);
+}
+// ─── END REPORTS ───
 
 // Save trip
 async function resolveTripLocationId(boatId) {
