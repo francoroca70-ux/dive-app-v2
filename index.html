@@ -2952,7 +2952,7 @@ async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
   const { data } = await sb
     .from('trips')
-    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name))')
+    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(price_per_person, participants(id))')
     .eq('org_id', currentOrgId)
     .gte('trip_date', formatDate(start))
     .lte('trip_date', formatDate(end))
@@ -2982,8 +2982,7 @@ function tripCard(t, paid) {
   const capacity = t.boats?.capacity;
   const tanks = t.num_dives ? guestCount * t.num_dives : null;
   const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(t.trip_type);
-  const perPerson = parseFloat(t.price_per_person || t.payment_amount || 0);
-  const total = perPerson * guestCount;
+  const total = (t.trip_groups || []).reduce((sum, g) => sum + (parseFloat(g.price_per_person) || 0) * (g.participants?.length || 0), 0);
   const owed = total - (paid || 0);
   return `
   <div class="trip-card ${t.status}" onclick="event.stopPropagation();openTrip('${t.id}')">
