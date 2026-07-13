@@ -6414,6 +6414,7 @@ document.getElementById('btn-show-add-boat').addEventListener('click', () => {
   document.getElementById('form-add-boat').style.display = 'block';
   document.getElementById('btn-show-add-boat').style.display = 'none';
   populateBoatLocations();
+  document.getElementById('form-add-boat').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 document.getElementById('btn-cancel-boat').addEventListener('click', () => {
@@ -6535,9 +6536,14 @@ document.getElementById('fleet-manage-boat-select').addEventListener('change', f
 });
 
 document.getElementById('btn-show-add-boat-engine').addEventListener('click', () => {
-  if (!window.currentBoatDetailId) { showAlertModal('Choose a boat first.'); return; }
+  if (!window.currentBoatDetailId) {
+    showAlertModal('Choose a boat first.');
+    document.getElementById('fleet-manage-boat-select').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
   document.getElementById('form-add-boat-hours').style.display = 'none';
   document.getElementById('form-add-boat-engine').style.display = 'block';
+  document.getElementById('form-add-boat-engine').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 document.getElementById('btn-cancel-boat-engine').addEventListener('click', () => {
   document.getElementById('form-add-boat-engine').style.display = 'none';
@@ -6574,9 +6580,14 @@ document.getElementById('btn-save-boat-engine').addEventListener('click', async 
 });
 
 document.getElementById('btn-show-add-boat-hours').addEventListener('click', () => {
-  if (!window.currentBoatDetailId) { showAlertModal('Choose a boat first.'); return; }
+  if (!window.currentBoatDetailId) {
+    showAlertModal('Choose a boat first.');
+    document.getElementById('fleet-manage-boat-select').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
   document.getElementById('form-add-boat-engine').style.display = 'none';
   document.getElementById('form-add-boat-hours').style.display = 'block';
+  document.getElementById('form-add-boat-hours').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 document.getElementById('btn-cancel-boat-hours').addEventListener('click', () => {
   document.getElementById('form-add-boat-hours').style.display = 'none';
