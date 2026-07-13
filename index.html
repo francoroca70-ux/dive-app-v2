@@ -2952,7 +2952,7 @@ async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
   const { data } = await sb
     .from('trips')
-    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(price_per_person, participants(id))')
+    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(price_per_person, participants(id, rental_surcharge))')
     .eq('org_id', currentOrgId)
     .gte('trip_date', formatDate(start))
     .lte('trip_date', formatDate(end))
@@ -2982,7 +2982,10 @@ function tripCard(t, paid) {
   const capacity = t.boats?.capacity;
   const tanks = t.num_dives ? guestCount * t.num_dives : null;
   const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(t.trip_type);
-  const total = (t.trip_groups || []).reduce((sum, g) => sum + (parseFloat(g.price_per_person) || 0) * (g.participants?.length || 0), 0);
+  const total = (t.trip_groups || []).reduce((sum, g) => {
+    const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
+    return sum + (parseFloat(g.price_per_person) || 0) * (g.participants?.length || 0) + rentalTotal;
+  }, 0);
   const owed = total - (paid || 0);
   return `
   <div class="trip-card ${t.status}" onclick="event.stopPropagation();openTrip('${t.id}')">
@@ -3189,7 +3192,7 @@ async function onTripTypeChange() {
     .select('*, gear_field_definitions(*)')
     .eq('trip_type_id', typeId)
     .order('sort_order');
-  selectedTripTypeFields = (ttgf || []).map(r => r.gear_field_definitions).filter(Boolean);
+  selectedTripTypeFields = (ttgf || []).map(r => r.gear_field_definitions ? { ...r.gear_field_definitions, rental_fee: r.rental_fee } : null).filter(Boolean);
 }
 
 document.getElementById('trip-type-select').addEventListener('change', onTripTypeChange);
@@ -3337,21 +3340,22 @@ async function groupCardHTML(g, index) {
     ? `<button class="btn-icon danger group-card-remove" onclick="removeGroup('${g.id}')">✕</button>`
     : '';
 
-  let guestsHtml, paymentHtml, tabOptionsHtml, guestCount = 0;
+  let guestsHtml, paymentHtml, tabOptionsHtml, guestCount = 0, rentalTotal = 0;
 
   if (isSaved) {
     const participants = groupParticipants_cache[g.id] || await loadGroupParticipants(g.id);
     guestCount = participants.length;
+    rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
     guestsHtml = renderGroupParticipantsBlock(g.id, participants);
     tabOptionsHtml = await buildTabOptionsHtml(g.tab_id);
-    paymentHtml = await groupPaymentHTML(g, guestCount);
+    paymentHtml = await groupPaymentHTML(g, participants);
   } else {
     guestsHtml = `<p style="font-size:0.83rem;color:var(--muted);">Save the trip to add guests.</p>`;
     tabOptionsHtml = '<option value="">No tab — pay per trip</option>';
     paymentHtml = `<p style="font-size:0.83rem;color:var(--muted);">Save the trip to log payments.</p>`;
   }
 
-  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * Math.max(guestCount, 1)).toFixed(2);
+  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * Math.max(guestCount, 1) + rentalTotal).toFixed(2);
 
   return `
   <div class="group-card" data-group-key="${key}">
@@ -3393,7 +3397,7 @@ async function groupCardHTML(g, index) {
     <div class="sf-row">
       <div class="sf-group" style="max-width:160px;">
         <label class="sf-label">Price per person</label>
-        <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * Math.max(${Math.max(guestCount,1)},1)).toFixed(2)">
+        <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * Math.max(${Math.max(guestCount,1)},1) + ${rentalTotal}).toFixed(2)">
       </div>
       <div class="sf-group">
         <label class="sf-label">Total</label>
@@ -3427,7 +3431,12 @@ async function updateGroupField(key, field, value) {
 
 document.getElementById('btn-add-group').addEventListener('click', async () => {
   if (!currentTripId) return;
-  const { data, error } = await sb.from('trip_groups').insert({ trip_id: currentTripId, contact_name: '', contact_phone: '' }).select().single();
+  const typeId = document.getElementById('trip-type-select').value;
+  const tripType = currentTripTypes.find(t => t.id === typeId);
+  const { data, error } = await sb.from('trip_groups').insert({
+    trip_id: currentTripId, contact_name: '', contact_phone: '',
+    price_per_person: tripType?.default_price || null
+  }).select().single();
   if (error) return;
   tripGroups_cache.push(data);
   await renderGroupsPanel();
@@ -3706,14 +3715,17 @@ async function loadGuestTabs() {
   }
   const today = formatDate(new Date());
   const rowsHtml = await Promise.all(tabs.map(async t => {
-    const { data: linkedGroups } = await sb.from('trip_groups').select('id, price_per_person, participants(id)').eq('tab_id', t.id);
+    const { data: linkedGroups } = await sb.from('trip_groups').select('id, price_per_person, participants(id, rental_surcharge)').eq('tab_id', t.id);
     const groupIds = (linkedGroups || []).map(g => g.id);
     let paid = 0;
     if (groupIds.length) {
       const { data: payments } = await sb.from('payments').select('amount').in('group_id', groupIds);
       paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
     }
-    const total = (linkedGroups || []).reduce((sum, g) => sum + (parseFloat(g.price_per_person) || 0) * Math.max(1, g.participants?.length || 0), 0);
+    const total = (linkedGroups || []).reduce((sum, g) => {
+      const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
+      return sum + (parseFloat(g.price_per_person) || 0) * Math.max(1, g.participants?.length || 0) + rentalTotal;
+    }, 0);
     const owed = total - paid - parseFloat(t.deposit_amount || 0);
     const isOverdue = t.status === 'open' && t.settle_by_date < today;
     const statusLabel = t.status === 'closed' ? 'Settled' : isOverdue ? 'Overdue' : 'Open';
@@ -3802,7 +3814,7 @@ async function openTabDetail(tabId) {
   const { data: tab } = await sb.from('guest_tabs').select('*').eq('id', tabId).single();
   if (!tab) return;
   const { data: linkedGroups } = await sb.from('trip_groups')
-    .select('id, trip_id, contact_name, price_per_person, participants(id), trips(trip_type, trip_date)')
+    .select('id, trip_id, contact_name, price_per_person, participants(id, rental_surcharge), trips(trip_type, trip_date)')
     .eq('tab_id', tabId)
     .order('created_at');
 
@@ -3825,7 +3837,8 @@ async function openTabDetail(tabId) {
     linkedGroups.forEach(g => {
       const perPerson = parseFloat(g.price_per_person) || 0;
       const guestCount = Math.max(1, g.participants?.length || 0);
-      const total = perPerson * guestCount;
+      const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
+      const total = perPerson * guestCount + rentalTotal;
       const paid = (allPayments || []).filter(p => p.group_id === g.id).reduce((sum, p) => sum + parseFloat(p.amount), 0);
       const owed = total - paid;
       const tripType = g.trips?.trip_type || 'Trip';
@@ -3917,7 +3930,8 @@ async function closeGuestTab(tabId, linkedGroups) {
   for (const g of linkedGroups) {
     const perPerson = parseFloat(g.price_per_person) || 0;
     const guestCount = Math.max(1, g.participants?.length || 0);
-    const total = perPerson * guestCount;
+    const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
+    const total = perPerson * guestCount + rentalTotal;
     const { data: payments } = await sb.from('payments').select('amount').eq('group_id', g.id);
     const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
     totalOwed += (total - paid);
@@ -4116,7 +4130,7 @@ async function renderTripCrewSection() {
   container.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${assignedHtml || '<span style="font-size:0.8rem;color:var(--muted)">No crew assigned yet.</span>'}</div>
     <div style="display:flex;gap:8px;">
-      <select class="sf-input" id="trip-crew-select" style="margin-bottom:0;">
+      <select class="sf-input" id="trip-crew-select" style="margin-bottom:0;flex:0 1 50%;">
         <option value="">${availableStaff.length ? 'Select crew member' : 'No one available for this date/time'}</option>
         ${optionsHtml}
       </select>
@@ -4164,11 +4178,12 @@ async function checkGuestCapacity() {
 }
 
 // ─── GROUP PAYMENTS ───
-async function groupPaymentHTML(g, guestCount) {
+async function groupPaymentHTML(g, participants) {
   const { data: payments } = await sb.from('payments').select('*').eq('group_id', g.id).order('payment_date');
   const perPerson = parseFloat(g.price_per_person) || 0;
-  const guests = Math.max(guestCount, 1);
-  const total = perPerson * guests;
+  const guests = Math.max(participants.length, 1);
+  const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
+  const total = perPerson * guests + rentalTotal;
   const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
   const balance = total - paid;
   const paymentsHtml = (payments || []).map(p => `
@@ -4176,11 +4191,15 @@ async function groupPaymentHTML(g, guestCount) {
       <button onclick="removeGroupPayment('${p.id}','${g.id}')">×</button>
     </div>
   `).join('');
-  const statusLabel = balance <= 0 && total > 0 ? 'Paid in full' : paid > 0 ? `Partial — $${balance.toFixed(2)} owed` : 'Nothing paid yet';
-  const statusColor = balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
+  const noPriceSet = !g.price_per_person && participants.length > 0;
+  const statusLabel = noPriceSet ? 'No price set' : balance <= 0 && total > 0 ? 'Paid in full' : paid > 0 ? `Partial — $${balance.toFixed(2)} owed` : 'Nothing paid yet';
+  const statusColor = noPriceSet ? 'var(--warning, #b7791f)' : balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
+  const breakdownText = noPriceSet
+    ? `${guests} guest${guests>1?'s':''} added, but no price per person set yet — nothing will be charged until you add one above.`
+    : `$${perPerson.toFixed(2)}/person × ${guests} guest${guests>1?'s':''} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' rental gear' : ''} = $${total.toFixed(2)}`;
   return `
     <div style="font-size:0.83rem;font-weight:600;color:${statusColor};margin-bottom:8px;">${statusLabel}</div>
-    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">$${perPerson.toFixed(2)}/person × ${guests} guest${guests>1?'s':''} = $${total.toFixed(2)}</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">${breakdownText}</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${paymentsHtml || '<span style="font-size:0.8rem;color:var(--muted)">No payments logged yet.</span>'}</div>
     <div id="log-payment-btn-wrap-${g.id}">
       <button class="btn-cancel" onclick="showLogPaymentForm('${g.id}', ${total}, ${paid})">+ Log Payment</button>
@@ -4217,11 +4236,12 @@ async function refreshGroupPaymentSection(groupId) {
   const g = tripGroups_cache.find(gr => gr.id === groupId);
   if (!g) return;
   const participants = groupParticipants_cache[groupId] || await loadGroupParticipants(groupId);
-  const html = await groupPaymentHTML(g, participants.length);
+  const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
+  const html = await groupPaymentHTML(g, participants);
   const container = document.getElementById('group-payments-' + groupId);
   if (container) container.innerHTML = html;
   const totalEl = document.getElementById('group-total-' + groupId);
-  if (totalEl) totalEl.value = ((parseFloat(g.price_per_person)||0) * Math.max(participants.length,1)).toFixed(2);
+  if (totalEl) totalEl.value = ((parseFloat(g.price_per_person)||0) * Math.max(participants.length,1) + rentalTotal).toFixed(2);
 }
 window.currentPaymentMethod = {};
 function showLogPaymentForm(groupId, total, paid) {
@@ -4341,22 +4361,23 @@ function renderDynamicGearFieldsFor(groupId) {
   }
   container.innerHTML = selectedTripTypeFields.map(f => {
     const inputId = `pgear-${groupId}-${f.field_key}`;
+    const feeNote = f.rental_fee ? `<span style="font-size:0.72rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;"> · +$${parseFloat(f.rental_fee).toFixed(2)} if renting</span>` : '';
     if (f.field_type === 'select') {
       const opts = Array.isArray(f.options) ? f.options : (f.options ? JSON.parse(f.options) : []);
       return `<div class="sf-group">
-        <label class="sf-label">${f.label}</label>
+        <label class="sf-label">${f.label}${feeNote}</label>
         <select class="sf-input" id="${inputId}" data-key="${f.field_key}">
           ${opts.map(o => `<option value="${o}">${o}</option>`).join('')}
         </select>
       </div>`;
     } else if (f.field_type === 'number') {
       return `<div class="sf-group">
-        <label class="sf-label">${f.label}</label>
+        <label class="sf-label">${f.label}${feeNote}</label>
         <input class="sf-input" type="number" id="${inputId}" data-key="${f.field_key}" placeholder="0">
       </div>`;
     } else {
       return `<div class="sf-group">
-        <label class="sf-label">${f.label}</label>
+        <label class="sf-label">${f.label}${feeNote}</label>
         <input class="sf-input" type="text" id="${inputId}" data-key="${f.field_key}">
       </div>`;
     }
@@ -4387,9 +4408,15 @@ async function saveGroupParticipant(groupId) {
   }
 
   const gear = {};
+  let rentalSurcharge = 0;
   selectedTripTypeFields.forEach(f => {
     const el = document.getElementById(`pgear-${groupId}-${f.field_key}`);
-    if (el && el.value) gear[f.field_key] = el.value;
+    if (el && el.value) {
+      gear[f.field_key] = el.value;
+      if (f.rental_fee && el.value !== 'Own gear' && el.value !== 'None') {
+        rentalSurcharge += parseFloat(f.rental_fee) || 0;
+      }
+    }
   });
 
   const { error } = await sb.from('participants').insert({
@@ -4398,6 +4425,7 @@ async function saveGroupParticipant(groupId) {
     full_name: name,
     phone: document.getElementById('p-phone-' + groupId).value.trim() || null,
     gear: gear,
+    rental_surcharge: rentalSurcharge,
     notes: document.getElementById('p-notes-' + groupId).value.trim() || null
   });
 
@@ -6120,14 +6148,49 @@ async function renderTripTypesList() {
       <div style="display:flex;align-items:center;gap:8px;">
         <input class="trip-type-price-input" type="number" min="0" value="${t.default_price || ''}" placeholder="0"
           onchange="updateTripTypePrice('${t.id}', this.value, this)">
+        <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRentalFees('${t.id}')">Rental fees</button>
         <button class="btn-icon danger" onclick="deactivateTripType('${t.id}')">Remove</button>
       </div>
     </div>
+    <div id="rental-fees-${t.id}" style="display:none;margin:-4px 0 12px;"></div>
   `).join('');
 }
 
 async function updateTripTypePrice(id, value, inputEl) {
   await sb.from('trip_types').update({ default_price: parseFloat(value) || 0 }).eq('id', id);
+  if (inputEl) {
+    inputEl.style.borderColor = 'var(--success, #2f855a)';
+    setTimeout(() => { inputEl.style.borderColor = ''; }, 800);
+  }
+}
+
+async function toggleRentalFees(tripTypeId) {
+  const panel = document.getElementById('rental-fees-' + tripTypeId);
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  panel.innerHTML = '<p style="font-size:0.8rem;color:var(--muted);">Loading...</p>';
+  const { data: ttgf } = await sb.from('trip_type_gear_fields')
+    .select('id, rental_fee, gear_field_definitions(field_key, label)')
+    .eq('trip_type_id', tripTypeId);
+  if (!ttgf || !ttgf.length) {
+    panel.innerHTML = '<p style="font-size:0.8rem;color:var(--muted);padding:4px 0 12px;">No gear fields attached to this trip type.</p>';
+    return;
+  }
+  panel.innerHTML = `
+    <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Rental gear fees (optional — added per guest who selects rental)</div>
+      ${ttgf.map(r => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">
+          <label style="font-size:0.85rem;">${r.gear_field_definitions?.label || r.gear_field_definitions?.field_key || 'Field'}</label>
+          <input class="sf-input" type="number" min="0" style="max-width:110px;margin-bottom:0;" value="${r.rental_fee ?? ''}" placeholder="0"
+            onchange="updateGearFieldRentalFee('${r.id}', this.value, this)">
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+async function updateGearFieldRentalFee(ttgfId, value, inputEl) {
+  await sb.from('trip_type_gear_fields').update({ rental_fee: value === '' ? null : (parseFloat(value) || 0) }).eq('id', ttgfId);
   if (inputEl) {
     inputEl.style.borderColor = 'var(--success, #2f855a)';
     setTimeout(() => { inputEl.style.borderColor = ''; }, 800);
