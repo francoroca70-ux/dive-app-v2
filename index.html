@@ -4878,9 +4878,12 @@ function svgPieChart(entries) {
 }
 
 function reportsLabelStep(data, barSlot) {
+  const targetLabelCount = 7;
+  const byCount = Math.max(1, Math.ceil(data.length / targetLabelCount));
   const maxLabelLen = Math.max(...data.map(d => (d.label || '').length), 1);
   const estWidth = maxLabelLen * 5.5 + 8;
-  return Math.max(1, Math.ceil(estWidth / barSlot));
+  const byWidth = Math.max(1, Math.ceil(estWidth / barSlot));
+  return Math.max(byCount, byWidth);
 }
 
 function svgStackedBarChart(data) {
