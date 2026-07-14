@@ -4877,15 +4877,22 @@ function svgPieChart(entries) {
   </div>`;
 }
 
+function reportsLabelStep(data, barSlot) {
+  const maxLabelLen = Math.max(...data.map(d => (d.label || '').length), 1);
+  const estWidth = maxLabelLen * 5.5 + 8;
+  return Math.max(1, Math.ceil(estWidth / barSlot));
+}
+
 function svgStackedBarChart(data) {
   const height = 160;
-  const width = Math.max(320, data.length * 36);
+  const barSlotTarget = 36;
+  const width = Math.max(320, data.length * barSlotTarget);
   const padding = { top: 10, right: 10, bottom: 26, left: 10 };
   const chartH = height - padding.top - padding.bottom;
   const maxVal = Math.max(1, ...data.map(d => d.segments.reduce((s, seg) => s + seg.value, 0)));
   const barSlot = (width - padding.left - padding.right) / data.length;
   const barWidth = Math.min(28, barSlot * 0.6);
-  const labelStep = Math.ceil(data.length / 15);
+  const labelStep = reportsLabelStep(data, barSlot);
   let bars = '';
   data.forEach((d, i) => {
     const x = padding.left + i * barSlot + (barSlot - barWidth) / 2;
@@ -4895,7 +4902,7 @@ function svgStackedBarChart(data) {
       y -= segH;
       if (segH > 0.3) bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${segH.toFixed(1)}" fill="${seg.color}" rx="2"></rect>`;
     });
-    if (i % labelStep === 0) {
+    if (i % labelStep === 0 || i === data.length - 1) {
       bars += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" font-size="9" fill="var(--muted)" text-anchor="middle">${d.label}</text>`;
     }
   });
@@ -4907,21 +4914,22 @@ function svgStackedBarChart(data) {
 
 function svgDivergingBarChart(data) {
   const height = 160;
-  const width = Math.max(320, data.length * 36);
+  const barSlotTarget = 36;
+  const width = Math.max(320, data.length * barSlotTarget);
   const padding = { top: 10, right: 10, bottom: 26, left: 10 };
   const chartH = height - padding.top - padding.bottom;
   const zeroY = padding.top + chartH / 2;
   const maxAbs = Math.max(1, ...data.map(d => Math.abs(d.value)));
   const barSlot = (width - padding.left - padding.right) / data.length;
   const barWidth = Math.min(28, barSlot * 0.6);
-  const labelStep = Math.ceil(data.length / 15);
+  const labelStep = reportsLabelStep(data, barSlot);
   let bars = '';
   data.forEach((d, i) => {
     const x = padding.left + i * barSlot + (barSlot - barWidth) / 2;
     const segH = (Math.abs(d.value) / maxAbs) * (chartH / 2);
     const y = d.value >= 0 ? zeroY - segH : zeroY;
     bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${Math.max(segH, 1).toFixed(1)}" fill="${d.color}" rx="2"></rect>`;
-    if (i % labelStep === 0) {
+    if (i % labelStep === 0 || i === data.length - 1) {
       bars += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" font-size="9" fill="var(--muted)" text-anchor="middle">${d.label}</text>`;
     }
   });
