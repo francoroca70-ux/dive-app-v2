@@ -2086,6 +2086,7 @@ body { background: var(--navy); color: var(--text); }
               <button class="btn-save" id="btn-export-waivers">Export day's waivers</button>
               <span class="save-feedback" id="waiver-export-feedback"></span>
             </div>
+            <p id="waiver-export-role-note" style="font-size:0.8rem;color:var(--muted);margin-top:8px;display:none;">Only owners, managers and front desk can download waivers to a computer. Ask them if you need a copy.</p>
             <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;">For safety, export and save a copy of each day's waivers to your own computer at the end of every day.</div>
           </div>
           <div class="card" id="card-pending-waivers">
@@ -5386,6 +5387,11 @@ async function loadWaivers() {
   const exportDateEl = document.getElementById('waiver-export-date');
   if (exportDateEl && !exportDateEl.value) exportDateEl.value = new Date().toISOString().split('T')[0];
 
+  const canExportWaivers = ['owner', 'manager', 'front_desk'].includes(currentUserRole);
+  document.getElementById('btn-export-waivers').disabled = !canExportWaivers;
+  document.getElementById('waiver-export-role-note').style.display = canExportWaivers ? 'none' : 'block';
+  document.getElementById('card-waiver-export').style.opacity = canExportWaivers ? '1' : '0.6';
+
   if (!currentOrgId) return;
   const today = new Date().toISOString().split('T')[0];
 
@@ -5723,6 +5729,12 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
 });
 
 document.getElementById('btn-export-waivers').addEventListener('click', () => {
+  if (!['owner', 'manager', 'front_desk'].includes(currentUserRole)) {
+    const feedback = document.getElementById('waiver-export-feedback');
+    feedback.textContent = 'Only owners, managers and front desk can export waivers.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
   const date = document.getElementById('waiver-export-date').value || new Date().toISOString().split('T')[0];
   exportWaiversForDay(date);
 });
