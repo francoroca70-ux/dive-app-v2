@@ -4156,6 +4156,43 @@ async function updateGroupField(key, field, value) {
     if (field === 'contact_name' && tripGroups_cache[0]?.id === g.id) {
       document.getElementById('modal-trip-title').textContent = val || 'Trip details';
     }
+    if (field === 'contact_email' && val) {
+      sendBookingConfirmationIfNeeded(g.id);
+    }
+  }
+}
+
+// ─── BOOKING CONFIRMATION EMAIL (light version) ───
+async function sendBookingConfirmationIfNeeded(groupId) {
+  if (!groupId) return;
+  try {
+    const { data: group } = await sb.from('trip_groups')
+      .select('id, contact_name, contact_email, price_per_person, confirmation_sent_at, trips(trip_type, trip_date, trip_time, boats(name))')
+      .eq('id', groupId).single();
+    if (!group || !group.contact_email || group.confirmation_sent_at) return;
+
+    const { data: org } = await sb.from('organizations').select('name, email, currency').eq('id', currentOrgId).single();
+
+    const { error } = await sb.functions.invoke('send-booking-confirmation', {
+      body: {
+        to: group.contact_email,
+        guestName: group.contact_name || 'Guest',
+        tripType: group.trips?.trip_type || 'Trip',
+        tripDate: group.trips?.trip_date || '',
+        tripTime: group.trips?.trip_time || '',
+        boatName: group.trips?.boats?.name || '',
+        pricePerPerson: group.price_per_person || null,
+        currency: org?.currency || 'USD',
+        orgName: org?.name || 'Your dive operator',
+        orgEmail: org?.email || null
+      }
+    });
+    if (!error) {
+      await sb.from('trip_groups').update({ confirmation_sent_at: new Date().toISOString() }).eq('id', groupId);
+    }
+  } catch (e) {
+    // Never block the booking save flow over an email hiccup.
+    console.warn('Booking confirmation email failed:', e);
   }
 }
 
@@ -5264,7 +5301,10 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
       price_per_person: primaryGroup.price_per_person || null,
       notes: primaryGroup.notes || null
     }).select().single();
-    if (!groupError) tripGroups_cache = [newGroup];
+    if (!groupError) {
+      tripGroups_cache = [newGroup];
+      sendBookingConfirmationIfNeeded(newGroup.id);
+    }
   } else {
     await sb.from('trips').update(payload).eq('id', currentTripId);
   }
