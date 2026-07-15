@@ -1454,8 +1454,8 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
         <div class="card">
-          <h2>Getting started</h2>
-          <p>Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.</p>
+          <h2 data-i18n="getting_started_title">Getting started</h2>
+          <p data-i18n="getting_started_sub">Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.</p>
         </div>
       </div>
 
@@ -2619,6 +2619,11 @@ const TRANSLATIONS = {
     stat_boats: 'Active boats', stat_boats_sub: 'in fleet',
     stat_crew: 'Crew online', stat_crew_sub: 'staff accounts',
     setup_banner_title: 'Set up your operation', setup_banner_sub: 'Add your shop details, boats, and invite your crew to get started.', setup_banner_btn: 'Go to Settings',
+
+    greeting_morning: 'Good morning', greeting_afternoon: 'Good afternoon', greeting_evening: 'Good evening',
+    home_banner_ready: 'Your operations dashboard. All systems ready.', home_banner_view_calendar: 'View Calendar',
+    getting_started_title: 'Getting started',
+    getting_started_sub: 'Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.',
   },
   es: {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
@@ -2654,6 +2659,11 @@ const TRANSLATIONS = {
     stat_boats: 'Embarcaciones activas', stat_boats_sub: 'en la flota',
     stat_crew: 'Tripulación activa', stat_crew_sub: 'cuentas de personal',
     setup_banner_title: 'Configura tu operación', setup_banner_sub: 'Agrega los datos de tu negocio, embarcaciones e invita a tu tripulación para comenzar.', setup_banner_btn: 'Ir a Configuración',
+
+    greeting_morning: 'Buenos días', greeting_afternoon: 'Buenas tardes', greeting_evening: 'Buenas noches',
+    home_banner_ready: 'Tu panel de operaciones. Todo listo.', home_banner_view_calendar: 'Ver Calendario',
+    getting_started_title: 'Primeros pasos',
+    getting_started_sub: 'Tu cuenta de Seven Seas ya está activa. Ve a Configuración para agregar los datos de tu operación y luego empieza a agregar embarcaciones y tripulación.',
   }
 };
 
@@ -2673,10 +2683,30 @@ function applyTranslations() {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLanguage));
 }
 
+// Handles UI pieces that mix translated text with live data (org name, today's date,
+// time-of-day greeting), so a simple data-i18n tag on its own can't cover them.
+function refreshDynamicTranslations() {
+  const greetingEl = document.getElementById('home-greeting');
+  if (greetingEl) {
+    const hour = new Date().getHours();
+    greetingEl.textContent = hour < 12 ? t('greeting_morning') : hour < 17 ? t('greeting_afternoon') : t('greeting_evening');
+  }
+  const dateEl = document.getElementById('home-date');
+  if (dateEl && dateEl.textContent !== 'Loading...') {
+    dateEl.textContent = new Date().toLocaleDateString(currentLanguage === 'es' ? 'es-ES' : 'en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
+  if (typeof currentOrgId !== 'undefined' && currentOrgId && typeof updateHomeBanner === 'function') {
+    updateHomeBanner();
+  }
+}
+
 function setLanguage(lang) {
   currentLanguage = lang;
   localStorage.setItem('sevenSeasLanguage', lang);
   applyTranslations();
+  refreshDynamicTranslations();
 }
 
 applyTranslations();
@@ -2945,9 +2975,9 @@ document.getElementById('sidebar-toggle').addEventListener('click', () => {
 function initHome(user) {
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? t('greeting_morning') : hour < 17 ? t('greeting_afternoon') : t('greeting_evening');
   document.getElementById('home-greeting').textContent = greeting;
-  document.getElementById('home-date').textContent = now.toLocaleDateString('en-US', {
+  document.getElementById('home-date').textContent = now.toLocaleDateString(currentLanguage === 'es' ? 'es-ES' : 'en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
@@ -2972,9 +3002,9 @@ async function updateHomeBanner() {
     // Replace banner with welcome banner showing operation name
     banner.innerHTML = `<div>
       <h2 style="color:var(--white);font-size:1.1rem;margin-bottom:4px;">${org.name}</h2>
-      <p>Your operations dashboard. All systems ready.</p>
+      <p>${t('home_banner_ready')}</p>
     </div>
-    <button class="btn-setup" onclick="showPage('calendar')">View Calendar</button>`;
+    <button class="btn-setup" onclick="showPage('calendar')">${t('home_banner_view_calendar')}</button>`;
   }
   await updateAppContext(org && org.name);
 }
