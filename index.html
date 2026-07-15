@@ -1437,9 +1437,15 @@ body { background: var(--navy); color: var(--text); }
                 <select class="sf-input" id="trip-type-select"></select>
               </div>
 
-              <div class="sf-group">
-                <label class="sf-label">Date <span class="required-star">*</span></label>
-                <input class="sf-input" type="date" id="trip-date">
+              <div class="sf-row">
+                <div class="sf-group">
+                  <label class="sf-label">Date <span class="required-star">*</span></label>
+                  <input class="sf-input" type="date" id="trip-date">
+                </div>
+                <div class="sf-group" id="trip-enddate-group" style="display:none;">
+                  <label class="sf-label">End date <span class="required-star">*</span></label>
+                  <input class="sf-input" type="date" id="trip-end-date">
+                </div>
               </div>
               <div class="sf-row">
                 <div class="sf-group">
@@ -3622,7 +3628,7 @@ async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
   const { data } = await sb
     .from('trips')
-    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(price_per_person, participants(id, rental_surcharge))')
+    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(price_per_person, crew_hire_total, participants(id, rental_surcharge))')
     .eq('org_id', currentOrgId)
     .gte('trip_date', formatDate(start))
     .lte('trip_date', formatDate(end))
@@ -3654,7 +3660,7 @@ function tripCard(t, paid) {
   const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(t.trip_type);
   const total = (t.trip_groups || []).reduce((sum, g) => {
     const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
-    return sum + (parseFloat(g.price_per_person) || 0) * (g.participants?.length || 0) + rentalTotal;
+    return sum + (parseFloat(g.price_per_person) || 0) * (g.participants?.length || 0) + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
   }, 0);
   const owed = total - (paid || 0);
   return `
@@ -3853,8 +3859,13 @@ async function onTripTypeChange() {
   // Tank/dive fields
   document.getElementById('trip-tank-fields').style.display = tripType.needs_tank_count ? 'block' : 'none';
 
+  // Multi-day (charter/yacht/liveaboard) end date field
+  document.getElementById('trip-enddate-group').style.display = tripType.is_multi_day ? 'block' : 'none';
+  if (!tripType.is_multi_day) document.getElementById('trip-end-date').value = '';
+
   // Boat requirement visual cue (boat field stays optional in UI either way)
   checkBoatConflict();
+  renderTripCrewSection();
 
   // Load gear fields for this trip type for participant form later
   const { data: ttgf } = await sb
@@ -3889,6 +3900,8 @@ async function openNewTrip() {
   document.getElementById('trip-date').value = formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
   document.getElementById('trip-arrival').value = '';
+  document.getElementById('trip-end-date').value = '';
+  document.getElementById('trip-enddate-group').style.display = 'none';
   document.getElementById('trip-dive-sites').value = '';
   tripCrewCache = [];
   document.getElementById('boat-conflict-warning').style.display = 'none';
@@ -3926,6 +3939,7 @@ async function openTrip(id) {
   document.getElementById('trip-date').value = trip.trip_date || '';
   document.getElementById('trip-time').value = trip.trip_time?.slice(0,5) || '';
   document.getElementById('trip-arrival').value = trip.arrival_time?.slice(0,5) || '';
+  document.getElementById('trip-end-date').value = trip.end_date || '';
   document.getElementById('trip-dive-sites').value = trip.dive_sites || '';
   setBookingMode(trip.booking_mode || 'private');
   populateTripBoats(trip.boat_id);
@@ -3937,8 +3951,8 @@ async function openTrip(id) {
   document.getElementById('modal-trip').style.display = 'flex';
   document.getElementById('modal-trip').scrollTop = 0;
 
-  const { data: existingCrew } = await sb.from('trip_crew').select('staff_id, staff(full_name)').eq('trip_id', id);
-  tripCrewCache = (existingCrew || []).map(c => ({ staff_id: c.staff_id, full_name: c.staff?.full_name || 'Unknown' }));
+  const { data: existingCrew } = await sb.from('trip_crew').select('staff_id, staff(full_name, day_rate)').eq('trip_id', id);
+  tripCrewCache = (existingCrew || []).map(c => ({ staff_id: c.staff_id, full_name: c.staff?.full_name || 'Unknown', day_rate: parseFloat(c.staff?.day_rate) || 0 }));
   await renderTripCrewSection();
   await renderGroupsPanel();
   await checkGuestCapacity();
@@ -4028,7 +4042,8 @@ async function groupCardHTML(g, index) {
     paymentHtml = `<p style="font-size:0.83rem;color:var(--muted);">Save the trip to log payments.</p>`;
   }
 
-  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * Math.max(guestCount, 1) + rentalTotal).toFixed(2);
+  const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
+  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * Math.max(guestCount, 1) + rentalTotal + crewHireTotal).toFixed(2);
 
   return `
   <div class="group-card" data-group-key="${key}">
@@ -4071,7 +4086,7 @@ async function groupCardHTML(g, index) {
     <div class="sf-row">
       <div class="sf-group" style="max-width:160px;">
         <label class="sf-label">Price per person</label>
-        <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * Math.max(${Math.max(guestCount,1)},1) + ${rentalTotal}).toFixed(2)">
+        <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * Math.max(${Math.max(guestCount,1)},1) + ${rentalTotal} + ${crewHireTotal}).toFixed(2)">
       </div>
       <div class="sf-group">
         <label class="sf-label">Total</label>
@@ -5229,11 +5244,15 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const diveSites = document.getElementById('trip-dive-sites').value.trim();
   const tripType = currentTripTypes.find(t => t.id === typeId);
   const primaryGroup = tripGroups_cache[0] || blankGroup();
+  const isMultiDay = !!tripType?.is_multi_day;
+  const endDate = isMultiDay ? document.getElementById('trip-end-date').value : null;
 
   const errors = [];
   if (!date) errors.push('Date');
   if (!time) errors.push('Departure time');
   if (!arrival) errors.push('Arrival time');
+  if (isMultiDay && !endDate) errors.push('End date');
+  if (isMultiDay && endDate && endDate < date) errors.push('End date must be on or after the start date');
   if (!primaryGroup.contact_name) errors.push('Contact name');
   if (!primaryGroup.contact_phone) errors.push('Contact phone');
 
@@ -5273,6 +5292,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     trip_date: date,
     trip_time: time,
     arrival_time: arrival || null,
+    end_date: endDate || null,
     boat_id: boatId || null,
     location_id: await resolveTripLocationId(boatId),
     num_dives: tripType?.num_tanks || null,
@@ -5319,6 +5339,16 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   if (tripCrewCache.length) {
     await sb.from('trip_crew').insert(tripCrewCache.map(c => ({ trip_id: tripId, staff_id: c.staff_id, role: 'crew' })));
   }
+
+  // Crew-hire cost (day rate x number of days) folds into the primary group's total, multi-day trip types only
+  const crewDays = isMultiDay ? tripDayCount(date, endDate) : 1;
+  const crewHireTotal = isMultiDay ? tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * crewDays, 0) : 0;
+  const primaryGroupId = tripGroups_cache[0]?.id;
+  if (primaryGroupId) {
+    await sb.from('trip_groups').update({ crew_hire_total: crewHireTotal }).eq('id', primaryGroupId);
+    tripGroups_cache[0].crew_hire_total = crewHireTotal;
+  }
+
   await renderTripCrewSection();
   await renderGroupsPanel();
 
@@ -5875,6 +5905,10 @@ let tripCrewCache = [];
 async function getEligibleCrewData() {
   const date = document.getElementById('trip-date').value;
   const boatId = document.getElementById('trip-boat').value;
+  const typeId = document.getElementById('trip-type-select').value;
+  const tripType = currentTripTypes.find(t => t.id === typeId);
+  const isMultiDay = !!tripType?.is_multi_day;
+  const endDate = isMultiDay ? (document.getElementById('trip-end-date').value || date) : date;
   const newStart = document.getElementById('trip-time').value || '00:00';
   const newEnd = document.getElementById('trip-arrival').value || '23:59';
 
@@ -5884,28 +5918,41 @@ async function getEligibleCrewData() {
     if (boat?.location_id) locId = boat.location_id;
   }
 
-  const { data: staffLocRows } = await sb.from('staff_locations').select('staff(id, full_name, role)').eq('location_id', locId);
-  const { data: owners } = await sb.from('staff').select('id, full_name, role').eq('org_id', currentOrgId).eq('role', 'owner');
+  const { data: staffLocRows } = await sb.from('staff_locations').select('staff(id, full_name, role, day_rate)').eq('location_id', locId);
+  const { data: owners } = await sb.from('staff').select('id, full_name, role, day_rate').eq('org_id', currentOrgId).eq('role', 'owner');
   const locStaff = (staffLocRows || []).map(r => r.staff).filter(Boolean);
   const eligibleStaff = [...locStaff, ...(owners || []).filter(o => !locStaff.some(s => s.id === o.id))];
 
   let availability = [], conflicted = {};
   if (date) {
-    const availRes = await sb.from('staff_availability').select('*').lte('start_date', date).gte('end_date', date);
+    const availRes = await sb.from('staff_availability').select('*').lte('start_date', endDate).gte('end_date', date);
     availability = availRes.data || [];
 
     const { data: otherTripCrew } = await sb.from('trip_crew')
-      .select('staff_id, trip_id, trips!inner(trip_date, trip_time, arrival_time, contact_name)')
-      .eq('trips.trip_date', date)
+      .select('staff_id, trip_id, trips!inner(trip_date, end_date, trip_time, arrival_time, contact_name)')
+      .lte('trips.trip_date', endDate)
       .neq('trip_id', currentTripId || '00000000-0000-0000-0000-000000000000');
 
     (otherTripCrew || []).forEach(tc => {
-      const tStart = tc.trips.trip_time?.slice(0,5) || '00:00';
-      const tEnd = tc.trips.arrival_time?.slice(0,5) || '23:59';
-      if (newStart < tEnd && newEnd > tStart) conflicted[tc.staff_id] = tc.trips.contact_name || 'another trip';
+      const tStart = tc.trips.trip_date;
+      const tEnd = tc.trips.end_date || tc.trips.trip_date;
+      if (!(tStart <= endDate && tEnd >= date)) return; // no date-range overlap at all
+      const bothSingleDaySameDate = date === endDate && tStart === tEnd && date === tStart;
+      if (bothSingleDaySameDate) {
+        const tStartTime = tc.trips.trip_time?.slice(0,5) || '00:00';
+        const tEndTime = tc.trips.arrival_time?.slice(0,5) || '23:59';
+        if (newStart < tEndTime && newEnd > tStartTime) conflicted[tc.staff_id] = tc.trips.contact_name || 'another trip';
+      } else {
+        conflicted[tc.staff_id] = tc.trips.contact_name || 'another trip';
+      }
     });
   }
-  return { eligibleStaff, availability, conflicted };
+  return { eligibleStaff, availability, conflicted, isMultiDay, endDate, date };
+}
+function tripDayCount(startDate, endDate) {
+  if (!startDate || !endDate) return 1;
+  const ms = new Date(endDate + 'T00:00:00') - new Date(startDate + 'T00:00:00');
+  return Math.max(1, Math.round(ms / 86400000) + 1);
 }
 
 async function renderTripCrewSection() {
@@ -5915,20 +5962,31 @@ async function renderTripCrewSection() {
     container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Set a date to see available crew.</p>';
     return;
   }
-  const { eligibleStaff, availability, conflicted } = await getEligibleCrewData();
+  const { eligibleStaff, availability, conflicted, isMultiDay, endDate } = await getEligibleCrewData();
+  const days = tripDayCount(date, endDate);
   const assignedIds = tripCrewCache.map(c => c.staff_id);
 
-  const assignedHtml = tripCrewCache.map(c => `
-    <span class="crew-member-tag-v2">${c.full_name}
+  const assignedHtml = tripCrewCache.map(c => {
+    const rate = parseFloat(c.day_rate) || 0;
+    const costNote = (isMultiDay && rate > 0) ? ` — $${rate.toFixed(2)}/day × ${days} = $${(rate*days).toFixed(2)}` : '';
+    return `
+    <span class="crew-member-tag-v2">${c.full_name}${costNote}
       <button onclick="removeTripCrewFromCache('${c.staff_id}')">×</button>
     </span>
-  `).join('');
+  `;
+  }).join('');
 
   const availableStaff = eligibleStaff.filter(s =>
     !assignedIds.includes(s.id) && !conflicted[s.id] && !availability.find(a => a.staff_id === s.id)
   );
 
-  const optionsHtml = availableStaff.map(s => `<option value="${s.id}" data-name="${s.full_name.replace(/"/g,'&quot;')}">${s.full_name}</option>`).join('');
+  const optionsHtml = availableStaff.map(s => {
+    const rate = parseFloat(s.day_rate) || 0;
+    const rateLabel = (isMultiDay && rate > 0) ? ` — $${rate.toFixed(2)}/day` : '';
+    return `<option value="${s.id}" data-name="${s.full_name.replace(/"/g,'&quot;')}" data-rate="${rate}">${s.full_name}${rateLabel}</option>`;
+  }).join('');
+
+  const crewHireTotal = isMultiDay ? tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * days, 0) : 0;
 
   container.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${assignedHtml || '<span style="font-size:0.8rem;color:var(--muted)">No crew assigned yet.</span>'}</div>
@@ -5939,17 +5997,20 @@ async function renderTripCrewSection() {
       </select>
       <button class="btn-cancel" onclick="addSelectedTripCrew()">Add</button>
     </div>
+    ${crewHireTotal > 0 ? `<p style="font-size:0.8rem;color:var(--blue);font-weight:600;margin-top:8px;">Crew hire cost: $${crewHireTotal.toFixed(2)} for ${days} day${days>1?'s':''} — added to this booking's total.</p>` : ''}
   `;
 }
 function addSelectedTripCrew() {
   const sel = document.getElementById('trip-crew-select');
   if (!sel.value) return;
   const name = sel.options[sel.selectedIndex].dataset.name;
-  addTripCrewToCache(sel.value, name);
+  const rate = sel.options[sel.selectedIndex].dataset.rate;
+  addTripCrewToCache(sel.value, name, rate);
 }
-function addTripCrewToCache(staffId, fullName) {
-  tripCrewCache.push({ staff_id: staffId, full_name: fullName });
+function addTripCrewToCache(staffId, fullName, dayRate) {
+  tripCrewCache.push({ staff_id: staffId, full_name: fullName, day_rate: parseFloat(dayRate) || 0 });
   renderTripCrewSection();
+  checkGuestCapacity();
 }
 function removeTripCrewFromCache(staffId) {
   tripCrewCache = tripCrewCache.filter(c => c.staff_id !== staffId);
@@ -5986,7 +6047,8 @@ async function groupPaymentHTML(g, participants) {
   const perPerson = parseFloat(g.price_per_person) || 0;
   const guests = Math.max(participants.length, 1);
   const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
-  const total = perPerson * guests + rentalTotal;
+  const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
+  const total = perPerson * guests + rentalTotal + crewHireTotal;
   const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
   const balance = total - paid;
   const paymentsHtml = (payments || []).map(p => `
@@ -5999,7 +6061,7 @@ async function groupPaymentHTML(g, participants) {
   const statusColor = noPriceSet ? 'var(--warning, #b7791f)' : balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
   const breakdownText = noPriceSet
     ? `${guests} guest${guests>1?'s':''} added, but no price per person set yet — nothing will be charged until you add one above.`
-    : `$${perPerson.toFixed(2)}/person × ${guests} guest${guests>1?'s':''} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' rental gear' : ''} = $${total.toFixed(2)}`;
+    : `$${perPerson.toFixed(2)}/person × ${guests} guest${guests>1?'s':''} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' rental gear' : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' crew hire' : ''} = $${total.toFixed(2)}`;
   return `
     <div style="font-size:0.83rem;font-weight:600;color:${statusColor};margin-bottom:8px;">${statusLabel}</div>
     <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">${breakdownText}</div>
@@ -6040,11 +6102,12 @@ async function refreshGroupPaymentSection(groupId) {
   if (!g) return;
   const participants = groupParticipants_cache[groupId] || await loadGroupParticipants(groupId);
   const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
+  const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
   const html = await groupPaymentHTML(g, participants);
   const container = document.getElementById('group-payments-' + groupId);
   if (container) container.innerHTML = html;
   const totalEl = document.getElementById('group-total-' + groupId);
-  if (totalEl) totalEl.value = ((parseFloat(g.price_per_person)||0) * Math.max(participants.length,1) + rentalTotal).toFixed(2);
+  if (totalEl) totalEl.value = ((parseFloat(g.price_per_person)||0) * Math.max(participants.length,1) + rentalTotal + crewHireTotal).toFixed(2);
 }
 window.currentPaymentMethod = {};
 function showLogPaymentForm(groupId, total, paid) {
@@ -6691,6 +6754,8 @@ async function loadCrew() {
   document.getElementById('stat-crew').textContent = staff.length;
 
   const canEditBanked = ['owner', 'manager'].includes(currentUserRole);
+  const activeCategories = await loadActiveCategories();
+  const showDayRate = activeCategories.includes('charter_yacht');
   list.innerHTML = staff.map(s => {
     const initials = s.full_name ? s.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : '?';
     const roleName = s.custom_role_name || s.role.replace('_', ' ');
@@ -6705,6 +6770,11 @@ async function loadCrew() {
           <div class="crew-meta">${s.email} · ${location}</div>
         </div>
       </div>
+      ${showDayRate ? `
+      <div style="display:flex;align-items:center;gap:6px;margin-right:12px;">
+        <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">Day rate</span>
+        <input class="sf-input" type="number" min="0" style="width:70px;text-align:center;padding:6px 4px;margin-bottom:0;" value="${s.day_rate ?? ''}" placeholder="—" ${canEditBanked ? '' : 'disabled'} onchange="updateStaffDayRate('${s.id}', this.value)" title="Set this to make ${(s.full_name||'this person').split(' ')[0]} hireable as paid crew on multi-day charter trips">
+      </div>` : ''}
       <div style="display:flex;align-items:center;gap:6px;margin-right:12px;">
         <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">Banked days</span>
         <input class="sf-input" type="number" style="width:60px;text-align:center;padding:6px 4px;margin-bottom:0;" value="${s.banked_days || 0}" ${canEditBanked ? '' : 'disabled'} onchange="updateBankedDays('${s.id}', this.value)">
@@ -6717,6 +6787,10 @@ async function loadCrew() {
 
   // Load pending invites
   await loadPendingInvites();
+}
+async function updateStaffDayRate(staffId, value) {
+  const dayRate = value === '' ? null : (parseFloat(value) || 0);
+  await sb.from('staff').update({ day_rate: dayRate }).eq('id', staffId);
 }
 async function updateBankedDays(staffId, newValue) {
   const value = parseFloat(newValue) || 0;
@@ -8524,7 +8598,7 @@ async function renderTripTypesList() {
     <div class="trip-type-row">
       <div>
         <div class="trip-type-name">${t.name}</div>
-        <div class="trip-type-meta">${CATEGORY_LABELS[t.category] || t.category}${t.needs_tank_count ? ' · ' + t.num_tanks + ' tank' + (t.num_tanks > 1 ? 's' : '') : ''}${t.can_be_private ? ' · can be private' : ''}</div>
+        <div class="trip-type-meta">${CATEGORY_LABELS[t.category] || t.category}${t.needs_tank_count ? ' · ' + t.num_tanks + ' tank' + (t.num_tanks > 1 ? 's' : '') : ''}${t.can_be_private ? ' · can be private' : ''}${t.is_multi_day ? ' · multi-day' : ''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <input class="trip-type-price-input" type="number" min="0" value="${t.default_price || ''}" placeholder="0"
@@ -8533,8 +8607,18 @@ async function renderTripTypesList() {
         <button class="btn-icon danger" onclick="deactivateTripType('${t.id}')">Remove</button>
       </div>
     </div>
+    ${t.category === 'charter_yacht' ? `
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted);margin:-6px 0 12px;cursor:pointer;">
+      <input type="checkbox" ${t.is_multi_day ? 'checked' : ''} onchange="updateTripTypeMultiDay('${t.id}', this.checked)">
+      Multi-day trip (adds an end date + lets you hire crew per day on this trip type)
+    </label>` : ''}
     <div id="rental-fees-${t.id}" style="display:none;margin:-4px 0 12px;"></div>
   `).join('');
+}
+async function updateTripTypeMultiDay(id, checked) {
+  await sb.from('trip_types').update({ is_multi_day: checked }).eq('id', id);
+  const tt = currentTripTypes.find(t => t.id === id);
+  if (tt) tt.is_multi_day = checked;
 }
 
 async function updateTripTypePrice(id, value, inputEl) {
