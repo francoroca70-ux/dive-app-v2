@@ -5350,11 +5350,13 @@ async function printManifest() {
   }
 
   const activeFieldKeys = new Set();
+  let showCertColumn = false;
   tripGroups_cache.forEach(g => {
     (groupParticipants_cache[g.id] || []).forEach(p => {
       Object.entries(p.gear || {}).forEach(([k, v]) => {
         if (v && v !== 'Own gear' && v !== 'None') activeFieldKeys.add(k);
       });
+      if (p.is_certified === true || p.is_certified === false) showCertColumn = true;
     });
   });
   const gearColumns = selectedTripTypeFields.filter(f => activeFieldKeys.has(f.field_key));
@@ -5365,8 +5367,10 @@ async function printManifest() {
     const participants = groupParticipants_cache[g.id] || [];
     const rows = participants.map(p => {
       const gear = p.gear || {};
+      const certCell = showCertColumn ? `<td>${escapeHtml(certDisplayString(p) || '—')}</td>` : '';
       return `<tr>
         <td>${escapeHtml(p.full_name)}${p.checked_in_at ? ' ✓' : ''}</td>
+        ${certCell}
         ${gearColumns.map(f => {
           const v = gear[f.field_key];
           const show = (v && v !== 'Own gear' && v !== 'None') ? v : '—';
@@ -5380,8 +5384,8 @@ async function printManifest() {
         <h3>${escapeHtml(g.contact_name) || 'Group ' + (i + 1)}${g.contact_phone ? ' · ' + escapeHtml(g.contact_phone) : ''}</h3>
         ${g.notes ? `<p class="manifest-group-notes">${escapeHtml(g.notes)}</p>` : ''}
         <table>
-          <thead><tr><th>Guest</th>${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}<th>Notes</th></tr></thead>
-          <tbody>${rows || `<tr><td colspan="${gearColumns.length + 2}">No guests</td></tr>`}</tbody>
+          <thead><tr><th>Guest</th>${showCertColumn ? '<th>Certification</th>' : ''}${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}<th>Notes</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="${gearColumns.length + (showCertColumn ? 1 : 0) + 2}">No guests</td></tr>`}</tbody>
         </table>
       </div>
     `;
@@ -6108,13 +6112,21 @@ function gearDisplayString(gear) {
   return parts.length ? parts.join(' · ') : 'No gear requests';
 }
 
+function certDisplayString(p) {
+  if (p.is_certified === true) return p.certification_level ? `Certified — ${p.certification_level}` : 'Certified';
+  if (p.is_certified === false) return 'Not certified';
+  return null;
+}
+
 function renderGroupParticipantsBlock(groupId, participants) {
   const listHtml = participants.length ? participants.map(p => {
     const gearStr = gearDisplayString(p.gear);
+    const certStr = certDisplayString(p);
     return `
     <div class="participant-row">
       <div>
         <div class="p-name">${p.full_name}${p.phone ? ' · ' + p.phone : ''}</div>
+        ${certStr ? `<div class="p-meta">${certStr}</div>` : ''}
         <div class="p-meta">${gearStr}</div>
         ${p.notes ? `<div class="p-meta">${p.notes}</div>` : ''}
       </div>
@@ -6137,6 +6149,28 @@ function renderGroupParticipantsBlock(groupId, participants) {
           <input class="sf-input" type="tel" autocomplete="off" id="p-phone-${groupId}" placeholder="Optional">
         </div>
       </div>
+      <div id="cert-section-${groupId}" style="display:none;">
+        <div class="sf-group">
+          <label class="sf-label">Certified diver? <span class="required-star">*</span></label>
+          <div class="radio-group">
+            <div class="radio-btn" id="cert-yes-${groupId}" onclick="setGuestCertStatus('${groupId}', true)">Certified</div>
+            <div class="radio-btn" id="cert-no-${groupId}" onclick="setGuestCertStatus('${groupId}', false)">Not certified</div>
+          </div>
+        </div>
+        <div class="sf-group" id="cert-level-wrap-${groupId}" style="display:none;">
+          <label class="sf-label">Certification level</label>
+          <select class="sf-input" id="cert-level-${groupId}">
+            <option value="">Select level</option>
+            <option>Junior Open Water</option>
+            <option>Open Water</option>
+            <option>Advanced Open Water</option>
+            <option>Rescue Diver</option>
+            <option>Divemaster</option>
+            <option>Instructor</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
       <div id="dynamic-gear-fields-${groupId}"></div>
       <div class="sf-group">
         <label class="sf-label">Notes</label>
@@ -6149,6 +6183,14 @@ function renderGroupParticipantsBlock(groupId, participants) {
       </div>
     </div>
   `;
+}
+
+window.currentGuestCertStatus = {};
+function setGuestCertStatus(groupId, certified) {
+  window.currentGuestCertStatus[groupId] = certified;
+  document.getElementById(`cert-yes-${groupId}`).classList.toggle('selected', certified === true);
+  document.getElementById(`cert-no-${groupId}`).classList.toggle('selected', certified === false);
+  document.getElementById(`cert-level-wrap-${groupId}`).style.display = certified ? 'block' : 'none';
 }
 
 function renderDynamicGearFieldsFor(groupId) {
@@ -6189,6 +6231,17 @@ function showAddGuestForm(groupId) {
   document.getElementById('p-name-' + groupId).value = '';
   document.getElementById('p-phone-' + groupId).value = '';
   document.getElementById('p-notes-' + groupId).value = '';
+
+  const typeId = document.getElementById('trip-type-select').value;
+  const tripType = currentTripTypes.find(t => t.id === typeId);
+  const isDiving = tripType?.category === 'diving';
+  document.getElementById('cert-section-' + groupId).style.display = isDiving ? 'block' : 'none';
+  window.currentGuestCertStatus[groupId] = null;
+  document.getElementById('cert-yes-' + groupId).classList.remove('selected');
+  document.getElementById('cert-no-' + groupId).classList.remove('selected');
+  document.getElementById('cert-level-wrap-' + groupId).style.display = 'none';
+  document.getElementById('cert-level-' + groupId).value = '';
+
   renderDynamicGearFieldsFor(groupId);
   form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -6205,6 +6258,17 @@ async function saveGroupParticipant(groupId) {
     feedback.className = 'save-feedback error visible';
     return;
   }
+
+  const typeId = document.getElementById('trip-type-select').value;
+  const tripType = currentTripTypes.find(t => t.id === typeId);
+  const isDiving = tripType?.category === 'diving';
+  const certStatus = window.currentGuestCertStatus[groupId];
+  if (isDiving && (certStatus === null || certStatus === undefined)) {
+    feedback.textContent = 'Please indicate whether this guest is a certified diver.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const certLevel = (isDiving && certStatus) ? (document.getElementById('cert-level-' + groupId).value || null) : null;
 
   const gear = {};
   let rentalSurcharge = 0;
@@ -6223,6 +6287,8 @@ async function saveGroupParticipant(groupId) {
     group_id: groupId,
     full_name: name,
     phone: document.getElementById('p-phone-' + groupId).value.trim() || null,
+    is_certified: isDiving ? certStatus : null,
+    certification_level: certLevel,
     gear: gear,
     rental_surcharge: rentalSurcharge,
     notes: document.getElementById('p-notes-' + groupId).value.trim() || null
