@@ -2639,6 +2639,20 @@ const TRANSLATIONS = {
     tt_contact: 'Contact', tt_lead_contact_name: 'Lead contact name', tt_phone: 'Phone', tt_email: 'Email', tt_booked_by: 'Booked by',
     tt_guests_label: 'Guests', tt_add_guest: '+ Add guest', tt_notes: 'Notes', tt_payment: 'Payment', tt_price_per_person: 'Price per person', tt_total: 'Total',
     tt_link_tab: 'Link to guest tab (optional)', tt_check_in: 'Check In',
+    tt_group_contact: 'Group {n} — Contact', tt_booked_by_placeholder: 'Staff member name', tt_save_add_guests: 'Save the trip to add guests.',
+    tt_save_log_payments: 'Save the trip to log payments.', tt_no_tab: 'No tab — pay per trip', tt_checked_in: 'Checked In', tt_checkin_disabled_title: 'Add guests first',
+    tt_confirm_checkin: 'Confirm check-in', tt_verify_against: 'Verify against: ', tt_already_checked_in: '(already checked in)',
+    tt_confirm_checkin_btn: 'Confirm Check-In', tt_cancel: 'Cancel', tt_no_crew_yet: 'No crew assigned yet.', tt_select_crew_member: 'Select crew member',
+    tt_no_one_available: 'No one available for this date/time', tt_add: 'Add', tt_crew_hire_cost: 'Crew hire cost: ', tt_for_days: ' for ',
+    tt_day_singular: ' day', tt_day_plural: ' days', tt_added_to_total: ' — added to this booking\'s total.',
+    tt_boat_capacity: 'Boat capacity: ', tt_not_incl_captain: ' (not including captain)', tt_crew_word: ' crew · ', tt_booked: ' booked · ',
+    tt_seat_singular: ' seat remaining', tt_seat_plural: ' seats remaining', tt_too_many_guests: 'Too many guests: ', tt_only_seats_available: ' seats available after ',
+    tt_boat_unavailable: 'Boat unavailable: overlaps with ', tt_privately_booked: ' (privately booked)', tt_this_trip_private: ' — this trip is private',
+    tt_adjust_times: '. Adjust times or choose a different boat.', tt_unnamed: 'Unnamed', tt_boat_capacity_exceeded: 'Boat capacity exceeded: ',
+    tt_already_booked: ' guests already booked in this slot, adding ', tt_would_total: ' would total ', tt_max_capacity: ' (max ', tt_this_boat_private: 'This boat will be exclusively reserved for this time slot.',
+    tt_this_boat_shared: 'Multiple independent groups can share this boat, up to its combined capacity.', tt_no_trip_types: 'No trip types — set up in Settings first',
+    tt_no_boat_select: 'No boat / select a boat',
+    tt_too_many_guests_full: 'Too many guests: {guests} booked, only {seats} seats available after {crew} crew.',
 
     fleet_add_boat: '+ Add boat', fleet_add_engine: '+ Add engine', fleet_log_hours: '+ Log engine hours',
     fleet_boat_name: 'Boat name', fleet_capacity: 'Capacity', fleet_location: 'Location',
@@ -2759,7 +2773,7 @@ const TRANSLATIONS = {
   es: {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
     nav_home: 'Inicio', nav_calendar: 'Calendario', nav_fleet: 'Flota', nav_crew: 'Tripulación',
-    nav_checklists: 'Listas de Verificación', nav_tasks: 'Tareas', nav_gear: 'Equipo y Material',
+    nav_checklists: 'Checklists', nav_tasks: 'Tareas', nav_gear: 'Equipo y Material',
     nav_waivers: 'Formularios', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
     signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
 
@@ -2775,7 +2789,7 @@ const TRANSLATIONS = {
 
     header_fleet_title: 'Flota', header_fleet_sub: 'Embarcaciones, motores y mantenimiento',
     header_crew_title: 'Tripulación', header_crew_sub: 'Cuentas y roles del personal',
-    header_checklists_title: 'Listas de Verificación', header_checklists_sub: 'Preparación de salidas, seguridad de la embarcación, rutinas por área',
+    header_checklists_title: 'Checklists', header_checklists_sub: 'Preparación de salidas, seguridad de la embarcación, rutinas por área',
     header_gear_title: 'Equipo y Material', header_gear_sub: 'Inventario y seguimiento de vida útil',
     header_waivers_title: 'Formularios', header_waivers_sub: 'Recolección de firmas digitales de huéspedes',
     header_cashup_title: 'Arqueo de Caja Diario', header_cashup_sub: 'Conciliación de caja y cuentas de huéspedes',
@@ -2810,10 +2824,24 @@ const TRANSLATIONS = {
     tt_contact: 'Contacto', tt_lead_contact_name: 'Nombre del contacto principal', tt_phone: 'Teléfono', tt_email: 'Correo electrónico', tt_booked_by: 'Reservado por',
     tt_guests_label: 'Huéspedes', tt_add_guest: '+ Agregar huésped', tt_notes: 'Notas', tt_payment: 'Pago', tt_price_per_person: 'Precio por persona', tt_total: 'Total',
     tt_link_tab: 'Vincular a cuenta de huésped (opcional)', tt_check_in: 'Registrar Llegada',
+    tt_group_contact: 'Grupo {n} — Contacto', tt_booked_by_placeholder: 'Nombre del miembro del personal', tt_save_add_guests: 'Guarda la salida para agregar huéspedes.',
+    tt_save_log_payments: 'Guarda la salida para registrar pagos.', tt_no_tab: 'Sin cuenta — pagar por salida', tt_checked_in: 'Registrado', tt_checkin_disabled_title: 'Agrega huéspedes primero',
+    tt_confirm_checkin: 'Confirmar llegada', tt_verify_against: 'Verificar contra: ', tt_already_checked_in: '(ya registrado)',
+    tt_confirm_checkin_btn: 'Confirmar Llegada', tt_cancel: 'Cancelar', tt_no_crew_yet: 'Aún no hay tripulación asignada.', tt_select_crew_member: 'Seleccionar miembro de la tripulación',
+    tt_no_one_available: 'Nadie disponible para esta fecha/hora', tt_add: 'Agregar', tt_crew_hire_cost: 'Costo de tripulación contratada: ', tt_for_days: ' por ',
+    tt_day_singular: ' día', tt_day_plural: ' días', tt_added_to_total: ' — agregado al total de esta reserva.',
+    tt_boat_capacity: 'Capacidad de la embarcación: ', tt_not_incl_captain: ' (sin incluir al capitán)', tt_crew_word: ' tripulación · ', tt_booked: ' reservados · ',
+    tt_seat_singular: ' asiento disponible', tt_seat_plural: ' asientos disponibles', tt_too_many_guests: 'Demasiados huéspedes: ', tt_only_seats_available: ' asientos disponibles después de ',
+    tt_boat_unavailable: 'Embarcación no disponible: se superpone con ', tt_privately_booked: ' (reserva privada)', tt_this_trip_private: ' — esta salida es privada',
+    tt_adjust_times: '. Ajusta los horarios o elige otra embarcación.', tt_unnamed: 'Sin nombre', tt_boat_capacity_exceeded: 'Capacidad de la embarcación excedida: ',
+    tt_already_booked: ' huéspedes ya reservados en este horario, agregar ', tt_would_total: ' totalizaría ', tt_max_capacity: ' (máx ', tt_this_boat_private: 'Esta embarcación quedará reservada exclusivamente para este horario.',
+    tt_this_boat_shared: 'Varios grupos independientes pueden compartir esta embarcación, hasta su capacidad combinada.', tt_no_trip_types: 'Sin tipos de salida — configúralos primero en Configuración',
+    tt_no_boat_select: 'Sin embarcación / selecciona una',
+    tt_too_many_guests_full: 'Demasiados huéspedes: {guests} reservados, solo {seats} asientos disponibles después de {crew} tripulación.',
 
     fleet_add_boat: '+ Agregar embarcación', fleet_add_engine: '+ Agregar motor', fleet_log_hours: '+ Registrar horas de motor',
     fleet_boat_name: 'Nombre de la embarcación', fleet_capacity: 'Capacidad', fleet_location: 'Ubicación',
-    fleet_engine_hours: 'Horas del motor', fleet_service_completed: 'Servicio Completado — Reiniciar Contador',
+    fleet_engine_hours: 'Horas del motor', fleet_service_completed: 'Mantenimiento completado - reiniciar contador',
     fleet_recent_logs: 'Registros Recientes', fleet_maintenance: 'Mantenimiento', fleet_no_logs: 'Aún no hay registros.',
 
     crew_invite: '+ Invitar personal', crew_email_label: 'Correo electrónico', crew_name_label: 'Nombre completo', crew_role_label: 'Rol',
@@ -2974,6 +3002,13 @@ function refreshDynamicTranslations() {
     if (typeof loadFleet === 'function') loadFleet();
     if (typeof loadCrew === 'function') loadCrew();
     if (typeof renderTripTypesList === 'function') renderTripTypesList();
+    if (document.getElementById('page-checklists') && document.getElementById('page-checklists').classList.contains('active')) {
+      if (typeof initCaptainChecklist === 'function') initCaptainChecklist();
+      if (typeof initInstructorChecklist === 'function') initInstructorChecklist();
+      if (typeof initDeptChecklists === 'function') initDeptChecklists();
+    }
+    if (typeof loadGearRegistry === 'function' && document.getElementById('gear-registry-list')) loadGearRegistry();
+    if (typeof loadCompressors === 'function') loadCompressors();
   }
 }
 
@@ -4328,15 +4363,16 @@ function addDays(d, n) {
 }
 
 function calTitleText() {
+  const loc = currentLanguage === 'es' ? 'es-ES' : 'en-US';
   const opts = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
   const wOpts = { month: 'long', year: 'numeric' };
-  if (calView === 'day') return calDate.toLocaleDateString('en-US', opts);
+  if (calView === 'day') return calDate.toLocaleDateString(loc, opts);
   if (calView === 'week') {
     const start = getWeekStart(calDate);
     const end = addDays(start, 6);
-    return `${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+    return `${start.toLocaleDateString(loc,{month:'short',day:'numeric'})} – ${end.toLocaleDateString(loc,{month:'short',day:'numeric',year:'numeric'})}`;
   }
-  return calDate.toLocaleDateString('en-US', wOpts);
+  return calDate.toLocaleDateString(loc, wOpts);
 }
 
 function getWeekStart(d) {
@@ -4622,7 +4658,7 @@ async function populateTripTypeSelect(selectedId) {
   const types = await loadTripTypesForModal();
   const sel = document.getElementById('trip-type-select');
   if (!types.length) {
-    sel.innerHTML = '<option value="">No trip types — set up in Settings first</option>';
+    sel.innerHTML = `<option value="">${t('tt_no_trip_types')}</option>`;
     return;
   }
   const grouped = {};
@@ -4783,8 +4819,8 @@ async function setBookingMode(mode) {
   window.currentBookingMode = mode;
   const hint = document.getElementById('booking-mode-hint');
   hint.textContent = mode === 'private'
-    ? 'This boat will be exclusively reserved for this time slot.'
-    : 'Multiple independent groups can share this boat, up to its combined capacity.';
+    ? t('tt_this_boat_private')
+    : t('tt_this_boat_shared');
   if (currentTripId) {
     await sb.from('trips').update({ booking_mode: mode }).eq('id', currentTripId);
   }
@@ -4830,9 +4866,9 @@ async function groupCardHTML(g, index) {
     paymentHtml = await groupPaymentHTML(g, participants);
     checkInHtml = checkInButtonHTML(g.id, participants);
   } else {
-    guestsHtml = `<p style="font-size:0.83rem;color:var(--muted);">Save the trip to add guests.</p>`;
-    tabOptionsHtml = '<option value="">No tab — pay per trip</option>';
-    paymentHtml = `<p style="font-size:0.83rem;color:var(--muted);">Save the trip to log payments.</p>`;
+    guestsHtml = `<p style="font-size:0.83rem;color:var(--muted);">${t('tt_save_add_guests')}</p>`;
+    tabOptionsHtml = `<option value="">${t('tt_no_tab')}</option>`;
+    paymentHtml = `<p style="font-size:0.83rem;color:var(--muted);">${t('tt_save_log_payments')}</p>`;
   }
 
   const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
@@ -4841,54 +4877,54 @@ async function groupCardHTML(g, index) {
   return `
   <div class="group-card" data-group-key="${key}">
     ${removeBtn}
-    <div class="card-section-title" style="margin-top:0;">${index === 0 ? 'Contact' : `Group ${index+1} — Contact`}</div>
+    <div class="card-section-title" style="margin-top:0;">${index === 0 ? t('tt_contact') : t('tt_group_contact').replace('{n}', index+1)}</div>
     <div class="sf-row">
       <div class="sf-group">
-        <label class="sf-label">Lead contact name <span class="required-star">*</span></label>
+        <label class="sf-label">${t('tt_lead_contact_name')} <span class="required-star">*</span></label>
         <input class="sf-input" type="text" autocomplete="off" value="${(g.contact_name||'').replace(/"/g,'&quot;')}" placeholder="e.g. John Smith" onblur="updateGroupField('${key}','contact_name', this.value)">
       </div>
       <div class="sf-group">
-        <label class="sf-label">Phone <span class="required-star">*</span></label>
+        <label class="sf-label">${t('tt_phone')} <span class="required-star">*</span></label>
         <input class="sf-input" type="tel" autocomplete="off" value="${(g.contact_phone||'').replace(/"/g,'&quot;')}" placeholder="+1 555 000 0000" onblur="updateGroupField('${key}','contact_phone', this.value)">
       </div>
     </div>
     <div class="sf-row">
       <div class="sf-group">
-        <label class="sf-label">Email</label>
+        <label class="sf-label">${t('tt_email')}</label>
         <input class="sf-input" type="email" autocomplete="off" value="${(g.contact_email||'').replace(/"/g,'&quot;')}" placeholder="john@email.com" onblur="updateGroupField('${key}','contact_email', this.value)">
       </div>
       <div class="sf-group">
-        <label class="sf-label">Booked by</label>
-        <input class="sf-input" type="text" autocomplete="off" value="${(g.booked_by||'').replace(/"/g,'&quot;')}" placeholder="Staff member name" onblur="updateGroupField('${key}','booked_by', this.value)">
+        <label class="sf-label">${t('tt_booked_by')}</label>
+        <input class="sf-input" type="text" autocomplete="off" value="${(g.booked_by||'').replace(/"/g,'&quot;')}" placeholder="${t('tt_booked_by_placeholder')}" onblur="updateGroupField('${key}','booked_by', this.value)">
       </div>
     </div>
     ${checkInHtml ? `<div style="margin-top:14px;">${checkInHtml}</div><div id="checkin-panel-${g.id}" style="display:none;margin-top:10px;"></div>` : ''}
 
     <div class="card-section-title" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;">
-      <span>Guests${guestCount ? ` (${guestCount})` : ''}</span>
-      ${isSaved ? `<button class="btn-save" style="font-size:0.8rem;padding:6px 12px;" onclick="showAddGuestForm('${g.id}')">+ Add guest</button>` : ''}
+      <span>${t('tt_guests_label')}${guestCount ? ` (${guestCount})` : ''}</span>
+      ${isSaved ? `<button class="btn-save" style="font-size:0.8rem;padding:6px 12px;" onclick="showAddGuestForm('${g.id}')">${t('tt_add_guest')}</button>` : ''}
     </div>
     ${guestsHtml}
 
     <div class="sf-group" style="margin-top:16px;">
-      <label class="sf-label">Notes</label>
+      <label class="sf-label">${t('tt_notes')}</label>
       <input class="sf-input" type="text" autocomplete="off" value="${(g.notes||'').replace(/"/g,'&quot;')}" placeholder="Any additional info for this group" onblur="updateGroupField('${key}','notes', this.value)">
     </div>
 
-    <div class="card-section-title" style="margin-top:20px;">Payment</div>
+    <div class="card-section-title" style="margin-top:20px;">${t('tt_payment')}</div>
     <div class="sf-row">
       <div class="sf-group" style="max-width:160px;">
-        <label class="sf-label">Price per person</label>
+        <label class="sf-label">${t('tt_price_per_person')}</label>
         <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * Math.max(${Math.max(guestCount,1)},1) + ${rentalTotal} + ${crewHireTotal}).toFixed(2)">
       </div>
       <div class="sf-group">
-        <label class="sf-label">Total</label>
+        <label class="sf-label">${t('tt_total')}</label>
         <input class="sf-input" type="text" disabled style="background:var(--white);font-weight:600;" id="group-total-${key}" value="${totalDisplay}">
       </div>
     </div>
     ${isSaved ? `
     <div class="sf-group">
-      <label class="sf-label">Link to guest tab (optional)</label>
+      <label class="sf-label">${t('tt_link_tab')}</label>
       <select class="sf-input" onchange="updateGroupField('${key}','tab_id', this.value)">
         ${tabOptionsHtml}
       </select>
@@ -4900,17 +4936,17 @@ async function groupCardHTML(g, index) {
 // ─── CHECK-IN ───
 function checkInButtonHTML(groupId, participants) {
   const total = participants.length;
-  if (total === 0) return `<button class="btn-cancel" style="font-size:0.8rem;padding:6px 12px;opacity:0.5;cursor:default;" disabled title="Add guests first">Check In</button>`;
+  if (total === 0) return `<button class="btn-cancel" style="font-size:0.8rem;padding:6px 12px;opacity:0.5;cursor:default;" disabled title="${t('tt_checkin_disabled_title')}">${t('tt_check_in')}</button>`;
   const checkedInCount = participants.filter(p => p.checked_in_at).length;
   let label, style;
   if (checkedInCount === 0) {
-    label = 'Check In';
+    label = t('tt_check_in');
     style = 'background:var(--blue);color:var(--white);border-color:var(--blue);';
   } else if (checkedInCount < total) {
-    label = `Checked In (${checkedInCount}/${total})`;
+    label = `${t('tt_checked_in')} (${checkedInCount}/${total})`;
     style = 'background:#b7791f;color:var(--white);border-color:#b7791f;';
   } else {
-    label = 'Checked In ✓';
+    label = `${t('tt_checked_in')} ✓`;
     style = 'background:var(--success);color:var(--white);border-color:var(--success);';
   }
   return `<button class="btn-cancel" style="font-size:0.8rem;padding:6px 12px;${style}" onclick="showCheckInPanel('${groupId}')">${label}</button>`;
@@ -4924,17 +4960,17 @@ function showCheckInPanel(groupId) {
   panel.style.display = 'block';
   panel.innerHTML = `
     <div style="background:var(--foam);border-radius:10px;padding:14px;">
-      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Confirm check-in</div>
-      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">Verify against: <strong>${g?.contact_name || '—'}</strong>${g?.contact_phone ? ' · ' + g.contact_phone : ''}</div>
+      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">${t('tt_confirm_checkin')}</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">${t('tt_verify_against')}<strong>${g?.contact_name || '—'}</strong>${g?.contact_phone ? ' · ' + g.contact_phone : ''}</div>
       ${participants.map(p => `
         <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-bottom:8px;">
           <input type="checkbox" class="checkin-box-${groupId}" data-pid="${p.id}" checked style="width:16px;height:16px;">
-          ${p.full_name}${p.checked_in_at ? ' <span style="color:var(--success);font-size:0.72rem;">(already checked in)</span>' : ''}
+          ${p.full_name}${p.checked_in_at ? ` <span style="color:var(--success);font-size:0.72rem;">${t('tt_already_checked_in')}</span>` : ''}
         </label>
       `).join('')}
       <div class="settings-actions" style="margin-top:8px;">
-        <button class="btn-save" onclick="confirmCheckIn('${groupId}')">Confirm Check-In</button>
-        <button class="btn-cancel" onclick="document.getElementById('checkin-panel-${groupId}').style.display='none';">Cancel</button>
+        <button class="btn-save" onclick="confirmCheckIn('${groupId}')">${t('tt_confirm_checkin_btn')}</button>
+        <button class="btn-cancel" onclick="document.getElementById('checkin-panel-${groupId}').style.display='none';">${t('tt_cancel')}</button>
         <span class="save-feedback" id="checkin-feedback-${groupId}"></span>
       </div>
     </div>
@@ -5062,7 +5098,7 @@ async function populateTripBoats(selectedId) {
     .eq('org_id', currentOrgId)
     .eq('active', true);
   const sel = document.getElementById('trip-boat');
-  sel.innerHTML = '<option value="">No boat / select a boat</option>' +
+  sel.innerHTML = `<option value="">${t('tt_no_boat_select')}</option>` +
     (boats || []).map(b => `<option value="${b.id}" data-capacity="${b.capacity||''}" ${b.id===selectedId?'selected':''}>${b.name}${b.capacity ? ' · Max ' + b.capacity : ''}</option>`).join('');
   sel.onchange = () => { checkBoatConflict(); };
 }
@@ -5093,10 +5129,10 @@ async function checkBoatConflict() {
 
   if (overlaps.length === 0) { warning.style.display = 'none'; window.currentBoatConflict = false; return; }
 
-  const anyPrivate = overlaps.some(t => t.booking_mode === 'private');
+  const anyPrivate = overlaps.some(tr => tr.booking_mode === 'private');
   if (newMode === 'private' || anyPrivate) {
-    const names = overlaps.map(t => t.contact_name || 'Unnamed').join(', ');
-    warning.textContent = `Boat unavailable: overlaps with "${names}"${anyPrivate ? ' (privately booked)' : ' — this trip is private'}. Adjust times or choose a different boat.`;
+    const names = overlaps.map(tr => tr.contact_name || t('tt_unnamed')).join(', ');
+    warning.textContent = `${t('tt_boat_unavailable')}"${names}"${anyPrivate ? t('tt_privately_booked') : t('tt_this_trip_private')}${t('tt_adjust_times')}`;
     warning.style.display = 'block';
     window.currentBoatConflict = true;
     return;
@@ -5108,11 +5144,11 @@ async function checkBoatConflict() {
   const capacity = parseInt(selectedOption?.dataset.capacity) || null;
   let newGuests = 0;
   tripGroups_cache.forEach(g => { if (g.id) newGuests += (groupParticipants_cache[g.id] || []).length; });
-  const existingGuests = overlaps.reduce((sum, t) => sum + (t.max_guests || 0), 0);
+  const existingGuests = overlaps.reduce((sum, tr) => sum + (tr.max_guests || 0), 0);
   const totalGuests = existingGuests + newGuests;
 
   if (capacity && totalGuests > capacity) {
-    warning.textContent = `Boat capacity exceeded: ${existingGuests} guests already booked in this slot, adding ${newGuests} would total ${totalGuests} (max ${capacity}).`;
+    warning.textContent = `${t('tt_boat_capacity_exceeded')}${existingGuests}${t('tt_already_booked')}${newGuests}${t('tt_would_total')}${totalGuests}${t('tt_max_capacity')}${capacity}).`;
     warning.style.display = 'block';
     window.currentBoatConflict = true;
   } else {
@@ -6797,15 +6833,15 @@ async function renderTripCrewSection() {
   const crewHireTotal = isMultiDay ? tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * days, 0) : 0;
 
   container.innerHTML = `
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${assignedHtml || '<span style="font-size:0.8rem;color:var(--muted)">No crew assigned yet.</span>'}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${assignedHtml || `<span style="font-size:0.8rem;color:var(--muted)">${t('tt_no_crew_yet')}</span>`}</div>
     <div style="display:flex;gap:8px;">
       <select class="sf-input" id="trip-crew-select" style="margin-bottom:0;flex:0 1 50%;">
-        <option value="">${availableStaff.length ? 'Select crew member' : 'No one available for this date/time'}</option>
+        <option value="">${availableStaff.length ? t('tt_select_crew_member') : t('tt_no_one_available')}</option>
         ${optionsHtml}
       </select>
-      <button class="btn-cancel" onclick="addSelectedTripCrew()">Add</button>
+      <button class="btn-cancel" onclick="addSelectedTripCrew()">${t('tt_add')}</button>
     </div>
-    ${crewHireTotal > 0 ? `<p style="font-size:0.8rem;color:var(--blue);font-weight:600;margin-top:8px;">Crew hire cost: $${crewHireTotal.toFixed(2)} for ${days} day${days>1?'s':''} — added to this booking's total.</p>` : ''}
+    ${crewHireTotal > 0 ? `<p style="font-size:0.8rem;color:var(--blue);font-weight:600;margin-top:8px;">${t('tt_crew_hire_cost')}$${crewHireTotal.toFixed(2)}${t('tt_for_days')}${days}${days>1?t('tt_day_plural'):t('tt_day_singular')}${t('tt_added_to_total')}</p>` : ''}
   `;
 }
 function addSelectedTripCrew() {
@@ -6839,9 +6875,9 @@ async function checkGuestCapacity() {
   tripGroups_cache.forEach(g => { if (g.id) guests += (groupParticipants_cache[g.id] || []).length; });
   const seatsForGuests = capacity - crewCount;
   const remaining = seatsForGuests - guests;
-  hint.textContent = `Boat capacity: ${capacity} (not including captain) · ${crewCount} crew · ${guests} guest${guests!==1?'s':''} booked · ${remaining} seat${remaining!==1?'s':''} remaining`;
+  hint.textContent = `${t('tt_boat_capacity')}${capacity}${t('tt_not_incl_captain')} · ${crewCount}${t('tt_crew_word')}${guests} ${guests!==1?t('cl_guest_plural'):t('cl_guest_singular')}${t('tt_booked')}${remaining}${remaining!==1?t('tt_seat_plural'):t('tt_seat_singular')}`;
   if (guests > seatsForGuests) {
-    warning.textContent = `Too many guests: ${guests} booked, only ${seatsForGuests} seats available after ${crewCount} crew.`;
+    warning.textContent = t('tt_too_many_guests_full').replace('{guests}', guests).replace('{seats}', seatsForGuests).replace('{crew}', crewCount);
     warning.style.display = 'block';
     window.currentCapacityExceeded = true;
   } else {
@@ -7233,74 +7269,84 @@ async function removeGroupParticipant(participantId, groupId) {
 
 // ─── CHECKLISTS ───
 
-const CAPTAIN_ITEMS = [
-  { id:'c1', text:'Engine started and warmed up — no unusual sounds or smoke' },
-  { id:'c2', text:'Engine oil level checked' },
-  { id:'c3', text:'Fuel confirmed — sufficient for trip + 25% reserve' },
-  { id:'c4', text:'Bilge pumped and dry' },
-  { id:'c5', text:'Navigation lights tested (red port, green starboard, white stern)' },
-  { id:'c6', text:'VHF radio operational — channel 16 confirmed' },
-  { id:'c7', text:'Life jackets aboard — count matches max POB' },
-  { id:'c8', text:'Fire extinguisher in place — pin intact, not expired' },
-  { id:'c9', text:'First aid kit stocked and accessible' },
-  { id:'c10', text:'Flares in date — count confirmed' },
-  { id:'c11', text:'Anchor and rode aboard' },
-  { id:'c12', text:'Mooring lines and fenders ready' },
-  { id:'c13', text:'Weather check completed — conditions acceptable' },
-  { id:'c14', text:'Float plan filed / shore contact notified' },
-  { id:'c15', text:'Dive flag / alpha flag aboard (if applicable)' },
+const CAPTAIN_ITEMS_I18N = [
+  { id:'c1', en:'Engine started and warmed up — no unusual sounds or smoke', es:'Motor encendido y calentado — sin ruidos o humo inusual' },
+  { id:'c2', en:'Engine oil level checked', es:'Nivel de aceite del motor revisado' },
+  { id:'c3', en:'Fuel confirmed — sufficient for trip + 25% reserve', es:'Combustible confirmado — suficiente para la salida + 25% de reserva' },
+  { id:'c4', en:'Bilge pumped and dry', es:'Sentina bombeada y seca' },
+  { id:'c5', en:'Navigation lights tested (red port, green starboard, white stern)', es:'Luces de navegación probadas (roja babor, verde estribor, blanca popa)' },
+  { id:'c6', en:'VHF radio operational — channel 16 confirmed', es:'Radio VHF operativa — canal 16 confirmado' },
+  { id:'c7', en:'Life jackets aboard — count matches max POB', es:'Chalecos salvavidas a bordo — cantidad coincide con el máximo de personas a bordo' },
+  { id:'c8', en:'Fire extinguisher in place — pin intact, not expired', es:'Extintor en su lugar — pasador intacto, no vencido' },
+  { id:'c9', en:'First aid kit stocked and accessible', es:'Botiquín de primeros auxilios abastecido y accesible' },
+  { id:'c10', en:'Flares in date — count confirmed', es:'Bengalas vigentes — cantidad confirmada' },
+  { id:'c11', en:'Anchor and rode aboard', es:'Ancla y cabo de ancla a bordo' },
+  { id:'c12', en:'Mooring lines and fenders ready', es:'Cabos de amarre y defensas listos' },
+  { id:'c13', en:'Weather check completed — conditions acceptable', es:'Revisión del clima completada — condiciones aceptables' },
+  { id:'c14', en:'Float plan filed / shore contact notified', es:'Plan de navegación presentado / contacto en tierra notificado' },
+  { id:'c15', en:'Dive flag / alpha flag aboard (if applicable)', es:'Bandera de buceo / bandera alfa a bordo (si aplica)' },
 ];
+function CAPTAIN_ITEMS_get() { return CAPTAIN_ITEMS_I18N.map(i => ({ id: i.id, text: currentLanguage === 'es' ? i.es : i.en })); }
 
-const INSTRUCTOR_ITEMS = [
-  { id:'i1', text:'Guest gear manifest checked against booking' },
-  { id:'i2', text:'All BCDs on board — sizes confirmed per booking' },
-  { id:'i3', text:'All regulators rinsed and functioning — no free-flows' },
-  { id:'i4', text:'All tanks on board — counted, valves closed' },
-  { id:'i5', text:'Tank pressures verified — minimum 200 bar' },
-  { id:'i6', text:'Weight belts and bags loaded — total kg confirmed' },
-  { id:'i7', text:'Wetsuits loaded — sizes per manifest' },
-  { id:'i8', text:'Fins loaded — sizes per manifest' },
-  { id:'i9', text:'Masks loaded and rinsed' },
-  { id:'i10', text:'Waivers / paperwork complete' },
-  { id:'i11', text:'Dive computers charged and functioning' },
-  { id:'i12', text:'Oxygen kit aboard and cylinder full' },
-  { id:'i13', text:'Spare regulator aboard' },
-  { id:'i14', text:'Briefing materials ready' },
+const INSTRUCTOR_ITEMS_I18N = [
+  { id:'i1', en:'Guest gear manifest checked against booking', es:'Manifiesto de equipo de huéspedes verificado contra la reserva' },
+  { id:'i2', en:'All BCDs on board — sizes confirmed per booking', es:'Todos los BCD a bordo — tallas confirmadas según la reserva' },
+  { id:'i3', en:'All regulators rinsed and functioning — no free-flows', es:'Todos los reguladores enjuagados y funcionando — sin flujo libre' },
+  { id:'i4', en:'All tanks on board — counted, valves closed', es:'Todos los tanques a bordo — contados, válvulas cerradas' },
+  { id:'i5', en:'Tank pressures verified — minimum 200 bar', es:'Presión de los tanques verificada — mínimo 200 bar' },
+  { id:'i6', en:'Weight belts and bags loaded — total kg confirmed', es:'Cinturones y bolsas de plomos cargados — total en kg confirmado' },
+  { id:'i7', en:'Wetsuits loaded — sizes per manifest', es:'Trajes de neopreno cargados — tallas según manifiesto' },
+  { id:'i8', en:'Fins loaded — sizes per manifest', es:'Aletas cargadas — tallas según manifiesto' },
+  { id:'i9', en:'Masks loaded and rinsed', es:'Máscaras cargadas y enjuagadas' },
+  { id:'i10', en:'Waivers / paperwork complete', es:'Formularios / documentación completa' },
+  { id:'i11', en:'Dive computers charged and functioning', es:'Computadoras de buceo cargadas y funcionando' },
+  { id:'i12', en:'Oxygen kit aboard and cylinder full', es:'Kit de oxígeno a bordo y cilindro lleno' },
+  { id:'i13', en:'Spare regulator aboard', es:'Regulador de repuesto a bordo' },
+  { id:'i14', en:'Briefing materials ready', es:'Materiales de briefing listos' },
 ];
+function INSTRUCTOR_ITEMS_get() { return INSTRUCTOR_ITEMS_I18N.map(i => ({ id: i.id, text: currentLanguage === 'es' ? i.es : i.en })); }
 
-const DEPT_CHECKLISTS = {
-  'Morning — Captain': [
-    'Engine room inspection complete',
-    'Bilge checked and pumped',
-    'Fuel and oil levels logged',
-    'VHF check with marina / port authority',
-    'Weather briefing completed',
-    'Daily log started',
-  ],
-  'Morning — Instructor': [
-    'Student waivers and certs checked',
-    'Gear manifest printed / confirmed',
-    'Theory briefing materials ready',
-    'Emergency procedures briefed to students',
-  ],
-  'End of Day — Deck': [
-    'All tanks rinsed with fresh water and stored',
-    'BCDs rinsed and hung to dry',
-    'Wetsuits rinsed and hung',
-    'Regulators rinsed and bagged',
-    'Boat rinsed — salt off all surfaces',
-    'Bilge checked',
-    'Lines secured and fenders in place',
-    'Log book completed and signed',
-  ],
-  'End of Day — Instructor': [
-    'Student progress logged',
-    'Gear returns confirmed — nothing left on boat',
-    'Lost and found checked',
-    'Next day student list reviewed',
-    'Equipment defects reported',
-  ],
-};
+const DEPT_CHECKLISTS_I18N = [
+  { key: 'morning_captain', en: 'Morning — Captain', es: 'Mañana — Capitán', items: [
+    { en:'Engine room inspection complete', es:'Inspección de sala de máquinas completa' },
+    { en:'Bilge checked and pumped', es:'Sentina revisada y bombeada' },
+    { en:'Fuel and oil levels logged', es:'Niveles de combustible y aceite registrados' },
+    { en:'VHF check with marina / port authority', es:'Revisión de VHF con la marina / autoridad portuaria' },
+    { en:'Weather briefing completed', es:'Briefing meteorológico completado' },
+    { en:'Daily log started', es:'Bitácora diaria iniciada' },
+  ]},
+  { key: 'morning_instructor', en: 'Morning — Instructor', es: 'Mañana — Instructor', items: [
+    { en:'Student waivers and certs checked', es:'Formularios y certificaciones de estudiantes revisados' },
+    { en:'Gear manifest printed / confirmed', es:'Manifiesto de equipo impreso / confirmado' },
+    { en:'Theory briefing materials ready', es:'Materiales de briefing teórico listos' },
+    { en:'Emergency procedures briefed to students', es:'Procedimientos de emergencia explicados a los estudiantes' },
+  ]},
+  { key: 'eod_deck', en: 'End of Day — Deck', es: 'Fin del Día — Cubierta', items: [
+    { en:'All tanks rinsed with fresh water and stored', es:'Todos los tanques enjuagados con agua dulce y guardados' },
+    { en:'BCDs rinsed and hung to dry', es:'BCD enjuagados y colgados para secar' },
+    { en:'Wetsuits rinsed and hung', es:'Trajes de neopreno enjuagados y colgados' },
+    { en:'Regulators rinsed and bagged', es:'Reguladores enjuagados y embolsados' },
+    { en:'Boat rinsed — salt off all surfaces', es:'Embarcación enjuagada — sal eliminada de todas las superficies' },
+    { en:'Bilge checked', es:'Sentina revisada' },
+    { en:'Lines secured and fenders in place', es:'Cabos asegurados y defensas en su lugar' },
+    { en:'Log book completed and signed', es:'Bitácora completada y firmada' },
+  ]},
+  { key: 'eod_instructor', en: 'End of Day — Instructor', es: 'Fin del Día — Instructor', items: [
+    { en:'Student progress logged', es:'Progreso de estudiantes registrado' },
+    { en:'Gear returns confirmed — nothing left on boat', es:'Devolución de equipo confirmada — nada quedó en la embarcación' },
+    { en:'Lost and found checked', es:'Objetos perdidos revisados' },
+    { en:'Next day student list reviewed', es:'Lista de estudiantes del día siguiente revisada' },
+    { en:'Equipment defects reported', es:'Defectos de equipo reportados' },
+  ]},
+];
+function DEPT_CHECKLISTS_get() {
+  const out = {};
+  DEPT_CHECKLISTS_I18N.forEach(dept => {
+    const label = currentLanguage === 'es' ? dept.es : dept.en;
+    out[dept.key] = { label, items: dept.items.map(i => currentLanguage === 'es' ? i.es : i.en) };
+  });
+  return out;
+}
 
 // State
 let captainChecks = {};
@@ -7433,7 +7479,7 @@ async function loadCrewStatus(tripId) {
 // ─── CAPTAIN ───
 function initCaptainChecklist() {
   captainChecks = {};
-  renderCheckItems('cl-captain-items', CAPTAIN_ITEMS, captainChecks, 'toggleCaptain', 'cl-captain-progress');
+  renderCheckItems('cl-captain-items', CAPTAIN_ITEMS_get(), captainChecks, 'toggleCaptain', 'cl-captain-progress');
   const done = document.getElementById('cl-captain-done');
   if (done) done.style.display = 'none';
   const status = document.getElementById('cl-captain-status');
@@ -7442,15 +7488,16 @@ function initCaptainChecklist() {
 
 function toggleCaptain(id) {
   captainChecks[id] = !captainChecks[id];
-  renderCheckItems('cl-captain-items', CAPTAIN_ITEMS, captainChecks, 'toggleCaptain', 'cl-captain-progress');
+  renderCheckItems('cl-captain-items', CAPTAIN_ITEMS_get(), captainChecks, 'toggleCaptain', 'cl-captain-progress');
 }
 
 async function captainSignOff() {
   const name = document.getElementById('cl-captain-name').value.trim();
   const boat = document.getElementById('cl-captain-boat').value.trim();
-  const done = CAPTAIN_ITEMS.filter(i => captainChecks[i.id]).length;
+  const captainItems = CAPTAIN_ITEMS_get();
+  const done = captainItems.filter(i => captainChecks[i.id]).length;
   if (!name) { await showAlertModal(t('cl_enter_captain_name')); return; }
-  if (done < CAPTAIN_ITEMS.length && !(await showConfirmModal(`${CAPTAIN_ITEMS.length - done}${t('cl_items_incomplete')}`))) return;
+  if (done < captainItems.length && !(await showConfirmModal(`${captainItems.length - done}${t('cl_items_incomplete')}`))) return;
   const ts = new Date().toLocaleString();
   const doneBanner = document.getElementById('cl-captain-done');
   doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
@@ -7461,7 +7508,7 @@ async function captainSignOff() {
     const payload = {
       org_id: currentOrgId, trip_id: currentChecklistTripId || null,
       role: 'captain', signed_by: name, boat_name: boat,
-      completed_items: done, total_items: CAPTAIN_ITEMS.length,
+      completed_items: done, total_items: captainItems.length,
       signed_at: new Date().toISOString()
     };
     if (isOffline) {
@@ -7476,7 +7523,7 @@ async function captainSignOff() {
 // ─── INSTRUCTOR ───
 function initInstructorChecklist() {
   instructorChecks = {};
-  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS, instructorChecks, 'toggleInstructor', null);
+  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), instructorChecks, 'toggleInstructor', null);
   const done = document.getElementById('cl-instructor-done');
   if (done) done.style.display = 'none';
   const status = document.getElementById('cl-instructor-status');
@@ -7485,14 +7532,15 @@ function initInstructorChecklist() {
 
 function toggleInstructor(id) {
   instructorChecks[id] = !instructorChecks[id];
-  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS, instructorChecks, 'toggleInstructor', null);
+  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), instructorChecks, 'toggleInstructor', null);
 }
 
 async function instructorSignOff() {
   const name = document.getElementById('cl-instructor-name').value.trim();
-  const done = INSTRUCTOR_ITEMS.filter(i => instructorChecks[i.id]).length;
+  const instructorItems = INSTRUCTOR_ITEMS_get();
+  const done = instructorItems.filter(i => instructorChecks[i.id]).length;
   if (!name) { await showAlertModal(t('cl_enter_your_name')); return; }
-  if (done < INSTRUCTOR_ITEMS.length && !(await showConfirmModal(`${INSTRUCTOR_ITEMS.length - done}${t('cl_items_incomplete')}`))) return;
+  if (done < instructorItems.length && !(await showConfirmModal(`${instructorItems.length - done}${t('cl_items_incomplete')}`))) return;
   const ts = new Date().toLocaleString();
   document.getElementById('cl-instructor-done').innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
   document.getElementById('cl-instructor-done').style.display = 'block';
@@ -7502,7 +7550,7 @@ async function instructorSignOff() {
     const payload = {
       org_id: currentOrgId, trip_id: currentChecklistTripId || null,
       role: 'instructor', signed_by: name,
-      completed_items: done, total_items: INSTRUCTOR_ITEMS.length,
+      completed_items: done, total_items: instructorItems.length,
       signed_at: new Date().toISOString()
     };
     if (isOffline) {
@@ -7536,21 +7584,23 @@ function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
 // ─── DEPARTMENT ───
 function initDeptChecklists() {
   const tabRow = document.getElementById('dept-tabs');
-  const deptNames = Object.keys(DEPT_CHECKLISTS);
-  tabRow.innerHTML = deptNames.map((name, i) =>
-    `<div class="cl-role-tab ${i===0?'active':''}" onclick="filterDeptList('${name}',this)">${name}</div>`
+  const depts = DEPT_CHECKLISTS_get();
+  const deptKeys = Object.keys(depts);
+  tabRow.innerHTML = deptKeys.map((key, i) =>
+    `<div class="cl-role-tab ${i===0?'active':''}" onclick="filterDeptList('${key}',this)">${depts[key].label}</div>`
   ).join('');
-  renderDeptList(deptNames[0]);
+  renderDeptList(deptKeys[0]);
 }
 
-function filterDeptList(name, el) {
-  document.querySelectorAll('#dept-tabs .cl-role-tab').forEach(t => t.classList.remove('active'));
+function filterDeptList(key, el) {
+  document.querySelectorAll('#dept-tabs .cl-role-tab').forEach(tb => tb.classList.remove('active'));
   el.classList.add('active');
-  renderDeptList(name);
+  renderDeptList(key);
 }
 
-function renderDeptList(name) {
-  const items = DEPT_CHECKLISTS[name] || [];
+function renderDeptList(key) {
+  const depts = DEPT_CHECKLISTS_get();
+  const items = depts[key]?.items || [];
   const checks = {};
   document.getElementById('dept-list').innerHTML = `
     <div style="margin-top:16px;">
@@ -7560,7 +7610,7 @@ function renderDeptList(name) {
           <div class="cl-item-text">${text}</div>
         </div>`).join('')}
       <div class="settings-actions" style="margin-top:16px;">
-        <button class="btn-cancel" onclick="renderDeptList('${name}')">${t('cl_reset')}</button>
+        <button class="btn-cancel" onclick="renderDeptList('${key}')">${t('cl_reset')}</button>
       </div>
     </div>`;
 }
