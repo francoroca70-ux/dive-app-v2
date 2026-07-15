@@ -1288,6 +1288,37 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<!-- ─── ACCEPT INVITE SCREEN ─── -->
+<div id="screen-accept-invite" class="screen">
+  <div class="login-box">
+    <div class="login-logo">Seven<span>Seas</span></div>
+    <div class="login-tagline">Water operations platform</div>
+    <div class="login-card">
+      <h2>You're invited</h2>
+      <p id="accept-invite-desc" style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;"></p>
+      <div id="accept-invite-form">
+        <div class="form-group">
+          <label>Full name</label>
+          <input type="text" id="accept-invite-name" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="accept-invite-email" disabled>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="accept-invite-password" placeholder="At least 6 characters" autocomplete="new-password">
+        </div>
+        <button class="btn-login" id="btn-accept-invite">Set up account</button>
+        <div class="login-error" id="accept-invite-error"></div>
+      </div>
+      <div id="accept-invite-invalid" style="display:none;">
+        <p style="color:var(--error);font-size:0.9rem;">This invite link is no longer valid. Ask whoever invited you to send a new one.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ─── APP SHELL ─── -->
 <div id="screen-app" class="screen">
 
@@ -2515,6 +2546,112 @@ const SUPABASE_URL = 'https://ggtbxjwstkuhnabwpgdz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tiYQ81YqYtscWmvb3-8o-w_lBPGtbUw';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─── ACCEPT INVITE ───
+let pendingInvite = null;
+async function checkForInviteToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('invite');
+  if (!token) return false;
+
+  const { data: invite } = await sb.from('invites').select('*').eq('token', token).eq('accepted', false).maybeSingle();
+  if (!invite) {
+    showScreen('accept-invite');
+    document.getElementById('accept-invite-form').style.display = 'none';
+    document.getElementById('accept-invite-invalid').style.display = 'block';
+    return true;
+  }
+
+  const { data: org } = await sb.from('organizations').select('name').eq('id', invite.org_id).single();
+
+  pendingInvite = invite;
+  const roleLabel = (invite.custom_role_name || invite.role || 'crew').replace(/_/g, ' ');
+  document.getElementById('accept-invite-desc').textContent =
+    `You've been invited to join ${org?.name || 'this operation'} as ${roleLabel}. Set a password to finish creating your account.`;
+  document.getElementById('accept-invite-name').value = invite.full_name || '';
+  document.getElementById('accept-invite-email').value = invite.email;
+  document.getElementById('accept-invite-form').style.display = 'block';
+  document.getElementById('accept-invite-invalid').style.display = 'none';
+  showScreen('accept-invite');
+  return true;
+}
+
+document.getElementById('btn-accept-invite').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-accept-invite');
+  const errorEl = document.getElementById('accept-invite-error');
+  const fullName = document.getElementById('accept-invite-name').value.trim();
+  const password = document.getElementById('accept-invite-password').value;
+  errorEl.classList.remove('visible');
+
+  if (!fullName) {
+    errorEl.textContent = 'Enter your name.';
+    errorEl.classList.add('visible');
+    return;
+  }
+  if (!password || password.length < 6) {
+    errorEl.textContent = 'Password must be at least 6 characters.';
+    errorEl.classList.add('visible');
+    return;
+  }
+  if (!pendingInvite) return;
+
+  btn.disabled = true; btn.textContent = 'Setting up...';
+
+  let userId = null;
+  const { data: signUpData, error: signUpErr } = await sb.auth.signUp({ email: pendingInvite.email, password });
+
+  if (!signUpErr && signUpData?.user) {
+    userId = signUpData.user.id;
+    if (!signUpData.session) {
+      const { data: signInData } = await sb.auth.signInWithPassword({ email: pendingInvite.email, password });
+      if (signInData?.session) userId = signInData.user.id;
+    }
+  } else if (signUpErr) {
+    // Most likely: this email already has an account (e.g. they work at another shop too).
+    const { data: signInData, error: signInErr } = await sb.auth.signInWithPassword({ email: pendingInvite.email, password });
+    if (signInErr || !signInData?.user) {
+      errorEl.textContent = 'An account already exists for this email. Enter that account\'s password, or ask for a password reset first.';
+      errorEl.classList.add('visible');
+      btn.disabled = false; btn.textContent = 'Set up account';
+      return;
+    }
+    userId = signInData.user.id;
+  }
+
+  if (!userId) {
+    errorEl.textContent = 'Could not verify your account. If you just signed up, confirm your email first, then try this link again.';
+    errorEl.classList.add('visible');
+    btn.disabled = false; btn.textContent = 'Set up account';
+    return;
+  }
+
+  const { data: existingStaff } = await sb.from('staff').select('id').eq('id', userId).eq('org_id', pendingInvite.org_id).maybeSingle();
+  if (!existingStaff) {
+    const { error: staffErr } = await sb.from('staff').insert({
+      id: userId,
+      org_id: pendingInvite.org_id,
+      full_name: fullName,
+      email: pendingInvite.email,
+      role: pendingInvite.role,
+      custom_role_name: pendingInvite.role === 'custom' ? (pendingInvite.custom_role_name || null) : null
+    });
+    if (staffErr) {
+      errorEl.textContent = 'Signed in, but could not finish linking your account to this operation. Send this to Fran: ' + staffErr.message;
+      errorEl.classList.add('visible');
+      btn.disabled = false; btn.textContent = 'Set up account';
+      return;
+    }
+    if (pendingInvite.location_id) {
+      await sb.from('staff_locations').insert({ staff_id: userId, location_id: pendingInvite.location_id });
+    }
+  }
+
+  await sb.from('invites').update({ accepted: true }).eq('id', pendingInvite.id);
+
+  window.history.replaceState({}, '', window.location.pathname);
+  pendingInvite = null;
+  initAuth();
+});
 
 // ─── SCREEN MANAGEMENT ───
 function showScreen(id) {
@@ -5379,17 +5516,15 @@ async function printManifest() {
     if (g.id) await loadGroupParticipants(g.id);
   }
 
-  const activeFieldKeys = new Set();
   let showCertColumn = false;
   tripGroups_cache.forEach(g => {
     (groupParticipants_cache[g.id] || []).forEach(p => {
-      Object.entries(p.gear || {}).forEach(([k, v]) => {
-        if (v && v !== 'Own gear' && v !== 'None') activeFieldKeys.add(k);
-      });
       if (p.is_certified === true || p.is_certified === false) showCertColumn = true;
     });
   });
-  const gearColumns = selectedTripTypeFields.filter(f => activeFieldKeys.has(f.field_key));
+  // Show every gear field configured on this trip type, not just ones where someone
+  // deviated from the default — otherwise a column silently disappears from the manifest.
+  const gearColumns = selectedTripTypeFields;
 
   const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -6194,6 +6329,7 @@ function renderGroupParticipantsBlock(groupId, participants) {
         ${p.notes ? `<div class="p-meta">${p.notes}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn-icon" onclick="editGroupParticipant('${p.id}','${groupId}')" title="Edit">✎</button>
         <button class="btn-icon danger" onclick="removeGroupParticipant('${p.id}','${groupId}')">✕</button>
       </div>
     </div>`;
@@ -6240,7 +6376,7 @@ function renderGroupParticipantsBlock(groupId, participants) {
         <input class="sf-input" type="text" autocomplete="off" id="p-notes-${groupId}" placeholder="Allergies, special requirements...">
       </div>
       <div class="settings-actions">
-        <button class="btn-save" onclick="saveGroupParticipant('${groupId}')">Save guest</button>
+        <button class="btn-save" id="p-save-btn-${groupId}" onclick="saveGroupParticipant('${groupId}')">Save guest</button>
         <button class="btn-cancel" onclick="cancelAddGuest('${groupId}')">Cancel</button>
         <span class="save-feedback" id="p-save-feedback-${groupId}"></span>
       </div>
@@ -6288,28 +6424,48 @@ function renderDynamicGearFieldsFor(groupId) {
   }).join('');
 }
 
-function showAddGuestForm(groupId) {
+window.currentEditingParticipantId = {};
+function showAddGuestForm(groupId, prefill) {
   const form = document.getElementById('form-add-participant-' + groupId);
   form.style.display = 'block';
-  document.getElementById('p-name-' + groupId).value = '';
-  document.getElementById('p-phone-' + groupId).value = '';
-  document.getElementById('p-notes-' + groupId).value = '';
+  window.currentEditingParticipantId[groupId] = prefill ? prefill.id : null;
+
+  document.getElementById('p-name-' + groupId).value = prefill?.full_name || '';
+  document.getElementById('p-phone-' + groupId).value = prefill?.phone || '';
+  document.getElementById('p-notes-' + groupId).value = prefill?.notes || '';
 
   const typeId = document.getElementById('trip-type-select').value;
   const tripType = currentTripTypes.find(t => t.id === typeId);
   const isDiving = tripType?.category === 'diving';
   document.getElementById('cert-section-' + groupId).style.display = isDiving ? 'block' : 'none';
-  window.currentGuestCertStatus[groupId] = null;
-  document.getElementById('cert-yes-' + groupId).classList.remove('selected');
-  document.getElementById('cert-no-' + groupId).classList.remove('selected');
-  document.getElementById('cert-level-wrap-' + groupId).style.display = 'none';
-  document.getElementById('cert-level-' + groupId).value = '';
+  const certStatus = prefill && (prefill.is_certified === true || prefill.is_certified === false) ? prefill.is_certified : null;
+  window.currentGuestCertStatus[groupId] = certStatus;
+  document.getElementById('cert-yes-' + groupId).classList.toggle('selected', certStatus === true);
+  document.getElementById('cert-no-' + groupId).classList.toggle('selected', certStatus === false);
+  document.getElementById('cert-level-wrap-' + groupId).style.display = certStatus ? 'block' : 'none';
+  document.getElementById('cert-level-' + groupId).value = prefill?.certification_level || '';
 
   renderDynamicGearFieldsFor(groupId);
+  if (prefill?.gear) {
+    Object.entries(prefill.gear).forEach(([key, val]) => {
+      const el = document.getElementById(`pgear-${groupId}-${key}`);
+      if (el) el.value = val;
+    });
+  }
+
+  const saveBtn = document.getElementById('p-save-btn-' + groupId);
+  if (saveBtn) saveBtn.textContent = prefill ? 'Update guest' : 'Save guest';
+
   form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function editGroupParticipant(participantId, groupId) {
+  const p = (groupParticipants_cache[groupId] || []).find(x => x.id === participantId);
+  if (!p) return;
+  showAddGuestForm(groupId, p);
 }
 function cancelAddGuest(groupId) {
   document.getElementById('form-add-participant-' + groupId).style.display = 'none';
+  window.currentEditingParticipantId[groupId] = null;
 }
 
 async function saveGroupParticipant(groupId) {
@@ -6345,9 +6501,8 @@ async function saveGroupParticipant(groupId) {
     }
   });
 
-  const { error } = await sb.from('participants').insert({
-    trip_id: currentTripId,
-    group_id: groupId,
+  const editingId = window.currentEditingParticipantId[groupId];
+  const payload = {
     full_name: name,
     phone: document.getElementById('p-phone-' + groupId).value.trim() || null,
     is_certified: isDiving ? certStatus : null,
@@ -6355,12 +6510,21 @@ async function saveGroupParticipant(groupId) {
     gear: gear,
     rental_surcharge: rentalSurcharge,
     notes: document.getElementById('p-notes-' + groupId).value.trim() || null
-  });
+  };
+
+  const { error } = editingId
+    ? await sb.from('participants').update(payload).eq('id', editingId)
+    : await sb.from('participants').insert({ trip_id: currentTripId, group_id: groupId, ...payload });
 
   if (error) {
     feedback.textContent = 'Error saving.';
     feedback.className = 'save-feedback error visible';
     return;
+  }
+
+  if (editingId) {
+    window.currentEditingParticipantId[groupId] = null;
+    document.getElementById('form-add-participant-' + groupId).style.display = 'none';
   }
 
   feedback.className = 'save-feedback';
@@ -7000,6 +7164,8 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
     org_id: currentOrgId,
     email,
     role,
+    custom_role_name: role === 'custom' ? (customRole || null) : null,
+    full_name: fullName,
     location_id: locationId || null,
     token,
     created_by: (await sb.auth.getUser()).data.user.id
@@ -7012,14 +7178,20 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
     return;
   }
 
-  // Send invite email via Supabase Auth
-  const { error: authErr } = await sb.auth.admin?.inviteUserByEmail?.(email) ||
-    await sb.auth.signInWithOtp({ email, options: {
-      emailRedirectTo: window.location.origin,
-      data: { full_name: fullName, role, org_id: currentOrgId, token }
-    }});
+  // Send the branded invite email via our Resend edge function
+  const { data: orgRow } = await sb.from('organizations').select('name').eq('id', currentOrgId).single();
+  const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${token}`;
+  const { error: emailErr } = await sb.functions.invoke('send-staff-invite', {
+    body: {
+      to: email,
+      fullName,
+      orgName: orgRow?.name || '',
+      role: role === 'custom' ? (customRole || 'crew') : role,
+      inviteUrl
+    }
+  });
 
-  feedback.textContent = `Invite sent to ${email}`;
+  feedback.textContent = emailErr ? `Invite created, but the email failed to send. Share this link with them directly: ${inviteUrl}` : `Invite sent to ${email}`;
   feedback.className = 'save-feedback visible';
   btn.disabled = false; btn.textContent = 'Send invite';
 
@@ -8768,7 +8940,10 @@ document.getElementById('confirm-modal-ok').addEventListener('click', () => {
 // ─── END CONFIRM / PROMPT / ALERT MODAL ───
 
 // ─── START ───
-initAuth();
+(async () => {
+  const hasInvite = await checkForInviteToken();
+  if (!hasInvite) await initAuth();
+})();
 
 </script>
 <!-- CONFIRM / PROMPT MODAL -->
