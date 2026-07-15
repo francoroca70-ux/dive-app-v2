@@ -599,6 +599,14 @@ body { background: var(--navy); color: var(--text); }
   background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.3); color: #92660a;
 }
 
+#offline-banner {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 16px; font-size: 0.82rem; font-weight: 600; text-align: center;
+  gap: 8px;
+}
+#offline-banner.offline { background: #92660a; color: #fff; }
+#offline-banner.syncing { background: var(--blue); color: #fff; }
+
 
 .crew-member-tag-v2 {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1340,6 +1348,11 @@ body { background: var(--navy); color: var(--text); }
     </div>
   </nav>
 
+  <!-- Offline / sync status banner -->
+  <div id="offline-banner" style="display:none;">
+    <span class="offline-banner-text"></span>
+  </div>
+
   <div class="app-body">
 
     <!-- Sidebar -->
@@ -1447,6 +1460,8 @@ body { background: var(--navy); color: var(--text); }
           </div>
           <button class="btn-save" id="btn-new-trip">+ New trip</button>
         </div>
+
+        <div class="warning-banner caution" id="double-booking-banner" style="display:none;"></div>
 
         <!-- Calendar body -->
         <div id="cal-body"></div>
@@ -2547,6 +2562,127 @@ const SUPABASE_KEY = 'sb_publishable_tiYQ81YqYtscWmvb3-8o-w_lBPGtbUw';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ─── OFFLINE SUPPORT (light resilience layer) ───
+// Scope: checklists, waiver signing, and maintenance/gear logs queue locally and sync
+// automatically when the connection returns — these are single-editor, add-only actions
+// with no real conflict risk. Bookings, payments, and crew assignment are blocked while
+// offline instead, since those are shared, editable records where two offline devices
+// could silently overwrite or double-book each other.
+let isOffline = !navigator.onLine;
+const OFFLINE_QUEUE_KEY = 'sevenSeasOfflineQueue';
+
+function getOfflineQueue() {
+  try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); } catch { return []; }
+}
+function setOfflineQueue(queue) {
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+  updateOfflineBanner();
+}
+function queueOfflineAction(type, payload) {
+  const queue = getOfflineQueue();
+  queue.push({ id: crypto.randomUUID(), type, payload, createdAt: new Date().toISOString() });
+  setOfflineQueue(queue);
+}
+
+function updateOfflineBanner() {
+  const banner = document.getElementById('offline-banner');
+  if (!banner) return;
+  const count = getOfflineQueue().length;
+  if (isOffline) {
+    banner.className = 'offline';
+    banner.style.display = 'flex';
+    banner.querySelector('.offline-banner-text').textContent = count > 0
+      ? `You're offline — ${count} change${count > 1 ? 's' : ''} waiting to sync. Checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.`
+      : `You're offline — checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.`;
+  } else if (count > 0) {
+    banner.className = 'syncing';
+    banner.style.display = 'flex';
+    banner.querySelector('.offline-banner-text').textContent = `Back online — syncing ${count} queued change${count > 1 ? 's' : ''}...`;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+async function replayOfflineAction(item) {
+  switch (item.type) {
+    case 'checklist_completion': {
+      const { error } = await sb.from('checklist_completions').insert(item.payload);
+      if (error) throw error;
+      break;
+    }
+    case 'maintenance_log': {
+      const { error } = await sb.from('maintenance_logs').insert(item.payload);
+      if (error) throw error;
+      break;
+    }
+    case 'gear_maintenance_log': {
+      const { error } = await sb.from('maintenance_logs').insert(item.payload.log);
+      if (error) throw error;
+      if (item.payload.gearUpdate) {
+        await sb.from('gear').update(item.payload.gearUpdate).eq('id', item.payload.gearId);
+      }
+      break;
+    }
+    case 'waiver_signature': {
+      const { error } = await sb.from('waivers').insert(item.payload);
+      if (error) throw error;
+      break;
+    }
+    case 'task_item_completion': {
+      const { itemId, staffId, taskListId, completed } = item.payload;
+      const { data: existing, error: readErr } = await sb.from('task_item_completions').select('id').eq('task_list_item_id', itemId).eq('staff_id', staffId).maybeSingle();
+      if (readErr) throw readErr;
+      if (completed && !existing) {
+        const { error } = await sb.from('task_item_completions').insert({ task_list_item_id: itemId, staff_id: staffId });
+        if (error) throw error;
+      } else if (!completed && existing) {
+        const { error } = await sb.from('task_item_completions').delete().eq('id', existing.id);
+        if (error) throw error;
+      }
+      const { data: items } = await sb.from('task_list_items').select('id').eq('task_list_id', taskListId);
+      const { data: completions } = await sb.from('task_item_completions').select('id').eq('staff_id', staffId).in('task_list_item_id', (items || []).map(i => i.id));
+      if (items && items.length && completions && items.length === completions.length) {
+        await sb.from('task_list_assignees').update({ completed_at: new Date().toISOString() }).eq('task_list_id', taskListId).eq('staff_id', staffId);
+      } else {
+        await sb.from('task_list_assignees').update({ completed_at: null }).eq('task_list_id', taskListId).eq('staff_id', staffId);
+      }
+      break;
+    }
+    default:
+      console.warn('Unknown offline queue item type', item.type);
+  }
+}
+
+async function flushOfflineQueue() {
+  if (isOffline) return;
+  const queue = getOfflineQueue();
+  if (!queue.length) return;
+  const banner = document.getElementById('offline-banner');
+  if (banner) {
+    banner.className = 'syncing';
+    banner.style.display = 'flex';
+    banner.querySelector('.offline-banner-text').textContent = `Syncing ${queue.length} queued change${queue.length > 1 ? 's' : ''}...`;
+  }
+  let i = 0;
+  for (; i < queue.length; i++) {
+    try {
+      await replayOfflineAction(queue[i]);
+    } catch (e) {
+      console.warn('Offline sync: failed to replay a queued action, will retry later', queue[i], e);
+      break;
+    }
+  }
+  const remaining = queue.slice(i);
+  setOfflineQueue(remaining);
+  if (remaining.length === 0 && banner) {
+    banner.querySelector('.offline-banner-text').textContent = 'All changes synced ✓';
+    setTimeout(() => { if (!isOffline && getOfflineQueue().length === 0) banner.style.display = 'none'; }, 2500);
+  }
+}
+
+window.addEventListener('offline', () => { isOffline = true; updateOfflineBanner(); });
+window.addEventListener('online', () => { isOffline = false; updateOfflineBanner(); flushOfflineQueue(); });
+
 // ─── ACCEPT INVITE ───
 let pendingInvite = null;
 async function checkForInviteToken() {
@@ -3092,8 +3228,30 @@ async function renderTasksAll() {
 }
 let currentTaskListId = null;
 let currentTaskStaffId = null;
+let currentTaskItemsCache = [];
+let currentTaskMyCompletedIds = [];
+let currentTaskIsAssignedToMe = false;
+
+function renderTaskDetailItems() {
+  document.getElementById('task-detail-items').innerHTML = currentTaskItemsCache.map(it => {
+    const isChecked = currentTaskMyCompletedIds.includes(it.id);
+    return `<div class="cl-item ${isChecked ? 'checked' : ''}" ${currentTaskIsAssignedToMe ? `onclick="toggleTaskItem('${it.id}')"` : ''} style="cursor:${currentTaskIsAssignedToMe ? 'pointer' : 'default'};">
+      <div class="cl-checkbox">${isChecked ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
+      <div class="cl-item-text">${it.text}</div>
+    </div>`;
+  }).join('');
+}
+
 async function openTaskDetail(taskListId) {
+  // If we're offline and this is a refresh of the list we're already viewing, just
+  // re-render from the local cache instead of trying (and failing) to hit the network.
+  if (isOffline && taskListId === currentTaskListId && currentTaskItemsCache.length) {
+    renderTaskDetailItems();
+    document.getElementById('modal-task-detail').style.display = 'flex';
+    return;
+  }
   currentTaskListId = taskListId;
+
   const { data: { user } } = await sb.auth.getUser();
   const { data: staffRow } = await sb.from('staff').select('id').eq('id', user.id).single();
   currentTaskStaffId = staffRow?.id;
@@ -3103,26 +3261,21 @@ async function openTaskDetail(taskListId) {
   const { data: assignees } = await sb.from('task_list_assignees').select('*, staff(full_name)').eq('task_list_id', taskListId);
   const { data: completions } = await sb.from('task_item_completions').select('*').in('task_list_item_id', (items || []).map(i => i.id));
 
-  const isAssignedToMe = (assignees || []).some(a => a.staff_id === currentTaskStaffId);
-  const myCompletedIds = (completions || []).filter(c => c.staff_id === currentTaskStaffId).map(c => c.task_list_item_id);
+  currentTaskIsAssignedToMe = (assignees || []).some(a => a.staff_id === currentTaskStaffId);
+  currentTaskItemsCache = items || [];
+  currentTaskMyCompletedIds = (completions || []).filter(c => c.staff_id === currentTaskStaffId).map(c => c.task_list_item_id);
 
   document.getElementById('task-detail-title').textContent = list?.title || 'Task list';
   document.getElementById('task-detail-meta').textContent = `${list?.due_date || 'No due date'} · Assigned to: ${(assignees || []).map(a => a.staff?.full_name).filter(Boolean).join(', ')}`;
 
-  document.getElementById('task-detail-items').innerHTML = (items || []).map(it => {
-    const isChecked = myCompletedIds.includes(it.id);
-    return `<div class="cl-item ${isChecked ? 'checked' : ''}" ${isAssignedToMe ? `onclick="toggleTaskItem('${it.id}')"` : ''} style="cursor:${isAssignedToMe ? 'pointer' : 'default'};">
-      <div class="cl-checkbox">${isChecked ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
-      <div class="cl-item-text">${it.text}</div>
-    </div>`;
-  }).join('');
+  renderTaskDetailItems();
 
   const myAssigneeRow = (assignees || []).find(a => a.staff_id === currentTaskStaffId);
-  document.getElementById('task-note-wrap').style.display = isAssignedToMe ? 'block' : 'none';
+  document.getElementById('task-note-wrap').style.display = currentTaskIsAssignedToMe ? 'block' : 'none';
   document.getElementById('task-note-input').value = myAssigneeRow?.note || '';
   document.getElementById('task-detail-feedback').className = 'save-feedback';
 
-  if (isAssignedToMe && myAssigneeRow && !myAssigneeRow.seen_at) {
+  if (currentTaskIsAssignedToMe && myAssigneeRow && !myAssigneeRow.seen_at) {
     await sb.from('task_list_assignees').update({ seen_at: new Date().toISOString() }).eq('id', myAssigneeRow.id);
     await checkTasksNotifications();
   }
@@ -3131,11 +3284,23 @@ async function openTaskDetail(taskListId) {
 }
 function closeTaskDetailModal() {
   document.getElementById('modal-task-detail').style.display = 'none';
-  renderTasksMine();
-  renderTasksAll();
+  if (!isOffline) { renderTasksMine(); renderTasksAll(); }
 }
 async function toggleTaskItem(itemId) {
   if (!currentTaskStaffId) return;
+
+  if (isOffline) {
+    const idx = currentTaskMyCompletedIds.indexOf(itemId);
+    const nowCompleted = idx === -1;
+    if (nowCompleted) currentTaskMyCompletedIds.push(itemId);
+    else currentTaskMyCompletedIds.splice(idx, 1);
+    renderTaskDetailItems();
+    queueOfflineAction('task_item_completion', {
+      itemId, staffId: currentTaskStaffId, taskListId: currentTaskListId, completed: nowCompleted
+    });
+    return;
+  }
+
   const { data: existing } = await sb.from('task_item_completions').select('id').eq('task_list_item_id', itemId).eq('staff_id', currentTaskStaffId).maybeSingle();
   if (existing) {
     await sb.from('task_item_completions').delete().eq('id', existing.id);
@@ -3190,6 +3355,8 @@ async function initAuth() {
     document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
     await checkCrewNotifications();
     await checkTasksNotifications();
+    updateOfflineBanner();
+    flushOfflineQueue();
     showScreen('app');
   } else {
     showScreen('login');
@@ -3759,6 +3926,70 @@ async function renderCalendar() {
   if (calView === 'day') await renderDayView();
   else if (calView === 'week') await renderWeekView();
   else await renderMonthView();
+  checkDoubleBookings();
+}
+
+// Scans a rolling window of trips for two bookings sharing the same boat or the same
+// crew member on overlapping dates/times. This can legitimately happen if a booking was
+// made while offline (two devices with no connection can't see each other's changes), so
+// the banner says that explicitly rather than leaving it looking like a bug.
+async function checkDoubleBookings() {
+  const banner = document.getElementById('double-booking-banner');
+  if (!banner) return;
+  if (!currentOrgId) { banner.style.display = 'none'; return; }
+
+  const windowStart = formatDate(addDays(new Date(), -14));
+  const windowEnd = formatDate(addDays(new Date(), 90));
+
+  const { data: trips } = await sb
+    .from('trips')
+    .select('id, contact_name, trip_date, end_date, trip_time, arrival_time, boat_id, boats(name), trip_crew(staff_id, staff(full_name))')
+    .eq('org_id', currentOrgId)
+    .not('boat_id', 'is', null)
+    .gte('trip_date', windowStart)
+    .lte('trip_date', windowEnd);
+
+  const list = trips || [];
+  const rangesOverlap = (a, b) => {
+    const aEnd = a.end_date || a.trip_date;
+    const bEnd = b.end_date || b.trip_date;
+    if (!(a.trip_date <= bEnd && aEnd >= b.trip_date)) return false;
+    const bothSingleDaySame = !a.end_date && !b.end_date && a.trip_date === b.trip_date;
+    if (bothSingleDaySame) {
+      const aStart = a.trip_time?.slice(0,5) || '00:00', aE = a.arrival_time?.slice(0,5) || '23:59';
+      const bStart = b.trip_time?.slice(0,5) || '00:00', bE = b.arrival_time?.slice(0,5) || '23:59';
+      return aStart < bE && aE > bStart;
+    }
+    return true;
+  };
+
+  const issues = [];
+  for (let i = 0; i < list.length; i++) {
+    for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j];
+      if (!rangesOverlap(a, b)) continue;
+      if (a.boat_id && a.boat_id === b.boat_id) {
+        issues.push(`${a.boats?.name || 'A boat'} is booked for both "${a.contact_name || 'Unnamed'}" and "${b.contact_name || 'Unnamed'}" — overlapping dates.`);
+      }
+      const aCrewIds = (a.trip_crew || []).map(c => c.staff_id);
+      (b.trip_crew || []).forEach(c => {
+        if (aCrewIds.includes(c.staff_id)) {
+          issues.push(`${c.staff?.full_name || 'A crew member'} is assigned to both "${a.contact_name || 'Unnamed'}" and "${b.contact_name || 'Unnamed'}" — overlapping dates.`);
+        }
+      });
+    }
+  }
+
+  if (issues.length) {
+    banner.innerHTML = `
+      <strong>⚠ Double-booking detected</strong>
+      <div style="margin-top:6px;">${issues.map(i => `<div>${i}</div>`).join('')}</div>
+      <div style="margin-top:8px;font-size:0.8rem;opacity:0.85;">This isn't a bug — it happens when a booking is made while offline, since two devices without a connection can't see each other's changes at the moment of booking. Open the trips above and adjust the boat, crew, or time to fix it.</div>
+    `;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 async function fetchTripsForRange(start, end) {
@@ -4286,6 +4517,11 @@ function showCheckInPanel(groupId) {
 }
 
 async function confirmCheckIn(groupId) {
+  if (isOffline) {
+    const feedback = document.getElementById('checkin-feedback-' + groupId);
+    if (feedback) { feedback.textContent = "You're offline — check-in needs a live connection."; feedback.className = 'save-feedback error visible'; }
+    return;
+  }
   const boxes = document.querySelectorAll(`.checkin-box-${groupId}`);
   const { data: { user } } = await sb.auth.getUser();
   const now = new Date().toISOString();
@@ -5373,6 +5609,11 @@ async function resolveTripLocationId(boatId) {
 document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-trip');
   const feedback = document.getElementById('trip-save-feedback');
+  if (isOffline) {
+    feedback.textContent = "You're offline — bookings need a live connection so nothing gets double-booked. Try again once you're back online.";
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
   const typeId = document.getElementById('trip-type-select').value;
   const date = document.getElementById('trip-date').value;
   const time = document.getElementById('trip-time').value;
@@ -5932,7 +6173,13 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     responses: isMedical ? window.currentSignQuestions.map(q => ({ question: q.question_text, checked: !!window.currentSignResponses[q.id] })) : null
   };
 
-  const { error } = await sb.from('waivers').insert(payload);
+  let error = null;
+  if (isOffline) {
+    queueOfflineAction('waiver_signature', payload);
+    await showAlertModal('Saved offline — this waiver will sync automatically once your connection is back.');
+  } else {
+    ({ error } = await sb.from('waivers').insert(payload));
+  }
   if (error) {
     feedback.textContent = 'Error saving waiver: ' + (error.message || 'unknown error');
     feedback.className = 'save-feedback error visible';
@@ -6273,6 +6520,11 @@ function cancelLogPayment(groupId) {
 }
 async function confirmLogPayment(groupId, total, paid) {
   const feedback = document.getElementById('log-payment-feedback-' + groupId);
+  if (isOffline) {
+    feedback.textContent = "You're offline — payments need a live connection so nothing gets logged twice or lost. Try again once you're back online.";
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
   const amount = parseFloat(document.getElementById('new-payment-amount-' + groupId).value);
   const method = window.currentPaymentMethod[groupId];
   const note = document.getElementById('new-payment-note-' + groupId).value.trim();
@@ -6470,6 +6722,11 @@ function cancelAddGuest(groupId) {
 
 async function saveGroupParticipant(groupId) {
   const feedback = document.getElementById('p-save-feedback-' + groupId);
+  if (isOffline) {
+    feedback.textContent = "You're offline — guest changes need a live connection. Try again once you're back online.";
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
   const name = document.getElementById('p-name-' + groupId).value.trim();
 
   if (!name) {
@@ -6535,6 +6792,7 @@ async function saveGroupParticipant(groupId) {
 }
 
 async function removeGroupParticipant(participantId, groupId) {
+  if (isOffline) { await showAlertModal("You're offline — guest changes need a live connection."); return; }
   if (!(await showConfirmModal('Remove this guest?'))) return;
   await sb.from('participants').delete().eq('id', participantId);
   await loadGroupParticipants(groupId);
@@ -6774,12 +7032,18 @@ async function captainSignOff() {
   const status = document.getElementById('cl-captain-status');
   if (status) { status.textContent = 'Complete ✓'; status.classList.add('done'); }
   if (currentOrgId) {
-    await sb.from('checklist_completions').insert({
+    const payload = {
       org_id: currentOrgId, trip_id: currentChecklistTripId || null,
       role: 'captain', signed_by: name, boat_name: boat,
       completed_items: done, total_items: CAPTAIN_ITEMS.length,
       signed_at: new Date().toISOString()
-    });
+    };
+    if (isOffline) {
+      queueOfflineAction('checklist_completion', payload);
+      doneBanner.innerHTML += ' <span style="opacity:0.75;">(saved offline — will sync automatically)</span>';
+    } else {
+      await sb.from('checklist_completions').insert(payload);
+    }
   }
 }
 
@@ -6809,14 +7073,20 @@ async function instructorSignOff() {
   const status = document.getElementById('cl-instructor-status');
   if (status) { status.textContent = 'Complete ✓'; status.classList.add('done'); }
   if (currentOrgId) {
-    await sb.from('checklist_completions').insert({
+    const payload = {
       org_id: currentOrgId, trip_id: currentChecklistTripId || null,
       role: 'instructor', signed_by: name,
       completed_items: done, total_items: INSTRUCTOR_ITEMS.length,
       signed_at: new Date().toISOString()
-    });
-    if (currentChecklistTripId && ['owner','manager','captain'].includes(currentUserRole)) {
-      await loadCrewStatus(currentChecklistTripId);
+    };
+    if (isOffline) {
+      queueOfflineAction('checklist_completion', payload);
+      document.getElementById('cl-instructor-done').innerHTML += ' <span style="opacity:0.75;">(saved offline — will sync automatically)</span>';
+    } else {
+      await sb.from('checklist_completions').insert(payload);
+      if (currentChecklistTripId && ['owner','manager','captain'].includes(currentUserRole)) {
+        await loadCrewStatus(currentChecklistTripId);
+      }
     }
   }
 }
@@ -7632,7 +7902,7 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
 
   btn.disabled = true; btn.textContent = 'Saving...';
   const { data: { user } } = await sb.auth.getUser();
-  const { error } = await sb.from('maintenance_logs').insert({
+  const logPayload = {
     org_id: currentOrgId,
     boat_id: boatId,
     engine_id: engineId,
@@ -7646,13 +7916,23 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
     performed_by: performedBy || null,
     next_due_date: nextDue || null,
     created_by: user?.id || null
-  });
+  };
+  let error = null;
+  if (isOffline) {
+    queueOfflineAction('maintenance_log', logPayload);
+  } else {
+    ({ error } = await sb.from('maintenance_logs').insert(logPayload));
+  }
   btn.disabled = false; btn.textContent = 'Save entry';
 
   if (error) {
     feedback.textContent = 'Error: ' + error.message;
     feedback.className = 'save-feedback error visible';
     return;
+  }
+  if (isOffline) {
+    feedback.textContent = 'Saved offline — will sync automatically when you\'re back online.';
+    feedback.className = 'save-feedback visible';
   }
 
   document.getElementById('bdm-title').value = '';
@@ -7910,7 +8190,7 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
 
   btn.disabled = true; btn.textContent = 'Saving...';
   const { data: { user } } = await sb.auth.getUser();
-  const { error } = await sb.from('maintenance_logs').insert({
+  const logPayload = {
     org_id: currentOrgId,
     gear_id: gearId,
     title: title,
@@ -7922,7 +8202,14 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
     performed_by: performedBy || null,
     next_due_date: nextDue || null,
     created_by: user?.id || null
-  });
+  };
+  const gearUpdate = { last_service_date: date, next_service_date: nextDue || null };
+  let error = null;
+  if (isOffline) {
+    queueOfflineAction('gear_maintenance_log', { log: logPayload, gearId, gearUpdate });
+  } else {
+    ({ error } = await sb.from('maintenance_logs').insert(logPayload));
+  }
   btn.disabled = false; btn.textContent = 'Save entry';
 
   if (error) {
@@ -7930,12 +8217,13 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
     feedback.className = 'save-feedback error visible';
     return;
   }
-
-  // Keep the gear item's own service dates in sync with its latest logged entry
-  await sb.from('gear').update({
-    last_service_date: date,
-    next_service_date: nextDue || null
-  }).eq('id', gearId);
+  if (isOffline) {
+    feedback.textContent = 'Saved offline — will sync automatically when you\'re back online.';
+    feedback.className = 'save-feedback visible';
+  } else {
+    // Keep the gear item's own service dates in sync with its latest logged entry
+    await sb.from('gear').update(gearUpdate).eq('id', gearId);
+  }
   document.getElementById('gd-last-service').value = date;
   document.getElementById('gd-next-service').value = nextDue || '';
 
