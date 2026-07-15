@@ -607,6 +607,16 @@ body { background: var(--navy); color: var(--text); }
 #offline-banner.offline { background: #92660a; color: #fff; }
 #offline-banner.syncing { background: var(--blue); color: #fff; }
 
+.lang-switcher { display: flex; gap: 4px; }
+.lang-btn {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px;
+  font-size: 0.75rem; font-weight: 700; color: var(--muted);
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: all 0.15s;
+}
+.lang-btn.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+
 
 .crew-member-tag-v2 {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1250,26 +1260,30 @@ body { background: var(--navy); color: var(--text); }
 <!-- ─── LOGIN SCREEN ─── -->
 <div id="screen-login" class="screen">
   <div class="login-box">
+    <div class="lang-switcher" style="justify-content:center;margin-bottom:12px;">
+      <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+      <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+    </div>
     <div class="login-logo">Seven<span>Seas</span></div>
-    <div class="login-tagline">Water operations platform</div>
+    <div class="login-tagline" data-i18n="login_tagline">Water operations platform</div>
     <div class="login-card">
-      <h2>Sign in to your account</h2>
+      <h2 data-i18n="login_title">Sign in to your account</h2>
       <div class="form-group">
-        <label>Email</label>
+        <label data-i18n="login_email_label">Email</label>
         <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
       </div>
       <div class="form-group">
-        <label>Password</label>
+        <label data-i18n="login_password_label">Password</label>
         <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
       </div>
-      <button class="btn-login" id="btn-login">Sign in</button>
+      <button class="btn-login" id="btn-login" data-i18n="login_signin_btn">Sign in</button>
       <div class="login-error" id="login-error"></div>
       <div class="login-forgot">
-        <a href="#" id="link-forgot">Forgot password?</a>
+        <a href="#" id="link-forgot" data-i18n="login_forgot_link">Forgot password?</a>
       </div>
       <hr class="login-divider">
       <div class="login-signup">
-        New operation? <a href="#" id="link-signup">Request access</a>
+        <span data-i18n="login_new_operation">New operation?</span> <a href="#" id="link-signup" data-i18n="login_request_access">Request access</a>
       </div>
     </div>
   </div>
@@ -1279,17 +1293,17 @@ body { background: var(--navy); color: var(--text); }
 <div id="screen-forgot" class="screen">
   <div class="login-box">
     <div class="login-logo">Seven<span>Seas</span></div>
-    <div class="login-tagline">Water operations platform</div>
+    <div class="login-tagline" data-i18n="login_tagline">Water operations platform</div>
     <div class="login-card">
-      <button class="back-link" id="btn-back-login">← Back to sign in</button>
-      <h2>Reset your password</h2>
+      <button class="back-link" id="btn-back-login" data-i18n="forgot_back">← Back to sign in</button>
+      <h2 data-i18n="forgot_title">Reset your password</h2>
       <div class="form-group">
-        <label>Email</label>
+        <label data-i18n="forgot_email_label">Email</label>
         <input type="email" id="forgot-email" placeholder="you@example.com">
       </div>
-      <button class="btn-login" id="btn-reset">Send reset link</button>
+      <button class="btn-login" id="btn-reset" data-i18n="forgot_send_btn">Send reset link</button>
       <div class="login-error" id="forgot-error"></div>
-      <div class="success-msg" id="forgot-success">
+      <div class="success-msg" id="forgot-success" data-i18n="forgot_success">
         Reset link sent — check your inbox.
       </div>
     </div>
@@ -1300,24 +1314,24 @@ body { background: var(--navy); color: var(--text); }
 <div id="screen-accept-invite" class="screen">
   <div class="login-box">
     <div class="login-logo">Seven<span>Seas</span></div>
-    <div class="login-tagline">Water operations platform</div>
+    <div class="login-tagline" data-i18n="login_tagline">Water operations platform</div>
     <div class="login-card">
       <h2>You're invited</h2>
       <p id="accept-invite-desc" style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;"></p>
       <div id="accept-invite-form">
         <div class="form-group">
-          <label>Full name</label>
+          <label data-i18n="accept_invite_name_label">Full name</label>
           <input type="text" id="accept-invite-name" placeholder="Your name">
         </div>
         <div class="form-group">
-          <label>Email</label>
+          <label data-i18n="accept_invite_email_label">Email</label>
           <input type="email" id="accept-invite-email" disabled>
         </div>
         <div class="form-group">
-          <label>Password</label>
+          <label data-i18n="accept_invite_password_label">Password</label>
           <input type="password" id="accept-invite-password" placeholder="At least 6 characters" autocomplete="new-password">
         </div>
-        <button class="btn-login" id="btn-accept-invite">Set up account</button>
+        <button class="btn-login" id="btn-accept-invite" data-i18n="accept_invite_btn">Set up account</button>
         <div class="login-error" id="accept-invite-error"></div>
       </div>
       <div id="accept-invite-invalid" style="display:none;">
@@ -1343,8 +1357,12 @@ body { background: var(--navy); color: var(--text); }
       </div>
     </div>
     <div class="nav-right">
-      <div class="nav-user">Signed in as <strong id="nav-username">—</strong></div>
-      <button class="btn-signout" id="btn-signout">Sign out</button>
+      <div class="lang-switcher">
+        <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+        <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+      </div>
+      <div class="nav-user"><span data-i18n="signed_in_as">Signed in as</span> <strong id="nav-username">—</strong></div>
+      <button class="btn-signout" id="btn-signout" data-i18n="sign_out">Sign out</button>
     </div>
   </nav>
 
@@ -1357,43 +1375,43 @@ body { background: var(--navy); color: var(--text); }
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <div class="nav-section-label">Operations</div>
+      <div class="nav-section-label" data-i18n="nav_section_operations">Operations</div>
       <div class="nav-item active" data-page="home">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></span> Home
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></span> <span data-i18n="nav_home">Home</span>
       </div>
       <div class="nav-item" data-page="calendar">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Calendar
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <span data-i18n="nav_calendar">Calendar</span>
       </div>
       <div class="nav-item" data-page="fleet">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20l2-8h12l2 8"/><path d="M12 4v8M8 8h8"/><path d="M6 12L4 20M18 12l2 8"/></svg></span> Fleet
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20l2-8h12l2 8"/><path d="M12 4v8M8 8h8"/><path d="M6 12L4 20M18 12l2 8"/></svg></span> <span data-i18n="nav_fleet">Fleet</span>
       </div>
       <div class="nav-item" data-page="crew" style="position:relative;">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span> Crew
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span> <span data-i18n="nav_crew">Crew</span>
         <span id="crew-notification-badge" style="display:none;position:absolute;left:16px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--error);border:1.5px solid var(--white);"></span>
       </div>
-      <div class="nav-section-label">Daily Ops</div>
+      <div class="nav-section-label" data-i18n="nav_section_dailyops">Daily Ops</div>
       <div class="nav-item" data-page="checklists">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span> Checklists
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span> <span data-i18n="nav_checklists">Checklists</span>
       </div>
       <div class="nav-item" data-page="tasks" style="position:relative;">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span> Tasks
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span> <span data-i18n="nav_tasks">Tasks</span>
         <span id="tasks-notification-badge" style="display:none;position:absolute;left:16px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--error);border:1.5px solid var(--white);"></span>
       </div>
       <div class="nav-item" data-page="gear">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/></svg></span> Gear & Equipment
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/></svg></span> <span data-i18n="nav_gear">Gear & Equipment</span>
       </div>
       <div class="nav-item" data-page="waivers">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg></span> Waivers
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg></span> <span data-i18n="nav_waivers">Waivers</span>
       </div>
       <div class="nav-item" data-page="cashup">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Daily Cash-Up
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> <span data-i18n="nav_cashup">Daily Cash-Up</span>
       </div>
-      <div class="nav-section-label">Manage</div>
+      <div class="nav-section-label" data-i18n="nav_section_manage">Manage</div>
       <div class="nav-item" data-page="reports" id="nav-item-reports" style="display:none;">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Reports
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> <span data-i18n="nav_reports">Reports</span>
       </div>
       <div class="nav-item" data-page="settings">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span> Settings
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span> <span data-i18n="nav_settings">Settings</span>
       </div>
     </aside>
 
@@ -1408,31 +1426,31 @@ body { background: var(--navy); color: var(--text); }
         </div>
         <div class="setup-banner" id="setup-banner">
           <div>
-            <h2>Set up your operation</h2>
-            <p>Add your shop details, boats, and invite your crew to get started.</p>
+            <h2 data-i18n="setup_banner_title">Set up your operation</h2>
+            <p data-i18n="setup_banner_sub">Add your shop details, boats, and invite your crew to get started.</p>
           </div>
-          <button class="btn-setup" onclick="showPage('settings')">Go to Settings</button>
+          <button class="btn-setup" onclick="showPage('settings')" data-i18n="setup_banner_btn">Go to Settings</button>
         </div>
         <div class="stat-grid">
           <div class="stat-card">
-            <div class="stat-label">Trips today</div>
+            <div class="stat-label" data-i18n="stat_trips_today">Trips today</div>
             <div class="stat-value" id="stat-trips">—</div>
-            <div class="stat-sub">scheduled</div>
+            <div class="stat-sub" data-i18n="stat_trips_sub">scheduled</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Guests today</div>
+            <div class="stat-label" data-i18n="stat_guests_today">Guests today</div>
             <div class="stat-value" id="stat-guests">—</div>
-            <div class="stat-sub">across all trips</div>
+            <div class="stat-sub" data-i18n="stat_guests_sub">across all trips</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Active boats</div>
+            <div class="stat-label" data-i18n="stat_boats">Active boats</div>
             <div class="stat-value" id="stat-boats">—</div>
-            <div class="stat-sub">in fleet</div>
+            <div class="stat-sub" data-i18n="stat_boats_sub">in fleet</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Crew online</div>
+            <div class="stat-label" data-i18n="stat_crew">Crew online</div>
             <div class="stat-value" id="stat-crew">—</div>
-            <div class="stat-sub">staff accounts</div>
+            <div class="stat-sub" data-i18n="stat_crew_sub">staff accounts</div>
           </div>
         </div>
         <div class="card">
@@ -1449,16 +1467,16 @@ body { background: var(--navy); color: var(--text); }
             <button class="cal-nav-btn" id="cal-prev">&#8249;</button>
             <div class="cal-title-group">
               <span class="cal-title" id="cal-title">Today</span>
-              <button class="cal-today-btn" id="cal-today">Today</button>
+              <button class="cal-today-btn" id="cal-today" data-i18n="cal_today">Today</button>
             </div>
             <button class="cal-nav-btn" id="cal-next">&#8250;</button>
           </div>
           <div class="cal-view-switcher">
-            <button class="cal-view-btn active" data-view="day">Day</button>
-            <button class="cal-view-btn" data-view="week">Week</button>
-            <button class="cal-view-btn" data-view="month">Month</button>
+            <button class="cal-view-btn active" data-view="day" data-i18n="cal_day">Day</button>
+            <button class="cal-view-btn" data-view="week" data-i18n="cal_week">Week</button>
+            <button class="cal-view-btn" data-view="month" data-i18n="cal_month">Month</button>
           </div>
-          <button class="btn-save" id="btn-new-trip">+ New trip</button>
+          <button class="btn-save" id="btn-new-trip" data-i18n="cal_new_trip">+ New trip</button>
         </div>
 
         <div class="warning-banner caution" id="double-booking-banner" style="display:none;"></div>
@@ -1554,8 +1572,8 @@ body { background: var(--navy); color: var(--text); }
       <div class="page" id="page-fleet">
         <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
           <div>
-            <h1>Fleet</h1>
-            <p>Boats, engines and maintenance</p>
+            <h1 data-i18n="header_fleet_title">Fleet</h1>
+            <p data-i18n="header_fleet_sub">Boats, engines and maintenance</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn-save" id="btn-show-add-boat">+ Add boat</button>
@@ -1746,8 +1764,8 @@ body { background: var(--navy); color: var(--text); }
       <div class="page" id="page-crew">
         <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
           <div>
-            <h1>Crew</h1>
-            <p>Staff accounts and roles</p>
+            <h1 data-i18n="header_crew_title">Crew</h1>
+            <p data-i18n="header_crew_sub">Staff accounts and roles</p>
           </div>
           <button class="btn-save" id="btn-show-invite">+ Invite staff</button>
         </div>
@@ -1898,8 +1916,8 @@ body { background: var(--navy); color: var(--text); }
       <!-- CHECKLISTS -->
       <div class="page" id="page-checklists">
         <div class="page-header">
-          <h1>Checklists</h1>
-          <p>Trip prep, vessel safety, department routines</p>
+          <h1 data-i18n="header_checklists_title">Checklists</h1>
+          <p data-i18n="header_checklists_sub">Trip prep, vessel safety, department routines</p>
         </div>
 
         <!-- Tab row -->
@@ -1984,8 +2002,8 @@ body { background: var(--navy); color: var(--text); }
     <!-- GEAR -->
       <div class="page" id="page-gear">
         <div class="page-header">
-          <h1>Gear & Equipment</h1>
-          <p>Inventory and lifecycle tracking</p>
+          <h1 data-i18n="header_gear_title">Gear & Equipment</h1>
+          <p data-i18n="header_gear_sub">Inventory and lifecycle tracking</p>
         </div>
 
         <div class="cl-tab-row">
@@ -2118,8 +2136,8 @@ body { background: var(--navy); color: var(--text); }
       <!-- WAIVERS -->
       <div class="page" id="page-waivers">
         <div class="page-header">
-          <h1>Waivers</h1>
-          <p>Digital signature collection for guests</p>
+          <h1 data-i18n="header_waivers_title">Waivers</h1>
+          <p data-i18n="header_waivers_sub">Digital signature collection for guests</p>
         </div>
         <div id="waivers-disabled-notice" style="display:none;">
           <div class="coming-soon">
@@ -2167,8 +2185,8 @@ body { background: var(--navy); color: var(--text); }
       <!-- CASH-UP -->
       <div class="page" id="page-cashup">
         <div class="page-header">
-          <h1>Daily Cash-Up</h1>
-          <p>Cash reconciliation and guest tabs</p>
+          <h1 data-i18n="header_cashup_title">Daily Cash-Up</h1>
+          <p data-i18n="header_cashup_sub">Cash reconciliation and guest tabs</p>
         </div>
         <div class="cl-tab-row">
           <div class="cl-tab active" onclick="showCashupView('cashup',this)">Cash-Up</div>
@@ -2199,8 +2217,8 @@ body { background: var(--navy); color: var(--text); }
       <!-- REPORTS -->
       <div class="page" id="page-reports">
         <div class="page-header">
-          <h1>Reports</h1>
-          <p>Revenue trends and cash accountability — owner only</p>
+          <h1 data-i18n="header_reports_title">Reports</h1>
+          <p data-i18n="header_reports_sub">Revenue trends and cash accountability — owner only</p>
         </div>
 
         <div id="reports-no-location" style="display:none;">
@@ -2300,8 +2318,8 @@ body { background: var(--navy); color: var(--text); }
       <div class="page" id="page-tasks">
         <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
           <div>
-            <h1>Tasks</h1>
-            <p>Crew task management</p>
+            <h1 data-i18n="header_tasks_title">Tasks</h1>
+            <p data-i18n="header_tasks_sub">Crew task management</p>
           </div>
           <button class="btn-save" id="btn-new-task-list">+ New Task List</button>
         </div>
@@ -2346,8 +2364,8 @@ body { background: var(--navy); color: var(--text); }
       <!-- SETTINGS -->
       <div class="page" id="page-settings">
         <div class="page-header">
-          <h1>Settings</h1>
-          <p>Operation details and account</p>
+          <h1 data-i18n="header_settings_title">Settings</h1>
+          <p data-i18n="header_settings_sub">Operation details and account</p>
         </div>
 
         <!-- Account card -->
@@ -2561,6 +2579,107 @@ const SUPABASE_URL = 'https://ggtbxjwstkuhnabwpgdz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tiYQ81YqYtscWmvb3-8o-w_lBPGtbUw';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─── LANGUAGE / TRANSLATIONS (English + Spanish) ───
+// Scope: app "furniture" — nav, headers, login/invite screens, buttons that appear
+// throughout the app. Shop-entered content (trip type names, gear labels, notes) is
+// intentionally left untranslated, since that's written by the shop in their own words.
+const TRANSLATIONS = {
+  en: {
+    nav_section_operations: 'Operations', nav_section_dailyops: 'Daily Ops', nav_section_manage: 'Manage',
+    nav_home: 'Home', nav_calendar: 'Calendar', nav_fleet: 'Fleet', nav_crew: 'Crew',
+    nav_checklists: 'Checklists', nav_tasks: 'Tasks', nav_gear: 'Gear & Equipment',
+    nav_waivers: 'Waivers', nav_cashup: 'Daily Cash-Up', nav_reports: 'Reports', nav_settings: 'Settings',
+    signed_in_as: 'Signed in as', sign_out: 'Sign out',
+
+    login_title: 'Sign in to your account', login_tagline: 'Water operations platform',
+    login_email_label: 'Email', login_password_label: 'Password', login_signin_btn: 'Sign in',
+    login_forgot_link: 'Forgot password?', login_new_operation: 'New operation?', login_request_access: 'Request access',
+
+    forgot_title: 'Reset your password', forgot_back: '← Back to sign in', forgot_email_label: 'Email',
+    forgot_send_btn: 'Send reset link', forgot_success: 'Reset link sent — check your inbox.',
+
+    accept_invite_name_label: 'Full name', accept_invite_email_label: 'Email', accept_invite_password_label: 'Password',
+    accept_invite_btn: 'Set up account',
+
+    header_fleet_title: 'Fleet', header_fleet_sub: 'Boats, engines and maintenance',
+    header_crew_title: 'Crew', header_crew_sub: 'Staff accounts and roles',
+    header_checklists_title: 'Checklists', header_checklists_sub: 'Trip prep, vessel safety, department routines',
+    header_gear_title: 'Gear & Equipment', header_gear_sub: 'Inventory and lifecycle tracking',
+    header_waivers_title: 'Waivers', header_waivers_sub: 'Digital signature collection for guests',
+    header_cashup_title: 'Daily Cash-Up', header_cashup_sub: 'Cash reconciliation and guest tabs',
+    header_reports_title: 'Reports', header_reports_sub: 'Revenue trends and cash accountability — owner only',
+    header_tasks_title: 'Tasks', header_tasks_sub: 'Crew task management',
+    header_settings_title: 'Settings', header_settings_sub: 'Operation details and account',
+
+    cal_today: 'Today', cal_day: 'Day', cal_week: 'Week', cal_month: 'Month', cal_new_trip: '+ New trip',
+
+    stat_trips_today: 'Trips today', stat_trips_sub: 'scheduled',
+    stat_guests_today: 'Guests today', stat_guests_sub: 'across all trips',
+    stat_boats: 'Active boats', stat_boats_sub: 'in fleet',
+    stat_crew: 'Crew online', stat_crew_sub: 'staff accounts',
+    setup_banner_title: 'Set up your operation', setup_banner_sub: 'Add your shop details, boats, and invite your crew to get started.', setup_banner_btn: 'Go to Settings',
+  },
+  es: {
+    nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
+    nav_home: 'Inicio', nav_calendar: 'Calendario', nav_fleet: 'Flota', nav_crew: 'Tripulación',
+    nav_checklists: 'Listas de Verificación', nav_tasks: 'Tareas', nav_gear: 'Equipo y Material',
+    nav_waivers: 'Formularios', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
+    signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
+
+    login_title: 'Inicia sesión en tu cuenta', login_tagline: 'Plataforma de operaciones marítimas',
+    login_email_label: 'Correo electrónico', login_password_label: 'Contraseña', login_signin_btn: 'Iniciar sesión',
+    login_forgot_link: '¿Olvidaste tu contraseña?', login_new_operation: '¿Nueva operación?', login_request_access: 'Solicitar acceso',
+
+    forgot_title: 'Restablece tu contraseña', forgot_back: '← Volver a iniciar sesión', forgot_email_label: 'Correo electrónico',
+    forgot_send_btn: 'Enviar enlace', forgot_success: 'Enlace enviado — revisa tu correo.',
+
+    accept_invite_name_label: 'Nombre completo', accept_invite_email_label: 'Correo electrónico', accept_invite_password_label: 'Contraseña',
+    accept_invite_btn: 'Configurar cuenta',
+
+    header_fleet_title: 'Flota', header_fleet_sub: 'Embarcaciones, motores y mantenimiento',
+    header_crew_title: 'Tripulación', header_crew_sub: 'Cuentas y roles del personal',
+    header_checklists_title: 'Listas de Verificación', header_checklists_sub: 'Preparación de salidas, seguridad de la embarcación, rutinas por área',
+    header_gear_title: 'Equipo y Material', header_gear_sub: 'Inventario y seguimiento de vida útil',
+    header_waivers_title: 'Formularios', header_waivers_sub: 'Recolección de firmas digitales de huéspedes',
+    header_cashup_title: 'Arqueo de Caja Diario', header_cashup_sub: 'Conciliación de caja y cuentas de huéspedes',
+    header_reports_title: 'Informes', header_reports_sub: 'Tendencias de ingresos y control de caja — solo propietario',
+    header_tasks_title: 'Tareas', header_tasks_sub: 'Gestión de tareas de la tripulación',
+    header_settings_title: 'Configuración', header_settings_sub: 'Detalles de la operación y cuenta',
+
+    cal_today: 'Hoy', cal_day: 'Día', cal_week: 'Semana', cal_month: 'Mes', cal_new_trip: '+ Nueva salida',
+
+    stat_trips_today: 'Salidas hoy', stat_trips_sub: 'programadas',
+    stat_guests_today: 'Huéspedes hoy', stat_guests_sub: 'en todas las salidas',
+    stat_boats: 'Embarcaciones activas', stat_boats_sub: 'en la flota',
+    stat_crew: 'Tripulación activa', stat_crew_sub: 'cuentas de personal',
+    setup_banner_title: 'Configura tu operación', setup_banner_sub: 'Agrega los datos de tu negocio, embarcaciones e invita a tu tripulación para comenzar.', setup_banner_btn: 'Ir a Configuración',
+  }
+};
+
+let currentLanguage = localStorage.getItem('sevenSeasLanguage') || 'en';
+
+function t(key) {
+  return (TRANSLATIONS[currentLanguage] && TRANSLATIONS[currentLanguage][key]) || TRANSLATIONS.en[key] || key;
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLanguage));
+}
+
+function setLanguage(lang) {
+  currentLanguage = lang;
+  localStorage.setItem('sevenSeasLanguage', lang);
+  applyTranslations();
+}
+
+applyTranslations();
 
 // ─── OFFLINE SUPPORT (light resilience layer) ───
 // Scope: checklists, waiver signing, and maintenance/gear logs queue locally and sync
