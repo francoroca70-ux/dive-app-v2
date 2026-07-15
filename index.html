@@ -1212,21 +1212,21 @@ body { background: var(--navy); color: var(--text); }
     <div class="modal-body">
       <p id="roster-cell-title" style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:16px;"></p>
       <div class="sf-group">
-        <label class="sf-label">Assign location</label>
+        <label class="sf-label" data-i18n="crew_assign_location">Assign location</label>
         <select class="sf-input" id="roster-cell-location"></select>
       </div>
       <div class="sf-group">
-        <label class="sf-label">Or set status</label>
+        <label class="sf-label" data-i18n="crew_or_set_status">Or set status</label>
         <div class="radio-group">
-          <div class="radio-btn" style="background:rgba(47,133,90,0.12);color:var(--success);border-color:transparent;" onclick="clearRosterCell()">On Duty</div>
-          <div class="radio-btn" style="background:rgba(229,62,62,0.12);color:var(--error);border-color:transparent;" onclick="setRosterCellStatus('dayoff')">Day Off</div>
-          <div class="radio-btn" style="background:rgba(229,62,62,0.12);color:var(--error);border-color:transparent;" onclick="setRosterCellStatus('sick')">Sick</div>
-          <div class="radio-btn" style="background:rgba(194,118,12,0.12);color:var(--warning);border-color:transparent;" onclick="setRosterCellStatus('personal')">Personal</div>
+          <div class="radio-btn" style="background:rgba(47,133,90,0.12);color:var(--success);border-color:transparent;" onclick="clearRosterCell()" data-i18n="crew_on_duty">On Duty</div>
+          <div class="radio-btn" style="background:rgba(229,62,62,0.12);color:var(--error);border-color:transparent;" onclick="setRosterCellStatus('dayoff')" data-i18n="crew_status_dayoff">Day Off</div>
+          <div class="radio-btn" style="background:rgba(229,62,62,0.12);color:var(--error);border-color:transparent;" onclick="setRosterCellStatus('sick')" data-i18n="crew_status_sick">Sick</div>
+          <div class="radio-btn" style="background:rgba(194,118,12,0.12);color:var(--warning);border-color:transparent;" onclick="setRosterCellStatus('personal')" data-i18n="crew_status_personal">Personal</div>
         </div>
       </div>
       <div class="settings-actions">
-        <button class="btn-save" id="btn-save-roster-location">Save location</button>
-        <button class="btn-cancel" onclick="closeRosterCellModal()">Cancel</button>
+        <button class="btn-save" id="btn-save-roster-location" data-i18n="crew_save_location">Save location</button>
+        <button class="btn-cancel" onclick="closeRosterCellModal()" data-i18n="crew_cancel">Cancel</button>
       </div>
       <span class="save-feedback" id="roster-cell-feedback"></span>
     </div>
@@ -1497,34 +1497,34 @@ body { background: var(--navy); color: var(--text); }
             <div id="trip-form-section">
 
               <div class="sf-group">
-                <label class="sf-label">Trip type</label>
+                <label class="sf-label" data-i18n="tt_trip_type">Trip type</label>
                 <select class="sf-input" id="trip-type-select"></select>
               </div>
 
               <div class="sf-row">
                 <div class="sf-group">
-                  <label class="sf-label">Date <span class="required-star">*</span></label>
+                  <label class="sf-label"><span data-i18n="tt_date">Date</span> <span class="required-star">*</span></label>
                   <input class="sf-input" type="date" id="trip-date">
                 </div>
                 <div class="sf-group" id="trip-enddate-group" style="display:none;">
-                  <label class="sf-label">End date <span class="required-star">*</span></label>
+                  <label class="sf-label"><span data-i18n="tt_end_date">End date</span> <span class="required-star">*</span></label>
                   <input class="sf-input" type="date" id="trip-end-date">
                 </div>
               </div>
               <div class="sf-row">
                 <div class="sf-group">
-                  <label class="sf-label">Departure <span class="required-star">*</span></label>
+                  <label class="sf-label"><span data-i18n="tt_departure">Departure</span> <span class="required-star">*</span></label>
                   <input class="sf-input" type="time" id="trip-time">
                 </div>
                 <div class="sf-group">
-                  <label class="sf-label">Arrival <span class="required-star">*</span></label>
+                  <label class="sf-label"><span data-i18n="tt_arrival">Arrival</span> <span class="required-star">*</span></label>
                   <input class="sf-input" type="time" id="trip-arrival">
                 </div>
               </div>
 
-              <div class="card-section-title" style="margin-top:20px;">Boat</div>
+              <div class="card-section-title" style="margin-top:20px;" data-i18n="tt_boat_section">Boat</div>
               <div class="sf-group">
-                <label class="sf-label">Select boat</label>
+                <label class="sf-label" data-i18n="tt_select_boat">Select boat</label>
                 <select class="sf-input" id="trip-boat"></select>
               </div>
               <div class="warning-banner caution" id="boat-conflict-warning" style="display:none;"></div>
@@ -1532,35 +1532,35 @@ body { background: var(--navy); color: var(--text); }
               <!-- Dynamic tank/dive info -->
               <div id="trip-tank-fields" style="display:none;">
                 <div class="sf-group">
-                  <label class="sf-label">Dive sites (optional)</label>
+                  <label class="sf-label" data-i18n="tt_dive_sites">Dive sites (optional)</label>
                   <input class="sf-input" type="text" id="trip-dive-sites" placeholder="e.g. Chumphon Pinnacle, Southwest">
                 </div>
               </div>
 
-              <div class="card-section-title" style="margin-top:20px;">Crew</div>
+              <div class="card-section-title" style="margin-top:20px;" data-i18n="tt_crew_section">Crew</div>
               <div id="trip-crew-fields"></div>
 
-              <div class="card-section-title" style="margin-top:20px;">Booking Mode</div>
+              <div class="card-section-title" style="margin-top:20px;" data-i18n="tt_booking_mode">Booking Mode</div>
               <div class="sf-group">
-                <label class="sf-label">Is this boat private or shared?</label>
+                <label class="sf-label" data-i18n="tt_mode_question">Is this boat private or shared?</label>
                 <div class="radio-group">
-                  <div class="radio-btn selected" id="mode-private" onclick="setBookingMode('private')">Private boat</div>
-                  <div class="radio-btn" id="mode-shared" onclick="setBookingMode('shared')">Shared boat</div>
+                  <div class="radio-btn selected" id="mode-private" onclick="setBookingMode('private')" data-i18n="tt_mode_private">Private boat</div>
+                  <div class="radio-btn" id="mode-shared" onclick="setBookingMode('shared')" data-i18n="tt_mode_shared">Shared boat</div>
                 </div>
                 <p id="booking-mode-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;">This boat will be exclusively reserved for this time slot.</p>
                 <p id="guest-capacity-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></p>
               </div>
 
-              <div class="card-section-title" style="margin-top:24px;" id="groups-title">Group</div>
+              <div class="card-section-title" style="margin-top:24px;" id="groups-title" data-i18n="tt_group">Group</div>
               <div id="groups-list"></div>
-              <button class="btn-cancel" id="btn-add-group" style="margin-top:4px;display:none;">+ Add another group to this trip</button>
+              <button class="btn-cancel" id="btn-add-group" style="margin-top:4px;display:none;" data-i18n="tt_add_group">+ Add another group to this trip</button>
 
               <div class="warning-banner caution" id="guest-capacity-warning" style="display:none;margin-top:16px;"></div>
               <div class="warning-banner caution" id="save-conflict-warning" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:20px;">
-                <button class="btn-save" id="btn-save-trip">Save trip</button>
-                <button class="btn-cancel" id="btn-print-manifest" style="display:none;" onclick="printManifest()">Print Manifest</button>
-                <button class="btn-cancel" id="btn-delete-trip" style="display:none;color:var(--error);border-color:rgba(229,62,62,0.3);">Delete trip</button>
+                <button class="btn-save" id="btn-save-trip" data-i18n="tt_save_trip">Save trip</button>
+                <button class="btn-cancel" id="btn-print-manifest" style="display:none;" onclick="printManifest()" data-i18n="tt_print_manifest">Print Manifest</button>
+                <button class="btn-cancel" id="btn-delete-trip" style="display:none;color:var(--error);border-color:rgba(229,62,62,0.3);" data-i18n="tt_delete_trip">Delete trip</button>
                 <span class="save-feedback" id="trip-save-feedback"></span>
               </div>
             </div>
@@ -1576,80 +1576,80 @@ body { background: var(--navy); color: var(--text); }
             <p data-i18n="header_fleet_sub">Boats, engines and maintenance</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn-save" id="btn-show-add-boat">+ Add boat</button>
-            <button class="btn-save" id="btn-show-add-boat-engine">+ Add engine</button>
-            <button class="btn-save" id="btn-show-add-boat-hours">+ Log engine hours</button>
+            <button class="btn-save" id="btn-show-add-boat" data-i18n="fleet_add_boat">+ Add boat</button>
+            <button class="btn-save" id="btn-show-add-boat-engine" data-i18n="fleet_add_engine">+ Add engine</button>
+            <button class="btn-save" id="btn-show-add-boat-hours" data-i18n="fleet_log_hours">+ Log engine hours</button>
           </div>
         </div>
 
-        <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">Click a boat, or choose one below, to manage its engines and maintenance history.</p>
+        <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;" data-i18n="fleet_manage_hint">Click a boat, or choose one below, to manage its engines and maintenance history.</p>
 
         <div class="sf-group" style="max-width:320px;margin-bottom:20px;">
-          <label class="sf-label">Manage boat</label>
-          <select class="sf-input" id="fleet-manage-boat-select"><option value="">— Choose a boat —</option></select>
+          <label class="sf-label" data-i18n="fleet_manage_boat">Manage boat</label>
+          <select class="sf-input" id="fleet-manage-boat-select"><option value="" data-i18n="fleet_choose_boat">— Choose a boat —</option></select>
         </div>
 
         <div id="fleet-boats-view" class="cl-view">
         <div class="inline-form" id="form-add-boat" style="display:none;margin-bottom:20px;">
-          <div class="card-section-title">New boat</div>
+          <div class="card-section-title" data-i18n="fleet_new_boat">New boat</div>
           <div class="sf-row">
             <div class="sf-group">
-              <label class="sf-label">Boat name</label>
+              <label class="sf-label" data-i18n="fleet_boat_name">Boat name</label>
               <input class="sf-input" type="text" id="boat-name" placeholder="e.g. Sea Dragon">
             </div>
             <div class="sf-group">
-              <label class="sf-label">Type</label>
+              <label class="sf-label" data-i18n="fleet_type">Type</label>
               <select class="sf-input" id="boat-type">
-                <option value="dive_boat">Dive boat</option>
-                <option value="day_charter">Day charter</option>
-                <option value="sailing_yacht">Sailing yacht</option>
-                <option value="motor_yacht">Motor yacht</option>
-                <option value="catamaran">Catamaran</option>
-                <option value="liveaboard">Liveaboard</option>
-                <option value="rib">RIB (Rigid Inflatable)</option>
-                <option value="fishing">Fishing vessel</option>
-                <option value="surf_sup">Surf / SUP</option>
-                <option value="other">Other</option>
+                <option value="dive_boat" data-i18n="fleet_type_dive_boat">Dive boat</option>
+                <option value="day_charter" data-i18n="fleet_type_day_charter">Day charter</option>
+                <option value="sailing_yacht" data-i18n="fleet_type_sailing_yacht">Sailing yacht</option>
+                <option value="motor_yacht" data-i18n="fleet_type_motor_yacht">Motor yacht</option>
+                <option value="catamaran" data-i18n="fleet_type_catamaran">Catamaran</option>
+                <option value="liveaboard" data-i18n="fleet_type_liveaboard">Liveaboard</option>
+                <option value="rib" data-i18n="fleet_type_rib">RIB (Rigid Inflatable)</option>
+                <option value="fishing" data-i18n="fleet_type_fishing">Fishing vessel</option>
+                <option value="surf_sup" data-i18n="fleet_type_surf_sup">Surf / SUP</option>
+                <option value="other" data-i18n="fleet_type_other">Other</option>
               </select>
             </div>
           </div>
           <div class="sf-row">
             <div class="sf-group">
-              <label class="sf-label">Capacity (guests)</label>
+              <label class="sf-label" data-i18n="fleet_capacity_guests">Capacity (guests)</label>
               <input class="sf-input" type="number" id="boat-capacity" placeholder="e.g. 12" min="1">
             </div>
             <div class="sf-group">
-              <label class="sf-label">Length overall (ft)</label>
+              <label class="sf-label" data-i18n="fleet_length">Length overall (ft)</label>
               <input class="sf-input" type="number" id="boat-length" placeholder="e.g. 42" min="1">
             </div>
           </div>
           <div class="sf-row">
             <div class="sf-group">
-              <label class="sf-label">Number of engines</label>
+              <label class="sf-label" data-i18n="fleet_num_engines">Number of engines</label>
               <select class="sf-input" id="boat-engines">
-                <option value="0">No engine / sail only</option>
-                <option value="1">1 engine</option>
-                <option value="2">2 engines</option>
-                <option value="3">3 engines</option>
-                <option value="4">4 engines</option>
+                <option value="0" data-i18n="fleet_no_engine">No engine / sail only</option>
+                <option value="1" data-i18n="fleet_1_engine">1 engine</option>
+                <option value="2" data-i18n="fleet_2_engines">2 engines</option>
+                <option value="3" data-i18n="fleet_3_engines">3 engines</option>
+                <option value="4" data-i18n="fleet_4_engines">4 engines</option>
               </select>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Current engine hours</label>
+              <label class="sf-label" data-i18n="fleet_current_engine_hours">Current engine hours</label>
               <input class="sf-input" type="number" id="boat-engine-hours" placeholder="e.g. 450" min="0">
             </div>
           </div>
           <div class="sf-group">
-            <label class="sf-label">Location</label>
+            <label class="sf-label" data-i18n="fleet_location">Location</label>
             <select class="sf-input" id="boat-location"></select>
           </div>
           <div class="sf-group">
-            <label class="sf-label">Notes</label>
+            <label class="sf-label" data-i18n="fleet_notes">Notes</label>
             <input class="sf-input" type="text" id="boat-notes" placeholder="Optional">
           </div>
           <div class="settings-actions">
-            <button class="btn-save" id="btn-save-boat">Save boat</button>
-            <button class="btn-cancel" id="btn-cancel-boat">Cancel</button>
+            <button class="btn-save" id="btn-save-boat" data-i18n="fleet_save_boat">Save boat</button>
+            <button class="btn-cancel" id="btn-cancel-boat" data-i18n="fleet_cancel">Cancel</button>
             <span class="save-feedback" id="boat-save-feedback"></span>
           </div>
         </div>
@@ -1663,95 +1663,95 @@ body { background: var(--navy); color: var(--text); }
           <p id="boat-detail-summary" style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;"></p>
 
           <div class="inline-form" id="form-add-boat-engine" style="display:none;margin-bottom:20px;">
-            <div class="card-section-title">Add engine</div>
+            <div class="card-section-title" data-i18n="fleet_add_engine_title">Add engine</div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Engine name</label>
+                <label class="sf-label" data-i18n="fleet_engine_name">Engine name</label>
                 <input class="sf-input" type="text" id="bde-engine-name" placeholder="e.g. Main Engine, Port Engine">
               </div>
               <div class="sf-group">
-                <label class="sf-label">Service interval (hours)</label>
+                <label class="sf-label" data-i18n="fleet_service_interval">Service interval (hours)</label>
                 <input class="sf-input" type="number" id="bde-engine-interval" placeholder="e.g. 100" min="1">
               </div>
             </div>
             <div class="settings-actions">
-              <button class="btn-save" id="btn-save-boat-engine">Add engine</button>
-              <button class="btn-cancel" id="btn-cancel-boat-engine">Cancel</button>
+              <button class="btn-save" id="btn-save-boat-engine" data-i18n="fleet_add_engine_title">Add engine</button>
+              <button class="btn-cancel" id="btn-cancel-boat-engine" data-i18n="fleet_cancel">Cancel</button>
               <span class="save-feedback" id="bde-engine-feedback"></span>
             </div>
           </div>
 
           <div class="inline-form" id="form-add-boat-hours" style="display:none;margin-bottom:20px;">
-            <div class="card-section-title">Log engine hours</div>
-            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;">Applies to every engine on this boat — the usual case, since engines on the same boat run together. Use an engine's own "Service Completed" button below if only one needs resetting.</p>
+            <div class="card-section-title" data-i18n="fleet_log_hours_title">Log engine hours</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;" data-i18n="fleet_log_hours_hint">Applies to every engine on this boat — the usual case, since engines on the same boat run together. Use an engine's own "Service Completed" button below if only one needs resetting.</p>
             <div class="sf-row">
-              <input class="sf-input" type="text" id="bdh-logged-by" placeholder="Logged by">
-              <input class="sf-input" type="number" id="bdh-hours-run" placeholder="Hours run (e.g. 2.5)" step="0.1">
+              <input class="sf-input" type="text" id="bdh-logged-by" placeholder="Logged by" data-i18n-placeholder="fleet_logged_by">
+              <input class="sf-input" type="number" id="bdh-hours-run" placeholder="Hours run (e.g. 2.5)" step="0.1" data-i18n-placeholder="fleet_hours_run">
             </div>
             <div class="settings-actions">
-              <button class="btn-save" id="btn-save-boat-hours">Log hours</button>
-              <button class="btn-cancel" id="btn-cancel-boat-hours">Cancel</button>
+              <button class="btn-save" id="btn-save-boat-hours" data-i18n="fleet_log_hours_btn">Log hours</button>
+              <button class="btn-cancel" id="btn-cancel-boat-hours" data-i18n="fleet_cancel">Cancel</button>
               <span class="save-feedback" id="bdh-feedback"></span>
             </div>
           </div>
 
-          <div class="card-section-title">Engines</div>
+          <div class="card-section-title" data-i18n="fleet_engines_title">Engines</div>
           <div id="boat-detail-engines-list"></div>
 
           <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;">
-            <div class="card-section-title" style="margin-bottom:0;">Maintenance</div>
-            <button class="btn-save" id="btn-show-add-boat-maintenance" style="padding:6px 12px;font-size:0.82rem;">+ Log maintenance</button>
+            <div class="card-section-title" style="margin-bottom:0;" data-i18n="fleet_maintenance">Maintenance</div>
+            <button class="btn-save" id="btn-show-add-boat-maintenance" style="padding:6px 12px;font-size:0.82rem;" data-i18n="fleet_log_maintenance">+ Log maintenance</button>
           </div>
           <div class="inline-form" id="form-add-boat-maintenance" style="display:none;margin-bottom:16px;">
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Engine (optional)</label>
-                <select class="sf-input" id="bdm-engine"><option value="">— Not engine-specific —</option></select>
+                <label class="sf-label" data-i18n="fleet_engine_optional">Engine (optional)</label>
+                <select class="sf-input" id="bdm-engine"><option value="" data-i18n="fleet_not_engine_specific">— Not engine-specific —</option></select>
               </div>
               <div class="sf-group">
-                <label class="sf-label">Registered gear item (optional)</label>
-                <select class="sf-input" id="bdm-gear"><option value="">— Not linked to registered gear —</option></select>
+                <label class="sf-label" data-i18n="fleet_gear_item_optional">Registered gear item (optional)</label>
+                <select class="sf-input" id="bdm-gear"><option value="" data-i18n="fleet_not_linked_gear">— Not linked to registered gear —</option></select>
               </div>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Title</label>
+              <label class="sf-label" data-i18n="fleet_title_label">Title</label>
               <input class="sf-input" type="text" id="bdm-title" placeholder="e.g. Anchor rope replacement">
             </div>
             <div class="sf-group">
-              <label class="sf-label">What was done</label>
+              <label class="sf-label" data-i18n="fleet_what_was_done">What was done</label>
               <textarea class="sf-input" id="bdm-description" rows="2" placeholder="e.g. Replaced anchor rope"></textarea>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Parts used (optional)</label>
+              <label class="sf-label" data-i18n="fleet_parts_used">Parts used (optional)</label>
               <input class="sf-input" type="text" id="bdm-parts" placeholder="e.g. 10m anchor rope, shackle">
             </div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Cost (optional)</label>
+                <label class="sf-label" data-i18n="fleet_cost">Cost (optional)</label>
                 <input class="sf-input" type="number" id="bdm-cost" placeholder="0.00" step="0.01" min="0">
               </div>
               <div class="sf-group">
-                <label class="sf-label">Currency</label>
+                <label class="sf-label" data-i18n="fleet_currency">Currency</label>
                 <input class="sf-input" type="text" id="bdm-currency" value="USD" maxlength="3" style="text-transform:uppercase;">
               </div>
             </div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Done by</label>
+                <label class="sf-label" data-i18n="fleet_done_by">Done by</label>
                 <input class="sf-input" type="text" id="bdm-performed-by" placeholder="Name">
               </div>
               <div class="sf-group">
-                <label class="sf-label">Date performed</label>
+                <label class="sf-label" data-i18n="fleet_date_performed">Date performed</label>
                 <input class="sf-input" type="date" id="bdm-date">
               </div>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Next due (optional)</label>
+              <label class="sf-label" data-i18n="fleet_next_due">Next due (optional)</label>
               <input class="sf-input" type="date" id="bdm-next-due">
             </div>
             <div class="settings-actions">
-              <button class="btn-save" id="btn-save-boat-maintenance">Save entry</button>
-              <button class="btn-cancel" id="btn-cancel-boat-maintenance">Cancel</button>
+              <button class="btn-save" id="btn-save-boat-maintenance" data-i18n="fleet_save_entry">Save entry</button>
+              <button class="btn-cancel" id="btn-cancel-boat-maintenance" data-i18n="fleet_cancel">Cancel</button>
               <span class="save-feedback" id="bdm-feedback"></span>
             </div>
           </div>
@@ -1767,74 +1767,74 @@ body { background: var(--navy); color: var(--text); }
             <h1 data-i18n="header_crew_title">Crew</h1>
             <p data-i18n="header_crew_sub">Staff accounts and roles</p>
           </div>
-          <button class="btn-save" id="btn-show-invite">+ Invite staff</button>
+          <button class="btn-save" id="btn-show-invite" data-i18n="crew_invite">+ Invite staff</button>
         </div>
         <div class="cl-tab-row">
-          <div class="cl-tab active" onclick="showCrewView('staff',this)">Staff</div>
-          <div class="cl-tab" onclick="showCrewView('availability',this)">Availability</div>
-          <div class="cl-tab" onclick="showCrewView('roster',this)">Roster</div>
+          <div class="cl-tab active" onclick="showCrewView('staff',this)" data-i18n="crew_tab_staff">Staff</div>
+          <div class="cl-tab" onclick="showCrewView('availability',this)" data-i18n="crew_tab_availability">Availability</div>
+          <div class="cl-tab" onclick="showCrewView('roster',this)" data-i18n="crew_tab_roster">Roster</div>
         </div>
         <div id="crew-staff-view" class="cl-view">
 
         <!-- Invite form -->
         <div class="inline-form" id="form-invite" style="display:none;margin-bottom:20px;">
-          <div class="card-section-title">Invite a crew member</div>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;">They will receive an email with a link to set up their account.</p>
+          <div class="card-section-title" data-i18n="crew_invite_title">Invite a crew member</div>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;" data-i18n="crew_invite_hint">They will receive an email with a link to set up their account.</p>
           <div class="sf-row">
             <div class="sf-group">
-              <label class="sf-label">Email address</label>
+              <label class="sf-label" data-i18n="crew_email_label">Email address</label>
               <input class="sf-input" type="email" id="invite-email" placeholder="crew@example.com">
             </div>
             <div class="sf-group">
-              <label class="sf-label">Full name</label>
+              <label class="sf-label" data-i18n="crew_name_label">Full name</label>
               <input class="sf-input" type="text" id="invite-name" placeholder="e.g. James Carter">
             </div>
           </div>
           <div class="sf-row">
             <div class="sf-group">
-              <label class="sf-label">Role</label>
+              <label class="sf-label" data-i18n="crew_role_label">Role</label>
               <select class="sf-input" id="invite-role">
-                <optgroup label="Operations">
-                  <option value="manager">Manager</option>
-                  <option value="front_desk">Front Desk</option>
+                <optgroup label="Operations" data-i18n="crew_role_group_ops">
+                  <option value="manager" data-i18n="crew_role_manager">Manager</option>
+                  <option value="front_desk" data-i18n="crew_role_front_desk">Front Desk</option>
                 </optgroup>
-                <optgroup label="Boat & Deck">
-                  <option value="captain">Captain</option>
-                  <option value="first_mate">First Mate</option>
-                  <option value="deckhand">Deckhand</option>
-                  <option value="bosun">Bosun</option>
-                  <option value="engineer">Engineer</option>
+                <optgroup label="Boat & Deck" data-i18n="crew_role_group_deck">
+                  <option value="captain" data-i18n="crew_role_captain">Captain</option>
+                  <option value="first_mate" data-i18n="crew_role_first_mate">First Mate</option>
+                  <option value="deckhand" data-i18n="crew_role_deckhand">Deckhand</option>
+                  <option value="bosun" data-i18n="crew_role_bosun">Bosun</option>
+                  <option value="engineer" data-i18n="crew_role_engineer">Engineer</option>
                 </optgroup>
-                <optgroup label="Dive">
-                  <option value="instructor">Instructor</option>
-                  <option value="divemaster">Divemaster</option>
-                  <option value="dive_guide">Dive Guide</option>
-                  <option value="equipment_technician">Equipment Technician</option>
+                <optgroup label="Dive" data-i18n="crew_role_group_dive">
+                  <option value="instructor" data-i18n="crew_role_instructor">Instructor</option>
+                  <option value="divemaster" data-i18n="crew_role_divemaster">Divemaster</option>
+                  <option value="dive_guide" data-i18n="crew_role_dive_guide">Dive Guide</option>
+                  <option value="equipment_technician" data-i18n="crew_role_equipment_technician">Equipment Technician</option>
                 </optgroup>
-                <optgroup label="Hospitality">
-                  <option value="head_steward">Head Steward</option>
-                  <option value="steward">Steward</option>
-                  <option value="head_chef">Head Chef</option>
-                  <option value="chef">Chef</option>
+                <optgroup label="Hospitality" data-i18n="crew_role_group_hospitality">
+                  <option value="head_steward" data-i18n="crew_role_head_steward">Head Steward</option>
+                  <option value="steward" data-i18n="crew_role_steward">Steward</option>
+                  <option value="head_chef" data-i18n="crew_role_head_chef">Head Chef</option>
+                  <option value="chef" data-i18n="crew_role_chef">Chef</option>
                 </optgroup>
-                <optgroup label="Other">
-                  <option value="photographer">Photographer / Videographer</option>
-                  <option value="custom">Custom</option>
+                <optgroup label="Other" data-i18n="crew_role_group_other">
+                  <option value="photographer" data-i18n="crew_role_photographer">Photographer / Videographer</option>
+                  <option value="custom" data-i18n="crew_role_custom">Custom</option>
                 </optgroup>
               </select>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Location</label>
+              <label class="sf-label" data-i18n="crew_location_label">Location</label>
               <select class="sf-input" id="invite-location"></select>
             </div>
           </div>
           <div class="sf-group" id="custom-role-group" style="display:none;">
-            <label class="sf-label">Custom role title</label>
+            <label class="sf-label" data-i18n="crew_custom_role_title">Custom role title</label>
             <input class="sf-input" type="text" id="invite-custom-role" placeholder="e.g. Dive Guide">
           </div>
           <div class="settings-actions">
-            <button class="btn-save" id="btn-send-invite">Send invite</button>
-            <button class="btn-cancel" id="btn-cancel-invite">Cancel</button>
+            <button class="btn-save" id="btn-send-invite" data-i18n="crew_send_invite">Send invite</button>
+            <button class="btn-cancel" id="btn-cancel-invite" data-i18n="crew_cancel">Cancel</button>
             <span class="save-feedback" id="invite-feedback"></span>
           </div>
         </div>
@@ -1842,7 +1842,7 @@ body { background: var(--navy); color: var(--text); }
         <!-- Pending invites -->
         <div id="pending-invites-section" style="display:none;margin-bottom:20px;">
           <div class="card">
-            <div class="card-section-title">Pending invites</div>
+            <div class="card-section-title" data-i18n="crew_pending_invites">Pending invites</div>
             <div id="pending-invites-list"></div>
           </div>
         </div>
@@ -1851,47 +1851,47 @@ body { background: var(--navy); color: var(--text); }
         <div id="crew-list"></div>
         </div>
         <div id="crew-availability-view" class="cl-view" style="display:none;">
-          <div class="card-section-title">Pending requests</div>
+          <div class="card-section-title" data-i18n="crew_pending_requests">Pending requests</div>
           <div id="dayoff-pending-list"></div>
-          <div class="card-section-title" style="margin-top:20px;">Recent decisions</div>
+          <div class="card-section-title" style="margin-top:20px;" data-i18n="crew_recent_decisions">Recent decisions</div>
           <div id="dayoff-decided-list"></div>
         </div>
         <div id="crew-roster-view" class="cl-view" style="display:none;">
           <div style="margin-bottom:16px;">
-            <button class="btn-save" id="btn-show-dayoff-request">+ Request Day Off</button>
+            <button class="btn-save" id="btn-show-dayoff-request" data-i18n="crew_request_dayoff">+ Request Day Off</button>
           </div>
           <div class="inline-form" id="form-dayoff-request" style="display:none;margin-bottom:20px;">
-            <div class="card-section-title">Request Day Off</div>
+            <div class="card-section-title" data-i18n="crew_request_dayoff_title">Request Day Off</div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Crew member</label>
+                <label class="sf-label" data-i18n="crew_member">Crew member</label>
                 <select class="sf-input" id="dayoff-staff-select"></select>
               </div>
             </div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Start date</label>
+                <label class="sf-label" data-i18n="crew_start_date">Start date</label>
                 <input class="sf-input" type="date" id="dayoff-start">
               </div>
               <div class="sf-group">
-                <label class="sf-label">End date</label>
+                <label class="sf-label" data-i18n="crew_end_date">End date</label>
                 <input class="sf-input" type="date" id="dayoff-end">
               </div>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Reason</label>
+              <label class="sf-label" data-i18n="crew_reason">Reason</label>
               <input class="sf-input" type="text" id="dayoff-reason" placeholder="Why do you need this time off?">
             </div>
             <div class="settings-actions">
-              <button class="btn-save" id="btn-submit-dayoff">Submit request</button>
-              <button class="btn-cancel" id="btn-cancel-dayoff">Cancel</button>
+              <button class="btn-save" id="btn-submit-dayoff" data-i18n="crew_submit_request">Submit request</button>
+              <button class="btn-cancel" id="btn-cancel-dayoff" data-i18n="crew_cancel">Cancel</button>
               <span class="save-feedback" id="dayoff-feedback"></span>
             </div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
             <div class="cl-tab-row" style="margin-bottom:0;">
-              <div class="cl-tab active" id="roster-view-week" onclick="setRosterView('week')">Week</div>
-              <div class="cl-tab" id="roster-view-month" onclick="setRosterView('month')">Month</div>
+              <div class="cl-tab active" id="roster-view-week" onclick="setRosterView('week')" data-i18n="crew_roster_week">Week</div>
+              <div class="cl-tab" id="roster-view-month" onclick="setRosterView('month')" data-i18n="crew_roster_month">Month</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <button class="btn-cancel" id="roster-prev" style="padding:8px 12px;">←</button>
@@ -1900,11 +1900,11 @@ body { background: var(--navy); color: var(--text); }
             </div>
           </div>
           <div style="margin-bottom:16px;">
-            <button class="btn-cancel" id="btn-toggle-roster-filter" style="font-size:0.8rem;">Filter crew ▾</button>
+            <button class="btn-cancel" id="btn-toggle-roster-filter" style="font-size:0.8rem;" data-i18n="crew_filter_crew">Filter crew ▾</button>
             <div id="roster-filter-panel" style="display:none;margin-top:8px;padding:12px;background:var(--foam);border-radius:10px;">
               <div style="display:flex;gap:8px;margin-bottom:8px;">
-                <button class="gear-action-btn" onclick="rosterFilterAll()">Select all</button>
-                <button class="gear-action-btn" onclick="rosterFilterNone()">Select none</button>
+                <button class="gear-action-btn" onclick="rosterFilterAll()" data-i18n="crew_select_all">Select all</button>
+                <button class="gear-action-btn" onclick="rosterFilterNone()" data-i18n="crew_select_none">Select none</button>
               </div>
               <div id="roster-filter-checkboxes" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
             </div>
@@ -2624,6 +2624,97 @@ const TRANSLATIONS = {
     home_banner_ready: 'Your operations dashboard. All systems ready.', home_banner_view_calendar: 'View Calendar',
     getting_started_title: 'Getting started',
     getting_started_sub: 'Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.',
+
+    day_sun: 'Sun', day_mon: 'Mon', day_tue: 'Tue', day_wed: 'Wed', day_thu: 'Thu', day_fri: 'Fri', day_sat: 'Sat',
+    cal_no_trips: 'No trips', cal_no_boat: 'No boat', cal_guests_suffix: 'guests', cal_more: 'more', cal_trip_fallback: 'Trip',
+    cal_no_trips_day: 'No trips scheduled for this day.', cal_add_trip: '+ Add a trip', cal_yesterday: '← Yesterday',
+    trip_guests: 'Guests', trip_crew: 'Crew', trip_owed: 'Owed', trip_paid: 'Paid', trip_tanks_needed: 'tanks needed',
+    cat_diving: 'Diving', cat_charter_yacht: 'Charter & Yacht', cat_surf: 'Surf', cat_fishing: 'Fishing', cat_freediving: 'Freediving',
+
+    tt_trip_type: 'Trip type', tt_date: 'Date', tt_end_date: 'End date', tt_departure: 'Departure', tt_arrival: 'Arrival',
+    tt_boat_section: 'Boat', tt_select_boat: 'Select boat', tt_dive_sites: 'Dive sites (optional)', tt_crew_section: 'Crew',
+    tt_booking_mode: 'Booking Mode', tt_mode_question: 'Is this boat private or shared?', tt_mode_private: 'Private boat', tt_mode_shared: 'Shared boat',
+    tt_group: 'Group', tt_add_group: '+ Add another group to this trip', tt_save_trip: 'Save trip', tt_update_trip: 'Update trip',
+    tt_print_manifest: 'Print Manifest', tt_delete_trip: 'Delete trip', tt_new_trip_title: 'New trip',
+    tt_contact: 'Contact', tt_lead_contact_name: 'Lead contact name', tt_phone: 'Phone', tt_email: 'Email', tt_booked_by: 'Booked by',
+    tt_guests_label: 'Guests', tt_add_guest: '+ Add guest', tt_notes: 'Notes', tt_payment: 'Payment', tt_price_per_person: 'Price per person', tt_total: 'Total',
+    tt_link_tab: 'Link to guest tab (optional)', tt_check_in: 'Check In',
+
+    fleet_add_boat: '+ Add boat', fleet_add_engine: '+ Add engine', fleet_log_hours: '+ Log engine hours',
+    fleet_boat_name: 'Boat name', fleet_capacity: 'Capacity', fleet_location: 'Location',
+    fleet_engine_hours: 'Engine hours', fleet_service_completed: 'Service Completed — Reset Counter',
+    fleet_recent_logs: 'Recent Logs', fleet_maintenance: 'Maintenance', fleet_no_logs: 'No logs yet.',
+
+    crew_invite: '+ Invite staff', crew_email_label: 'Email address', crew_name_label: 'Full name', crew_role_label: 'Role',
+    crew_location_label: 'Location', crew_send_invite: 'Send invite', crew_cancel: 'Cancel', crew_banked_days: 'Banked days', crew_day_rate: 'Day rate',
+    crew_tab_staff: 'Staff', crew_tab_availability: 'Availability', crew_tab_roster: 'Roster', crew_remove: 'Remove',
+    crew_pending_invites: 'Pending invites', crew_pending: 'Pending',
+
+    fleet_manage_boat: 'Manage boat', fleet_manage_hint: 'Click a boat, or choose one below, to manage its engines and maintenance history.',
+    fleet_choose_boat: '— Choose a boat —', fleet_new_boat: 'New boat', fleet_type: 'Type',
+    fleet_capacity_guests: 'Capacity (guests)', fleet_length: 'Length overall (ft)', fleet_num_engines: 'Number of engines',
+    fleet_no_engine: 'No engine / sail only', fleet_1_engine: '1 engine', fleet_2_engines: '2 engines', fleet_3_engines: '3 engines', fleet_4_engines: '4 engines',
+    fleet_current_engine_hours: 'Current engine hours', fleet_notes: 'Notes', fleet_save_boat: 'Save boat', fleet_cancel: 'Cancel',
+    fleet_type_dive_boat: 'Dive boat', fleet_type_day_charter: 'Day charter', fleet_type_sailing_yacht: 'Sailing yacht',
+    fleet_type_motor_yacht: 'Motor yacht', fleet_type_catamaran: 'Catamaran', fleet_type_liveaboard: 'Liveaboard',
+    fleet_type_rib: 'RIB (Rigid Inflatable)', fleet_type_fishing: 'Fishing vessel', fleet_type_surf_sup: 'Surf / SUP', fleet_type_other: 'Other',
+    fleet_engine_name: 'Engine name', fleet_service_interval: 'Service interval (hours)', fleet_add_engine_title: 'Add engine',
+    fleet_log_hours_title: 'Log engine hours',
+    fleet_log_hours_hint: 'Applies to every engine on this boat — the usual case, since engines on the same boat run together. Use an engine\'s own "Service Completed" button below if only one needs resetting.',
+    fleet_logged_by: 'Logged by', fleet_hours_run: 'Hours run (e.g. 2.5)', fleet_log_hours_btn: 'Log hours',
+    fleet_engines_title: 'Engines', fleet_log_maintenance: '+ Log maintenance',
+    fleet_engine_optional: 'Engine (optional)', fleet_not_engine_specific: '— Not engine-specific —',
+    fleet_gear_item_optional: 'Registered gear item (optional)', fleet_not_linked_gear: '— Not linked to registered gear —',
+    fleet_title_label: 'Title', fleet_what_was_done: 'What was done', fleet_parts_used: 'Parts used (optional)',
+    fleet_cost: 'Cost (optional)', fleet_currency: 'Currency', fleet_done_by: 'Done by', fleet_date_performed: 'Date performed',
+    fleet_next_due: 'Next due (optional)', fleet_save_entry: 'Save entry',
+    fleet_service_due: 'Service due', fleet_vessel: 'Vessel', fleet_engines_suffix: 'engines', fleet_hrs_suffix: 'hrs',
+    fleet_active: 'Active', fleet_inactive: 'Inactive', fleet_deactivate: 'Deactivate', fleet_activate: 'Activate', fleet_remove: 'Remove',
+    fleet_no_boats_yet: 'No boats yet. Add your first vessel above.', fleet_no_locations: 'No locations — add one in Settings',
+    fleet_saving: 'Saving...', fleet_name_required: 'Boat name required.', fleet_setup_org_first: 'Set up your organisation in Settings first.',
+    fleet_error_saving: 'Error saving. Try again.', fleet_remove_confirm: 'Remove this boat from the fleet?',
+    fleet_choose_boat_first: 'Choose a boat first.', fleet_engine_name_interval_required: 'Name and service interval are required.',
+    fleet_error_saving_short: 'Error saving.', fleet_no_engines_yet: 'No engines tracked yet. Add one above.',
+    fleet_logged_hours_required: 'Logged by and hours run are required.',
+    fleet_total_hours: 'Total hours', fleet_since_service: 'since service', fleet_remaining: 'remaining', fleet_serviced: 'Serviced',
+    fleet_no_maint_engine: 'No maintenance logged for this engine yet.',
+    fleet_reset_confirm: 'Log this as a completed service and reset the hour counter to zero?', fleet_who_completed: 'Who completed the service?',
+    fleet_your_name: 'Your name', fleet_remove_engine_confirm: 'Remove this engine and its history?',
+    fleet_maint_required: 'Title, date and description are required.', fleet_saved_offline: 'Saved offline — will sync automatically when you\'re back online.',
+    fleet_error_prefix: 'Error: ', fleet_no_maint_boat: 'No maintenance logged for this boat yet.',
+    fleet_parts_prefix: 'Parts: ', fleet_cost_prefix: 'Cost: ', fleet_next_due_prefix: 'Next due: ', fleet_due_now: ' — due now',
+
+    crew_invite_title: 'Invite a crew member', crew_invite_hint: 'They will receive an email with a link to set up their account.',
+    crew_role_group_ops: 'Operations', crew_role_group_deck: 'Boat & Deck', crew_role_group_dive: 'Dive',
+    crew_role_group_hospitality: 'Hospitality', crew_role_group_other: 'Other',
+    crew_role_manager: 'Manager', crew_role_front_desk: 'Front Desk', crew_role_captain: 'Captain', crew_role_first_mate: 'First Mate',
+    crew_role_deckhand: 'Deckhand', crew_role_bosun: 'Bosun', crew_role_engineer: 'Engineer', crew_role_instructor: 'Instructor',
+    crew_role_divemaster: 'Divemaster', crew_role_dive_guide: 'Dive Guide', crew_role_equipment_technician: 'Equipment Technician',
+    crew_role_head_steward: 'Head Steward', crew_role_steward: 'Steward', crew_role_head_chef: 'Head Chef', crew_role_chef: 'Chef',
+    crew_role_photographer: 'Photographer / Videographer', crew_role_custom: 'Custom', crew_role_owner: 'Owner',
+    crew_custom_role_title: 'Custom role title', crew_pending_requests: 'Pending requests', crew_recent_decisions: 'Recent decisions',
+    crew_request_dayoff: '+ Request Day Off', crew_request_dayoff_title: 'Request Day Off', crew_member: 'Crew member',
+    crew_start_date: 'Start date', crew_end_date: 'End date', crew_reason: 'Reason', crew_submit_request: 'Submit request',
+    crew_roster_week: 'Week', crew_roster_month: 'Month', crew_filter_crew: 'Filter crew ▾', crew_select_all: 'Select all', crew_select_none: 'Select none',
+    crew_no_access: 'You don\'t have access to this section.', crew_no_crew_yet: 'No crew yet. Invite your first staff member above.',
+    crew_day_rate_label: 'Day rate', crew_banked_days_label: 'Banked days', crew_account_owner: 'Account owner',
+    crew_approve: 'Approve', crew_deny: 'Deny', crew_reason_prefix: 'Reason: ', crew_manager_note_prefix: 'Manager note: ',
+    crew_no_pending_requests: 'No pending requests.', crew_no_recent_decisions: 'No recent decisions.', crew_unknown: 'Unknown', crew_to: ' to ',
+    crew_fill_required: 'Please fill in crew member, dates, and reason.', crew_submitting: 'Submitting...',
+    crew_status_approved: 'approved', crew_status_denied: 'denied', crew_status_pending: 'pending',
+    crew_approve_confirm: 'Approve this day-off request?', crew_deny_reason_prompt: 'Reason for denying this request',
+    crew_deny_reason_placeholder: 'e.g. Needed for the Thursday charter', crew_no_location: 'No location',
+    crew_invited_prefix: 'Invited ', crew_status_pending_badge: 'Pending', crew_cancel_invite: 'Cancel',
+    crew_no_locations_settings: 'No locations — add in Settings',
+    crew_email_name_required: 'Email and name are required.', crew_setup_org_first: 'Set up your organisation in Settings first.',
+    crew_sending: 'Sending...', crew_error_creating_invite: 'Error creating invite.',
+    crew_invite_email_failed: 'Invite created, but the email failed to send. Share this link with them directly: ',
+    crew_invite_sent_to: 'Invite sent to ',
+    crew_no_selected: 'No crew selected — use the filter above.', crew_table_header: 'Crew',
+    crew_status_dayoff: 'Day Off', crew_status_sick: 'Sick', crew_status_personal: 'Personal', crew_status_offduty: 'Off Duty (legacy)',
+    crew_assigned: 'Assigned', crew_on_duty: 'On Duty', crew_fallback: 'Crew',
+    crew_assign_location: 'Assign location', crew_or_set_status: 'Or set status', crew_save_location: 'Save location',
+    crew_remove_confirm: 'Remove {name} from your crew?', crew_cancel_invite_confirm: 'Cancel this invite?',
   },
   es: {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
@@ -2664,6 +2755,97 @@ const TRANSLATIONS = {
     home_banner_ready: 'Tu panel de operaciones. Todo listo.', home_banner_view_calendar: 'Ver Calendario',
     getting_started_title: 'Primeros pasos',
     getting_started_sub: 'Tu cuenta de Seven Seas ya está activa. Ve a Configuración para agregar los datos de tu operación y luego empieza a agregar embarcaciones y tripulación.',
+
+    day_sun: 'Dom', day_mon: 'Lun', day_tue: 'Mar', day_wed: 'Mié', day_thu: 'Jue', day_fri: 'Vie', day_sat: 'Sáb',
+    cal_no_trips: 'Sin salidas', cal_no_boat: 'Sin embarcación', cal_guests_suffix: 'huéspedes', cal_more: 'más', cal_trip_fallback: 'Salida',
+    cal_no_trips_day: 'No hay salidas programadas para este día.', cal_add_trip: '+ Agregar salida', cal_yesterday: '← Ayer',
+    trip_guests: 'Huéspedes', trip_crew: 'Tripulación', trip_owed: 'Adeudado', trip_paid: 'Pagado', trip_tanks_needed: 'tanques necesarios',
+    cat_diving: 'Buceo', cat_charter_yacht: 'Charter y Yate', cat_surf: 'Surf', cat_fishing: 'Pesca', cat_freediving: 'Apnea',
+
+    tt_trip_type: 'Tipo de salida', tt_date: 'Fecha', tt_end_date: 'Fecha de fin', tt_departure: 'Salida', tt_arrival: 'Llegada',
+    tt_boat_section: 'Embarcación', tt_select_boat: 'Seleccionar embarcación', tt_dive_sites: 'Sitios de buceo (opcional)', tt_crew_section: 'Tripulación',
+    tt_booking_mode: 'Modo de Reserva', tt_mode_question: '¿Esta embarcación es privada o compartida?', tt_mode_private: 'Embarcación privada', tt_mode_shared: 'Embarcación compartida',
+    tt_group: 'Grupo', tt_add_group: '+ Agregar otro grupo a esta salida', tt_save_trip: 'Guardar salida', tt_update_trip: 'Actualizar salida',
+    tt_print_manifest: 'Imprimir Manifiesto', tt_delete_trip: 'Eliminar salida', tt_new_trip_title: 'Nueva salida',
+    tt_contact: 'Contacto', tt_lead_contact_name: 'Nombre del contacto principal', tt_phone: 'Teléfono', tt_email: 'Correo electrónico', tt_booked_by: 'Reservado por',
+    tt_guests_label: 'Huéspedes', tt_add_guest: '+ Agregar huésped', tt_notes: 'Notas', tt_payment: 'Pago', tt_price_per_person: 'Precio por persona', tt_total: 'Total',
+    tt_link_tab: 'Vincular a cuenta de huésped (opcional)', tt_check_in: 'Registrar Llegada',
+
+    fleet_add_boat: '+ Agregar embarcación', fleet_add_engine: '+ Agregar motor', fleet_log_hours: '+ Registrar horas de motor',
+    fleet_boat_name: 'Nombre de la embarcación', fleet_capacity: 'Capacidad', fleet_location: 'Ubicación',
+    fleet_engine_hours: 'Horas del motor', fleet_service_completed: 'Servicio Completado — Reiniciar Contador',
+    fleet_recent_logs: 'Registros Recientes', fleet_maintenance: 'Mantenimiento', fleet_no_logs: 'Aún no hay registros.',
+
+    crew_invite: '+ Invitar personal', crew_email_label: 'Correo electrónico', crew_name_label: 'Nombre completo', crew_role_label: 'Rol',
+    crew_location_label: 'Ubicación', crew_send_invite: 'Enviar invitación', crew_cancel: 'Cancelar', crew_banked_days: 'Días acumulados', crew_day_rate: 'Tarifa por día',
+    crew_tab_staff: 'Personal', crew_tab_availability: 'Disponibilidad', crew_tab_roster: 'Turnos', crew_remove: 'Eliminar',
+    crew_pending_invites: 'Invitaciones pendientes', crew_pending: 'Pendiente',
+
+    fleet_manage_boat: 'Gestionar embarcación', fleet_manage_hint: 'Haz clic en una embarcación, o elige una abajo, para gestionar sus motores e historial de mantenimiento.',
+    fleet_choose_boat: '— Elige una embarcación —', fleet_new_boat: 'Nueva embarcación', fleet_type: 'Tipo',
+    fleet_capacity_guests: 'Capacidad (huéspedes)', fleet_length: 'Eslora total (pies)', fleet_num_engines: 'Número de motores',
+    fleet_no_engine: 'Sin motor / solo vela', fleet_1_engine: '1 motor', fleet_2_engines: '2 motores', fleet_3_engines: '3 motores', fleet_4_engines: '4 motores',
+    fleet_current_engine_hours: 'Horas actuales del motor', fleet_notes: 'Notas', fleet_save_boat: 'Guardar embarcación', fleet_cancel: 'Cancelar',
+    fleet_type_dive_boat: 'Embarcación de buceo', fleet_type_day_charter: 'Charter de día', fleet_type_sailing_yacht: 'Velero',
+    fleet_type_motor_yacht: 'Yate a motor', fleet_type_catamaran: 'Catamarán', fleet_type_liveaboard: 'Liveaboard',
+    fleet_type_rib: 'RIB (Bote Inflable Rígido)', fleet_type_fishing: 'Embarcación de pesca', fleet_type_surf_sup: 'Surf / SUP', fleet_type_other: 'Otro',
+    fleet_engine_name: 'Nombre del motor', fleet_service_interval: 'Intervalo de servicio (horas)', fleet_add_engine_title: 'Agregar motor',
+    fleet_log_hours_title: 'Registrar horas de motor',
+    fleet_log_hours_hint: 'Se aplica a todos los motores de esta embarcación — el caso habitual, ya que los motores de la misma embarcación funcionan juntos. Usa el botón "Servicio Completado" de un motor individual abajo si solo uno necesita reiniciarse.',
+    fleet_logged_by: 'Registrado por', fleet_hours_run: 'Horas recorridas (ej. 2.5)', fleet_log_hours_btn: 'Registrar horas',
+    fleet_engines_title: 'Motores', fleet_log_maintenance: '+ Registrar mantenimiento',
+    fleet_engine_optional: 'Motor (opcional)', fleet_not_engine_specific: '— No específico de un motor —',
+    fleet_gear_item_optional: 'Artículo de equipo registrado (opcional)', fleet_not_linked_gear: '— No vinculado a equipo registrado —',
+    fleet_title_label: 'Título', fleet_what_was_done: 'Qué se hizo', fleet_parts_used: 'Repuestos utilizados (opcional)',
+    fleet_cost: 'Costo (opcional)', fleet_currency: 'Moneda', fleet_done_by: 'Realizado por', fleet_date_performed: 'Fecha realizada',
+    fleet_next_due: 'Próximo vencimiento (opcional)', fleet_save_entry: 'Guardar registro',
+    fleet_service_due: 'Servicio pendiente', fleet_vessel: 'Embarcación', fleet_engines_suffix: 'motores', fleet_hrs_suffix: 'hrs',
+    fleet_active: 'Activa', fleet_inactive: 'Inactiva', fleet_deactivate: 'Desactivar', fleet_activate: 'Activar', fleet_remove: 'Eliminar',
+    fleet_no_boats_yet: 'Aún no hay embarcaciones. Agrega tu primera embarcación arriba.', fleet_no_locations: 'Sin ubicaciones — agrega una en Configuración',
+    fleet_saving: 'Guardando...', fleet_name_required: 'El nombre de la embarcación es obligatorio.', fleet_setup_org_first: 'Configura tu operación en Configuración primero.',
+    fleet_error_saving: 'Error al guardar. Inténtalo de nuevo.', fleet_remove_confirm: '¿Eliminar esta embarcación de la flota?',
+    fleet_choose_boat_first: 'Elige una embarcación primero.', fleet_engine_name_interval_required: 'El nombre y el intervalo de servicio son obligatorios.',
+    fleet_error_saving_short: 'Error al guardar.', fleet_no_engines_yet: 'Aún no hay motores registrados. Agrega uno arriba.',
+    fleet_logged_hours_required: 'Se requiere quién registra y las horas recorridas.',
+    fleet_total_hours: 'Horas totales', fleet_since_service: 'desde el servicio', fleet_remaining: 'restantes', fleet_serviced: 'Con servicio',
+    fleet_no_maint_engine: 'Aún no hay mantenimiento registrado para este motor.',
+    fleet_reset_confirm: '¿Registrar esto como un servicio completado y reiniciar el contador de horas a cero?', fleet_who_completed: '¿Quién completó el servicio?',
+    fleet_your_name: 'Tu nombre', fleet_remove_engine_confirm: '¿Eliminar este motor y su historial?',
+    fleet_maint_required: 'Título, fecha y descripción son obligatorios.', fleet_saved_offline: 'Guardado sin conexión — se sincronizará automáticamente cuando vuelvas a estar en línea.',
+    fleet_error_prefix: 'Error: ', fleet_no_maint_boat: 'Aún no hay mantenimiento registrado para esta embarcación.',
+    fleet_parts_prefix: 'Repuestos: ', fleet_cost_prefix: 'Costo: ', fleet_next_due_prefix: 'Próximo vencimiento: ', fleet_due_now: ' — vencido',
+
+    crew_invite_title: 'Invitar a un miembro de la tripulación', crew_invite_hint: 'Recibirán un correo con un enlace para configurar su cuenta.',
+    crew_role_group_ops: 'Operaciones', crew_role_group_deck: 'Embarcación y Cubierta', crew_role_group_dive: 'Buceo',
+    crew_role_group_hospitality: 'Hospitalidad', crew_role_group_other: 'Otro',
+    crew_role_manager: 'Gerente', crew_role_front_desk: 'Recepción', crew_role_captain: 'Capitán', crew_role_first_mate: 'Primer Oficial',
+    crew_role_deckhand: 'Marinero', crew_role_bosun: 'Contramaestre', crew_role_engineer: 'Maquinista', crew_role_instructor: 'Instructor',
+    crew_role_divemaster: 'Divemaster', crew_role_dive_guide: 'Guía de Buceo', crew_role_equipment_technician: 'Técnico de Equipos',
+    crew_role_head_steward: 'Jefe de Camareros', crew_role_steward: 'Camarero', crew_role_head_chef: 'Chef Principal', crew_role_chef: 'Chef',
+    crew_role_photographer: 'Fotógrafo / Videógrafo', crew_role_custom: 'Personalizado', crew_role_owner: 'Propietario',
+    crew_custom_role_title: 'Título de rol personalizado', crew_pending_requests: 'Solicitudes pendientes', crew_recent_decisions: 'Decisiones recientes',
+    crew_request_dayoff: '+ Solicitar Día Libre', crew_request_dayoff_title: 'Solicitar Día Libre', crew_member: 'Miembro de la tripulación',
+    crew_start_date: 'Fecha de inicio', crew_end_date: 'Fecha de fin', crew_reason: 'Motivo', crew_submit_request: 'Enviar solicitud',
+    crew_roster_week: 'Semana', crew_roster_month: 'Mes', crew_filter_crew: 'Filtrar tripulación ▾', crew_select_all: 'Seleccionar todo', crew_select_none: 'Deseleccionar todo',
+    crew_no_access: 'No tienes acceso a esta sección.', crew_no_crew_yet: 'Aún no hay tripulación. Invita a tu primer miembro del personal arriba.',
+    crew_day_rate_label: 'Tarifa por día', crew_banked_days_label: 'Días acumulados', crew_account_owner: 'Propietario de la cuenta',
+    crew_approve: 'Aprobar', crew_deny: 'Rechazar', crew_reason_prefix: 'Motivo: ', crew_manager_note_prefix: 'Nota del gerente: ',
+    crew_no_pending_requests: 'No hay solicitudes pendientes.', crew_no_recent_decisions: 'No hay decisiones recientes.', crew_unknown: 'Desconocido', crew_to: ' a ',
+    crew_fill_required: 'Por favor completa el miembro de la tripulación, las fechas y el motivo.', crew_submitting: 'Enviando...',
+    crew_status_approved: 'aprobado', crew_status_denied: 'rechazado', crew_status_pending: 'pendiente',
+    crew_approve_confirm: '¿Aprobar esta solicitud de día libre?', crew_deny_reason_prompt: 'Motivo para rechazar esta solicitud',
+    crew_deny_reason_placeholder: 'ej. Necesario para el charter del jueves', crew_no_location: 'Sin ubicación',
+    crew_invited_prefix: 'Invitado ', crew_status_pending_badge: 'Pendiente', crew_cancel_invite: 'Cancelar',
+    crew_no_locations_settings: 'Sin ubicaciones — agrega una en Configuración',
+    crew_email_name_required: 'El correo y el nombre son obligatorios.', crew_setup_org_first: 'Configura tu operación en Configuración primero.',
+    crew_sending: 'Enviando...', crew_error_creating_invite: 'Error al crear la invitación.',
+    crew_invite_email_failed: 'Invitación creada, pero el correo no se pudo enviar. Comparte este enlace directamente: ',
+    crew_invite_sent_to: 'Invitación enviada a ',
+    crew_no_selected: 'Ninguna tripulación seleccionada — usa el filtro de arriba.', crew_table_header: 'Tripulación',
+    crew_status_dayoff: 'Día Libre', crew_status_sick: 'Enfermo', crew_status_personal: 'Personal', crew_status_offduty: 'Fuera de Turno (antiguo)',
+    crew_assigned: 'Asignado', crew_on_duty: 'En Turno', crew_fallback: 'Tripulación',
+    crew_assign_location: 'Asignar ubicación', crew_or_set_status: 'O establecer estado', crew_save_location: 'Guardar ubicación',
+    crew_remove_confirm: '¿Eliminar a {name} de tu tripulación?', crew_cancel_invite_confirm: '¿Cancelar esta invitación?',
   }
 };
 
@@ -2675,7 +2857,11 @@ function t(key) {
 
 function applyTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.getAttribute('data-i18n'));
+    if (el.tagName === 'OPTGROUP') {
+      el.label = t(el.getAttribute('data-i18n'));
+    } else {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    }
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
@@ -2699,6 +2885,15 @@ function refreshDynamicTranslations() {
   }
   if (typeof currentOrgId !== 'undefined' && currentOrgId && typeof updateHomeBanner === 'function') {
     updateHomeBanner();
+  }
+  if (typeof buildCategoryLabels === 'function') {
+    CATEGORY_LABELS = buildCategoryLabels();
+  }
+  if (typeof currentOrgId !== 'undefined' && currentOrgId) {
+    if (typeof renderCalendar === 'function') renderCalendar();
+    if (typeof loadFleet === 'function') loadFleet();
+    if (typeof loadCrew === 'function') loadCrew();
+    if (typeof renderTripTypesList === 'function') renderTripTypesList();
   }
 }
 
@@ -3135,17 +3330,18 @@ async function renderRosterGrid() {
   if (!currentOrgId) return;
   const selectedStaff = rosterStaffAll.filter(s => rosterSelectedStaffIds.includes(s.id));
   if (!selectedStaff.length) {
-    container.innerHTML = '<p style="color:var(--muted);">No crew selected — use the filter above.</p>';
+    container.innerHTML = `<p style="color:var(--muted);">${t('crew_no_selected')}</p>`;
     document.getElementById('roster-title').textContent = '';
     return;
   }
+  const rosterLocale = currentLanguage === 'es' ? 'es-ES' : 'en-US';
   let weekBlocks = [];
   if (rosterView === 'week') {
     const start = new Date(rosterDate);
     start.setDate(start.getDate() - start.getDay());
     const days = Array.from({length:7}, (_,i) => { const d = new Date(start); d.setDate(d.getDate()+i); return d; });
     weekBlocks = [{ label: null, days }];
-    document.getElementById('roster-title').textContent = `${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+    document.getElementById('roster-title').textContent = `${days[0].toLocaleDateString(rosterLocale,{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString(rosterLocale,{month:'short',day:'numeric'})}`;
   } else {
     const year = rosterDate.getFullYear(), month = rosterDate.getMonth();
     const firstOfMonth = new Date(year, month, 1);
@@ -3155,10 +3351,10 @@ async function renderRosterGrid() {
     let cursor = new Date(gridStart);
     while (cursor <= gridEnd) {
       const days = Array.from({length:7}, (_,i) => { const d = new Date(cursor); d.setDate(d.getDate()+i); return d; });
-      weekBlocks.push({ label: `${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString('en-US',{month:'short',day:'numeric'})}`, days });
+      weekBlocks.push({ label: `${days[0].toLocaleDateString(rosterLocale,{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString(rosterLocale,{month:'short',day:'numeric'})}`, days });
       cursor.setDate(cursor.getDate() + 7);
     }
-    document.getElementById('roster-title').textContent = rosterDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    document.getElementById('roster-title').textContent = rosterDate.toLocaleDateString(rosterLocale,{month:'long',year:'numeric'});
   }
   const allDays = weekBlocks.flatMap(b => b.days);
   const rangeStart = formatDate(allDays[0]);
@@ -3168,23 +3364,23 @@ async function renderRosterGrid() {
   const { data: availability } = await sb.from('staff_availability').select('*').in('staff_id', staffIds).lte('start_date', rangeEnd).gte('end_date', rangeStart);
   const { data: dailyLoc } = await sb.from('staff_daily_location').select('*, locations(name)').in('staff_id', staffIds).gte('work_date', rangeStart).lte('work_date', rangeEnd);
 
-  const statusLabels = { dayoff: 'Day Off', sick: 'Sick', personal: 'Personal', offduty: 'Off Duty (legacy)' };
+  const statusLabels = { dayoff: t('crew_status_dayoff'), sick: t('crew_status_sick'), personal: t('crew_status_personal'), offduty: t('crew_status_offduty') };
   const statusColors = { dayoff: '#c0392b', sick: '#c0392b', personal: 'var(--warning)', offduty: 'var(--muted)' };
 
   function getCellInfo(staffId, dateStr) {
     const avail = (availability || []).find(a => a.staff_id === staffId && dateStr >= a.start_date && dateStr <= a.end_date);
     if (avail) return { type: 'status', status: avail.status };
     const loc = (dailyLoc || []).find(d => d.staff_id === staffId && d.work_date === dateStr);
-    if (loc) return { type: 'location', name: loc.locations?.name || 'Assigned' };
+    if (loc) return { type: 'location', name: loc.locations?.name || t('crew_assigned') };
     const staffObj = selectedStaff.find(s => s.id === staffId);
     const defaultLoc = staffObj?.staff_locations?.[0]?.locations?.name;
-    return { type: 'default', name: defaultLoc || 'On Duty' };
+    return { type: 'default', name: defaultLoc || t('crew_on_duty') };
   }
 
   function buildOneWeekTable(days) {
     let html = `<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;font-size:0.78rem;">`;
-    html += `<thead><tr><th style="position:sticky;left:0;background:var(--white);padding:8px;text-align:left;border-bottom:2px solid var(--border);min-width:120px;">Crew</th>`;
-    html += days.map(d => `<th style="padding:6px 4px;text-align:center;border-bottom:2px solid var(--border);min-width:110px;color:var(--muted);font-weight:600;">${d.toLocaleDateString('en-US',{weekday:'short', day:'numeric'})}</th>`).join('');
+    html += `<thead><tr><th style="position:sticky;left:0;background:var(--white);padding:8px;text-align:left;border-bottom:2px solid var(--border);min-width:120px;">${t('crew_table_header')}</th>`;
+    html += days.map(d => `<th style="padding:6px 4px;text-align:center;border-bottom:2px solid var(--border);min-width:110px;color:var(--muted);font-weight:600;">${d.toLocaleDateString(rosterLocale,{weekday:'short', day:'numeric'})}</th>`).join('');
     html += `</tr></thead><tbody>`;
     html += selectedStaff.map(s => {
       const cells = days.map(d => {
@@ -3216,7 +3412,7 @@ async function openRosterCellEditor(staffId, dateStr) {
   rosterCellStaffId = staffId;
   rosterCellDate = dateStr;
   const staffObj = rosterStaffAll.find(s => s.id === staffId);
-  document.getElementById('roster-cell-title').textContent = `${staffObj?.full_name || 'Crew'} — ${dateStr}`;
+  document.getElementById('roster-cell-title').textContent = `${staffObj?.full_name || t('crew_fallback')} — ${dateStr}`;
   const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId);
   const sel = document.getElementById('roster-cell-location');
   sel.innerHTML = (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
@@ -4158,46 +4354,46 @@ async function renderDayView() {
   const dayTrips = await fetchTripsForRange(calDate, calDate);
 
   if (dayTrips.length === 0) {
-    body.innerHTML = `<div class="day-empty">No trips scheduled for this day.<br><br><button class="btn-save" onclick="openNewTrip()" style="margin-right:8px;">+ Add a trip</button><button class="btn-cancel" onclick="calDate=new Date();calDate.setDate(calDate.getDate()-1);renderCalendar()">← Yesterday</button></div>`;
+    body.innerHTML = `<div class="day-empty">${t('cal_no_trips_day')}<br><br><button class="btn-save" onclick="openNewTrip()" style="margin-right:8px;">${t('cal_add_trip')}</button><button class="btn-cancel" onclick="calDate=new Date();calDate.setDate(calDate.getDate()-1);renderCalendar()">${t('cal_yesterday')}</button></div>`;
     return;
   }
 
-  const tripIds = dayTrips.map(t => t.id);
+  const tripIds = dayTrips.map(tr => tr.id);
   const { data: payments } = await sb.from('payments').select('trip_id, amount').in('trip_id', tripIds);
   const paidByTrip = {};
   (payments || []).forEach(p => { paidByTrip[p.trip_id] = (paidByTrip[p.trip_id] || 0) + parseFloat(p.amount); });
 
-  body.innerHTML = dayTrips.map(t => tripCard(t, paidByTrip[t.id] || 0)).join('');
+  body.innerHTML = dayTrips.map(tr => tripCard(tr, paidByTrip[tr.id] || 0)).join('');
 }
 
-function tripCard(t, paid) {
-  const guestCount = t.max_guests || 0;
-  const capacity = t.boats?.capacity;
-  const tanks = t.num_dives ? guestCount * t.num_dives : null;
-  const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(t.trip_type);
-  const total = (t.trip_groups || []).reduce((sum, g) => {
+function tripCard(trip, paid) {
+  const guestCount = trip.max_guests || 0;
+  const capacity = trip.boats?.capacity;
+  const tanks = trip.num_dives ? guestCount * trip.num_dives : null;
+  const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(trip.trip_type);
+  const total = (trip.trip_groups || []).reduce((sum, g) => {
     const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
     return sum + (parseFloat(g.price_per_person) || 0) * (g.participants?.length || 0) + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
   }, 0);
   const owed = total - (paid || 0);
   return `
-  <div class="trip-card ${t.status}" onclick="event.stopPropagation();openTrip('${t.id}')">
+  <div class="trip-card ${trip.status}" onclick="event.stopPropagation();openTrip('${trip.id}')">
     <div class="trip-card-header">
       <div>
-        <div class="trip-card-title">${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}</div>
+        <div class="trip-card-title">${trip.trip_name || trip.trip_type?.replace(/_/g,' ') || t('cal_trip_fallback')}</div>
         <div class="trip-card-meta">
-          <span>${t.trip_time ? t.trip_time.slice(0,5) : '—'}${t.arrival_time ? ' – ' + t.arrival_time.slice(0,5) : ''}</span>
-          <span>${t.boats?.name || 'No boat'}</span>
-          <span>${t.trip_type?.replace(/_/g,' ') || ''}</span>
+          <span>${trip.trip_time ? trip.trip_time.slice(0,5) : '—'}${trip.arrival_time ? ' – ' + trip.arrival_time.slice(0,5) : ''}</span>
+          <span>${trip.boats?.name || t('cal_no_boat')}</span>
+          <span>${trip.trip_type?.replace(/_/g,' ') || ''}</span>
         </div>
       </div>
-      <span class="trip-status-badge ${t.status}">${t.status}</span>
+      <span class="trip-status-badge ${trip.status}">${trip.status}</span>
     </div>
     <div class="trip-card-footer">
-      <div class="trip-stat">Guests: <strong>${guestCount}${capacity ? '/' + capacity : ''}</strong></div>
-      ${t.trip_crew?.length ? `<div class="trip-stat">Crew: <strong>${t.trip_crew.map(c => c.staff?.full_name).filter(Boolean).join(', ')}</strong></div>` : ''}
-      ${isDive && tanks ? `<div class="trip-stat"><strong>${tanks}</strong> tanks needed</div>` : ''}
-      ${total > 0 ? `<div class="trip-stat" style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};">${owed > 0 ? 'Owed' : 'Paid'}: <strong>${t.currency || ''} ${Math.abs(owed).toFixed(2)}</strong></div>` : ''}
+      <div class="trip-stat">${t('trip_guests')}: <strong>${guestCount}${capacity ? '/' + capacity : ''}</strong></div>
+      ${trip.trip_crew?.length ? `<div class="trip-stat">${t('trip_crew')}: <strong>${trip.trip_crew.map(c => c.staff?.full_name).filter(Boolean).join(', ')}</strong></div>` : ''}
+      ${isDive && tanks ? `<div class="trip-stat"><strong>${tanks}</strong> ${t('trip_tanks_needed')}</div>` : ''}
+      ${total > 0 ? `<div class="trip-stat" style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};">${owed > 0 ? t('trip_owed') : t('trip_paid')}: <strong>${trip.currency || ''} ${Math.abs(owed).toFixed(2)}</strong></div>` : ''}
     </div>
   </div>`;
 }
@@ -4226,24 +4422,24 @@ async function renderWeekView() {
   const weekTrips = await fetchTripsForRange(start, addDays(start, 6));
   const today = new Date();
   const days = Array.from({length:7}, (_,i) => addDays(start, i));
-  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayNames = [t('day_sun'),t('day_mon'),t('day_tue'),t('day_wed'),t('day_thu'),t('day_fri'),t('day_sat')];
 
   const dayCols = days.map((d, i) => {
     const isToday = isSameDay(d, today);
     const dayT = weekTrips.filter(t => t.trip_date === formatDate(d)).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
 
-    const chips = dayT.map(t => `
-      <div class="week-chip" onclick="event.stopPropagation();openTrip('${t.id}')">
-        <div class="week-chip-time">${t.trip_time?.slice(0,5)||''}${t.arrival_time ? ' – ' + t.arrival_time.slice(0,5) : ''}</div>
-        <div class="week-chip-title">${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}</div>
-        <div class="week-chip-meta">${t.boats?.name || 'No boat'}${t.max_guests ? ' · ' + t.max_guests + (t.boats?.capacity ? '/' + t.boats.capacity : '') + ' guests' : ''}</div>
+    const chips = dayT.map(tr => `
+      <div class="week-chip" onclick="event.stopPropagation();openTrip('${tr.id}')">
+        <div class="week-chip-time">${tr.trip_time?.slice(0,5)||''}${tr.arrival_time ? ' – ' + tr.arrival_time.slice(0,5) : ''}</div>
+        <div class="week-chip-title">${tr.trip_name || tr.trip_type?.replace(/_/g,' ') || t('cal_trip_fallback')}</div>
+        <div class="week-chip-meta">${tr.boats?.name || t('cal_no_boat')}${tr.max_guests ? ' · ' + tr.max_guests + (tr.boats?.capacity ? '/' + tr.boats.capacity : '') + ' ' + t('cal_guests_suffix') : ''}</div>
       </div>
     `).join('');
 
     return `<div class="week-day-col-v3" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
       <div class="week-day-col-header-v3 ${isToday?'today':''}">${dayNames[i]} ${d.getDate()}</div>
       <div class="week-day-col-body-v3">
-        ${chips || '<div class="week-day-empty-v3">No trips</div>'}
+        ${chips || `<div class="week-day-empty-v3">${t('cal_no_trips')}</div>`}
       </div>
     </div>`;
   }).join('');
@@ -4260,7 +4456,7 @@ async function renderMonthView() {
   const monthTrips = await fetchTripsForRange(firstDay, lastDay);
   const today = new Date();
 
-  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayNames = [t('day_sun'),t('day_mon'),t('day_tue'),t('day_wed'),t('day_thu'),t('day_fri'),t('day_sat')];
   let html = `<div class="month-grid">`;
   html += dayNames.map(d => `<div class="month-day-header">${d}</div>`).join('');
 
@@ -4274,18 +4470,18 @@ async function renderMonthView() {
     const date = new Date(year, month, d);
     const dateStr = formatDate(date);
     const isToday = isSameDay(date, today);
-    const dayTrips = monthTrips.filter(t => t.trip_date === dateStr).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
+    const dayTrips = monthTrips.filter(tr => tr.trip_date === dateStr).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
     const shown = dayTrips.slice(0, 3);
-    const chips = shown.map(t => `
-      <div class="month-mini-chip" onclick="event.stopPropagation();openTrip('${t.id}')">
-        ${t.trip_time?.slice(0,5)||''} ${t.trip_name || t.trip_type?.replace(/_/g,' ') || 'Trip'}
+    const chips = shown.map(tr => `
+      <div class="month-mini-chip" onclick="event.stopPropagation();openTrip('${tr.id}')">
+        ${tr.trip_time?.slice(0,5)||''} ${tr.trip_name || tr.trip_type?.replace(/_/g,' ') || t('cal_trip_fallback')}
       </div>
     `).join('');
     html += `
     <div class="month-day ${isToday?'today':''}" onclick="goToDay('${dateStr}')">
       <div class="month-day-num">${d}</div>
       ${chips}
-      ${dayTrips.length > 3 ? `<div class="month-day-more">+${dayTrips.length-3} more</div>` : ''}
+      ${dayTrips.length > 3 ? `<div class="month-day-more">+${dayTrips.length-3} ${t('cal_more')}</div>` : ''}
     </div>`;
   }
 
@@ -7315,7 +7511,7 @@ async function loadCrew() {
   const canManageStaff = currentUserRole === 'owner' || currentUserRole === 'manager' || (currentUserRole === 'captain' && window.currentCaptainElevated);
   const list = document.getElementById('crew-list');
   if (!canManageStaff) {
-    list.innerHTML = '<p style="color:var(--muted);">You don\'t have access to this section.</p>';
+    list.innerHTML = `<p style="color:var(--muted);">${t('crew_no_access')}</p>`;
     document.getElementById('btn-show-invite').style.display = 'none';
     document.getElementById('stat-crew').textContent = '—';
     return;
@@ -7330,7 +7526,7 @@ async function loadCrew() {
     .eq('org_id', currentOrgId)
     .order('created_at');
   if (!staff || staff.length === 0) {
-    list.innerHTML = '<div class="fleet-empty">No crew yet. Invite your first staff member above.</div>';
+    list.innerHTML = `<div class="fleet-empty">${t('crew_no_crew_yet')}</div>`;
     document.getElementById('stat-crew').textContent = '0';
     return;
   }
@@ -7343,7 +7539,7 @@ async function loadCrew() {
   const showDayRate = activeCategories.includes('charter_yacht');
   list.innerHTML = staff.map(s => {
     const initials = s.full_name ? s.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : '?';
-    const roleName = s.custom_role_name || s.role.replace('_', ' ');
+    const roleName = s.custom_role_name || crewRoleLabel(s.role);
     const location = s.staff_locations?.[0]?.locations?.name || '—';
     const isOwner = s.role === 'owner';
     return `
@@ -7357,21 +7553,31 @@ async function loadCrew() {
       </div>
       ${showDayRate ? `
       <div style="display:flex;align-items:center;gap:6px;margin-right:12px;">
-        <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">Day rate</span>
+        <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">${t('crew_day_rate_label')}</span>
         <input class="sf-input" type="number" min="0" style="width:70px;text-align:center;padding:6px 4px;margin-bottom:0;" value="${s.day_rate ?? ''}" placeholder="—" ${canEditDayRate ? '' : 'disabled'} onchange="updateStaffDayRate('${s.id}', this.value)" title="Set this to make ${(s.full_name||'this person').split(' ')[0]} hireable as paid crew on multi-day charter trips">
       </div>` : ''}
       <div style="display:flex;align-items:center;gap:6px;margin-right:12px;">
-        <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">Banked days</span>
+        <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">${t('crew_banked_days_label')}</span>
         <input class="sf-input" type="number" style="width:60px;text-align:center;padding:6px 4px;margin-bottom:0;" value="${s.banked_days || 0}" ${canEditBanked ? '' : 'disabled'} onchange="updateBankedDays('${s.id}', this.value)">
       </div>
       <div class="boat-actions">
-        ${!isOwner ? `<button class="btn-icon danger" onclick="removeStaff('${s.id}', '${s.full_name}')">Remove</button>` : '<span style="font-size:0.75rem;color:var(--muted)">Account owner</span>'}
+        ${!isOwner ? `<button class="btn-icon danger" onclick="removeStaff('${s.id}', '${s.full_name}')">${t('crew_remove')}</button>` : `<span style="font-size:0.75rem;color:var(--muted)">${t('crew_account_owner')}</span>`}
       </div>
     </div>`;
   }).join('');
 
   // Load pending invites
   await loadPendingInvites();
+}
+
+function crewRoleLabel(role) {
+  const map = { manager: 'crew_role_manager', front_desk: 'crew_role_front_desk', captain: 'crew_role_captain',
+    first_mate: 'crew_role_first_mate', deckhand: 'crew_role_deckhand', bosun: 'crew_role_bosun', engineer: 'crew_role_engineer',
+    instructor: 'crew_role_instructor', divemaster: 'crew_role_divemaster', dive_guide: 'crew_role_dive_guide',
+    equipment_technician: 'crew_role_equipment_technician', head_steward: 'crew_role_head_steward', steward: 'crew_role_steward',
+    head_chef: 'crew_role_head_chef', chef: 'crew_role_chef', photographer: 'crew_role_photographer', custom: 'crew_role_custom',
+    owner: 'crew_role_owner' };
+  return role && map[role] ? t(map[role]) : (role || '').replace('_', ' ');
 }
 async function updateStaffDayRate(staffId, value) {
   const dayRate = value === '' ? null : (parseFloat(value) || 0);
@@ -7399,7 +7605,7 @@ async function loadDayOffRequests() {
   if (!currentOrgId) return;
   const canManageRequests = currentUserRole === 'owner' || currentUserRole === 'manager' || (currentUserRole === 'captain' && window.currentCaptainElevated);
   if (!canManageRequests) {
-    document.getElementById('dayoff-pending-list').innerHTML = '<p style="color:var(--muted);">You don\'t have access to this section.</p>';
+    document.getElementById('dayoff-pending-list').innerHTML = `<p style="color:var(--muted);">${t('crew_no_access')}</p>`;
     document.getElementById('dayoff-decided-list').innerHTML = '';
     return;
   }
@@ -7416,30 +7622,31 @@ async function loadDayOffRequests() {
     ? pending.map(r => `
       <div class="gear-item-row">
         <div class="gear-item-header">
-          <span class="gear-item-name">${r.staff?.full_name || 'Unknown'} — ${r.start_date} to ${r.end_date}</span>
+          <span class="gear-item-name">${r.staff?.full_name || t('crew_unknown')} — ${r.start_date}${t('crew_to')}${r.end_date}</span>
         </div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Reason: ${r.reason}</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('crew_reason_prefix')}${r.reason}</div>
         <div style="display:flex;gap:6px;margin-top:8px;">
-          <button class="gear-action-btn" onclick="approveDayOffRequest('${r.id}','${r.staff_id}','${r.start_date}','${r.end_date}')">Approve</button>
-          <button class="gear-action-btn" onclick="openDenyDayOffModal('${r.id}')">Deny</button>
+          <button class="gear-action-btn" onclick="approveDayOffRequest('${r.id}','${r.staff_id}','${r.start_date}','${r.end_date}')">${t('crew_approve')}</button>
+          <button class="gear-action-btn" onclick="openDenyDayOffModal('${r.id}')">${t('crew_deny')}</button>
         </div>
       </div>
     `).join('')
-    : '<p style="font-size:0.85rem;color:var(--muted);">No pending requests.</p>';
+    : `<p style="font-size:0.85rem;color:var(--muted);">${t('crew_no_pending_requests')}</p>`;
 
   document.getElementById('dayoff-decided-list').innerHTML = decided.length
     ? decided.map(r => {
         const color = r.status === 'approved' ? 'var(--success)' : '#c0392b';
+        const statusLabel = r.status === 'approved' ? t('crew_status_approved') : (r.status === 'denied' ? t('crew_status_denied') : t('crew_status_pending'));
         return `<div class="gear-item-row">
           <div class="gear-item-header">
-            <span class="gear-item-name">${r.staff?.full_name || 'Unknown'} — ${r.start_date} to ${r.end_date}</span>
-            <span style="font-size:0.75rem;color:${color};font-weight:600;text-transform:capitalize;">${r.status}</span>
+            <span class="gear-item-name">${r.staff?.full_name || t('crew_unknown')} — ${r.start_date}${t('crew_to')}${r.end_date}</span>
+            <span style="font-size:0.75rem;color:${color};font-weight:600;text-transform:capitalize;">${statusLabel}</span>
           </div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Reason: ${r.reason}</div>
-          ${r.manager_note ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Manager note: ${r.manager_note}</div>` : ''}
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('crew_reason_prefix')}${r.reason}</div>
+          ${r.manager_note ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">${t('crew_manager_note_prefix')}${r.manager_note}</div>` : ''}
         </div>`;
       }).join('')
-    : '<p style="font-size:0.85rem;color:var(--muted);">No recent decisions.</p>';
+    : `<p style="font-size:0.85rem;color:var(--muted);">${t('crew_no_recent_decisions')}</p>`;
 }
 document.getElementById('btn-show-dayoff-request').addEventListener('click', () => {
   document.getElementById('form-dayoff-request').style.display = 'block';
@@ -7457,15 +7664,15 @@ document.getElementById('btn-submit-dayoff').addEventListener('click', async () 
   const end = document.getElementById('dayoff-end').value;
   const reason = document.getElementById('dayoff-reason').value.trim();
   if (!staffId || !start || !end || !reason) {
-    feedback.textContent = 'Please fill in crew member, dates, and reason.';
+    feedback.textContent = t('crew_fill_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  btn.disabled = true; btn.textContent = 'Submitting...';
+  btn.disabled = true; btn.textContent = t('crew_submitting');
   await sb.from('day_off_requests').insert({
     org_id: currentOrgId, staff_id: staffId, start_date: start, end_date: end, reason, status: 'pending'
   });
-  btn.disabled = false; btn.textContent = 'Submit request';
+  btn.disabled = false; btn.textContent = t('crew_submit_request');
   document.getElementById('dayoff-start').value = '';
   document.getElementById('dayoff-end').value = '';
   document.getElementById('dayoff-reason').value = '';
@@ -7475,7 +7682,7 @@ document.getElementById('btn-submit-dayoff').addEventListener('click', async () 
   await loadDayOffRequests();
 });
 async function approveDayOffRequest(reqId, staffId, start, end) {
-  if (!(await showConfirmModal('Approve this day-off request?'))) return;
+  if (!(await showConfirmModal(t('crew_approve_confirm')))) return;
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('day_off_requests').update({ status: 'approved', decided_by: user.email, decided_at: new Date().toISOString() }).eq('id', reqId);
   await sb.from('staff_availability').insert({
@@ -7485,7 +7692,7 @@ async function approveDayOffRequest(reqId, staffId, start, end) {
   await checkCrewNotifications();
 }
 async function openDenyDayOffModal(reqId) {
-  const note = await showPromptModal('Reason for denying this request', 'e.g. Needed for the Thursday charter');
+  const note = await showPromptModal(t('crew_deny_reason_prompt'), t('crew_deny_reason_placeholder'));
   if (!note) return;
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('day_off_requests').update({ status: 'denied', manager_note: note, decided_by: user.email, decided_at: new Date().toISOString() }).eq('id', reqId);
@@ -7514,11 +7721,11 @@ async function loadPendingInvites() {
     <div class="invite-item">
       <div>
         <div class="invite-email">${inv.email}</div>
-        <div class="invite-meta">${inv.role.replace('_',' ')} · ${inv.locations?.name || 'No location'} · Invited ${new Date(inv.created_at).toLocaleDateString()}</div>
+        <div class="invite-meta">${crewRoleLabel(inv.role)} · ${inv.locations?.name || t('crew_no_location')} · ${t('crew_invited_prefix')}${new Date(inv.created_at).toLocaleDateString()}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span class="invite-status">Pending</span>
-        <button class="btn-icon danger" onclick="cancelInvite('${inv.id}')">Cancel</button>
+        <span class="invite-status">${t('crew_status_pending_badge')}</span>
+        <button class="btn-icon danger" onclick="cancelInvite('${inv.id}')">${t('crew_cancel_invite')}</button>
       </div>
     </div>
   `).join('');
@@ -7553,7 +7760,7 @@ async function populateInviteLocations() {
   const sel = document.getElementById('invite-location');
   sel.innerHTML = locs && locs.length
     ? locs.map(l => `<option value="${l.id}">${l.name}</option>`).join('')
-    : '<option value="">No locations — add in Settings</option>';
+    : `<option value="">${t('crew_no_locations_settings')}</option>`;
 }
 
 // Send invite
@@ -7567,17 +7774,17 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
   const locationId = document.getElementById('invite-location').value;
 
   if (!email || !fullName) {
-    feedback.textContent = 'Email and name are required.';
+    feedback.textContent = t('crew_email_name_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (!currentOrgId) {
-    feedback.textContent = 'Set up your organisation in Settings first.';
+    feedback.textContent = t('crew_setup_org_first');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Sending...';
+  btn.disabled = true; btn.textContent = t('crew_sending');
 
   // Create invite record
   const token = crypto.randomUUID();
@@ -7593,9 +7800,9 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
   });
 
   if (invErr) {
-    feedback.textContent = 'Error creating invite.';
+    feedback.textContent = t('crew_error_creating_invite');
     feedback.className = 'save-feedback error visible';
-    btn.disabled = false; btn.textContent = 'Send invite';
+    btn.disabled = false; btn.textContent = t('crew_send_invite');
     return;
   }
 
@@ -7612,9 +7819,9 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
     }
   });
 
-  feedback.textContent = emailErr ? `Invite created, but the email failed to send. Share this link with them directly: ${inviteUrl}` : `Invite sent to ${email}`;
+  feedback.textContent = emailErr ? `${t('crew_invite_email_failed')}${inviteUrl}` : `${t('crew_invite_sent_to')}${email}`;
   feedback.className = 'save-feedback visible';
-  btn.disabled = false; btn.textContent = 'Send invite';
+  btn.disabled = false; btn.textContent = t('crew_send_invite');
 
   document.getElementById('invite-email').value = '';
   document.getElementById('invite-name').value = '';
@@ -7626,14 +7833,14 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
 });
 
 async function removeStaff(id, name) {
-  if (!(await showConfirmModal(`Remove ${name} from your crew?`))) return;
+  if (!(await showConfirmModal(t('crew_remove_confirm').replace('{name}', name)))) return;
   await sb.from('staff_locations').delete().eq('staff_id', id);
   await sb.from('staff').delete().eq('id', id);
   await loadCrew();
 }
 
 async function cancelInvite(id) {
-  if (!(await showConfirmModal('Cancel this invite?'))) return;
+  if (!(await showConfirmModal(t('crew_cancel_invite_confirm')))) return;
   await sb.from('invites').delete().eq('id', id);
   await loadPendingInvites();
 }
@@ -7652,9 +7859,9 @@ async function loadFleet() {
   const list = document.getElementById('fleet-list');
   const manageSel = document.getElementById('fleet-manage-boat-select');
   if (!boats || boats.length === 0) {
-    list.innerHTML = '<div class="fleet-empty">No boats yet. Add your first vessel above.</div>';
+    list.innerHTML = `<div class="fleet-empty">${t('fleet_no_boats_yet')}</div>`;
     document.getElementById('stat-boats').textContent = '0';
-    manageSel.innerHTML = '<option value="">— Choose a boat —</option>';
+    manageSel.innerHTML = `<option value="">${t('fleet_choose_boat')}</option>`;
     document.getElementById('fleet-boat-detail-section').style.display = 'none';
     return;
   }
@@ -7662,7 +7869,7 @@ async function loadFleet() {
   document.getElementById('stat-boats').textContent = boats.filter(b => b.active).length;
 
   const prevSelected = manageSel.value;
-  manageSel.innerHTML = '<option value="">— Choose a boat —</option>' + boats.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  manageSel.innerHTML = `<option value="">${t('fleet_choose_boat')}</option>` + boats.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
   if (prevSelected && boats.some(b => b.id === prevSelected)) manageSel.value = prevSelected;
 
   const boatIds = boats.map(b => b.id);
@@ -7681,23 +7888,30 @@ async function loadFleet() {
   list.innerHTML = boats.map(b => `
     <div class="boat-card" style="cursor:pointer;" onclick="openBoatDetail('${b.id}')">
       <div class="boat-info">
-        <div class="boat-name">${b.name}${dueSoonBoatIds.has(b.id) ? ' <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">Service due</span>' : ''}</div>
+        <div class="boat-name">${b.name}${dueSoonBoatIds.has(b.id) ? ` <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">${t('fleet_service_due')}</span>` : ''}</div>
         <div class="boat-meta">
-          <span>${b.type ? b.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Vessel'}</span>
-          ${b.capacity ? `<span>${b.capacity} guests</span>` : ''}
+          <span>${boatTypeLabel(b.type)}</span>
+          ${b.capacity ? `<span>${b.capacity} ${t('cal_guests_suffix')}</span>` : ''}
           ${b.length_ft ? `<span>${b.length_ft} ft</span>` : ''}
-          ${b.num_engines > 1 ? `<span>${b.num_engines} engines</span>` : ''}
-          ${b.engine_hours ? `<span>${b.engine_hours} hrs</span>` : ''}
+          ${b.num_engines > 1 ? `<span>${b.num_engines} ${t('fleet_engines_suffix')}</span>` : ''}
+          ${b.engine_hours ? `<span>${b.engine_hours} ${t('fleet_hrs_suffix')}</span>` : ''}
           ${b.locations ? `<span>${b.locations.name}</span>` : ''}
         </div>
       </div>
       <div class="boat-actions">
-        <span class="boat-badge ${b.active ? 'active' : 'inactive'}">${b.active ? 'Active' : 'Inactive'}</span>
-        <button class="btn-icon" onclick="event.stopPropagation();toggleBoat('${b.id}', ${b.active})">${b.active ? 'Deactivate' : 'Activate'}</button>
-        <button class="btn-icon danger" onclick="event.stopPropagation();deleteBoat('${b.id}')">Remove</button>
+        <span class="boat-badge ${b.active ? 'active' : 'inactive'}">${b.active ? t('fleet_active') : t('fleet_inactive')}</span>
+        <button class="btn-icon" onclick="event.stopPropagation();toggleBoat('${b.id}', ${b.active})">${b.active ? t('fleet_deactivate') : t('fleet_activate')}</button>
+        <button class="btn-icon danger" onclick="event.stopPropagation();deleteBoat('${b.id}')">${t('fleet_remove')}</button>
       </div>
     </div>
   `).join('');
+}
+
+function boatTypeLabel(type) {
+  const map = { dive_boat: 'fleet_type_dive_boat', day_charter: 'fleet_type_day_charter', sailing_yacht: 'fleet_type_sailing_yacht',
+    motor_yacht: 'fleet_type_motor_yacht', catamaran: 'fleet_type_catamaran', liveaboard: 'fleet_type_liveaboard',
+    rib: 'fleet_type_rib', fishing: 'fleet_type_fishing', surf_sup: 'fleet_type_surf_sup', other: 'fleet_type_other' };
+  return type && map[type] ? t(map[type]) : t('fleet_vessel');
 }
 
 // Populate location dropdown in add boat form
@@ -7710,7 +7924,7 @@ async function populateBoatLocations() {
   const sel = document.getElementById('boat-location');
   sel.innerHTML = locs && locs.length
     ? locs.map(l => `<option value="${l.id}">${l.name}</option>`).join('')
-    : '<option value="">No locations — add one in Settings</option>';
+    : `<option value="">${t('fleet_no_locations')}</option>`;
 }
 
 document.getElementById('btn-show-add-compressor').addEventListener('click', () => {
@@ -7744,17 +7958,17 @@ document.getElementById('btn-save-boat').addEventListener('click', async () => {
   const notes = document.getElementById('boat-notes').value.trim();
 
   if (!name) {
-    feedback.textContent = 'Boat name required.';
+    feedback.textContent = t('fleet_name_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (!currentOrgId) {
-    feedback.textContent = 'Set up your organisation in Settings first.';
+    feedback.textContent = t('fleet_setup_org_first');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('fleet_saving');
 
   const { error } = await sb.from('boats').insert({
     org_id: currentOrgId,
@@ -7769,9 +7983,9 @@ document.getElementById('btn-save-boat').addEventListener('click', async () => {
   });
 
   if (error) {
-    feedback.textContent = 'Error saving. Try again.';
+    feedback.textContent = t('fleet_error_saving');
     feedback.className = 'save-feedback error visible';
-    btn.disabled = false; btn.textContent = 'Save boat';
+    btn.disabled = false; btn.textContent = t('fleet_save_boat');
     return;
   }
 
@@ -7782,7 +7996,7 @@ document.getElementById('btn-save-boat').addEventListener('click', async () => {
   document.getElementById('boat-notes').value = '';
   document.getElementById('form-add-boat').style.display = 'none';
   document.getElementById('btn-show-add-boat').style.display = 'inline-block';
-  btn.disabled = false; btn.textContent = 'Save boat';
+  btn.disabled = false; btn.textContent = t('fleet_save_boat');
   feedback.className = 'save-feedback';
 
   await loadFleet();
@@ -7794,7 +8008,7 @@ async function toggleBoat(id, currentActive) {
 }
 
 async function deleteBoat(id) {
-  if (!(await showConfirmModal('Remove this boat from the fleet?'))) return;
+  if (!(await showConfirmModal(t('fleet_remove_confirm')))) return;
   await sb.from('boats').delete().eq('id', id);
   await loadFleet();
 }
@@ -7820,10 +8034,10 @@ async function selectFleetBoat(boatId) {
   const { data: boat } = await sb.from('boats').select('*, locations(name)').eq('id', boatId).single();
   if (!boat) return;
   document.getElementById('boat-detail-title').textContent = boat.name;
-  const typeLabel = boat.type ? boat.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Vessel';
+  const typeLabel = boatTypeLabel(boat.type);
   document.getElementById('boat-detail-summary').textContent = [
     typeLabel,
-    boat.capacity ? boat.capacity + ' guests' : null,
+    boat.capacity ? boat.capacity + ' ' + t('cal_guests_suffix') : null,
     boat.length_ft ? boat.length_ft + ' ft' : null,
     boat.locations?.name || null
   ].filter(Boolean).join(' · ');
@@ -7845,7 +8059,7 @@ document.getElementById('fleet-manage-boat-select').addEventListener('change', f
 
 document.getElementById('btn-show-add-boat-engine').addEventListener('click', () => {
   if (!window.currentBoatDetailId) {
-    showAlertModal('Choose a boat first.');
+    showAlertModal(t('fleet_choose_boat_first'));
     document.getElementById('fleet-manage-boat-select').scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
@@ -7864,18 +8078,18 @@ document.getElementById('btn-save-boat-engine').addEventListener('click', async 
   const name = document.getElementById('bde-engine-name').value.trim();
   const interval = document.getElementById('bde-engine-interval').value;
   if (!boatId || !name || !interval) {
-    feedback.textContent = 'Name and service interval are required.';
+    feedback.textContent = t('fleet_engine_name_interval_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('fleet_saving');
   const { error } = await sb.from('engines').insert({
     org_id: currentOrgId, boat_id: boatId, name,
     service_interval_hours: parseFloat(interval), current_hours: 0
   });
-  btn.disabled = false; btn.textContent = 'Add engine';
+  btn.disabled = false; btn.textContent = t('fleet_add_engine_title');
   if (error) {
-    feedback.textContent = 'Error saving.';
+    feedback.textContent = t('fleet_error_saving_short');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -7889,7 +8103,7 @@ document.getElementById('btn-save-boat-engine').addEventListener('click', async 
 
 document.getElementById('btn-show-add-boat-hours').addEventListener('click', () => {
   if (!window.currentBoatDetailId) {
-    showAlertModal('Choose a boat first.');
+    showAlertModal(t('fleet_choose_boat_first'));
     document.getElementById('fleet-manage-boat-select').scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
@@ -7908,17 +8122,17 @@ document.getElementById('btn-save-boat-hours').addEventListener('click', async (
   const loggedBy = document.getElementById('bdh-logged-by').value.trim();
   const hours = parseFloat(document.getElementById('bdh-hours-run').value);
   if (!boatId || !loggedBy || !hours) {
-    feedback.textContent = 'Logged by and hours run are required.';
+    feedback.textContent = t('fleet_logged_hours_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('fleet_saving');
   const { data: engines } = await sb.from('engines').select('id, current_hours').eq('boat_id', boatId);
   for (const e of (engines || [])) {
     await sb.from('engines').update({ current_hours: (e.current_hours || 0) + hours }).eq('id', e.id);
     await sb.from('engine_hour_logs').insert({ engine_id: e.id, logged_by: loggedBy, hours_run: hours, event_type: 'log' });
   }
-  btn.disabled = false; btn.textContent = 'Log hours';
+  btn.disabled = false; btn.textContent = t('fleet_log_hours_btn');
   document.getElementById('bdh-logged-by').value = '';
   document.getElementById('bdh-hours-run').value = '';
   feedback.className = 'save-feedback';
@@ -7931,7 +8145,7 @@ async function loadBoatDetailEngines(boatId) {
   const { data: engines } = await sb.from('engines').select('*').eq('boat_id', boatId).order('created_at');
   const list = document.getElementById('boat-detail-engines-list');
   if (!engines || !engines.length) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No engines tracked yet. Add one above.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('fleet_no_engines_yet')}</p>`;
     return;
   }
   list.innerHTML = '';
@@ -7952,36 +8166,36 @@ function renderEngineCard(e, logs, maintLogs) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <h2>${e.name}</h2>
-        <p>Total hours: ${parseFloat(e.current_hours || 0).toFixed(1)}h</p>
+        <p>${t('fleet_total_hours')}: ${parseFloat(e.current_hours || 0).toFixed(1)}h</p>
       </div>
-      <button class="btn-icon danger" onclick="deleteEngine('${e.id}')">Remove</button>
+      <button class="btn-icon danger" onclick="deleteEngine('${e.id}')">${t('fleet_remove')}</button>
     </div>
     <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
     <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
-      ${parseFloat(e.current_hours || 0).toFixed(1)}h / ${e.service_interval_hours}h since service — ${remaining}h remaining
+      ${parseFloat(e.current_hours || 0).toFixed(1)}h / ${e.service_interval_hours}h ${t('fleet_since_service')} — ${remaining}h ${t('fleet_remaining')}
     </p>
     <div class="settings-actions">
-      <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">Service Completed — Reset Counter</button>
+      <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">${t('fleet_service_completed')}</button>
     </div>
-    <div class="card-section-title" style="margin-top:16px;">Recent Logs</div>
+    <div class="card-section-title" style="margin-top:16px;">${t('fleet_recent_logs')}</div>
     ${logs.length ? logs.map(l => `<div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);padding:4px 0;">
-      <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?' · <strong style="color:var(--success)">Serviced</strong>':''}</span>
+      <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('fleet_serviced')}</strong>`:''}</span>
       <span>${l.event_type==='service' ? '' : l.hours_run+'h'}</span>
-    </div>`).join('') : '<p style="font-size:0.8rem;color:var(--muted)">No logs yet.</p>'}
-    <div class="card-section-title" style="margin-top:16px;">Maintenance</div>
+    </div>`).join('') : `<p style="font-size:0.8rem;color:var(--muted)">${t('fleet_no_logs')}</p>`}
+    <div class="card-section-title" style="margin-top:16px;">${t('fleet_maintenance')}</div>
     ${maintLogs.length ? maintLogs.map(m => `<div style="font-size:0.8rem;padding:6px 0;border-bottom:1px solid var(--border);">
       <div style="display:flex;justify-content:space-between;">
         <strong>${m.title}</strong>
         <span style="color:var(--muted);">${new Date(m.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
       </div>
       <div style="color:var(--muted);margin-top:2px;">${m.description}${m.performed_by ? ' · ' + m.performed_by : ''}</div>
-    </div>`).join('') : '<p style="font-size:0.8rem;color:var(--muted)">No maintenance logged for this engine yet.</p>'}
+    </div>`).join('') : `<p style="font-size:0.8rem;color:var(--muted)">${t('fleet_no_maint_engine')}</p>`}
   </div>`;
 }
 
 async function resetEngine(id) {
-  if (!(await showConfirmModal('Log this as a completed service and reset the hour counter to zero?'))) return;
-  const loggedBy = await showPromptModal('Who completed the service?', 'Your name');
+  if (!(await showConfirmModal(t('fleet_reset_confirm')))) return;
+  const loggedBy = await showPromptModal(t('fleet_who_completed'), t('fleet_your_name'));
   if (!loggedBy) return;
   await sb.from('engines').update({ current_hours: 0 }).eq('id', id);
   await sb.from('engine_hour_logs').insert({ engine_id: id, logged_by: loggedBy, hours_run: 0, event_type: 'service' });
@@ -7990,7 +8204,7 @@ async function resetEngine(id) {
 }
 
 async function deleteEngine(id) {
-  if (!(await showConfirmModal('Remove this engine and its history?'))) return;
+  if (!(await showConfirmModal(t('fleet_remove_engine_confirm')))) return;
   await sb.from('engine_hour_logs').delete().eq('engine_id', id);
   await sb.from('engines').delete().eq('id', id);
   await loadBoatDetailEngines(window.currentBoatDetailId);
@@ -8015,7 +8229,7 @@ async function populateBoatDetailMaintenanceGearSelect() {
   if (!currentOrgId) return;
   const { data: gear } = await sb.from('gear').select('id, name, serial_number').eq('org_id', currentOrgId).order('name');
   const sel = document.getElementById('bdm-gear');
-  sel.innerHTML = '<option value="">— Not linked to registered gear —</option>' +
+  sel.innerHTML = `<option value="">${t('fleet_not_linked_gear')}</option>` +
     (gear || []).map(g => `<option value="${g.id}">${g.name}${g.serial_number ? ' (' + g.serial_number + ')' : ''}</option>`).join('');
 }
 
@@ -8023,11 +8237,11 @@ async function populateBoatDetailMaintenanceEngineSelect() {
   const boatId = window.currentBoatDetailId;
   const sel = document.getElementById('bdm-engine');
   if (!boatId) {
-    sel.innerHTML = '<option value="">— Not engine-specific —</option>';
+    sel.innerHTML = `<option value="">${t('fleet_not_engine_specific')}</option>`;
     return;
   }
   const { data: engines } = await sb.from('engines').select('id, name').eq('boat_id', boatId).order('name');
-  sel.innerHTML = '<option value="">— Not engine-specific —</option>' + (engines || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  sel.innerHTML = `<option value="">${t('fleet_not_engine_specific')}</option>` + (engines || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
 }
 
 document.getElementById('btn-save-boat-maintenance').addEventListener('click', async () => {
@@ -8046,12 +8260,12 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   const nextDue = document.getElementById('bdm-next-due').value;
 
   if (!title || !description || !date) {
-    feedback.textContent = 'Title, date and description are required.';
+    feedback.textContent = t('fleet_maint_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('fleet_saving');
   const { data: { user } } = await sb.auth.getUser();
   const logPayload = {
     org_id: currentOrgId,
@@ -8074,15 +8288,15 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   } else {
     ({ error } = await sb.from('maintenance_logs').insert(logPayload));
   }
-  btn.disabled = false; btn.textContent = 'Save entry';
+  btn.disabled = false; btn.textContent = t('fleet_save_entry');
 
   if (error) {
-    feedback.textContent = 'Error: ' + error.message;
+    feedback.textContent = t('fleet_error_prefix') + error.message;
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (isOffline) {
-    feedback.textContent = 'Saved offline — will sync automatically when you\'re back online.';
+    feedback.textContent = t('fleet_saved_offline');
     feedback.className = 'save-feedback visible';
   }
 
@@ -8110,7 +8324,7 @@ async function loadBoatDetailMaintenance(boatId) {
 function renderBoatDetailMaintenance(logs) {
   const list = document.getElementById('boat-detail-maintenance-list');
   if (!logs.length) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No maintenance logged for this boat yet.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('fleet_no_maint_boat')}</p>`;
     return;
   }
   const today = new Date().toISOString().split('T')[0];
@@ -8123,12 +8337,12 @@ function renderBoatDetailMaintenance(logs) {
           <h2 style="margin-bottom:2px;">${l.title}</h2>
           <p style="font-size:0.8rem;color:var(--muted);">${[l.engines?.name, l.gear?.name].filter(Boolean).join(' · ')}${l.engines?.name || l.gear?.name ? ' · ' : ''}${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
         </div>
-        <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', true)">Remove</button>
+        <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', true)">${t('fleet_remove')}</button>
       </div>
       <p style="font-size:0.85rem;margin-top:8px;">${l.description}</p>
-      ${l.parts_used ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:6px;">Parts: ${l.parts_used}</p>` : ''}
-      ${l.cost ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Cost: ${l.currency || 'USD'} ${parseFloat(l.cost).toFixed(2)}</p>` : ''}
-      ${l.next_due_date ? `<p style="font-size:0.8rem;margin-top:2px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">Next due: ${new Date(l.next_due_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? ' — due now' : ''}</p>` : ''}
+      ${l.parts_used ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:6px;">${t('fleet_parts_prefix')}${l.parts_used}</p>` : ''}
+      ${l.cost ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:2px;">${t('fleet_cost_prefix')}${l.currency || 'USD'} ${parseFloat(l.cost).toFixed(2)}</p>` : ''}
+      ${l.next_due_date ? `<p style="font-size:0.8rem;margin-top:2px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">${t('fleet_next_due_prefix')}${new Date(l.next_due_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? t('fleet_due_now') : ''}</p>` : ''}
     </div>
   `;
   }).join('');
@@ -9092,10 +9306,13 @@ async function loadActiveCategories() {
   return (data || []).map(r => r.category);
 }
 
-const CATEGORY_LABELS = {
-  diving: 'Diving', charter_yacht: 'Charter & Yacht', surf: 'Surf',
-  fishing: 'Fishing', freediving: 'Freediving'
-};
+function buildCategoryLabels() {
+  return {
+    diving: t('cat_diving'), charter_yacht: t('cat_charter_yacht'), surf: t('cat_surf'),
+    fishing: t('cat_fishing'), freediving: t('cat_freediving')
+  };
+}
+let CATEGORY_LABELS = buildCategoryLabels();
 
 async function seedTripTypesForCategory(category) {
   const starters = CATEGORY_STARTER_TYPES[category] || [];
