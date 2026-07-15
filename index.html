@@ -1114,91 +1114,91 @@ body { background: var(--navy); color: var(--text); }
 <div class="modal-overlay" id="modal-gear-detail" style="display:none;z-index:300;">
   <div class="modal-box" style="max-width:600px;">
     <div class="modal-header">
-      <h2 id="gear-detail-title">Gear item</h2>
+      <h2 id="gear-detail-title" data-i18n="gear_item_title">Gear item</h2>
       <button class="modal-close" id="modal-gear-detail-close">&times;</button>
     </div>
     <div class="modal-body">
       <p id="gear-detail-summary" style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;"></p>
 
-      <div class="card-section-title">Status &amp; service dates</div>
+      <div class="card-section-title" data-i18n="gear_status_service_dates">Status &amp; service dates</div>
       <div class="sf-row">
         <div class="sf-group">
-          <label class="sf-label">Status</label>
+          <label class="sf-label" data-i18n="gear_status">Status</label>
           <select class="sf-input" id="gd-status">
-            <option value="available">Active</option>
-            <option value="in_repair">In repair</option>
-            <option value="retired">Retired</option>
+            <option value="available" data-i18n="gear_status_active">Active</option>
+            <option value="in_repair" data-i18n="gear_status_in_repair">In repair</option>
+            <option value="retired" data-i18n="gear_status_retired">Retired</option>
           </select>
         </div>
         <div class="sf-group">
-          <label class="sf-label">Last service</label>
+          <label class="sf-label" data-i18n="gear_last_service">Last service</label>
           <input class="sf-input" type="date" id="gd-last-service">
         </div>
       </div>
       <div class="sf-row">
         <div class="sf-group">
-          <label class="sf-label">Next service due</label>
+          <label class="sf-label" data-i18n="gear_next_service_due">Next service due</label>
           <input class="sf-input" type="date" id="gd-next-service">
         </div>
       </div>
       <div class="sf-group">
-        <label class="sf-label">Repair notes</label>
+        <label class="sf-label" data-i18n="gear_repair_notes">Repair notes</label>
         <textarea class="sf-input" id="gd-repair-notes" rows="2" placeholder="Optional"></textarea>
       </div>
       <div class="sf-group">
-        <label class="sf-label">Notes</label>
+        <label class="sf-label" data-i18n="gear_notes">Notes</label>
         <textarea class="sf-input" id="gd-notes" rows="2" placeholder="Optional"></textarea>
       </div>
       <div class="settings-actions">
-        <button class="btn-save" id="btn-save-gear-detail">Save</button>
-        <button class="btn-cancel" id="btn-delete-gear-item" style="color:var(--error);border-color:rgba(229,62,62,0.3);">Remove item</button>
+        <button class="btn-save" id="btn-save-gear-detail" data-i18n="gear_save">Save</button>
+        <button class="btn-cancel" id="btn-delete-gear-item" style="color:var(--error);border-color:rgba(229,62,62,0.3);" data-i18n="gear_remove_item">Remove item</button>
         <span class="save-feedback" id="gear-detail-feedback"></span>
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;">
-        <div class="card-section-title" style="margin-bottom:0;">Maintenance history</div>
-        <button class="btn-save" id="btn-show-add-gear-maintenance" style="padding:6px 12px;font-size:0.82rem;">+ Log maintenance</button>
+        <div class="card-section-title" style="margin-bottom:0;" data-i18n="gear_maintenance_history">Maintenance history</div>
+        <button class="btn-save" id="btn-show-add-gear-maintenance" style="padding:6px 12px;font-size:0.82rem;" data-i18n="gear_log_maintenance">+ Log maintenance</button>
       </div>
       <div class="inline-form" id="form-add-gear-maintenance" style="display:none;margin-bottom:16px;">
         <div class="sf-group">
-          <label class="sf-label">Title</label>
+          <label class="sf-label" data-i18n="gear_title_label">Title</label>
           <input class="sf-input" type="text" id="gdm-title" placeholder="e.g. Annual service">
         </div>
         <div class="sf-group">
-          <label class="sf-label">What was done</label>
+          <label class="sf-label" data-i18n="gear_what_was_done">What was done</label>
           <textarea class="sf-input" id="gdm-description" rows="2" placeholder="e.g. Full service, replaced HP hose"></textarea>
         </div>
         <div class="sf-group">
-          <label class="sf-label">Parts used (optional)</label>
+          <label class="sf-label" data-i18n="gear_parts_used">Parts used (optional)</label>
           <input class="sf-input" type="text" id="gdm-parts" placeholder="e.g. HP hose, o-rings">
         </div>
         <div class="sf-row">
           <div class="sf-group">
-            <label class="sf-label">Cost (optional)</label>
+            <label class="sf-label" data-i18n="gear_cost">Cost (optional)</label>
             <input class="sf-input" type="number" id="gdm-cost" placeholder="0.00" step="0.01" min="0">
           </div>
           <div class="sf-group">
-            <label class="sf-label">Currency</label>
+            <label class="sf-label" data-i18n="gear_currency">Currency</label>
             <input class="sf-input" type="text" id="gdm-currency" value="USD" maxlength="3" style="text-transform:uppercase;">
           </div>
         </div>
         <div class="sf-row">
           <div class="sf-group">
-            <label class="sf-label">Done by</label>
+            <label class="sf-label" data-i18n="gear_done_by">Done by</label>
             <input class="sf-input" type="text" id="gdm-performed-by" placeholder="Name">
           </div>
           <div class="sf-group">
-            <label class="sf-label">Date performed</label>
+            <label class="sf-label" data-i18n="gear_date_performed">Date performed</label>
             <input class="sf-input" type="date" id="gdm-date">
           </div>
         </div>
         <div class="sf-group">
-          <label class="sf-label">Next due (optional)</label>
+          <label class="sf-label" data-i18n="gear_next_due">Next due (optional)</label>
           <input class="sf-input" type="date" id="gdm-next-due">
         </div>
         <div class="settings-actions">
-          <button class="btn-save" id="btn-save-gear-maintenance">Save entry</button>
-          <button class="btn-cancel" id="btn-cancel-gear-maintenance">Cancel</button>
+          <button class="btn-save" id="btn-save-gear-maintenance" data-i18n="gear_save_entry">Save entry</button>
+          <button class="btn-cancel" id="btn-cancel-gear-maintenance" data-i18n="gear_cancel">Cancel</button>
           <span class="save-feedback" id="gdm-feedback"></span>
         </div>
       </div>
@@ -1922,45 +1922,45 @@ body { background: var(--navy); color: var(--text); }
 
         <!-- Tab row -->
         <div class="cl-tab-row">
-          <div class="cl-tab active" onclick="showChecklistView('tripprep',this)">Trip Prep</div>
-          <div class="cl-tab" id="cl-tab-captain" onclick="showChecklistView('captaincheck',this)">Captain</div>
-          <div class="cl-tab" onclick="showChecklistView('department',this)">Department Routines</div>
+          <div class="cl-tab active" onclick="showChecklistView('tripprep',this)" data-i18n="cl_tab_tripprep">Trip Prep</div>
+          <div class="cl-tab" id="cl-tab-captain" onclick="showChecklistView('captaincheck',this)" data-i18n="cl_tab_captain">Captain</div>
+          <div class="cl-tab" onclick="showChecklistView('department',this)" data-i18n="cl_tab_department">Department Routines</div>
         </div>
 
         <!-- TRIP PREP — smart, linked to booking, role-filtered -->
         <div id="cl-tripprep" class="cl-view">
           <div class="card" id="cl-trip-selector-card">
-            <div class="card-section-title">Today's Trips</div>
-            <p class="card-desc">Select a trip to load gear totals from your bookings automatically.</p>
+            <div class="card-section-title" data-i18n="cl_todays_trips">Today's Trips</div>
+            <p class="card-desc" data-i18n="cl_select_trip_hint">Select a trip to load gear totals from your bookings automatically.</p>
             <div id="cl-trip-list"></div>
           </div>
 
           <!-- Gear summary from booking -->
           <div class="card" id="cl-gear-summary-card" style="display:none;">
-            <div class="card-section-title" style="margin-bottom:8px;">Gear Required — from Booking</div>
+            <div class="card-section-title" style="margin-bottom:8px;" data-i18n="cl_gear_required">Gear Required — from Booking</div>
             <div class="cl-info-box" id="cl-tank-info"></div>
           </div>
 
           <!-- Instructor / DM section — always visible to relevant roles -->
           <div class="card" id="cl-instructor-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div class="card-section-title" style="margin-bottom:0;">Instructor / DM — Gear Prep</div>
-              <div class="cl-role-badge" id="cl-instructor-status">Pending</div>
+              <div class="card-section-title" style="margin-bottom:0;" data-i18n="cl_instructor_dm">Instructor / DM — Gear Prep</div>
+              <div class="cl-role-badge" id="cl-instructor-status" data-i18n="cl_pending">Pending</div>
             </div>
             <div id="cl-instructor-items"></div>
             <div class="cl-signoff">
-              <input class="sf-input" type="text" id="cl-instructor-name" placeholder="Your name">
+              <input class="sf-input" type="text" id="cl-instructor-name" placeholder="Your name" data-i18n-placeholder="cl_your_name">
               <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
-                <button class="btn-save" onclick="instructorSignOff()">Sign Off — Gear Ready</button>
-                <button class="btn-cancel" onclick="initInstructorChecklist()">Reset</button>
+                <button class="btn-save" onclick="instructorSignOff()" data-i18n="cl_sign_off_gear">Sign Off — Gear Ready</button>
+                <button class="btn-cancel" onclick="initInstructorChecklist()" data-i18n="cl_reset">Reset</button>
               </div>
             </div>
           </div>
 
           <!-- Captain overview — only visible to captain/manager/owner -->
           <div class="card" id="cl-captain-overview" style="display:none;">
-            <div class="card-section-title" style="margin-bottom:12px;">Crew Sign-Off Status</div>
+            <div class="card-section-title" style="margin-bottom:12px;" data-i18n="cl_crew_signoff_status">Crew Sign-Off Status</div>
             <div id="cl-crew-status-list"></div>
           </div>
         </div>
@@ -1969,20 +1969,20 @@ body { background: var(--navy); color: var(--text); }
         <div id="cl-captaincheck" class="cl-view" style="display:none;">
           <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div class="card-section-title" style="margin-bottom:0;">Vessel Safety Check</div>
-              <div class="cl-role-badge" id="cl-captain-status">Pending</div>
+              <div class="card-section-title" style="margin-bottom:0;" data-i18n="cl_vessel_safety_check">Vessel Safety Check</div>
+              <div class="cl-role-badge" id="cl-captain-status" data-i18n="cl_pending">Pending</div>
             </div>
-            <p class="card-desc" style="margin-bottom:16px;">Complete once per day before first departure. Independent of individual trips.</p>
+            <p class="card-desc" style="margin-bottom:16px;" data-i18n="cl_complete_once_daily">Complete once per day before first departure. Independent of individual trips.</p>
             <div class="cl-progress-bar"><div class="cl-progress-fill" id="cl-captain-progress"></div></div>
             <div id="cl-captain-items"></div>
             <div class="cl-signoff">
-              <div class="card-section-title">Captain Sign-Off</div>
-              <input class="sf-input" type="text" id="cl-captain-name" placeholder="Captain name">
-              <input class="sf-input" type="text" id="cl-captain-boat" placeholder="Boat name" style="margin-top:8px;">
+              <div class="card-section-title" data-i18n="cl_captain_signoff">Captain Sign-Off</div>
+              <input class="sf-input" type="text" id="cl-captain-name" placeholder="Captain name" data-i18n-placeholder="cl_captain_name">
+              <input class="sf-input" type="text" id="cl-captain-boat" placeholder="Boat name" style="margin-top:8px;" data-i18n-placeholder="cl_boat_name">
               <div class="cl-done-banner" id="cl-captain-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
-                <button class="btn-save" onclick="captainSignOff()">Sign Off — Clear to Depart</button>
-                <button class="btn-cancel" onclick="initCaptainChecklist()">Reset</button>
+                <button class="btn-save" onclick="captainSignOff()" data-i18n="cl_sign_off_depart">Sign Off — Clear to Depart</button>
+                <button class="btn-cancel" onclick="initCaptainChecklist()" data-i18n="cl_reset">Reset</button>
               </div>
             </div>
           </div>
@@ -1991,8 +1991,8 @@ body { background: var(--navy); color: var(--text); }
         <!-- DEPARTMENT ROUTINES -->
         <div id="cl-department" class="cl-view" style="display:none;">
           <div class="card">
-            <div class="card-section-title" style="margin-bottom:12px;">Department Routines</div>
-            <p class="card-desc">Reusable daily routines per department — not linked to bookings.</p>
+            <div class="card-section-title" style="margin-bottom:12px;" data-i18n="cl_department_routines">Department Routines</div>
+            <p class="card-desc" data-i18n="cl_reusable_routines_hint">Reusable daily routines per department — not linked to bookings.</p>
             <div class="cl-role-tab-row" id="dept-tabs"></div>
             <div id="dept-list"></div>
           </div>
@@ -2007,40 +2007,40 @@ body { background: var(--navy); color: var(--text); }
         </div>
 
         <div class="cl-tab-row">
-          <div class="cl-tab active" onclick="showGearView('compressors',this)">Compressors</div>
-          <div class="cl-tab" onclick="showGearView('inventory',this)">Inventory</div>
-          <div class="cl-tab" onclick="showGearView('inspection',this)">Inspection</div>
-          <div class="cl-tab" onclick="showGearView('registry',this)">Registry</div>
+          <div class="cl-tab active" onclick="showGearView('compressors',this)" data-i18n="gear_tab_compressors">Compressors</div>
+          <div class="cl-tab" onclick="showGearView('inventory',this)" data-i18n="gear_tab_inventory">Inventory</div>
+          <div class="cl-tab" onclick="showGearView('inspection',this)" data-i18n="gear_tab_inspection">Inspection</div>
+          <div class="cl-tab" onclick="showGearView('registry',this)" data-i18n="gear_tab_registry">Registry</div>
         </div>
 
         <div id="gear-compressors-view" class="cl-view">
           <div style="margin-bottom:20px;">
-            <button class="btn-save" id="btn-show-add-compressor">+ Add Compressor</button>
+            <button class="btn-save" id="btn-show-add-compressor" data-i18n="gear_add_compressor">+ Add Compressor</button>
           </div>
           <div class="inline-form" id="form-add-compressor" style="display:none;margin-bottom:20px;">
-            <div class="card-section-title">Add Compressor</div>
+            <div class="card-section-title" data-i18n="gear_add_compressor_title">Add Compressor</div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Location</label>
+                <label class="sf-label" data-i18n="gear_location">Location</label>
                 <select class="sf-input" id="compressor-location"></select>
               </div>
               <div class="sf-group">
-                <label class="sf-label">Assign to boat (optional)</label>
-                <select class="sf-input" id="compressor-boat"><option value="">— Shop-based, no boat —</option></select>
+                <label class="sf-label" data-i18n="gear_assign_boat_optional">Assign to boat (optional)</label>
+                <select class="sf-input" id="compressor-boat"><option value="" data-i18n="gear_no_boat_shop">— Shop-based, no boat —</option></select>
               </div>
             </div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Compressor name</label>
+                <label class="sf-label" data-i18n="gear_compressor_name">Compressor name</label>
                 <input class="sf-input" type="text" id="compressor-name" placeholder="e.g. Bauer 1">
               </div>
               <div class="sf-group">
-                <label class="sf-label">Filter lifespan (hours)</label>
+                <label class="sf-label" data-i18n="gear_filter_lifespan">Filter lifespan (hours)</label>
                 <input class="sf-input" type="number" id="compressor-interval" placeholder="e.g. 50" min="1">
               </div>
             </div>
             <div class="settings-actions">
-              <button class="btn-save" id="btn-save-compressor">Add Compressor</button>
+              <button class="btn-save" id="btn-save-compressor" data-i18n="gear_add_compressor_title">Add Compressor</button>
               <span class="save-feedback" id="compressor-save-feedback"></span>
             </div>
           </div>
@@ -2049,66 +2049,66 @@ body { background: var(--navy); color: var(--text); }
 
         <div id="gear-inventory-view" class="cl-view" style="display:none;">
           <div id="inventory-no-location" style="display:none;">
-            <p style="color:var(--muted);">Select a location above to view inventory.</p>
+            <p style="color:var(--muted);" data-i18n="gear_select_location_inventory">Select a location above to view inventory.</p>
           </div>
           <div id="inventory-categories"></div>
         </div>
 
         <div id="gear-inspection-view" class="cl-view" style="display:none;">
           <div id="inspection-no-location" style="display:none;">
-            <p style="color:var(--muted);">Select a location above to view the inspection checklist.</p>
+            <p style="color:var(--muted);" data-i18n="gear_select_location_inspection">Select a location above to view the inspection checklist.</p>
           </div>
           <div class="cl-tab-row" id="inspection-tabs"></div>
           <div id="inspection-categories"></div>
         </div>
 
         <div id="gear-registry-view" class="cl-view" style="display:none;">
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;">Individually tracked safety-critical or high-value gear — regulators, dive computers, tanks, cameras and the like. Click an item for its full service history.</p>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;" data-i18n="gear_registry_hint">Individually tracked safety-critical or high-value gear — regulators, dive computers, tanks, cameras and the like. Click an item for its full service history.</p>
           <div style="margin-bottom:16px;">
-            <button class="btn-save" id="btn-show-add-gear-item">+ Register item</button>
+            <button class="btn-save" id="btn-show-add-gear-item" data-i18n="gear_register_item">+ Register item</button>
           </div>
           <div class="inline-form" id="form-add-gear-item" style="display:none;margin-bottom:20px;">
-            <div class="card-section-title">Register gear item</div>
+            <div class="card-section-title" data-i18n="gear_register_item_title">Register gear item</div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Name</label>
+                <label class="sf-label" data-i18n="gear_name">Name</label>
                 <input class="sf-input" type="text" id="reg-name" placeholder="e.g. Scubapro MK25 #3">
               </div>
               <div class="sf-group">
-                <label class="sf-label">Category</label>
+                <label class="sf-label" data-i18n="gear_category">Category</label>
                 <select class="sf-input" id="reg-category">
-                  <option value="Regulator">Regulator</option>
-                  <option value="Dive computer">Dive computer</option>
-                  <option value="BCD">BCD</option>
-                  <option value="Tank / Cylinder">Tank / Cylinder</option>
-                  <option value="Underwater camera">Underwater camera</option>
-                  <option value="Radio / Communication">Radio / Communication</option>
-                  <option value="Rebreather">Rebreather</option>
-                  <option value="Other">Other</option>
+                  <option value="Regulator" data-i18n="gear_cat_regulator">Regulator</option>
+                  <option value="Dive computer" data-i18n="gear_cat_dive_computer">Dive computer</option>
+                  <option value="BCD" data-i18n="gear_cat_bcd">BCD</option>
+                  <option value="Tank / Cylinder" data-i18n="gear_cat_tank">Tank / Cylinder</option>
+                  <option value="Underwater camera" data-i18n="gear_cat_camera">Underwater camera</option>
+                  <option value="Radio / Communication" data-i18n="gear_cat_radio">Radio / Communication</option>
+                  <option value="Rebreather" data-i18n="gear_cat_rebreather">Rebreather</option>
+                  <option value="Other" data-i18n="gear_cat_other">Other</option>
                 </select>
               </div>
             </div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Size (optional)</label>
+                <label class="sf-label" data-i18n="gear_size_optional">Size (optional)</label>
                 <input class="sf-input" type="text" id="reg-size" placeholder="e.g. M, XL, 12L">
               </div>
               <div class="sf-group">
-                <label class="sf-label">Serial number</label>
+                <label class="sf-label" data-i18n="gear_serial_number">Serial number</label>
                 <input class="sf-input" type="text" id="reg-serial" placeholder="Optional but recommended">
               </div>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Location</label>
+              <label class="sf-label" data-i18n="gear_location">Location</label>
               <select class="sf-input" id="reg-location"></select>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Notes (optional)</label>
+              <label class="sf-label" data-i18n="gear_notes_optional">Notes (optional)</label>
               <input class="sf-input" type="text" id="reg-notes" placeholder="Optional">
             </div>
             <div class="settings-actions">
-              <button class="btn-save" id="btn-save-gear-item">Register item</button>
-              <button class="btn-cancel" id="btn-cancel-gear-item">Cancel</button>
+              <button class="btn-save" id="btn-save-gear-item" data-i18n="gear_register_item_title">Register item</button>
+              <button class="btn-cancel" id="btn-cancel-gear-item" data-i18n="fleet_cancel">Cancel</button>
               <span class="save-feedback" id="reg-save-feedback"></span>
             </div>
           </div>
@@ -2715,6 +2715,46 @@ const TRANSLATIONS = {
     crew_assigned: 'Assigned', crew_on_duty: 'On Duty', crew_fallback: 'Crew',
     crew_assign_location: 'Assign location', crew_or_set_status: 'Or set status', crew_save_location: 'Save location',
     crew_remove_confirm: 'Remove {name} from your crew?', crew_cancel_invite_confirm: 'Cancel this invite?',
+
+    cl_tab_tripprep: 'Trip Prep', cl_tab_captain: 'Captain', cl_tab_department: 'Department Routines',
+    cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
+    cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
+    cl_your_name: 'Your name', cl_sign_off_gear: 'Sign Off — Gear Ready', cl_reset: 'Reset',
+    cl_crew_signoff_status: 'Crew Sign-Off Status', cl_vessel_safety_check: 'Vessel Safety Check',
+    cl_complete_once_daily: 'Complete once per day before first departure. Independent of individual trips.',
+    cl_captain_signoff: 'Captain Sign-Off', cl_captain_name: 'Captain name', cl_boat_name: 'Boat name',
+    cl_sign_off_depart: 'Sign Off — Clear to Depart', cl_department_routines: 'Department Routines',
+    cl_reusable_routines_hint: 'Reusable daily routines per department — not linked to bookings.',
+    cl_complete_check: 'Complete ✓', cl_enter_captain_name: 'Enter captain name to sign off.', cl_enter_your_name: 'Enter your name to sign off.',
+    cl_items_incomplete: ' items incomplete. Sign off anyway?', cl_signed_off_by: 'Signed off by ', cl_saved_offline_sync: ' (saved offline — will sync automatically)',
+    cl_no_trips_today: 'No trips today. You can still use checklists independently.', cl_guest_singular: 'guest', cl_guest_plural: 'guests',
+    cl_tanks_needed: 'tanks needed', cl_kg_weights_total: 'kg weights total', cl_no_signoffs_yet: 'No sign-offs yet for this trip.', cl_signed_by: 'Signed by ',
+
+    gear_tab_compressors: 'Compressors', gear_tab_inventory: 'Inventory', gear_tab_inspection: 'Inspection', gear_tab_registry: 'Registry',
+    gear_add_compressor: '+ Add Compressor', gear_add_compressor_title: 'Add Compressor', gear_location: 'Location',
+    gear_assign_boat_optional: 'Assign to boat (optional)', gear_no_boat_shop: '— Shop-based, no boat —',
+    gear_compressor_name: 'Compressor name', gear_filter_lifespan: 'Filter lifespan (hours)',
+    gear_select_location_inventory: 'Select a location above to view inventory.',
+    gear_select_location_inspection: 'Select a location above to view the inspection checklist.',
+    gear_registry_hint: 'Individually tracked safety-critical or high-value gear — regulators, dive computers, tanks, cameras and the like. Click an item for its full service history.',
+    gear_register_item: '+ Register item', gear_register_item_title: 'Register gear item', gear_name: 'Name', gear_category: 'Category',
+    gear_cat_regulator: 'Regulator', gear_cat_dive_computer: 'Dive computer', gear_cat_bcd: 'BCD', gear_cat_tank: 'Tank / Cylinder',
+    gear_cat_camera: 'Underwater camera', gear_cat_radio: 'Radio / Communication', gear_cat_rebreather: 'Rebreather', gear_cat_other: 'Other',
+    gear_size_optional: 'Size (optional)', gear_serial_number: 'Serial number', gear_notes_optional: 'Notes (optional)',
+    gear_item_title: 'Gear item', gear_status_service_dates: 'Status & service dates', gear_status: 'Status',
+    gear_status_active: 'Active', gear_status_in_repair: 'In repair', gear_status_retired: 'Retired',
+    gear_last_service: 'Last service', gear_next_service_due: 'Next service due', gear_repair_notes: 'Repair notes', gear_notes: 'Notes',
+    gear_save: 'Save', gear_remove_item: 'Remove item', gear_maintenance_history: 'Maintenance history', gear_log_maintenance: '+ Log maintenance',
+    gear_title_label: 'Title', gear_what_was_done: 'What was done', gear_parts_used: 'Parts used (optional)',
+    gear_cost: 'Cost (optional)', gear_currency: 'Currency', gear_done_by: 'Done by', gear_date_performed: 'Date performed',
+    gear_next_due: 'Next due (optional)', gear_save_entry: 'Save entry', gear_cancel: 'Cancel',
+    gear_all_categories: 'All categories', gear_no_registered_yet: 'No gear registered yet.', gear_service_due: 'Service due',
+    gear_next_service_prefix: 'Next service: ', gear_due_now: ' — due now', gear_error_prefix: 'Error: ', gear_saved: 'Saved',
+    gear_no_compressors_yet: 'No compressors tracked yet. Add one above.', gear_no_location: 'No location', gear_shop_based: 'Shop-based',
+    gear_filter_due_soon: 'Filter change due soon — ', gear_hours_remaining_plan: 'h remaining. Plan it in.', gear_hours_used: 'h used — ',
+    gear_hours_remaining: 'h remaining', gear_log_a_fill: 'Log a Fill', gear_who_filled: 'Who filled', gear_start_time: 'Start time', gear_stop_time: 'Stop time',
+    gear_log_fill: 'Log Fill', gear_filter_replaced_reset: 'Filter Replaced — Reset Counter', gear_recent_activity: 'Recent Activity',
+    gear_filter_replaced: 'Filter replaced', gear_no_activity_yet: 'No activity yet.',
   },
   es: {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
@@ -2846,6 +2886,46 @@ const TRANSLATIONS = {
     crew_assigned: 'Asignado', crew_on_duty: 'En Turno', crew_fallback: 'Tripulación',
     crew_assign_location: 'Asignar ubicación', crew_or_set_status: 'O establecer estado', crew_save_location: 'Guardar ubicación',
     crew_remove_confirm: '¿Eliminar a {name} de tu tripulación?', crew_cancel_invite_confirm: '¿Cancelar esta invitación?',
+
+    cl_tab_tripprep: 'Preparación de Salida', cl_tab_captain: 'Capitán', cl_tab_department: 'Rutinas por Área',
+    cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
+    cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
+    cl_your_name: 'Tu nombre', cl_sign_off_gear: 'Confirmar — Equipo Listo', cl_reset: 'Reiniciar',
+    cl_crew_signoff_status: 'Estado de Confirmación de Tripulación', cl_vessel_safety_check: 'Revisión de Seguridad de la Embarcación',
+    cl_complete_once_daily: 'Completar una vez al día antes de la primera salida. Independiente de las salidas individuales.',
+    cl_captain_signoff: 'Confirmación del Capitán', cl_captain_name: 'Nombre del capitán', cl_boat_name: 'Nombre de la embarcación',
+    cl_sign_off_depart: 'Confirmar — Listo para Zarpar', cl_department_routines: 'Rutinas por Área',
+    cl_reusable_routines_hint: 'Rutinas diarias reutilizables por área — no vinculadas a reservas.',
+    cl_complete_check: 'Completo ✓', cl_enter_captain_name: 'Ingresa el nombre del capitán para confirmar.', cl_enter_your_name: 'Ingresa tu nombre para confirmar.',
+    cl_items_incomplete: ' elementos incompletos. ¿Confirmar de todos modos?', cl_signed_off_by: 'Confirmado por ', cl_saved_offline_sync: ' (guardado sin conexión — se sincronizará automáticamente)',
+    cl_no_trips_today: 'No hay salidas hoy. Aún puedes usar las listas de verificación de forma independiente.', cl_guest_singular: 'huésped', cl_guest_plural: 'huéspedes',
+    cl_tanks_needed: 'tanques necesarios', cl_kg_weights_total: 'kg de plomos en total', cl_no_signoffs_yet: 'Aún no hay confirmaciones para esta salida.', cl_signed_by: 'Confirmado por ',
+
+    gear_tab_compressors: 'Compresores', gear_tab_inventory: 'Inventario', gear_tab_inspection: 'Inspección', gear_tab_registry: 'Registro',
+    gear_add_compressor: '+ Agregar Compresor', gear_add_compressor_title: 'Agregar Compresor', gear_location: 'Ubicación',
+    gear_assign_boat_optional: 'Asignar a embarcación (opcional)', gear_no_boat_shop: '— Basado en tienda, sin embarcación —',
+    gear_compressor_name: 'Nombre del compresor', gear_filter_lifespan: 'Vida útil del filtro (horas)',
+    gear_select_location_inventory: 'Selecciona una ubicación arriba para ver el inventario.',
+    gear_select_location_inspection: 'Selecciona una ubicación arriba para ver la lista de inspección.',
+    gear_registry_hint: 'Equipo crítico para la seguridad o de alto valor rastreado individualmente — reguladores, computadoras de buceo, tanques, cámaras y similares. Haz clic en un artículo para ver su historial de servicio completo.',
+    gear_register_item: '+ Registrar artículo', gear_register_item_title: 'Registrar artículo de equipo', gear_name: 'Nombre', gear_category: 'Categoría',
+    gear_cat_regulator: 'Regulador', gear_cat_dive_computer: 'Computadora de buceo', gear_cat_bcd: 'BCD', gear_cat_tank: 'Tanque / Cilindro',
+    gear_cat_camera: 'Cámara submarina', gear_cat_radio: 'Radio / Comunicación', gear_cat_rebreather: 'Rebreather', gear_cat_other: 'Otro',
+    gear_size_optional: 'Talla (opcional)', gear_serial_number: 'Número de serie', gear_notes_optional: 'Notas (opcional)',
+    gear_item_title: 'Artículo de equipo', gear_status_service_dates: 'Estado y fechas de servicio', gear_status: 'Estado',
+    gear_status_active: 'Activo', gear_status_in_repair: 'En reparación', gear_status_retired: 'Retirado',
+    gear_last_service: 'Último servicio', gear_next_service_due: 'Próximo servicio', gear_repair_notes: 'Notas de reparación', gear_notes: 'Notas',
+    gear_save: 'Guardar', gear_remove_item: 'Eliminar artículo', gear_maintenance_history: 'Historial de mantenimiento', gear_log_maintenance: '+ Registrar mantenimiento',
+    gear_title_label: 'Título', gear_what_was_done: 'Qué se hizo', gear_parts_used: 'Repuestos utilizados (opcional)',
+    gear_cost: 'Costo (opcional)', gear_currency: 'Moneda', gear_done_by: 'Realizado por', gear_date_performed: 'Fecha realizada',
+    gear_next_due: 'Próximo vencimiento (opcional)', gear_save_entry: 'Guardar registro', gear_cancel: 'Cancelar',
+    gear_all_categories: 'Todas las categorías', gear_no_registered_yet: 'Aún no hay equipo registrado.', gear_service_due: 'Servicio pendiente',
+    gear_next_service_prefix: 'Próximo servicio: ', gear_due_now: ' — vencido', gear_error_prefix: 'Error: ', gear_saved: 'Guardado',
+    gear_no_compressors_yet: 'Aún no hay compresores registrados. Agrega uno arriba.', gear_no_location: 'Sin ubicación', gear_shop_based: 'Basado en tienda',
+    gear_filter_due_soon: 'Cambio de filtro pronto — ', gear_hours_remaining_plan: 'h restantes. Planifícalo.', gear_hours_used: 'h usadas — ',
+    gear_hours_remaining: 'h restantes', gear_log_a_fill: 'Registrar una Carga', gear_who_filled: 'Quién cargó', gear_start_time: 'Hora de inicio', gear_stop_time: 'Hora de fin',
+    gear_log_fill: 'Registrar Carga', gear_filter_replaced_reset: 'Filtro Reemplazado — Reiniciar Contador', gear_recent_activity: 'Actividad Reciente',
+    gear_filter_replaced: 'Filtro reemplazado', gear_no_activity_yet: 'Aún no hay actividad.',
   }
 };
 
@@ -7259,21 +7339,21 @@ async function loadTodaysTripList() {
 
   const list = document.getElementById('cl-trip-list');
   if (!trips || trips.length === 0) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">No trips today. You can still use checklists independently.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('cl_no_trips_today')}</p>`;
     return;
   }
 
-  list.innerHTML = trips.map(t => {
-    const name = t.trip_name || t.trip_types?.name || t.trip_type || 'Trip';
-    const time = t.trip_time?.slice(0,5) || '';
-    const guests = t.participants?.length || 0;
-    const numTanks = t.trip_types?.num_tanks || 1;
-    const needsTanks = t.trip_types?.needs_tank_count;
-    const tanks = needsTanks ? `${guests * numTanks} tanks` : '';
-    return `<div class="cl-trip-pill ${currentChecklistTripId===t.id?'selected':''}"
-      onclick="selectChecklistTrip('${t.id}',${JSON.stringify(t.participants||[]).replace(/"/g,'&quot;')},${numTanks},${needsTanks?'true':'false'},'${name}','${time}')">
+  list.innerHTML = trips.map(tr => {
+    const name = tr.trip_name || tr.trip_types?.name || tr.trip_type || t('cal_trip_fallback');
+    const time = tr.trip_time?.slice(0,5) || '';
+    const guests = tr.participants?.length || 0;
+    const numTanks = tr.trip_types?.num_tanks || 1;
+    const needsTanks = tr.trip_types?.needs_tank_count;
+    const tanks = needsTanks ? `${guests * numTanks} ${t('cl_tanks_needed')}` : '';
+    return `<div class="cl-trip-pill ${currentChecklistTripId===tr.id?'selected':''}"
+      onclick="selectChecklistTrip('${tr.id}',${JSON.stringify(tr.participants||[]).replace(/"/g,'&quot;')},${numTanks},${needsTanks?'true':'false'},'${name}','${time}')">
       <div style="font-weight:600;font-size:0.875rem;">${time ? time+' — ' : ''}${name}</div>
-      <div style="font-size:0.75rem;color:var(--muted);">${guests} guest${guests!==1?'s':''}${tanks?' · '+tanks:''}</div>
+      <div style="font-size:0.75rem;color:var(--muted);">${guests} ${guests!==1?t('cl_guest_plural'):t('cl_guest_singular')}${tanks?' · '+tanks:''}</div>
     </div>`;
   }).join('');
 }
@@ -7303,9 +7383,9 @@ function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripNam
   const lines = [];
   if (totalTanks > 0) {
     const tankBreakdown = Object.entries(tankSizes).map(([s,n])=>`${n}×${s}`).join(', ');
-    lines.push(`<strong>${totalTanks} tanks needed</strong>${tankBreakdown?' ('+tankBreakdown+')':''}`);
+    lines.push(`<strong>${totalTanks} ${t('cl_tanks_needed')}</strong>${tankBreakdown?' ('+tankBreakdown+')':''}`);
   }
-  if (totalWeight > 0) lines.push(`<strong>${totalWeight} kg weights</strong> total`);
+  if (totalWeight > 0) lines.push(`<strong>${totalWeight} ${t('cl_kg_weights_total')}</strong>`);
   Object.entries(gearTotals).forEach(([key, sizes]) => {
     const label = key.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase());
     const breakdown = Object.entries(sizes).map(([s,n])=>`${n}×${s}`).join(', ');
@@ -7337,14 +7417,14 @@ async function loadCrewStatus(tripId) {
 
   const container = document.getElementById('cl-crew-status-list');
   if (!signoffs || signoffs.length === 0) {
-    container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">No sign-offs yet for this trip.</p>';
+    container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('cl_no_signoffs_yet')}</p>`;
     return;
   }
   container.innerHTML = signoffs.map(s => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
       <div>
-        <div style="font-weight:600;font-size:0.875rem;">${s.role.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase())}</div>
-        <div style="font-size:0.75rem;color:var(--muted);">Signed by ${s.signed_by} · ${new Date(s.signed_at).toLocaleTimeString()}</div>
+        <div style="font-weight:600;font-size:0.875rem;">${crewRoleLabel(s.role)}</div>
+        <div style="font-size:0.75rem;color:var(--muted);">${t('cl_signed_by')}${s.signed_by} · ${new Date(s.signed_at).toLocaleTimeString()}</div>
       </div>
       <div class="cl-role-badge done">${s.completed_items}/${s.total_items} ✓</div>
     </div>`).join('');
@@ -7357,7 +7437,7 @@ function initCaptainChecklist() {
   const done = document.getElementById('cl-captain-done');
   if (done) done.style.display = 'none';
   const status = document.getElementById('cl-captain-status');
-  if (status) { status.textContent = 'Pending'; status.classList.remove('done'); }
+  if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
 }
 
 function toggleCaptain(id) {
@@ -7369,14 +7449,14 @@ async function captainSignOff() {
   const name = document.getElementById('cl-captain-name').value.trim();
   const boat = document.getElementById('cl-captain-boat').value.trim();
   const done = CAPTAIN_ITEMS.filter(i => captainChecks[i.id]).length;
-  if (!name) { await showAlertModal('Enter captain name to sign off.'); return; }
-  if (done < CAPTAIN_ITEMS.length && !(await showConfirmModal(`${CAPTAIN_ITEMS.length - done} items incomplete. Sign off anyway?`))) return;
+  if (!name) { await showAlertModal(t('cl_enter_captain_name')); return; }
+  if (done < CAPTAIN_ITEMS.length && !(await showConfirmModal(`${CAPTAIN_ITEMS.length - done}${t('cl_items_incomplete')}`))) return;
   const ts = new Date().toLocaleString();
   const doneBanner = document.getElementById('cl-captain-done');
-  doneBanner.innerHTML = `✓ Signed off by <strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
+  doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
   doneBanner.style.display = 'block';
   const status = document.getElementById('cl-captain-status');
-  if (status) { status.textContent = 'Complete ✓'; status.classList.add('done'); }
+  if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
   if (currentOrgId) {
     const payload = {
       org_id: currentOrgId, trip_id: currentChecklistTripId || null,
@@ -7386,7 +7466,7 @@ async function captainSignOff() {
     };
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
-      doneBanner.innerHTML += ' <span style="opacity:0.75;">(saved offline — will sync automatically)</span>';
+      doneBanner.innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
     } else {
       await sb.from('checklist_completions').insert(payload);
     }
@@ -7400,7 +7480,7 @@ function initInstructorChecklist() {
   const done = document.getElementById('cl-instructor-done');
   if (done) done.style.display = 'none';
   const status = document.getElementById('cl-instructor-status');
-  if (status) { status.textContent = 'Pending'; status.classList.remove('done'); }
+  if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
 }
 
 function toggleInstructor(id) {
@@ -7411,13 +7491,13 @@ function toggleInstructor(id) {
 async function instructorSignOff() {
   const name = document.getElementById('cl-instructor-name').value.trim();
   const done = INSTRUCTOR_ITEMS.filter(i => instructorChecks[i.id]).length;
-  if (!name) { await showAlertModal('Enter your name to sign off.'); return; }
-  if (done < INSTRUCTOR_ITEMS.length && !(await showConfirmModal(`${INSTRUCTOR_ITEMS.length - done} items incomplete. Sign off anyway?`))) return;
+  if (!name) { await showAlertModal(t('cl_enter_your_name')); return; }
+  if (done < INSTRUCTOR_ITEMS.length && !(await showConfirmModal(`${INSTRUCTOR_ITEMS.length - done}${t('cl_items_incomplete')}`))) return;
   const ts = new Date().toLocaleString();
-  document.getElementById('cl-instructor-done').innerHTML = `✓ Signed off by <strong>${name}</strong> at ${ts}`;
+  document.getElementById('cl-instructor-done').innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
   document.getElementById('cl-instructor-done').style.display = 'block';
   const status = document.getElementById('cl-instructor-status');
-  if (status) { status.textContent = 'Complete ✓'; status.classList.add('done'); }
+  if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
   if (currentOrgId) {
     const payload = {
       org_id: currentOrgId, trip_id: currentChecklistTripId || null,
@@ -7427,7 +7507,7 @@ async function instructorSignOff() {
     };
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
-      document.getElementById('cl-instructor-done').innerHTML += ' <span style="opacity:0.75;">(saved offline — will sync automatically)</span>';
+      document.getElementById('cl-instructor-done').innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
     } else {
       await sb.from('checklist_completions').insert(payload);
       if (currentChecklistTripId && ['owner','manager','captain'].includes(currentUserRole)) {
@@ -7480,7 +7560,7 @@ function renderDeptList(name) {
           <div class="cl-item-text">${text}</div>
         </div>`).join('')}
       <div class="settings-actions" style="margin-top:16px;">
-        <button class="btn-cancel" onclick="renderDeptList('${name}')">Reset</button>
+        <button class="btn-cancel" onclick="renderDeptList('${name}')">${t('cl_reset')}</button>
       </div>
     </div>`;
 }
@@ -8350,7 +8430,10 @@ function renderBoatDetailMaintenance(logs) {
 // ─── END BOAT DETAIL ───
 
 // ─── GEAR REGISTRY ───
-const gearRegistryStatusLabels = { available: 'Active', in_repair: 'In repair', retired: 'Retired' };
+function gearRegistryStatusLabel(status) {
+  const map = { available: 'gear_status_active', in_repair: 'gear_status_in_repair', retired: 'gear_status_retired' };
+  return status && map[status] ? t(map[status]) : status;
+}
 
 async function populateRegistryLocationSelect() {
   if (!currentOrgId) return;
@@ -8422,7 +8505,7 @@ async function loadGearRegistry() {
   if (!currentOrgId) return;
   const catFilterEl = document.getElementById('reg-filter-category');
   if (!catFilterEl.options.length || catFilterEl.options.length === 1) {
-    catFilterEl.innerHTML = '<option value="">All categories</option>' + gearRegistryCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+    catFilterEl.innerHTML = `<option value="">${t('gear_all_categories')}</option>` + gearRegistryCategories.map(c => `<option value="${c}">${c}</option>`).join('');
   }
   const catFilter = catFilterEl.value;
   const statusFilter = document.getElementById('reg-filter-status').value;
@@ -8437,7 +8520,7 @@ async function loadGearRegistry() {
 function renderGearRegistry(items) {
   const list = document.getElementById('gear-registry-list');
   if (!items.length) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No gear registered yet.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('gear_no_registered_yet')}</p>`;
     return;
   }
   const today = new Date().toISOString().split('T')[0];
@@ -8448,12 +8531,12 @@ function renderGearRegistry(items) {
     <div class="card" style="margin-bottom:12px;cursor:pointer;" onclick="openGearDetail('${g.id}')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div>
-          <h2 style="margin-bottom:2px;">${g.name}${dueSoon ? ' <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">Service due</span>' : ''}</h2>
+          <h2 style="margin-bottom:2px;">${g.name}${dueSoon ? ` <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">${t('gear_service_due')}</span>` : ''}</h2>
           <p style="font-size:0.8rem;color:var(--muted);">${g.category}${g.size ? ' · ' + g.size : ''}${g.serial_number ? ' · SN ' + g.serial_number : ''}${g.locations?.name ? ' · ' + g.locations.name : ''}</p>
         </div>
-        <span class="role-badge" style="background:rgba(0,0,0,0.06);color:${statusColor};">${gearRegistryStatusLabels[g.status] || g.status}</span>
+        <span class="role-badge" style="background:rgba(0,0,0,0.06);color:${statusColor};">${gearRegistryStatusLabel(g.status)}</span>
       </div>
-      ${g.next_service_date ? `<p style="font-size:0.8rem;margin-top:8px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">Next service: ${new Date(g.next_service_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? ' — due now' : ''}</p>` : ''}
+      ${g.next_service_date ? `<p style="font-size:0.8rem;margin-top:8px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">${t('gear_next_service_prefix')}${new Date(g.next_service_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? t('gear_due_now') : ''}</p>` : ''}
     </div>
   `;
   }).join('');
@@ -8499,11 +8582,11 @@ document.getElementById('btn-save-gear-detail').addEventListener('click', async 
     notes: document.getElementById('gd-notes').value.trim() || null
   }).eq('id', gearId);
   if (error) {
-    feedback.textContent = 'Error: ' + error.message;
+    feedback.textContent = t('gear_error_prefix') + error.message;
     feedback.className = 'save-feedback error visible';
     return;
   }
-  feedback.textContent = 'Saved';
+  feedback.textContent = t('gear_saved');
   feedback.className = 'save-feedback visible';
   setTimeout(() => feedback.className = 'save-feedback', 2000);
 });
@@ -8853,7 +8936,7 @@ async function loadCompressors() {
   const { data: compressors } = await sb.from('compressors').select('*, locations(name), boats(name)').eq('org_id', currentOrgId).order('created_at');
   const list = document.getElementById('compressors-list');
   if (!compressors || !compressors.length) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No compressors tracked yet. Add one above.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('gear_no_compressors_yet')}</p>`;
     return;
   }
   list.innerHTML = '';
@@ -8872,39 +8955,39 @@ function renderCompressorCard(c, logs) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <h2>${c.name}</h2>
-        <p>${c.locations?.name || 'No location'}${c.boats?.name ? ' · ' + c.boats.name : ' · Shop-based'}</p>
+        <p>${c.locations?.name || t('gear_no_location')}${c.boats?.name ? ' · ' + c.boats.name : ' · ' + t('gear_shop_based')}</p>
       </div>
-      <button class="btn-icon danger" onclick="deleteCompressor('${c.id}')">Remove</button>
+      <button class="btn-icon danger" onclick="deleteCompressor('${c.id}')">${t('fleet_remove')}</button>
     </div>
-    ${warn ? `<div class="warning-banner caution" style="margin-top:12px;">Filter change due soon — ${remaining}h remaining. Plan it in.</div>` : ''}
+    ${warn ? `<div class="warning-banner caution" style="margin-top:12px;">${t('gear_filter_due_soon')}${remaining}${t('gear_hours_remaining_plan')}</div>` : ''}
     <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
     <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
-      ${parseFloat(c.current_hours || 0).toFixed(1)}h / ${c.filter_interval_hours}h used — ${remaining}h remaining
+      ${parseFloat(c.current_hours || 0).toFixed(1)}h / ${c.filter_interval_hours}${t('gear_hours_used')}${remaining}${t('gear_hours_remaining')}
     </p>
-    <div class="card-section-title">Log a Fill</div>
+    <div class="card-section-title">${t('gear_log_a_fill')}</div>
     <div class="sf-row">
       <div class="sf-group">
-        <label class="sf-label">Who filled</label>
+        <label class="sf-label">${t('gear_who_filled')}</label>
         <input class="sf-input" type="text" id="comp-logby-${c.id}" placeholder="Name">
       </div>
       <div class="sf-group">
-        <label class="sf-label">Start time</label>
+        <label class="sf-label">${t('gear_start_time')}</label>
         <input class="sf-input" type="time" id="comp-start-${c.id}">
       </div>
       <div class="sf-group">
-        <label class="sf-label">Stop time</label>
+        <label class="sf-label">${t('gear_stop_time')}</label>
         <input class="sf-input" type="time" id="comp-stop-${c.id}">
       </div>
     </div>
     <div class="settings-actions">
-      <button class="btn-save" onclick="logCompressorFill('${c.id}')">Log Fill</button>
-      <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetCompressor('${c.id}')">Filter Replaced — Reset Counter</button>
+      <button class="btn-save" onclick="logCompressorFill('${c.id}')">${t('gear_log_fill')}</button>
+      <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetCompressor('${c.id}')">${t('gear_filter_replaced_reset')}</button>
     </div>
-    <div class="card-section-title" style="margin-top:16px;">Recent Activity</div>
+    <div class="card-section-title" style="margin-top:16px;">${t('gear_recent_activity')}</div>
     ${logs.length ? logs.map(l => `<div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);padding:4px 0;">
-      <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?' · <strong style="color:var(--success)">Filter replaced</strong>':''}</span>
+      <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('gear_filter_replaced')}</strong>`:''}</span>
       <span>${l.event_type==='service' ? '' : (l.start_time && l.stop_time ? l.start_time+'-'+l.stop_time+' ('+l.hours_run+'h)' : l.hours_run+'h')}</span>
-    </div>`).join('') : '<p style="font-size:0.8rem;color:var(--muted)">No activity yet.</p>'}
+    </div>`).join('') : `<p style="font-size:0.8rem;color:var(--muted)">${t('gear_no_activity_yet')}</p>`}
   </div>`;
 }
 
