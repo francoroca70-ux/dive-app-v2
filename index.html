@@ -1071,40 +1071,40 @@ body { background: var(--navy); color: var(--text); }
 <div class="modal-overlay" id="modal-signature" style="display:none;z-index:300;">
   <div class="modal-box" style="max-width:520px;">
     <div class="modal-header">
-      <h2>Sign Waiver</h2>
+      <h2 data-i18n="wv_sign_waiver">Sign Waiver</h2>
       <button class="modal-close" id="modal-signature-close">&times;</button>
     </div>
     <div class="modal-body">
       <p id="signature-guest-name" style="font-weight:600;color:var(--navy);margin-bottom:12px;"></p>
       <div class="sf-group">
-        <label class="sf-label">Waiver type</label>
+        <label class="sf-label" data-i18n="wv_waiver_type">Waiver type</label>
         <select class="sf-input" id="signature-waiver-type">
-          <option value="liability">Liability Waiver</option>
-          <option value="minor">Minor / Youth Waiver</option>
-          <option value="freediving">Freediving / Apnea Waiver</option>
-          <option value="snorkel">Snorkel / Charter Waiver</option>
-          <option value="medical">Medical</option>
-          <option value="custom">Other</option>
+          <option value="liability" data-i18n="wv_type_liability">Liability Waiver</option>
+          <option value="minor" data-i18n="wv_type_minor">Minor / Youth Waiver</option>
+          <option value="freediving" data-i18n="wv_type_freediving">Freediving / Apnea Waiver</option>
+          <option value="snorkel" data-i18n="wv_type_snorkel">Snorkel / Charter Waiver</option>
+          <option value="medical" data-i18n="wv_type_medical">Medical</option>
+          <option value="custom" data-i18n="wv_type_custom">Other</option>
         </select>
       </div>
       <div id="sig-template-content" style="margin-top:10px;"></div>
       <div class="radio-group" style="margin-top:6px;" id="sig-method-row">
-        <div class="radio-btn selected" id="sig-method-digital" onclick="setSignMethod('digital')">Sign digitally</div>
-        <div class="radio-btn" id="sig-method-paper" onclick="setSignMethod('paper')">Logged on paper</div>
+        <div class="radio-btn selected" id="sig-method-digital" onclick="setSignMethod('digital')" data-i18n="wv_sign_digitally">Sign digitally</div>
+        <div class="radio-btn" id="sig-method-paper" onclick="setSignMethod('paper')" data-i18n="wv_logged_paper">Logged on paper</div>
       </div>
       <div id="sig-canvas-wrap" style="margin-top:14px;">
         <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
           <canvas id="signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
         </div>
-        <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearSignatureCanvas()">Clear</button>
+        <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearSignatureCanvas()" data-i18n="wv_clear">Clear</button>
       </div>
       <div class="sf-group" style="margin-top:14px;">
-        <label class="sf-label">Notes (optional)</label>
-        <input class="sf-input" type="text" autocomplete="off" id="sig-notes" placeholder="e.g. Paper copy filed at front desk">
+        <label class="sf-label" data-i18n="wv_notes_optional">Notes (optional)</label>
+        <input class="sf-input" type="text" autocomplete="off" id="sig-notes" placeholder="e.g. Paper copy filed at front desk" data-i18n-placeholder="wv_notes_ph">
       </div>
-      <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;">Enforceability of digital signatures varies by country and jurisdiction. Consult a local lawyer before relying on these documents legally.</div>
+      <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;" data-i18n="wv_sign_legal_note">Enforceability of digital signatures varies by country and jurisdiction. Consult a local lawyer before relying on these documents legally.</div>
       <div class="settings-actions" style="margin-top:14px;">
-        <button class="btn-save" id="btn-confirm-signature">Save Waiver</button>
+        <button class="btn-save" id="btn-confirm-signature" data-i18n="wv_save_waiver">Save Waiver</button>
         <span class="save-feedback" id="signature-save-feedback"></span>
       </div>
     </div>
@@ -2142,30 +2142,30 @@ body { background: var(--navy); color: var(--text); }
         <div id="waivers-disabled-notice" style="display:none;">
           <div class="coming-soon">
             <div class="icon">📝</div>
-            <h3>Waivers aren't enabled yet</h3>
-            <p>Turn them on in Settings to start collecting digital signatures.</p>
-            <button class="btn-setup" onclick="showPage('settings')">Go to Settings</button>
+            <h3 data-i18n="wv_not_enabled">Waivers aren't enabled yet</h3>
+            <p data-i18n="wv_not_enabled_desc">Turn them on in Settings to start collecting digital signatures.</p>
+            <button class="btn-setup" onclick="showPage('settings')" data-i18n="wv_go_to_settings">Go to Settings</button>
           </div>
         </div>
         <div id="waivers-main" style="display:none;">
           <div class="card" id="card-waiver-export">
-            <h2>Export / Backup</h2>
-            <p class="card-desc">Download all signed waivers for a day as a single file you can save to your own computer.</p>
+            <h2 data-i18n="wv_export_backup">Export / Backup</h2>
+            <p class="card-desc" data-i18n="wv_export_backup_desc">Download all signed waivers for a day as a single file you can save to your own computer.</p>
             <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
               <input class="sf-input" type="date" id="waiver-export-date" style="width:auto;">
-              <button class="btn-save" id="btn-export-waivers">Export day's waivers</button>
+              <button class="btn-save" id="btn-export-waivers" data-i18n="wv_export_day">Export day's waivers</button>
               <span class="save-feedback" id="waiver-export-feedback"></span>
             </div>
-            <p id="waiver-export-role-note" style="font-size:0.8rem;color:var(--muted);margin-top:8px;display:none;">Only owners, managers and front desk can download waivers to a computer. Ask them if you need a copy.</p>
-            <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;">For safety, export and save a copy of each day's waivers to your own computer at the end of every day.</div>
+            <p id="waiver-export-role-note" style="font-size:0.8rem;color:var(--muted);margin-top:8px;display:none;" data-i18n="wv_export_role_note">Only owners, managers and front desk can download waivers to a computer. Ask them if you need a copy.</p>
+            <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;" data-i18n="wv_export_safety_note">For safety, export and save a copy of each day's waivers to your own computer at the end of every day.</div>
           </div>
           <div class="card" id="card-pending-waivers">
-            <h2>Pending Signatures — Today</h2>
+            <h2 data-i18n="wv_pending_today">Pending Signatures — Today</h2>
             <div id="pending-waivers-list"></div>
           </div>
           <div class="card" id="card-waiver-log">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-              <h2 style="margin-bottom:0;">Waiver Log</h2>
+              <h2 style="margin-bottom:0;" data-i18n="wv_waiver_log">Waiver Log</h2>
               <div style="display:flex;align-items:center;gap:8px;">
                 <button class="btn-cancel" id="waiver-log-prev" style="padding:8px 12px;">←</button>
                 <input class="sf-input" type="date" id="waiver-log-date" style="width:auto;">
@@ -2173,10 +2173,10 @@ body { background: var(--navy); color: var(--text); }
               </div>
             </div>
             <div class="cl-tab-row" style="margin-top:10px;">
-              <div class="cl-tab active" id="waiver-log-view-daily" onclick="setWaiverLogView('daily')">Daily</div>
-              <div class="cl-tab" id="waiver-log-view-weekly" onclick="setWaiverLogView('weekly')">Weekly</div>
+              <div class="cl-tab active" id="waiver-log-view-daily" onclick="setWaiverLogView('daily')" data-i18n="wv_daily">Daily</div>
+              <div class="cl-tab" id="waiver-log-view-weekly" onclick="setWaiverLogView('weekly')" data-i18n="wv_weekly">Weekly</div>
             </div>
-            <input class="sf-input" type="text" id="waiver-log-search" placeholder="Search by guest name..." autocomplete="off" style="margin-top:10px;">
+            <input class="sf-input" type="text" id="waiver-log-search" placeholder="Search by guest name..." data-i18n-placeholder="wv_search_guest_ph" autocomplete="off" style="margin-top:10px;">
             <div id="waiver-log-list" style="margin-top:12px;"></div>
           </div>
         </div>
@@ -2189,8 +2189,8 @@ body { background: var(--navy); color: var(--text); }
           <p data-i18n="header_cashup_sub">Cash reconciliation and guest tabs</p>
         </div>
         <div class="cl-tab-row">
-          <div class="cl-tab active" onclick="showCashupView('cashup',this)">Cash-Up</div>
-          <div class="cl-tab" onclick="showCashupView('tabs',this)">Guest Tabs</div>
+          <div class="cl-tab active" onclick="showCashupView('cashup',this)" data-i18n="cu_tab_cashup">Cash-Up</div>
+          <div class="cl-tab" onclick="showCashupView('tabs',this)" data-i18n="cu_tab_guest_tabs">Guest Tabs</div>
         </div>
         <div id="cashup-view" class="cl-view">
           <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
@@ -2202,13 +2202,13 @@ body { background: var(--navy); color: var(--text); }
             </div>
           </div>
           <div id="cashup-no-location" style="display:none;">
-            <p style="color:var(--muted);">Select a location above to view cash-up.</p>
+            <p style="color:var(--muted);" data-i18n="cu_select_location">Select a location above to view cash-up.</p>
           </div>
           <div id="cashup-content"></div>
         </div>
         <div id="guest-tabs-view" class="cl-view" style="display:none;">
           <div style="margin-bottom:16px;">
-            <button class="btn-save" id="btn-show-open-tab">+ Open Tab</button>
+            <button class="btn-save" id="btn-show-open-tab" data-i18n="cu_open_tab">+ Open Tab</button>
           </div>
           <div id="guest-tabs-list"></div>
         </div>
@@ -2222,82 +2222,82 @@ body { background: var(--navy); color: var(--text); }
         </div>
 
         <div id="reports-no-location" style="display:none;">
-          <p style="color:var(--muted);">Set up your organisation in Settings first.</p>
+          <p style="color:var(--muted);" data-i18n="rep_setup_org_first">Set up your organisation in Settings first.</p>
         </div>
 
         <div id="reports-content">
           <div class="inline-form" style="margin-bottom:20px;">
             <div class="sf-group" style="max-width:340px;margin-bottom:0;">
-              <label class="sf-label">Viewing</label>
-              <select class="sf-input" id="reports-scope-select"><option value="all">All shops (combined)</option></select>
+              <label class="sf-label" data-i18n="rep_viewing">Viewing</label>
+              <select class="sf-input" id="reports-scope-select"><option value="all" data-i18n="rep_all_shops_combined">All shops (combined)</option></select>
             </div>
           </div>
 
           <div class="inline-form" style="margin-bottom:20px;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-              <div class="card-section-title" style="margin-bottom:0;">Date range</div>
+              <div class="card-section-title" style="margin-bottom:0;" data-i18n="rep_date_range">Date range</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn-cancel" id="reports-range-7" style="padding:6px 12px;font-size:0.8rem;">7 days</button>
-                <button class="btn-save" id="reports-range-30" style="padding:6px 12px;font-size:0.8rem;">30 days</button>
-                <button class="btn-cancel" id="reports-range-90" style="padding:6px 12px;font-size:0.8rem;">90 days</button>
-                <button class="btn-cancel" id="reports-range-365" style="padding:6px 12px;font-size:0.8rem;">1 year</button>
+                <button class="btn-cancel" id="reports-range-7" style="padding:6px 12px;font-size:0.8rem;" data-i18n="rep_7_days">7 days</button>
+                <button class="btn-save" id="reports-range-30" style="padding:6px 12px;font-size:0.8rem;" data-i18n="rep_30_days">30 days</button>
+                <button class="btn-cancel" id="reports-range-90" style="padding:6px 12px;font-size:0.8rem;" data-i18n="rep_90_days">90 days</button>
+                <button class="btn-cancel" id="reports-range-365" style="padding:6px 12px;font-size:0.8rem;" data-i18n="rep_1_year">1 year</button>
               </div>
             </div>
             <div class="sf-row" style="margin-top:12px;">
               <div class="sf-group">
-                <label class="sf-label">From</label>
+                <label class="sf-label" data-i18n="rep_from">From</label>
                 <input class="sf-input" type="date" id="reports-start-date">
               </div>
               <div class="sf-group">
-                <label class="sf-label">To</label>
+                <label class="sf-label" data-i18n="rep_to">To</label>
                 <input class="sf-input" type="date" id="reports-end-date">
               </div>
             </div>
           </div>
 
           <div class="card">
-            <div class="card-section-title">Revenue</div>
+            <div class="card-section-title" data-i18n="rep_revenue">Revenue</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
-              <div><div class="gear-stock-label">Cash</div><div class="gear-stock-value-lg" id="rep-total-cash">$0.00</div></div>
-              <div><div class="gear-stock-label">Card</div><div class="gear-stock-value-lg" id="rep-total-card">$0.00</div></div>
-              <div><div class="gear-stock-label">Transfer</div><div class="gear-stock-value-lg" id="rep-total-transfer">$0.00</div></div>
-              <div><div class="gear-stock-label">Total</div><div class="gear-stock-value-lg" id="rep-total-revenue">$0.00</div></div>
+              <div><div class="gear-stock-label" data-i18n="rep_cash">Cash</div><div class="gear-stock-value-lg" id="rep-total-cash">$0.00</div></div>
+              <div><div class="gear-stock-label" data-i18n="rep_card">Card</div><div class="gear-stock-value-lg" id="rep-total-card">$0.00</div></div>
+              <div><div class="gear-stock-label" data-i18n="rep_transfer">Transfer</div><div class="gear-stock-value-lg" id="rep-total-transfer">$0.00</div></div>
+              <div><div class="gear-stock-label" data-i18n="rep_total">Total</div><div class="gear-stock-value-lg" id="rep-total-revenue">$0.00</div></div>
             </div>
             <div id="rep-revenue-chart"></div>
             <div style="display:flex;gap:16px;margin-top:10px;font-size:0.75rem;color:var(--muted);">
-              <span><span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Cash</span>
-              <span><span style="display:inline-block;width:10px;height:10px;background:var(--teal);border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Card</span>
-              <span><span style="display:inline-block;width:10px;height:10px;background:#a0aec0;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Transfer</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px;margin-right:4px;vertical-align:middle;"></span><span data-i18n="rep_cash">Cash</span></span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--teal);border-radius:2px;margin-right:4px;vertical-align:middle;"></span><span data-i18n="rep_card">Card</span></span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:#a0aec0;border-radius:2px;margin-right:4px;vertical-align:middle;"></span><span data-i18n="rep_transfer">Transfer</span></span>
             </div>
           </div>
 
           <div class="card" id="rep-location-pie-wrap" style="display:none;">
-            <div class="card-section-title">Revenue by shop</div>
-            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Which shop is bringing in the most revenue in this range.</p>
+            <div class="card-section-title" data-i18n="rep_revenue_by_shop">Revenue by shop</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;" data-i18n="rep_revenue_by_shop_desc">Which shop is bringing in the most revenue in this range.</p>
             <div id="rep-location-pie"></div>
           </div>
 
           <div class="card" id="rep-discrepancy-card">
-            <div class="card-section-title">Cash discrepancies</div>
-            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Counted cash vs expected cash on days the register was closed out. Bars above the line are cash over, below the line is cash short.</p>
+            <div class="card-section-title" data-i18n="rep_cash_discrepancies">Cash discrepancies</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;" data-i18n="rep_cash_discrepancies_desc">Counted cash vs expected cash on days the register was closed out. Bars above the line are cash over, below the line is cash short.</p>
             <div id="rep-discrepancy-chart"></div>
             <div id="rep-discrepancy-list" style="margin-top:14px;"></div>
           </div>
 
           <div class="card" id="rep-missed-card">
-            <div class="card-section-title">Missed cash-ups</div>
-            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Days with payments logged but no register close-out.</p>
+            <div class="card-section-title" data-i18n="rep_missed_cashups">Missed cash-ups</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;" data-i18n="rep_missed_cashups_desc">Days with payments logged but no register close-out.</p>
             <div id="rep-missed-list"></div>
           </div>
 
           <div class="card">
-            <div class="card-section-title">Expenses</div>
+            <div class="card-section-title" data-i18n="rep_expenses">Expenses</div>
             <div id="rep-expense-chart"></div>
             <div style="padding:10px 14px;background:var(--foam);border-radius:10px;margin-top:10px;font-weight:600;" id="rep-expense-total">Total expenses: $0.00</div>
           </div>
 
           <div class="card">
-            <div class="card-section-title">Revenue by trip type</div>
+            <div class="card-section-title" data-i18n="rep_revenue_by_trip_type">Revenue by trip type</div>
             <div style="display:flex;gap:24px;flex-wrap:wrap;">
               <div style="flex:1;min-width:220px;" id="rep-trip-type-bars"></div>
               <div style="flex:1;min-width:220px;" id="rep-trip-type-pie"></div>
@@ -2305,7 +2305,7 @@ body { background: var(--navy); color: var(--text); }
           </div>
 
           <div class="card">
-            <div class="card-section-title">Revenue by boat</div>
+            <div class="card-section-title" data-i18n="rep_revenue_by_boat">Revenue by boat</div>
             <div style="display:flex;gap:24px;flex-wrap:wrap;">
               <div style="flex:1;min-width:220px;" id="rep-boat-bars"></div>
               <div style="flex:1;min-width:220px;" id="rep-boat-pie"></div>
@@ -2370,84 +2370,84 @@ body { background: var(--navy); color: var(--text); }
 
         <!-- Account card -->
         <div class="card">
-          <div class="card-section-title">Account</div>
+          <div class="card-section-title" data-i18n="set_account">Account</div>
           <div class="settings-row">
-            <div class="settings-label">Signed in as</div>
+            <div class="settings-label" data-i18n="set_signed_in_as">Signed in as</div>
             <div class="settings-value" id="settings-email">—</div>
           </div>
           <div class="settings-row">
-            <div class="settings-label">Role</div>
+            <div class="settings-label" data-i18n="set_role">Role</div>
             <div class="settings-value" id="settings-role">Owner</div>
           </div>
-          <button class="btn-danger-sm" id="btn-change-password">Change password</button>
+          <button class="btn-danger-sm" id="btn-change-password" data-i18n="set_change_password">Change password</button>
         </div>
 
         <!-- Organisation card -->
         <div class="card" id="card-org">
-          <div class="card-section-title">Organisation</div>
-          <div class="settings-notice" id="org-notice-new">
+          <div class="card-section-title" data-i18n="set_organisation">Organisation</div>
+          <div class="settings-notice" id="org-notice-new" data-i18n="set_org_notice_new">
             No organisation set up yet. Fill in your details below and save.
           </div>
           <div class="settings-form">
             <div class="sf-group">
-              <label class="sf-label">Your full name</label>
-              <input class="sf-input" type="text" id="owner-full-name" placeholder="e.g. Jane Smith">
+              <label class="sf-label" data-i18n="set_your_full_name">Your full name</label>
+              <input class="sf-input" type="text" id="owner-full-name" placeholder="e.g. Jane Smith" data-i18n-placeholder="set_your_full_name_ph">
             </div>
             <div class="sf-group">
-              <label class="sf-label">Operation name</label>
-              <input class="sf-input" type="text" id="org-name" placeholder="e.g. Blue Water Dive Centre">
+              <label class="sf-label" data-i18n="set_operation_name">Operation name</label>
+              <input class="sf-input" type="text" id="org-name" placeholder="e.g. Blue Water Dive Centre" data-i18n-placeholder="set_operation_name_ph">
             </div>
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Country</label>
+                <label class="sf-label" data-i18n="set_country">Country</label>
                 <select class="sf-input" id="org-country">
-                  <option value="">Select country</option>
-                  <option value="TH">Thailand</option>
-                  <option value="PH">Philippines</option>
-                  <option value="ID">Indonesia</option>
-                  <option value="VG">British Virgin Islands</option>
-                  <option value="FJ">Fiji</option>
-                  <option value="EG">Egypt</option>
-                  <option value="AU">Australia</option>
-                  <option value="MX">Mexico</option>
-                  <option value="US">United States</option>
-                  <option value="ES">Spain</option>
-                  <option value="AR">Argentina</option>
-                  <option value="OTHER">Other</option>
+                  <option value="" data-i18n="set_select_country">Select country</option>
+                  <option value="TH" data-i18n="country_TH">Thailand</option>
+                  <option value="PH" data-i18n="country_PH">Philippines</option>
+                  <option value="ID" data-i18n="country_ID">Indonesia</option>
+                  <option value="VG" data-i18n="country_VG">British Virgin Islands</option>
+                  <option value="FJ" data-i18n="country_FJ">Fiji</option>
+                  <option value="EG" data-i18n="country_EG">Egypt</option>
+                  <option value="AU" data-i18n="country_AU">Australia</option>
+                  <option value="MX" data-i18n="country_MX">Mexico</option>
+                  <option value="US" data-i18n="country_US">United States</option>
+                  <option value="ES" data-i18n="country_ES">Spain</option>
+                  <option value="AR" data-i18n="country_AR">Argentina</option>
+                  <option value="OTHER" data-i18n="country_OTHER">Other</option>
                 </select>
               </div>
               <div class="sf-group">
-                <label class="sf-label">Currency</label>
+                <label class="sf-label" data-i18n="set_currency">Currency</label>
                 <select class="sf-input" id="org-currency">
-                  <option value="USD">USD — US Dollar</option>
-                  <option value="THB">THB — Thai Baht</option>
-                  <option value="AUD">AUD — Australian Dollar</option>
-                  <option value="EUR">EUR — Euro</option>
-                  <option value="GBP">GBP — British Pound</option>
-                  <option value="IDR">IDR — Indonesian Rupiah</option>
-                  <option value="PHP">PHP — Philippine Peso</option>
-                  <option value="EGP">EGP — Egyptian Pound</option>
-                  <option value="ARS">ARS — Argentine Peso</option>
+                  <option value="USD" data-i18n="currency_USD">USD — US Dollar</option>
+                  <option value="THB" data-i18n="currency_THB">THB — Thai Baht</option>
+                  <option value="AUD" data-i18n="currency_AUD">AUD — Australian Dollar</option>
+                  <option value="EUR" data-i18n="currency_EUR">EUR — Euro</option>
+                  <option value="GBP" data-i18n="currency_GBP">GBP — British Pound</option>
+                  <option value="IDR" data-i18n="currency_IDR">IDR — Indonesian Rupiah</option>
+                  <option value="PHP" data-i18n="currency_PHP">PHP — Philippine Peso</option>
+                  <option value="EGP" data-i18n="currency_EGP">EGP — Egyptian Pound</option>
+                  <option value="ARS" data-i18n="currency_ARS">ARS — Argentine Peso</option>
                 </select>
               </div>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Contact email <span class="required-star">*</span></label>
+              <label class="sf-label"><span data-i18n="set_contact_email">Contact email</span> <span class="required-star">*</span></label>
               <input class="sf-input" type="email" id="org-email" placeholder="hello@yourdiveshop.com">
-              <p style="font-size:0.78rem;color:var(--muted);margin-top:4px;">Guests see this as the reply-to address on booking confirmation emails.</p>
+              <p style="font-size:0.78rem;color:var(--muted);margin-top:4px;" data-i18n="set_contact_email_hint">Guests see this as the reply-to address on booking confirmation emails.</p>
             </div>
             <div class="sf-group" id="org-categories-group">
-              <label class="sf-label">What does your operation run? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">— select all that apply</span></label>
+              <label class="sf-label"><span data-i18n="set_operation_runs">What does your operation run?</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);" data-i18n="set_select_all_apply">— select all that apply</span></label>
               <div class="category-picker" id="org-categories-picker">
-                <label class="category-chip"><input type="checkbox" value="diving"> Diving</label>
-                <label class="category-chip"><input type="checkbox" value="charter_yacht"> Charter & Yacht</label>
-                <label class="category-chip"><input type="checkbox" value="surf"> Surf</label>
-                <label class="category-chip"><input type="checkbox" value="fishing"> Fishing</label>
-                <label class="category-chip"><input type="checkbox" value="freediving"> Freediving</label>
+                <label class="category-chip"><input type="checkbox" value="diving"> <span data-i18n="cat_diving">Diving</span></label>
+                <label class="category-chip"><input type="checkbox" value="charter_yacht"> <span data-i18n="cat_charter_yacht">Charter & Yacht</span></label>
+                <label class="category-chip"><input type="checkbox" value="surf"> <span data-i18n="cat_surf">Surf</span></label>
+                <label class="category-chip"><input type="checkbox" value="fishing"> <span data-i18n="cat_fishing">Fishing</span></label>
+                <label class="category-chip"><input type="checkbox" value="freediving"> <span data-i18n="cat_freediving">Freediving</span></label>
               </div>
             </div>
             <div class="settings-actions">
-              <button class="btn-save" id="btn-save-org">Save organisation</button>
+              <button class="btn-save" id="btn-save-org" data-i18n="set_save_org">Save organisation</button>
               <span class="save-feedback" id="org-save-feedback"></span>
             </div>
           </div>
@@ -2455,21 +2455,21 @@ body { background: var(--navy); color: var(--text); }
 
         <!-- Operation Categories card (post-setup management) -->
         <div class="card" id="card-categories">
-          <div class="card-section-title">Operation Categories</div>
-          <p class="card-desc">Add a category any time your operation grows — adding one creates a starter set of trip types you can edit. Owner only.</p>
+          <div class="card-section-title" data-i18n="set_op_categories">Operation Categories</div>
+          <p class="card-desc" data-i18n="set_op_categories_desc">Add a category any time your operation grows — adding one creates a starter set of trip types you can edit. Owner only.</p>
           <div id="active-categories-list" style="margin: 14px 0;"></div>
           <div class="category-picker" id="add-category-picker"></div>
         </div>
 
         <!-- Permissions card -->
         <div class="card" id="card-permissions">
-          <div class="card-section-title">Permissions</div>
-          <p class="card-desc">Control what different roles can do across your operation.</p>
+          <div class="card-section-title" data-i18n="set_permissions">Permissions</div>
+          <p class="card-desc" data-i18n="set_permissions_desc">Control what different roles can do across your operation.</p>
           <div class="sf-group" style="display:flex;align-items:center;gap:12px;">
             <input type="checkbox" id="chk-captain-elevated" style="width:18px;height:18px;">
-            <label class="sf-label" for="chk-captain-elevated" style="margin:0;">Give captains manager-level permissions (invite/remove staff, edit banked days, manage day-off requests, edit task lists, export waivers)</label>
+            <label class="sf-label" for="chk-captain-elevated" style="margin:0;" data-i18n="set_captain_elevated_label">Give captains manager-level permissions (invite/remove staff, edit banked days, manage day-off requests, edit task lists, export waivers)</label>
           </div>
-          <p class="card-desc" style="margin-top:6px;">Off by default. Turn on if your captains carry management authority, common on charters and yachts.</p>
+          <p class="card-desc" style="margin-top:6px;" data-i18n="set_captain_elevated_hint">Off by default. Turn on if your captains carry management authority, common on charters and yachts.</p>
           <div class="settings-actions" style="margin-top:12px;">
             <span class="save-feedback" id="permissions-save-feedback"></span>
           </div>
@@ -2478,71 +2478,71 @@ body { background: var(--navy); color: var(--text); }
         <!-- Waivers card -->
         <div class="card" id="card-waivers-toggle">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div class="card-section-title" style="margin-bottom:0;">Waivers</div>
-            <span class="role-badge owner">Owner only</span>
+            <div class="card-section-title" style="margin-bottom:0;" data-i18n="set_waivers">Waivers</div>
+            <span class="role-badge owner" data-i18n="set_owner_only">Owner only</span>
           </div>
-          <p class="card-desc" style="margin-top:8px;">This is a digital signature collection tool only. Seven Seas does not provide, verify, or take responsibility for waiver content or legal validity.</p>
-          <p class="card-desc" style="margin-top:6px;">Enforceability of digital signatures varies by country and jurisdiction. <strong>Consult a local lawyer before relying on these documents legally.</strong> By enabling this feature you confirm your operation takes full responsibility for the legal validity of your forms.</p>
-          <p class="card-desc" style="margin-top:6px;">Signed waivers are stored securely, but we recommend exporting each day's waivers to your own computer as a local backup — use the Export tool at the top of the Waivers page. It takes seconds and gives you a copy on hand whenever you need one.</p>
+          <p class="card-desc" style="margin-top:8px;" data-i18n="set_waivers_desc1">This is a digital signature collection tool only. Seven Seas does not provide, verify, or take responsibility for waiver content or legal validity.</p>
+          <p class="card-desc" style="margin-top:6px;"><span data-i18n="set_waivers_desc2a">Enforceability of digital signatures varies by country and jurisdiction.</span> <strong data-i18n="set_waivers_desc2b">Consult a local lawyer before relying on these documents legally.</strong> <span data-i18n="set_waivers_desc2c">By enabling this feature you confirm your operation takes full responsibility for the legal validity of your forms.</span></p>
+          <p class="card-desc" style="margin-top:6px;" data-i18n="set_waivers_desc3">Signed waivers are stored securely, but we recommend exporting each day's waivers to your own computer as a local backup — use the Export tool at the top of the Waivers page. It takes seconds and gives you a copy on hand whenever you need one.</p>
           <div id="waivers-toggle-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
             <div style="display:flex;align-items:center;gap:12px;">
               <input type="checkbox" id="chk-waivers-enabled" style="width:20px;height:20px;">
-              <label class="sf-label" for="chk-waivers-enabled" style="margin:0;font-size:0.92rem;">Enable Waivers for this operation</label>
+              <label class="sf-label" for="chk-waivers-enabled" style="margin:0;font-size:0.92rem;" data-i18n="set_enable_waivers">Enable Waivers for this operation</label>
             </div>
             <span id="waivers-status-badge" class="role-badge"></span>
           </div>
-          <p class="card-desc" id="waivers-owner-only-note" style="margin-top:8px;display:none;">Only the account owner can change this setting. Ask your owner or manager if you'd like Waivers turned on.</p>
+          <p class="card-desc" id="waivers-owner-only-note" style="margin-top:8px;display:none;" data-i18n="set_waivers_owner_only_note">Only the account owner can change this setting. Ask your owner or manager if you'd like Waivers turned on.</p>
           <span class="save-feedback" id="waivers-toggle-feedback"></span>
         </div>
 
         <!-- Waiver Templates card -->
         <div class="card" id="card-waiver-templates">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div class="card-section-title" style="margin-bottom:0;">Waiver Templates</div>
-            <span class="role-badge owner">Owner only</span>
+            <div class="card-section-title" style="margin-bottom:0;" data-i18n="set_waiver_templates">Waiver Templates</div>
+            <span class="role-badge owner" data-i18n="set_owner_only">Owner only</span>
           </div>
-          <p class="card-desc" style="margin-top:8px;">Write the actual wording guests will read and sign for each waiver type. A type can't be signed by staff until it has a template here.</p>
+          <p class="card-desc" style="margin-top:8px;" data-i18n="set_waiver_templates_desc">Write the actual wording guests will read and sign for each waiver type. A type can't be signed by staff until it has a template here.</p>
           <div class="cl-tab-row" id="waiver-template-tabs" style="margin-top:12px;">
-            <div class="cl-tab active" data-wt="liability" onclick="switchWaiverTemplateTab('liability', this)">Liability</div>
-            <div class="cl-tab" data-wt="minor" onclick="switchWaiverTemplateTab('minor', this)">Minor / Youth</div>
-            <div class="cl-tab" data-wt="freediving" onclick="switchWaiverTemplateTab('freediving', this)">Freediving</div>
-            <div class="cl-tab" data-wt="snorkel" onclick="switchWaiverTemplateTab('snorkel', this)">Snorkel / Charter</div>
-            <div class="cl-tab" data-wt="custom" onclick="switchWaiverTemplateTab('custom', this)">Other</div>
-            <div class="cl-tab" data-wt="medical" onclick="switchWaiverTemplateTab('medical', this)">Medical</div>
+            <div class="cl-tab active" data-wt="liability" onclick="switchWaiverTemplateTab('liability', this)" data-i18n="wt_liability">Liability</div>
+            <div class="cl-tab" data-wt="minor" onclick="switchWaiverTemplateTab('minor', this)" data-i18n="wt_minor">Minor / Youth</div>
+            <div class="cl-tab" data-wt="freediving" onclick="switchWaiverTemplateTab('freediving', this)" data-i18n="wt_freediving">Freediving</div>
+            <div class="cl-tab" data-wt="snorkel" onclick="switchWaiverTemplateTab('snorkel', this)" data-i18n="wt_snorkel">Snorkel / Charter</div>
+            <div class="cl-tab" data-wt="custom" onclick="switchWaiverTemplateTab('custom', this)" data-i18n="wt_other">Other</div>
+            <div class="cl-tab" data-wt="medical" onclick="switchWaiverTemplateTab('medical', this)" data-i18n="wt_medical">Medical</div>
           </div>
           <div id="waiver-template-editor" style="margin-top:16px;"></div>
-          <p class="card-desc" id="waiver-templates-owner-only-note" style="margin-top:8px;display:none;">Only the account owner can edit waiver templates.</p>
+          <p class="card-desc" id="waiver-templates-owner-only-note" style="margin-top:8px;display:none;" data-i18n="set_waiver_templates_owner_only_note">Only the account owner can edit waiver templates.</p>
         </div>
 
         <!-- Trip Types card -->
         <div class="card" id="card-trip-types">
-          <div class="card-section-title">Trip Types</div>
-          <p class="card-desc">Set default prices and gear requirements per trip type. These auto-fill when staff create a booking.</p>
+          <div class="card-section-title" data-i18n="set_trip_types">Trip Types</div>
+          <p class="card-desc" data-i18n="set_trip_types_desc">Set default prices and gear requirements per trip type. These auto-fill when staff create a booking.</p>
           <div id="trip-types-list" style="margin: 14px 0;"></div>
-          <button class="btn-add" id="btn-add-trip-type">+ Add custom trip type</button>
+          <button class="btn-add" id="btn-add-trip-type" data-i18n="set_add_trip_type">+ Add custom trip type</button>
         </div>
 
         <!-- Locations card -->
         <div class="card" id="card-locations">
-          <div class="card-section-title">Locations</div>
-          <p class="card-desc">Each location has its own boats, crew, and calendar. Add your main shop first.</p>
+          <div class="card-section-title" data-i18n="set_locations">Locations</div>
+          <p class="card-desc" data-i18n="set_locations_desc">Each location has its own boats, crew, and calendar. Add your main shop first.</p>
           <div id="locations-list" style="margin: 16px 0;"></div>
-          <button class="btn-add" id="btn-add-location">+ Add location</button>
+          <button class="btn-add" id="btn-add-location" data-i18n="set_add_location">+ Add location</button>
 
           <!-- Add location form (hidden by default) -->
           <div class="inline-form" id="form-add-location" style="display:none;">
             <div class="sf-row">
               <div class="sf-group">
-                <label class="sf-label">Location name</label>
-                <input class="sf-input" type="text" id="loc-name" placeholder="e.g. Main Shop, North Beach">
+                <label class="sf-label" data-i18n="set_location_name">Location name</label>
+                <input class="sf-input" type="text" id="loc-name" placeholder="e.g. Main Shop, North Beach" data-i18n-placeholder="set_location_name_ph">
               </div>
               <div class="sf-group">
-                <label class="sf-label">Country</label>
-                <input class="sf-input" type="text" id="loc-country" placeholder="e.g. Thailand">
+                <label class="sf-label" data-i18n="set_country">Country</label>
+                <input class="sf-input" type="text" id="loc-country" placeholder="e.g. Thailand" data-i18n-placeholder="set_loc_country_ph">
               </div>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Timezone</label>
+              <label class="sf-label" data-i18n="set_timezone">Timezone</label>
               <select class="sf-input" id="loc-timezone">
                 <option value="UTC">UTC</option>
                 <option value="Asia/Bangkok">Asia/Bangkok (Thailand, Indonesia)</option>
@@ -2560,8 +2560,8 @@ body { background: var(--navy); color: var(--text); }
               </select>
             </div>
             <div class="settings-actions">
-              <button class="btn-save" id="btn-save-location">Save location</button>
-              <button class="btn-cancel" id="btn-cancel-location">Cancel</button>
+              <button class="btn-save" id="btn-save-location" data-i18n="set_save_location">Save location</button>
+              <button class="btn-cancel" id="btn-cancel-location" data-i18n="tt_cancel">Cancel</button>
               <span class="save-feedback" id="loc-save-feedback"></span>
             </div>
           </div>
@@ -2769,6 +2769,135 @@ const TRANSLATIONS = {
     gear_hours_remaining: 'h remaining', gear_log_a_fill: 'Log a Fill', gear_who_filled: 'Who filled', gear_start_time: 'Start time', gear_stop_time: 'Stop time',
     gear_log_fill: 'Log Fill', gear_filter_replaced_reset: 'Filter Replaced — Reset Counter', gear_recent_activity: 'Recent Activity',
     gear_filter_replaced: 'Filter replaced', gear_no_activity_yet: 'No activity yet.',
+
+    set_account: 'Account', set_signed_in_as: 'Signed in as', set_role: 'Role', set_change_password: 'Change password',
+    set_organisation: 'Organisation', set_org_notice_new: 'No organisation set up yet. Fill in your details below and save.',
+    set_your_full_name: 'Your full name', set_your_full_name_ph: 'e.g. Jane Smith',
+    set_operation_name: 'Operation name', set_operation_name_ph: 'e.g. Blue Water Dive Centre',
+    set_country: 'Country', set_select_country: 'Select country',
+    country_TH: 'Thailand', country_PH: 'Philippines', country_ID: 'Indonesia', country_VG: 'British Virgin Islands',
+    country_FJ: 'Fiji', country_EG: 'Egypt', country_AU: 'Australia', country_MX: 'Mexico', country_US: 'United States',
+    country_ES: 'Spain', country_AR: 'Argentina', country_OTHER: 'Other',
+    set_currency: 'Currency',
+    currency_USD: 'USD — US Dollar', currency_THB: 'THB — Thai Baht', currency_AUD: 'AUD — Australian Dollar',
+    currency_EUR: 'EUR — Euro', currency_GBP: 'GBP — British Pound', currency_IDR: 'IDR — Indonesian Rupiah',
+    currency_PHP: 'PHP — Philippine Peso', currency_EGP: 'EGP — Egyptian Pound', currency_ARS: 'ARS — Argentine Peso',
+    set_contact_email: 'Contact email', set_contact_email_hint: 'Guests see this as the reply-to address on booking confirmation emails.',
+    set_operation_runs: 'What does your operation run?', set_select_all_apply: '— select all that apply',
+    cat_diving: 'Diving', cat_charter_yacht: 'Charter & Yacht', cat_surf: 'Surf', cat_fishing: 'Fishing', cat_freediving: 'Freediving',
+    set_save_org: 'Save organisation',
+    set_op_categories: 'Operation Categories',
+    set_op_categories_desc: 'Add a category any time your operation grows — adding one creates a starter set of trip types you can edit. Owner only.',
+    set_permissions: 'Permissions', set_permissions_desc: 'Control what different roles can do across your operation.',
+    set_captain_elevated_label: 'Give captains manager-level permissions (invite/remove staff, edit banked days, manage day-off requests, edit task lists, export waivers)',
+    set_captain_elevated_hint: 'Off by default. Turn on if your captains carry management authority, common on charters and yachts.',
+    set_waivers: 'Waivers', set_owner_only: 'Owner only',
+    set_waivers_desc1: 'This is a digital signature collection tool only. Seven Seas does not provide, verify, or take responsibility for waiver content or legal validity.',
+    set_waivers_desc2a: 'Enforceability of digital signatures varies by country and jurisdiction.',
+    set_waivers_desc2b: 'Consult a local lawyer before relying on these documents legally.',
+    set_waivers_desc2c: 'By enabling this feature you confirm your operation takes full responsibility for the legal validity of your forms.',
+    set_waivers_desc3: "Signed waivers are stored securely, but we recommend exporting each day's waivers to your own computer as a local backup — use the Export tool at the top of the Waivers page. It takes seconds and gives you a copy on hand whenever you need one.",
+    set_enable_waivers: 'Enable Waivers for this operation',
+    set_waivers_owner_only_note: "Only the account owner can change this setting. Ask your owner or manager if you'd like Waivers turned on.",
+    set_waiver_templates: 'Waiver Templates',
+    set_waiver_templates_desc: "Write the actual wording guests will read and sign for each waiver type. A type can't be signed by staff until it has a template here.",
+    wt_liability: 'Liability', wt_minor: 'Minor / Youth', wt_freediving: 'Freediving', wt_snorkel: 'Snorkel / Charter', wt_other: 'Other', wt_medical: 'Medical',
+    set_waiver_templates_owner_only_note: 'Only the account owner can edit waiver templates.',
+    set_trip_types: 'Trip Types', set_trip_types_desc: 'Set default prices and gear requirements per trip type. These auto-fill when staff create a booking.',
+    set_add_trip_type: '+ Add custom trip type',
+    set_locations: 'Locations', set_locations_desc: 'Each location has its own boats, crew, and calendar. Add your main shop first.',
+    set_add_location: '+ Add location', set_location_name: 'Location name', set_location_name_ph: 'e.g. Main Shop, North Beach',
+    set_loc_country_ph: 'e.g. Thailand', set_timezone: 'Timezone', set_save_location: 'Save location',
+
+    set_no_categories_yet: 'No categories set yet — set these up in the Organisation section above.',
+    set_all_categories_active: 'All categories active.',
+    set_adding_category_confirm_singular: 'Adding <strong>{cat}</strong> will create {n} starter trip type you can edit afterward. This action is owner-only.',
+    set_adding_category_confirm_plural: 'Adding <strong>{cat}</strong> will create {n} starter trip types you can edit afterward. This action is owner-only.',
+    set_add_category_btn: 'Add category', set_category_already_active: 'This category is already active.',
+    set_no_trip_types_yet: 'No trip types yet. Select an operation category above to get started.',
+    set_tanks_plural: ' tanks', set_tank_singular: ' tank',
+    set_can_be_private: ' · can be private', set_multi_day_suffix: ' · multi-day',
+    set_rental_fees_btn: 'Rental fees',
+    set_multiday_checkbox_label: 'Multi-day trip (adds an end date + lets you hire crew per day on this trip type)',
+    common_loading: 'Loading...',
+    set_no_gear_fields: 'No gear fields attached to this trip type.',
+    set_rental_gear_fees_header: 'Rental gear fees (optional — added per guest who selects rental)',
+    set_field_fallback: 'Field',
+    set_confirm_remove_trip_type: 'Remove this trip type? Existing bookings using it are unaffected.',
+    set_trip_type_name_prompt: 'Trip type name:', set_trip_type_name_ph: 'e.g. Wreck Dive, Yoga Charter',
+    set_no_locations_yet: 'No locations yet. Add your first one below.',
+    set_enabled: 'Enabled', set_disabled: 'Disabled',
+    set_only_owner_change: 'Only the account owner can change this setting.',
+    set_saved: 'Saved',
+    wt_template_on_file: 'Template on file', wt_no_template_yet: "No template yet — this type can't be signed",
+    wt_title_label: 'Title (optional)', wt_title_ph: 'e.g. Liability Waiver',
+    wt_body_label: 'Waiver text', wt_body_ph: 'Write the full waiver text guests will read before signing...',
+    wt_save_template: 'Save template', wt_last_updated: 'Last updated',
+    wt_text_required: 'Waiver text is required.', common_error_prefix: 'Error: ',
+    wt_question_singular: ' question on file', wt_questions_plural: ' questions on file',
+    wt_no_questions_yet: "No questions yet — Medical can't be signed",
+    wt_medical_title_ph: 'e.g. Dive Medical Statement',
+    wt_medical_instructions: 'List the conditions or questions guests must tick if they apply to them. Each one becomes a checkbox on the sign form.',
+    wt_add_question: '+ Add question', wt_no_questions_added: 'No questions added yet.',
+    wt_add_one_question: 'Add at least one question.',
+
+    rep_setup_org_first: 'Set up your organisation in Settings first.',
+    rep_viewing: 'Viewing', rep_all_shops_combined: 'All shops (combined)',
+    rep_date_range: 'Date range', rep_7_days: '7 days', rep_30_days: '30 days', rep_90_days: '90 days', rep_1_year: '1 year',
+    rep_from: 'From', rep_to: 'To',
+    rep_revenue: 'Revenue', rep_cash: 'Cash', rep_card: 'Card', rep_transfer: 'Transfer', rep_total: 'Total',
+    rep_revenue_by_shop: 'Revenue by shop', rep_revenue_by_shop_desc: 'Which shop is bringing in the most revenue in this range.',
+    rep_cash_discrepancies: 'Cash discrepancies',
+    rep_cash_discrepancies_desc: 'Counted cash vs expected cash on days the register was closed out. Bars above the line are cash over, below the line is cash short.',
+    rep_missed_cashups: 'Missed cash-ups', rep_missed_cashups_desc: 'Days with payments logged but no register close-out.',
+    rep_expenses: 'Expenses', rep_revenue_by_trip_type: 'Revenue by trip type', rep_revenue_by_boat: 'Revenue by boat',
+    rep_total_expenses: 'Total expenses: $', rep_no_expenses_range: 'No expenses logged in this range.',
+    rep_other: 'Other', rep_no_boat_shore: 'No boat / shore-based', rep_no_data_range: 'No data in this range.',
+    rep_no_closed_days: 'No closed-out days with counted cash in this range yet.',
+    rep_no_discrepancies: 'No discrepancies in this range.', rep_closed_by: 'Closed by',
+    rep_no_missed_cashups: 'No missed cash-ups in this range.', rep_taken_not_closed: 'taken, not closed out',
+
+    cu_tab_cashup: 'Cash-Up', cu_tab_guest_tabs: 'Guest Tabs', cu_select_location: 'Select a location above to view cash-up.',
+    cu_open_tab: '+ Open Tab', cu_unknown: 'unknown', cu_tab_badge: 'TAB', cu_no_payments: 'No payments logged for this date.',
+    cu_payments: 'Payments', cu_totals: 'Totals', cu_total_taken_today: 'Total taken today:',
+    cu_cash_expenses: 'Cash Expenses', cu_add_expense: '+ Add Expense', cu_no_expenses: 'No expenses logged for this date.',
+    cu_what_was_bought: 'What was bought', cu_what_was_bought_ph: 'e.g. Fuel, first aid kit', cu_amount: 'Amount',
+    cu_save_expense: 'Save Expense', cu_total_expenses_today: 'Total expenses today:',
+    cu_cash_reconciliation: 'Cash Reconciliation', cu_opening_float: 'Opening float', cu_cash_paid_out: 'Cash paid out (expenses)',
+    cu_counted_cash: 'Counted cash (actual)', cu_expected_cash: 'Expected cash', cu_discrepancy: 'Discrepancy:',
+    cu_notes: 'Notes', cu_notes_ph: 'Any anomalies or comments', cu_close_out_day: 'Close Out Day',
+    cu_last_closed_by: 'Last closed by', cu_description_required: 'Description required.',
+    cu_enter_valid_amount: 'Enter a valid amount.', cu_error_saving: 'Error saving.',
+    cu_remove_expense_confirm: 'Remove this expense?', cu_saving: 'Saving...',
+    cu_select_location_tabs: 'Select a location above to view guest tabs.',
+
+    wv_not_enabled: "Waivers aren't enabled yet", wv_not_enabled_desc: 'Turn them on in Settings to start collecting digital signatures.',
+    wv_go_to_settings: 'Go to Settings',
+    wv_export_backup: 'Export / Backup', wv_export_backup_desc: 'Download all signed waivers for a day as a single file you can save to your own computer.',
+    wv_export_day: "Export day's waivers",
+    wv_export_role_note: 'Only owners, managers and front desk can download waivers to a computer. Ask them if you need a copy.',
+    wv_export_safety_note: "For safety, export and save a copy of each day's waivers to your own computer at the end of every day.",
+    wv_pending_today: 'Pending Signatures — Today', wv_waiver_log: 'Waiver Log', wv_daily: 'Daily', wv_weekly: 'Weekly',
+    wv_search_guest_ph: 'Search by guest name...',
+    wv_trip_fallback: 'Trip', wv_sign_waiver: 'Sign Waiver', wv_no_pending_guests: "No pending guests for today's trips.",
+    wv_unknown_guest: 'Unknown guest', wv_paper: 'Paper', wv_digital: 'Digital',
+    wv_no_waivers_week: 'No waivers signed this week.', wv_no_waivers_date: 'No waivers signed on this date.',
+    wv_no_waivers_found: 'No waivers found for',
+    wv_type_liability: 'Liability Waiver', wv_type_minor: 'Minor / Youth Waiver', wv_type_freediving: 'Freediving / Apnea Waiver',
+    wv_type_snorkel: 'Snorkel / Charter Waiver', wv_type_medical: 'Medical', wv_type_custom: 'Other',
+    wv_waiver_type: 'Waiver type', wv_sign_digitally: 'Sign digitally', wv_logged_paper: 'Logged on paper',
+    wv_clear: 'Clear', wv_notes_optional: 'Notes (optional)', wv_notes_ph: 'e.g. Paper copy filed at front desk',
+    wv_sign_legal_note: 'Enforceability of digital signatures varies by country and jurisdiction. Consult a local lawyer before relying on these documents legally.',
+    wv_save_waiver: 'Save Waiver', wv_loading_waiver: 'Loading waiver...',
+    wv_add_one_in: 'Add one in', wv_settings_waiver_templates_link: 'Settings → Waiver Templates',
+    wv_ask_owner_add_one: 'Ask your owner or manager to add one in Settings before this can be signed.',
+    wv_no_template_set_up: 'No waiver template is set up for this type yet.',
+    wv_medical_questionnaire: 'Medical questionnaire', wv_tick_anything_applies: '— tick anything that applies',
+    wv_please_draw_signature: 'Please draw a signature, or switch to "Logged on paper".',
+    wv_saved_offline: 'Saved offline — this waiver will sync automatically once your connection is back.',
+    wv_error_saving: 'Error saving waiver: ', wv_unknown_error: 'unknown error',
+    wv_export_no_permission: 'Only owners, managers, front desk, and elevated captains can export waivers.',
+    wv_preparing_export: 'Preparing export...',
   },
   es: {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
@@ -2954,6 +3083,135 @@ const TRANSLATIONS = {
     gear_hours_remaining: 'h restantes', gear_log_a_fill: 'Registrar una Carga', gear_who_filled: 'Quién cargó', gear_start_time: 'Hora de inicio', gear_stop_time: 'Hora de fin',
     gear_log_fill: 'Registrar Carga', gear_filter_replaced_reset: 'Filtro Reemplazado — Reiniciar Contador', gear_recent_activity: 'Actividad Reciente',
     gear_filter_replaced: 'Filtro reemplazado', gear_no_activity_yet: 'Aún no hay actividad.',
+
+    set_account: 'Cuenta', set_signed_in_as: 'Sesión iniciada como', set_role: 'Rol', set_change_password: 'Cambiar contraseña',
+    set_organisation: 'Organización', set_org_notice_new: 'Aún no has configurado tu organización. Completa tus datos abajo y guarda.',
+    set_your_full_name: 'Tu nombre completo', set_your_full_name_ph: 'ej. Jane Smith',
+    set_operation_name: 'Nombre de la operación', set_operation_name_ph: 'ej. Blue Water Dive Centre',
+    set_country: 'País', set_select_country: 'Selecciona un país',
+    country_TH: 'Tailandia', country_PH: 'Filipinas', country_ID: 'Indonesia', country_VG: 'Islas Vírgenes Británicas',
+    country_FJ: 'Fiyi', country_EG: 'Egipto', country_AU: 'Australia', country_MX: 'México', country_US: 'Estados Unidos',
+    country_ES: 'España', country_AR: 'Argentina', country_OTHER: 'Otro',
+    set_currency: 'Moneda',
+    currency_USD: 'USD — Dólar estadounidense', currency_THB: 'THB — Baht tailandés', currency_AUD: 'AUD — Dólar australiano',
+    currency_EUR: 'EUR — Euro', currency_GBP: 'GBP — Libra esterlina', currency_IDR: 'IDR — Rupia indonesia',
+    currency_PHP: 'PHP — Peso filipino', currency_EGP: 'EGP — Libra egipcia', currency_ARS: 'ARS — Peso argentino',
+    set_contact_email: 'Correo de contacto', set_contact_email_hint: 'Los huéspedes ven esto como la dirección de respuesta en los correos de confirmación de reserva.',
+    set_operation_runs: '¿Qué ofrece tu operación?', set_select_all_apply: '— selecciona todo lo que aplique',
+    cat_diving: 'Buceo', cat_charter_yacht: 'Charter y Yate', cat_surf: 'Surf', cat_fishing: 'Pesca', cat_freediving: 'Apnea',
+    set_save_org: 'Guardar organización',
+    set_op_categories: 'Categorías de la Operación',
+    set_op_categories_desc: 'Agrega una categoría cuando tu operación crezca — al agregar una se crea un conjunto inicial de tipos de salida que puedes editar. Solo el propietario.',
+    set_permissions: 'Permisos', set_permissions_desc: 'Controla lo que pueden hacer los distintos roles en tu operación.',
+    set_captain_elevated_label: 'Dar a los capitanes permisos de nivel gerente (invitar/eliminar personal, editar días acumulados, gestionar solicitudes de días libres, editar listas de tareas, exportar exenciones)',
+    set_captain_elevated_hint: 'Desactivado por defecto. Actívalo si tus capitanes tienen autoridad de gestión, algo común en charters y yates.',
+    set_waivers: 'Exenciones', set_owner_only: 'Solo propietario',
+    set_waivers_desc1: 'Esta es solo una herramienta de recolección de firmas digitales. Seven Seas no provee, verifica ni se responsabiliza por el contenido o la validez legal de las exenciones.',
+    set_waivers_desc2a: 'La validez legal de las firmas digitales varía según el país y la jurisdicción.',
+    set_waivers_desc2b: 'Consulta a un abogado local antes de confiar legalmente en estos documentos.',
+    set_waivers_desc2c: 'Al activar esta función confirmas que tu operación asume toda la responsabilidad por la validez legal de tus formularios.',
+    set_waivers_desc3: 'Las exenciones firmadas se almacenan de forma segura, pero recomendamos exportar las exenciones de cada día a tu propia computadora como respaldo local — usa la herramienta de exportación en la parte superior de la página de Formularios. Toma segundos y te da una copia a mano cuando la necesites.',
+    set_enable_waivers: 'Activar Exenciones para esta operación',
+    set_waivers_owner_only_note: 'Solo el propietario de la cuenta puede cambiar esta configuración. Pídele a tu propietario o gerente que active las Exenciones si lo necesitas.',
+    set_waiver_templates: 'Plantillas de Exenciones',
+    set_waiver_templates_desc: 'Escribe el texto real que los huéspedes leerán y firmarán para cada tipo de exención. Un tipo no puede ser firmado por el personal hasta que tenga una plantilla aquí.',
+    wt_liability: 'Responsabilidad', wt_minor: 'Menor / Joven', wt_freediving: 'Apnea', wt_snorkel: 'Esnórquel / Charter', wt_other: 'Otro', wt_medical: 'Médico',
+    set_waiver_templates_owner_only_note: 'Solo el propietario de la cuenta puede editar las plantillas de exenciones.',
+    set_trip_types: 'Tipos de Salida', set_trip_types_desc: 'Configura precios y requisitos de equipo predeterminados por tipo de salida. Se completan automáticamente cuando el personal crea una reserva.',
+    set_add_trip_type: '+ Agregar tipo de salida personalizado',
+    set_locations: 'Ubicaciones', set_locations_desc: 'Cada ubicación tiene su propia flota, tripulación y calendario. Agrega primero tu local principal.',
+    set_add_location: '+ Agregar ubicación', set_location_name: 'Nombre de la ubicación', set_location_name_ph: 'ej. Local Principal, Playa Norte',
+    set_loc_country_ph: 'ej. Tailandia', set_timezone: 'Zona horaria', set_save_location: 'Guardar ubicación',
+
+    set_no_categories_yet: 'Aún no hay categorías configuradas — configúralas en la sección de Organización más arriba.',
+    set_all_categories_active: 'Todas las categorías están activas.',
+    set_adding_category_confirm_singular: 'Agregar <strong>{cat}</strong> creará {n} tipo de salida inicial que podrás editar después. Esta acción es solo para el propietario.',
+    set_adding_category_confirm_plural: 'Agregar <strong>{cat}</strong> creará {n} tipos de salida iniciales que podrás editar después. Esta acción es solo para el propietario.',
+    set_add_category_btn: 'Agregar categoría', set_category_already_active: 'Esta categoría ya está activa.',
+    set_no_trip_types_yet: 'Aún no hay tipos de salida. Selecciona una categoría de operación arriba para empezar.',
+    set_tanks_plural: ' tanques', set_tank_singular: ' tanque',
+    set_can_be_private: ' · puede ser privada', set_multi_day_suffix: ' · varios días',
+    set_rental_fees_btn: 'Tarifas de alquiler',
+    set_multiday_checkbox_label: 'Salida de varios días (agrega una fecha de fin + permite contratar tripulación por día para este tipo de salida)',
+    common_loading: 'Cargando...',
+    set_no_gear_fields: 'No hay campos de equipo asociados a este tipo de salida.',
+    set_rental_gear_fees_header: 'Tarifas de alquiler de equipo (opcional — se agrega por huésped que seleccione alquiler)',
+    set_field_fallback: 'Campo',
+    set_confirm_remove_trip_type: 'Eliminar este tipo de salida? Las reservas existentes que lo usan no se verán afectadas.',
+    set_trip_type_name_prompt: 'Nombre del tipo de salida:', set_trip_type_name_ph: 'ej. Buceo en Naufragio, Charter de Yoga',
+    set_no_locations_yet: 'Aún no hay ubicaciones. Agrega la primera abajo.',
+    set_enabled: 'Activado', set_disabled: 'Desactivado',
+    set_only_owner_change: 'Solo el propietario de la cuenta puede cambiar esta configuración.',
+    set_saved: 'Guardado',
+    wt_template_on_file: 'Plantilla registrada', wt_no_template_yet: 'Aún no hay plantilla — este tipo no se puede firmar',
+    wt_title_label: 'Título (opcional)', wt_title_ph: 'ej. Exención de Responsabilidad',
+    wt_body_label: 'Texto de la exención', wt_body_ph: 'Escribe el texto completo de la exención que los huéspedes leerán antes de firmar...',
+    wt_save_template: 'Guardar plantilla', wt_last_updated: 'Última actualización',
+    wt_text_required: 'El texto de la exención es obligatorio.', common_error_prefix: 'Error: ',
+    wt_question_singular: ' pregunta registrada', wt_questions_plural: ' preguntas registradas',
+    wt_no_questions_yet: 'Aún no hay preguntas — Médico no se puede firmar',
+    wt_medical_title_ph: 'ej. Declaración Médica de Buceo',
+    wt_medical_instructions: 'Enumera las condiciones o preguntas que los huéspedes deben marcar si les aplican. Cada una se convierte en una casilla en el formulario de firma.',
+    wt_add_question: '+ Agregar pregunta', wt_no_questions_added: 'Aún no se han agregado preguntas.',
+    wt_add_one_question: 'Agrega al menos una pregunta.',
+
+    rep_setup_org_first: 'Configura tu organización en Configuración primero.',
+    rep_viewing: 'Viendo', rep_all_shops_combined: 'Todos los locales (combinado)',
+    rep_date_range: 'Rango de fechas', rep_7_days: '7 días', rep_30_days: '30 días', rep_90_days: '90 días', rep_1_year: '1 año',
+    rep_from: 'Desde', rep_to: 'Hasta',
+    rep_revenue: 'Ingresos', rep_cash: 'Efectivo', rep_card: 'Tarjeta', rep_transfer: 'Transferencia', rep_total: 'Total',
+    rep_revenue_by_shop: 'Ingresos por local', rep_revenue_by_shop_desc: 'Qué local está generando más ingresos en este rango.',
+    rep_cash_discrepancies: 'Discrepancias de caja',
+    rep_cash_discrepancies_desc: 'Efectivo contado vs efectivo esperado en los días que se cerró la caja. Las barras sobre la línea son sobrante, debajo de la línea es faltante.',
+    rep_missed_cashups: 'Arqueos faltantes', rep_missed_cashups_desc: 'Días con pagos registrados pero sin cierre de caja.',
+    rep_expenses: 'Gastos', rep_revenue_by_trip_type: 'Ingresos por tipo de salida', rep_revenue_by_boat: 'Ingresos por embarcación',
+    rep_total_expenses: 'Gastos totales: $', rep_no_expenses_range: 'No hay gastos registrados en este rango.',
+    rep_other: 'Otro', rep_no_boat_shore: 'Sin embarcación / en tierra', rep_no_data_range: 'No hay datos en este rango.',
+    rep_no_closed_days: 'Aún no hay días cerrados con efectivo contado en este rango.',
+    rep_no_discrepancies: 'No hay discrepancias en este rango.', rep_closed_by: 'Cerrado por',
+    rep_no_missed_cashups: 'No hay arqueos faltantes en este rango.', rep_taken_not_closed: 'recaudado, sin cerrar',
+
+    cu_tab_cashup: 'Arqueo de Caja', cu_tab_guest_tabs: 'Cuentas de Huéspedes', cu_select_location: 'Selecciona una ubicación arriba para ver el arqueo de caja.',
+    cu_open_tab: '+ Abrir Cuenta', cu_unknown: 'desconocido', cu_tab_badge: 'CUENTA', cu_no_payments: 'No hay pagos registrados para esta fecha.',
+    cu_payments: 'Pagos', cu_totals: 'Totales', cu_total_taken_today: 'Total recaudado hoy:',
+    cu_cash_expenses: 'Gastos en Efectivo', cu_add_expense: '+ Agregar Gasto', cu_no_expenses: 'No hay gastos registrados para esta fecha.',
+    cu_what_was_bought: 'Qué se compró', cu_what_was_bought_ph: 'ej. Combustible, botiquín', cu_amount: 'Monto',
+    cu_save_expense: 'Guardar Gasto', cu_total_expenses_today: 'Gastos totales hoy:',
+    cu_cash_reconciliation: 'Conciliación de Caja', cu_opening_float: 'Fondo de caja inicial', cu_cash_paid_out: 'Efectivo pagado (gastos)',
+    cu_counted_cash: 'Efectivo contado (real)', cu_expected_cash: 'Efectivo esperado', cu_discrepancy: 'Discrepancia:',
+    cu_notes: 'Notas', cu_notes_ph: 'Cualquier anomalía o comentario', cu_close_out_day: 'Cerrar el Día',
+    cu_last_closed_by: 'Último cierre por', cu_description_required: 'Se requiere una descripción.',
+    cu_enter_valid_amount: 'Ingresa un monto válido.', cu_error_saving: 'Error al guardar.',
+    cu_remove_expense_confirm: 'Eliminar este gasto?', cu_saving: 'Guardando...',
+    cu_select_location_tabs: 'Selecciona una ubicación arriba para ver las cuentas de huéspedes.',
+
+    wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Actívalos en Configuración para empezar a recolectar firmas digitales.',
+    wv_go_to_settings: 'Ir a Configuración',
+    wv_export_backup: 'Exportar / Respaldo', wv_export_backup_desc: 'Descarga todas las exenciones firmadas de un día como un solo archivo que puedes guardar en tu computadora.',
+    wv_export_day: 'Exportar exenciones del día',
+    wv_export_role_note: 'Solo propietarios, gerentes y recepción pueden descargar exenciones a una computadora. Pídeles una copia si la necesitas.',
+    wv_export_safety_note: 'Por seguridad, exporta y guarda una copia de las exenciones de cada día en tu computadora al final de cada jornada.',
+    wv_pending_today: 'Firmas Pendientes — Hoy', wv_waiver_log: 'Registro de Exenciones', wv_daily: 'Diario', wv_weekly: 'Semanal',
+    wv_search_guest_ph: 'Buscar por nombre de huésped...',
+    wv_trip_fallback: 'Salida', wv_sign_waiver: 'Firmar Exención', wv_no_pending_guests: 'No hay huéspedes pendientes para las salidas de hoy.',
+    wv_unknown_guest: 'Huésped desconocido', wv_paper: 'Papel', wv_digital: 'Digital',
+    wv_no_waivers_week: 'No hay exenciones firmadas esta semana.', wv_no_waivers_date: 'No hay exenciones firmadas en esta fecha.',
+    wv_no_waivers_found: 'No se encontraron exenciones para',
+    wv_type_liability: 'Exención de Responsabilidad', wv_type_minor: 'Exención de Menor / Joven', wv_type_freediving: 'Exención de Apnea',
+    wv_type_snorkel: 'Exención de Esnórquel / Charter', wv_type_medical: 'Médico', wv_type_custom: 'Otro',
+    wv_waiver_type: 'Tipo de exención', wv_sign_digitally: 'Firmar digitalmente', wv_logged_paper: 'Registrado en papel',
+    wv_clear: 'Borrar', wv_notes_optional: 'Notas (opcional)', wv_notes_ph: 'ej. Copia en papel archivada en recepción',
+    wv_sign_legal_note: 'La validez legal de las firmas digitales varía según el país y la jurisdicción. Consulta a un abogado local antes de confiar legalmente en estos documentos.',
+    wv_save_waiver: 'Guardar Exención', wv_loading_waiver: 'Cargando exención...',
+    wv_add_one_in: 'Agrega una en', wv_settings_waiver_templates_link: 'Configuración → Plantillas de Exenciones',
+    wv_ask_owner_add_one: 'Pídele a tu propietario o gerente que agregue una en Configuración antes de poder firmar esto.',
+    wv_no_template_set_up: 'Aún no hay una plantilla de exención configurada para este tipo.',
+    wv_medical_questionnaire: 'Cuestionario médico', wv_tick_anything_applies: '— marca todo lo que aplique',
+    wv_please_draw_signature: 'Por favor dibuja una firma, o cambia a "Registrado en papel".',
+    wv_saved_offline: 'Guardado sin conexión — esta exención se sincronizará automáticamente cuando vuelva la conexión.',
+    wv_error_saving: 'Error al guardar la exención: ', wv_unknown_error: 'error desconocido',
+    wv_export_no_permission: 'Solo propietarios, gerentes, recepción y capitanes con permisos elevados pueden exportar exenciones.',
+    wv_preparing_export: 'Preparando exportación...',
   }
 };
 
@@ -2997,11 +3255,28 @@ function refreshDynamicTranslations() {
   if (typeof buildCategoryLabels === 'function') {
     CATEGORY_LABELS = buildCategoryLabels();
   }
+  if (typeof buildWaiverTypeLabels === 'function') {
+    waiverTypeLabels = buildWaiverTypeLabels();
+  }
   if (typeof currentOrgId !== 'undefined' && currentOrgId) {
     if (typeof renderCalendar === 'function') renderCalendar();
     if (typeof loadFleet === 'function') loadFleet();
     if (typeof loadCrew === 'function') loadCrew();
     if (typeof renderTripTypesList === 'function') renderTripTypesList();
+    if (typeof renderActiveCategories === 'function') renderActiveCategories();
+    if (typeof loadLocations === 'function') loadLocations();
+    if (document.getElementById('page-reports') && document.getElementById('page-reports').classList.contains('active')) {
+      if (typeof populateReportsScopeSelect === 'function') populateReportsScopeSelect();
+      if (typeof loadReports === 'function') loadReports();
+    }
+    if (document.getElementById('page-cashup') && document.getElementById('page-cashup').classList.contains('active')) {
+      if (typeof loadCashUp === 'function') loadCashUp();
+      if (typeof loadGuestTabs === 'function' && document.getElementById('guest-tabs-view') && document.getElementById('guest-tabs-view').style.display !== 'none') loadGuestTabs();
+    }
+    if (document.getElementById('page-waivers') && document.getElementById('page-waivers').classList.contains('active')) {
+      if (typeof loadWaivers === 'function') loadWaivers();
+    }
+    if (document.getElementById('page-settings') && document.getElementById('page-settings').classList.contains('active') && typeof updateWaiversStatusBadge === 'function') updateWaiversStatusBadge();
     if (document.getElementById('page-checklists') && document.getElementById('page-checklists').classList.contains('active')) {
       if (typeof initCaptainChecklist === 'function') initCaptainChecklist();
       if (typeof initInstructorChecklist === 'function') initInstructorChecklist();
@@ -3998,7 +4273,7 @@ async function loadLocations() {
 
   const list = document.getElementById('locations-list');
   if (!locs || locs.length === 0) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No locations yet. Add your first one below.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('set_no_locations_yet')}</p>`;
     return;
   }
   list.innerHTML = locs.map(l => `
@@ -4007,7 +4282,7 @@ async function loadLocations() {
         <div class="location-name">${l.name}</div>
         <div class="location-meta">${l.country || ''} · ${l.timezone || 'UTC'}</div>
       </div>
-      <button class="location-delete" onclick="deleteLocation('${l.id}')">Remove</button>
+      <button class="location-delete" onclick="deleteLocation('${l.id}')">${t('fleet_remove')}</button>
     </div>
   `).join('');
 
@@ -4019,7 +4294,7 @@ function updateWaiversStatusBadge() {
   const badge = document.getElementById('waivers-status-badge');
   if (!badge) return;
   const on = !!window.waiversEnabled;
-  badge.textContent = on ? 'Enabled' : 'Disabled';
+  badge.textContent = on ? t('set_enabled') : t('set_disabled');
   badge.style.background = on ? 'rgba(47,133,90,0.12)' : 'rgba(148,163,184,0.18)';
   badge.style.color = on ? 'var(--success)' : 'var(--muted)';
 }
@@ -4029,7 +4304,7 @@ document.getElementById('chk-waivers-enabled').addEventListener('change', async 
   const feedback = document.getElementById('waivers-toggle-feedback');
   if (currentUserRole !== 'owner') {
     this.checked = window.waiversEnabled || false;
-    feedback.textContent = 'Only the account owner can change this setting.';
+    feedback.textContent = t('set_only_owner_change');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -4038,7 +4313,7 @@ document.getElementById('chk-waivers-enabled').addEventListener('change', async 
     await sb.from('organizations').update({ waivers_enabled: this.checked }).eq('id', currentOrgId);
   }
   updateWaiversStatusBadge();
-  feedback.textContent = 'Saved';
+  feedback.textContent = t('set_saved');
   feedback.className = 'save-feedback visible';
   setTimeout(() => feedback.className = 'save-feedback', 2000);
 });
@@ -4055,7 +4330,7 @@ function switchWaiverTemplateTab(type, el) {
 
 async function loadWaiverTemplateEditor(type) {
   const container = document.getElementById('waiver-template-editor');
-  container.innerHTML = '<p style="font-size:0.85rem;color:var(--muted);">Loading...</p>';
+  container.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">${t('common_loading')}</p>`;
   if (!currentOrgId) return;
   const { data: template } = await sb.from('waiver_templates').select('*').eq('org_id', currentOrgId).eq('waiver_type', type).maybeSingle();
 
@@ -4074,23 +4349,23 @@ async function loadWaiverTemplateEditor(type) {
 function renderTextTemplateEditor(type, template) {
   const container = document.getElementById('waiver-template-editor');
   const statusHtml = template && template.body_text
-    ? `<span class="role-badge" style="background:rgba(47,133,90,0.12);color:var(--success);">Template on file</span>`
-    : `<span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);">No template yet — this type can't be signed</span>`;
+    ? `<span class="role-badge" style="background:rgba(47,133,90,0.12);color:var(--success);">${t('wt_template_on_file')}</span>`
+    : `<span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);">${t('wt_no_template_yet')}</span>`;
   container.innerHTML = `
     <div style="margin-bottom:10px;">${statusHtml}</div>
     <div class="sf-group">
-      <label class="sf-label">Title (optional)</label>
-      <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="e.g. Liability Waiver">
+      <label class="sf-label">${t('wt_title_label')}</label>
+      <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="${t('wt_title_ph')}">
     </div>
     <div class="sf-group">
-      <label class="sf-label">Waiver text</label>
-      <textarea class="sf-input" id="wt-body" rows="10" placeholder="Write the full waiver text guests will read before signing...">${template?.body_text || ''}</textarea>
+      <label class="sf-label">${t('wt_body_label')}</label>
+      <textarea class="sf-input" id="wt-body" rows="10" placeholder="${t('wt_body_ph')}">${template?.body_text || ''}</textarea>
     </div>
     <div class="settings-actions">
-      <button class="btn-save" onclick="saveTextWaiverTemplate('${type}')">Save template</button>
+      <button class="btn-save" onclick="saveTextWaiverTemplate('${type}')">${t('wt_save_template')}</button>
       <span class="save-feedback" id="wt-save-feedback"></span>
     </div>
-    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">Last updated ${new Date(template.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
+    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">${t('wt_last_updated')} ${new Date(template.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
   `;
 }
 
@@ -4099,7 +4374,7 @@ async function saveTextWaiverTemplate(type) {
   const title = document.getElementById('wt-title').value.trim() || null;
   const body = document.getElementById('wt-body').value.trim();
   if (!body) {
-    feedback.textContent = 'Waiver text is required.';
+    feedback.textContent = t('wt_text_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -4112,11 +4387,11 @@ async function saveTextWaiverTemplate(type) {
     updated_at: new Date().toISOString()
   }, { onConflict: 'org_id,waiver_type' });
   if (error) {
-    feedback.textContent = 'Error: ' + error.message;
+    feedback.textContent = t('common_error_prefix') + error.message;
     feedback.className = 'save-feedback error visible';
     return;
   }
-  feedback.textContent = 'Saved';
+  feedback.textContent = t('set_saved');
   feedback.className = 'save-feedback visible';
   await loadWaiverTemplateEditor(type);
 }
@@ -4124,23 +4399,23 @@ async function saveTextWaiverTemplate(type) {
 function renderMedicalTemplateEditor(template, questions) {
   const container = document.getElementById('waiver-template-editor');
   const statusHtml = questions.length
-    ? `<span class="role-badge" style="background:rgba(47,133,90,0.12);color:var(--success);">${questions.length} question${questions.length === 1 ? '' : 's'} on file</span>`
-    : `<span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);">No questions yet — Medical can't be signed</span>`;
+    ? `<span class="role-badge" style="background:rgba(47,133,90,0.12);color:var(--success);">${questions.length}${questions.length === 1 ? t('wt_question_singular') : t('wt_questions_plural')}</span>`
+    : `<span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);">${t('wt_no_questions_yet')}</span>`;
   window._medicalQuestionsDraft = questions.map(q => q.question_text);
   container.innerHTML = `
     <div style="margin-bottom:10px;">${statusHtml}</div>
     <div class="sf-group">
-      <label class="sf-label">Title (optional)</label>
-      <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="e.g. Dive Medical Statement">
+      <label class="sf-label">${t('wt_title_label')}</label>
+      <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="${t('wt_medical_title_ph')}">
     </div>
-    <p class="card-desc" style="margin-bottom:8px;">List the conditions or questions guests must tick if they apply to them. Each one becomes a checkbox on the sign form.</p>
+    <p class="card-desc" style="margin-bottom:8px;">${t('wt_medical_instructions')}</p>
     <div id="medical-questions-list"></div>
-    <button class="btn-add" onclick="addMedicalQuestionRow()">+ Add question</button>
+    <button class="btn-add" onclick="addMedicalQuestionRow()">${t('wt_add_question')}</button>
     <div class="settings-actions" style="margin-top:14px;">
-      <button class="btn-save" onclick="saveMedicalWaiverTemplate()">Save template</button>
+      <button class="btn-save" onclick="saveMedicalWaiverTemplate()">${t('wt_save_template')}</button>
       <span class="save-feedback" id="wt-save-feedback"></span>
     </div>
-    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">Last updated ${new Date(template.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
+    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">${t('wt_last_updated')} ${new Date(template.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
   `;
   renderMedicalQuestionsDraft();
 }
@@ -4153,7 +4428,7 @@ function renderMedicalQuestionsDraft() {
       <input class="sf-input" type="text" value="${(q || '').replace(/"/g, '&quot;')}" oninput="window._medicalQuestionsDraft[${i}] = this.value">
       <button class="btn-icon danger" onclick="removeMedicalQuestionRow(${i})">&times;</button>
     </div>
-  `).join('') : '<p style="font-size:0.83rem;color:var(--muted);margin-bottom:8px;">No questions added yet.</p>';
+  `).join('') : `<p style="font-size:0.83rem;color:var(--muted);margin-bottom:8px;">${t('wt_no_questions_added')}</p>`;
 }
 
 function addMedicalQuestionRow() {
@@ -4172,7 +4447,7 @@ async function saveMedicalWaiverTemplate() {
   const title = document.getElementById('wt-title').value.trim() || null;
   const questions = (window._medicalQuestionsDraft || []).map(q => q.trim()).filter(Boolean);
   if (!questions.length) {
-    feedback.textContent = 'Add at least one question.';
+    feedback.textContent = t('wt_add_one_question');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -4184,13 +4459,13 @@ async function saveMedicalWaiverTemplate() {
     updated_at: new Date().toISOString()
   }, { onConflict: 'org_id,waiver_type' }).select().single();
   if (error) {
-    feedback.textContent = 'Error: ' + error.message;
+    feedback.textContent = t('common_error_prefix') + error.message;
     feedback.className = 'save-feedback error visible';
     return;
   }
   await sb.from('waiver_template_questions').delete().eq('template_id', template.id);
   await sb.from('waiver_template_questions').insert(questions.map((q, i) => ({ template_id: template.id, question_text: q, sort_order: i })));
-  feedback.textContent = 'Saved';
+  feedback.textContent = t('set_saved');
   feedback.className = 'save-feedback visible';
   await loadWaiverTemplateEditor('medical');
 }
@@ -5236,10 +5511,10 @@ function renderCashUp(payments, existing, date, expenses) {
         <span style="font-size:0.95rem;font-weight:700;">$${amount.toFixed(2)}</span>
       </div>
       <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${trip?.trip_type || ''}${trip?.boats ? ' · ' + trip.boats.name : ''}</div>
-      <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:4px;text-transform:capitalize;">${method || 'unknown'}${isTabPayment ? ' <span style="background:rgba(26,107,138,0.12);color:var(--blue);padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;text-transform:none;margin-left:6px;">TAB</span>' : ''}</div>
+      <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:4px;text-transform:capitalize;">${method || t('cu_unknown')}${isTabPayment ? ` <span style="background:rgba(26,107,138,0.12);color:var(--blue);padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;text-transform:none;margin-left:6px;">${t('cu_tab_badge')}</span>` : ''}</div>
     </div>`;
   }).join('');
-  const paymentsSection = rowsHtml || '<p style="font-size:0.83rem;color:var(--muted);padding:4px 0;">No payments logged for this date.</p>';
+  const paymentsSection = rowsHtml || `<p style="font-size:0.83rem;color:var(--muted);padding:4px 0;">${t('cu_no_payments')}</p>`;
 
   const expensesTotal = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
   const expensesRowsHtml = expenses.map(e => `
@@ -5263,77 +5538,77 @@ function renderCashUp(payments, existing, date, expenses) {
   const discrepancy = (counted !== null && counted !== undefined) ? counted - expectedCash : null;
   el.innerHTML = `
     <div class="inline-form" style="margin-bottom:20px;">
-      <div class="card-section-title">Payments</div>
+      <div class="card-section-title">${t('cu_payments')}</div>
       ${paymentsSection}
     </div>
     <div class="inline-form" style="margin-bottom:20px;">
-      <div class="card-section-title">Totals</div>
+      <div class="card-section-title">${t('cu_totals')}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
-        <div><div class="gear-stock-label">Cash</div><div class="gear-stock-value-lg">$${cashTotal.toFixed(2)}</div></div>
-        <div><div class="gear-stock-label">Card</div><div class="gear-stock-value-lg">$${cardTotal.toFixed(2)}</div></div>
-        <div><div class="gear-stock-label">Transfer</div><div class="gear-stock-value-lg">$${transferTotal.toFixed(2)}</div></div>
+        <div><div class="gear-stock-label">${t('rep_cash')}</div><div class="gear-stock-value-lg">$${cashTotal.toFixed(2)}</div></div>
+        <div><div class="gear-stock-label">${t('rep_card')}</div><div class="gear-stock-value-lg">$${cardTotal.toFixed(2)}</div></div>
+        <div><div class="gear-stock-label">${t('rep_transfer')}</div><div class="gear-stock-value-lg">$${transferTotal.toFixed(2)}</div></div>
       </div>
       <div style="padding:14px;background:var(--foam);border-radius:10px;border:1px solid var(--border);">
-        <span style="font-weight:600;">Total taken today: $${takenToday.toFixed(2)}</span>
+        <span style="font-weight:600;">${t('cu_total_taken_today')} $${takenToday.toFixed(2)}</span>
       </div>
     </div>
     <div class="inline-form" style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div class="card-section-title" style="margin-bottom:0;">Cash Expenses</div>
-        <button class="btn-save" style="font-size:0.8rem;padding:6px 12px;" onclick="showAddExpenseForm()">+ Add Expense</button>
+        <div class="card-section-title" style="margin-bottom:0;">${t('cu_cash_expenses')}</div>
+        <button class="btn-save" style="font-size:0.8rem;padding:6px 12px;" onclick="showAddExpenseForm()">${t('cu_add_expense')}</button>
       </div>
-      <div id="cashup-expenses-list">${expensesRowsHtml || '<p style="font-size:0.83rem;color:var(--muted);padding:4px 0;">No expenses logged for this date.</p>'}</div>
+      <div id="cashup-expenses-list">${expensesRowsHtml || `<p style="font-size:0.83rem;color:var(--muted);padding:4px 0;">${t('cu_no_expenses')}</p>`}</div>
       <div class="inline-form" id="form-add-expense" style="display:none;margin-top:12px;padding:12px;background:var(--foam);border-radius:10px;">
         <div class="sf-row">
           <div class="sf-group">
-            <label class="sf-label">What was bought</label>
-            <input class="sf-input" type="text" autocomplete="off" id="expense-description" placeholder="e.g. Fuel, first aid kit">
+            <label class="sf-label">${t('cu_what_was_bought')}</label>
+            <input class="sf-input" type="text" autocomplete="off" id="expense-description" placeholder="${t('cu_what_was_bought_ph')}">
           </div>
           <div class="sf-group" style="max-width:140px;">
-            <label class="sf-label">Amount</label>
+            <label class="sf-label">${t('cu_amount')}</label>
             <input class="sf-input" type="number" step="0.01" min="0" id="expense-amount" placeholder="0">
           </div>
         </div>
         <div class="settings-actions">
-          <button class="btn-save" onclick="confirmAddExpense('${date}')">Save Expense</button>
-          <button class="btn-cancel" onclick="document.getElementById('form-add-expense').style.display='none';">Cancel</button>
+          <button class="btn-save" onclick="confirmAddExpense('${date}')">${t('cu_save_expense')}</button>
+          <button class="btn-cancel" onclick="document.getElementById('form-add-expense').style.display='none';">${t('tt_cancel')}</button>
           <span class="save-feedback" id="expense-save-feedback"></span>
         </div>
       </div>
-      <div style="padding:10px 14px;background:var(--foam);border-radius:10px;margin-top:10px;font-weight:600;">Total expenses today: $${expensesTotal.toFixed(2)}</div>
+      <div style="padding:10px 14px;background:var(--foam);border-radius:10px;margin-top:10px;font-weight:600;">${t('cu_total_expenses_today')} $${expensesTotal.toFixed(2)}</div>
     </div>
     <div class="inline-form">
-      <div class="card-section-title">Cash Reconciliation</div>
+      <div class="card-section-title">${t('cu_cash_reconciliation')}</div>
       <div class="sf-row">
         <div class="sf-group">
-          <label class="sf-label">Opening float</label>
+          <label class="sf-label">${t('cu_opening_float')}</label>
           <input class="sf-input" type="number" step="0.01" id="cashup-opening" value="${opening}">
         </div>
         <div class="sf-group">
-          <label class="sf-label">Cash paid out (expenses)</label>
+          <label class="sf-label">${t('cu_cash_paid_out')}</label>
           <input class="sf-input" type="text" value="$${paidOut.toFixed(2)}" disabled style="background:var(--foam);font-weight:600;">
         </div>
       </div>
       <div class="sf-row">
         <div class="sf-group">
-          <label class="sf-label">Counted cash (actual)</label>
+          <label class="sf-label">${t('cu_counted_cash')}</label>
           <input class="sf-input" type="number" step="0.01" id="cashup-counted" value="${counted ?? ''}">
         </div>
         <div class="sf-group">
-          <label class="sf-label">Expected cash</label>
+          <label class="sf-label">${t('cu_expected_cash')}</label>
           <input class="sf-input" type="text" value="$${expectedCash.toFixed(2)}" disabled>
         </div>
       </div>
-      ${discrepancy !== null ? `<p style="color:${discrepancy === 0 ? 'var(--success)' : 'var(--error)'};font-weight:600;">Discrepancy: $${discrepancy.toFixed(2)}</p>` : ''}
+      ${discrepancy !== null ? `<p style="color:${discrepancy === 0 ? 'var(--success)' : 'var(--error)'};font-weight:600;">${t('cu_discrepancy')} $${discrepancy.toFixed(2)}</p>` : ''}
       <div class="sf-group">
-        <label class="sf-label">Notes</label>
-        <input class="sf-input" type="text" id="cashup-notes" value="${existing?.notes || ''}" placeholder="Any anomalies or comments">
+        <label class="sf-label">${t('cu_notes')}</label>
+        <input class="sf-input" type="text" id="cashup-notes" value="${existing?.notes || ''}" placeholder="${t('cu_notes_ph')}">
       </div>
       <div class="settings-actions">
-        <button class="btn-save" id="btn-save-cashup">Close Out Day</button>
+        <button class="btn-save" id="btn-save-cashup">${t('cu_close_out_day')}</button>
         <span class="save-feedback" id="cashup-save-feedback"></span>
       </div>
-      ${existing?.closed_by ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">Last closed by ${existing.closed_by} · ${new Date(existing.closed_at).toLocaleString()}</p>` : ''}
+      ${existing?.closed_by ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">${t('cu_last_closed_by')} ${existing.closed_by} · ${new Date(existing.closed_at).toLocaleString()}</p>` : ''}
     </div>
   `;
   document.getElementById('btn-save-cashup').addEventListener('click', () => saveCashUp(date, cashTotal, cardTotal, transferTotal, expensesTotal));
@@ -5350,12 +5625,12 @@ async function confirmAddExpense(date) {
   const description = document.getElementById('expense-description').value.trim();
   const amount = parseFloat(document.getElementById('expense-amount').value);
   if (!description) {
-    feedback.textContent = 'Description required.';
+    feedback.textContent = t('cu_description_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (!amount || amount <= 0) {
-    feedback.textContent = 'Enter a valid amount.';
+    feedback.textContent = t('cu_enter_valid_amount');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -5365,14 +5640,14 @@ async function confirmAddExpense(date) {
     description, amount, logged_by: user.email
   });
   if (error) {
-    feedback.textContent = 'Error saving.';
+    feedback.textContent = t('cu_error_saving');
     feedback.className = 'save-feedback error visible';
     return;
   }
   await loadCashUp();
 }
 async function removeCashExpense(id) {
-  if (!(await showConfirmModal('Remove this expense?'))) return;
+  if (!(await showConfirmModal(t('cu_remove_expense_confirm')))) return;
   await sb.from('cash_expenses').delete().eq('id', id);
   await loadCashUp();
 }
@@ -5384,20 +5659,20 @@ async function saveCashUp(date, cashTotal, cardTotal, transferTotal, paidOut) {
   const counted = countedInput ? parseFloat(countedInput) : null;
   const notes = document.getElementById('cashup-notes').value.trim();
   const { data: { user } } = await sb.auth.getUser();
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('cu_saving');
   const { error } = await sb.from('cash_ups').upsert({
     org_id: currentOrgId, location_id: currentLocationId, cash_up_date: date,
     total_cash: cashTotal, total_card: cardTotal, total_transfer: transferTotal,
     opening_float: opening, cash_paid_out: paidOut, counted_cash: counted,
     notes: notes || null, closed_by: user.email, closed_at: new Date().toISOString()
   }, { onConflict: 'org_id,location_id,cash_up_date' });
-  btn.disabled = false; btn.textContent = 'Close Out Day';
+  btn.disabled = false; btn.textContent = t('cu_close_out_day');
   if (error) {
-    feedback.textContent = 'Error saving.';
+    feedback.textContent = t('cu_error_saving');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  feedback.textContent = 'Saved';
+  feedback.textContent = t('set_saved');
   feedback.className = 'save-feedback visible';
   await loadCashUp();
 }
@@ -5406,7 +5681,7 @@ async function saveCashUp(date, cashTotal, cardTotal, transferTotal, paidOut) {
 async function loadGuestTabs() {
   const container = document.getElementById('guest-tabs-list');
   if (!currentOrgId || !currentLocationId) {
-    container.innerHTML = '<p style="color:var(--muted);">Select a location above to view guest tabs.</p>';
+    container.innerHTML = `<p style="color:var(--muted);">${t('cu_select_location_tabs')}</p>`;
     return;
   }
   const { data: tabs } = await sb.from('guest_tabs')
@@ -5685,7 +5960,7 @@ async function populateReportsScopeSelect() {
   const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId).order('name');
   const sel = document.getElementById('reports-scope-select');
   const prev = sel.value || window.reportsScope || 'all';
-  sel.innerHTML = '<option value="all">All shops (combined)</option>' + (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  sel.innerHTML = `<option value="all">${t('rep_all_shops_combined')}</option>` + (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   window.reportsScope = sel.value;
 }
@@ -5741,7 +6016,7 @@ function reportsPolarPoint(cx, cy, r, angleDeg) {
 }
 function svgPieChart(entries) {
   const total = entries.reduce((s, e) => s + e.value, 0);
-  if (total <= 0) return '<p style="font-size:0.83rem;color:var(--muted)">No data in this range.</p>';
+  if (total <= 0) return `<p style="font-size:0.83rem;color:var(--muted)">${t('rep_no_data_range')}</p>`;
   const size = 160, cx = size / 2, cy = size / 2, r = size / 2 - 4;
   let angle = 0;
   let slices = '';
@@ -5967,7 +6242,7 @@ function renderDiscrepancyReport(cashUps) {
   });
   const chartEl = document.getElementById('rep-discrepancy-chart');
   if (!withDiff.length) {
-    chartEl.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No closed-out days with counted cash in this range yet.</p>';
+    chartEl.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('rep_no_closed_days')}</p>`;
   } else {
     const chartData = withDiff.map(({ c, diff }) => ({
       label: new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' }),
@@ -5979,14 +6254,14 @@ function renderDiscrepancyReport(cashUps) {
   const flagged = withDiff.filter(({ diff }) => Math.abs(diff) >= 0.01);
   const listEl = document.getElementById('rep-discrepancy-list');
   if (!flagged.length) {
-    listEl.innerHTML = '<p style="font-size:0.83rem;color:var(--success);font-weight:600;">No discrepancies in this range.</p>';
+    listEl.innerHTML = `<p style="font-size:0.83rem;color:var(--success);font-weight:600;">${t('rep_no_discrepancies')}</p>`;
   } else {
     listEl.innerHTML = flagged.map(({ c, diff }) => `<div class="gear-item-row">
         <div class="gear-item-header">
           <span class="gear-item-name">${new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           <span style="color:var(--error);font-weight:700;">${diff > 0 ? '+' : ''}$${diff.toFixed(2)}</span>
         </div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Closed by ${c.closed_by || '—'}${c.notes ? ' · ' + c.notes : ''}</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('rep_closed_by')} ${c.closed_by || '—'}${c.notes ? ' · ' + c.notes : ''}</div>
       </div>`).join('');
   }
 }
@@ -6001,12 +6276,12 @@ function renderMissedCashUps(payments, cashUps) {
   const missed = Object.keys(paymentDates).filter(d => d < today && !closedDates.has(d)).sort();
   const listEl = document.getElementById('rep-missed-list');
   if (!missed.length) {
-    listEl.innerHTML = '<p style="font-size:0.83rem;color:var(--success);font-weight:600;">No missed cash-ups in this range.</p>';
+    listEl.innerHTML = `<p style="font-size:0.83rem;color:var(--success);font-weight:600;">${t('rep_no_missed_cashups')}</p>`;
   } else {
     listEl.innerHTML = missed.map(d => `<div class="gear-item-row">
         <div class="gear-item-header">
           <span class="gear-item-name">${new Date(d + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-          <span style="color:var(--error);font-weight:600;">$${paymentDates[d].toFixed(2)} taken, not closed out</span>
+          <span style="color:var(--error);font-weight:600;">$${paymentDates[d].toFixed(2)} ${t('rep_taken_not_closed')}</span>
         </div>
       </div>`).join('');
   }
@@ -6035,9 +6310,9 @@ function renderExpenseReport(expenses, startDate, endDate) {
     segments: [{ value: bucketMap[k], color: 'var(--error)' }]
   }));
   document.getElementById('rep-expense-chart').innerHTML = total === 0
-    ? '<p style="font-size:0.83rem;color:var(--muted)">No expenses logged in this range.</p>'
+    ? `<p style="font-size:0.83rem;color:var(--muted)">${t('rep_no_expenses_range')}</p>`
     : svgStackedBarChart(chartData);
-  document.getElementById('rep-expense-total').textContent = 'Total expenses: $' + total.toFixed(2);
+  document.getElementById('rep-expense-total').textContent = t('rep_total_expenses') + total.toFixed(2);
 }
 
 function renderTripTypeAndBoatBreakdown(payments) {
@@ -6045,8 +6320,8 @@ function renderTripTypeAndBoatBreakdown(payments) {
   const byBoat = {};
   payments.forEach(p => {
     const amount = parseFloat(p.amount) || 0;
-    const tripType = p.trips?.trip_type || 'Other';
-    const boatName = p.trips?.boats?.name || 'No boat / shore-based';
+    const tripType = p.trips?.trip_type || t('rep_other');
+    const boatName = p.trips?.boats?.name || t('rep_no_boat_shore');
     byTripType[tripType] = (byTripType[tripType] || 0) + amount;
     byBoat[boatName] = (byBoat[boatName] || 0) + amount;
   });
@@ -6288,7 +6563,10 @@ async function printManifest() {
 }
 
 // ─── WAIVERS ───
-const waiverTypeLabels = { liability: 'Liability Waiver', minor: 'Minor / Youth Waiver', freediving: 'Freediving / Apnea Waiver', snorkel: 'Snorkel / Charter Waiver', medical: 'Medical', custom: 'Other' };
+function buildWaiverTypeLabels() {
+  return { liability: t('wv_type_liability'), minor: t('wv_type_minor'), freediving: t('wv_type_freediving'), snorkel: t('wv_type_snorkel'), medical: t('wv_type_medical'), custom: t('wv_type_custom') };
+}
+let waiverTypeLabels = buildWaiverTypeLabels();
 
 async function loadWaivers() {
   const disabledEl = document.getElementById('waivers-disabled-notice');
@@ -6336,16 +6614,16 @@ async function loadWaivers() {
   const pendingListEl = document.getElementById('pending-waivers-list');
   pendingListEl.innerHTML = pending.length ? pending.map(p => {
     const trip = tripById[p.trip_id];
-    const tripLabel = trip ? `${trip.trip_type || 'Trip'}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
+    const tripLabel = trip ? `${trip.trip_type || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
     const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
     return `<div class="participant-row">
       <div>
         <div class="p-name">${p.full_name}</div>
         <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}</div>
       </div>
-      <button class="btn-save" style="padding:6px 12px;font-size:0.82rem;" onclick="openSignWaiverModal('${p.id}','${p.trip_id}','${p.group_id || ''}','${nameEsc}')">Sign Waiver</button>
+      <button class="btn-save" style="padding:6px 12px;font-size:0.82rem;" onclick="openSignWaiverModal('${p.id}','${p.trip_id}','${p.group_id || ''}','${nameEsc}')">${t('wv_sign_waiver')}</button>
     </div>`;
-  }).join('') : '<p style="font-size:0.85rem;color:var(--muted);">No pending guests for today\'s trips.</p>';
+  }).join('') : `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
 
   await renderWaiverLog();
 }
@@ -6353,8 +6631,8 @@ async function loadWaivers() {
 function waiverLogRowHtml(w) {
   return `<div class="participant-row">
     <div>
-      <div class="p-name">${w.participants?.full_name || 'Unknown guest'}</div>
-      <div style="font-size:0.78rem;color:var(--muted);">${waiverTypeLabels[w.waiver_type] || w.waiver_type} · ${w.method === 'paper' ? 'Paper' : 'Digital'} · ${new Date(w.signed_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + w.signed_by_name : ''}</div>
+      <div class="p-name">${w.participants?.full_name || t('wv_unknown_guest')}</div>
+      <div style="font-size:0.78rem;color:var(--muted);">${waiverTypeLabels[w.waiver_type] || w.waiver_type} · ${w.method === 'paper' ? t('wv_paper') : t('wv_digital')} · ${new Date(w.signed_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + w.signed_by_name : ''}</div>
     </div>
   </div>`;
 }
@@ -6399,7 +6677,7 @@ async function renderWaiverLog() {
   const { data: log } = await query;
 
   if (!log || !log.length) {
-    logListEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">No waivers signed ${window.waiverLogView === 'weekly' ? 'this week' : 'on this date'}.</p>`;
+    logListEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">${window.waiverLogView === 'weekly' ? t('wv_no_waivers_week') : t('wv_no_waivers_date')}</p>`;
     return;
   }
 
@@ -6456,7 +6734,7 @@ async function searchWaiverLog(term) {
   const { data: results } = await query;
   const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   if (!results || !results.length) {
-    logListEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">No waivers found for "${escapeHtml(term)}".</p>`;
+    logListEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_waivers_found')} "${escapeHtml(term)}".</p>`;
     return;
   }
   logListEl.innerHTML = results.map(w => waiverLogRowHtml(w)).join('');
@@ -6496,7 +6774,7 @@ window.currentSignBlocked = false;
 
 async function loadSignTemplate(type) {
   const container = document.getElementById('sig-template-content');
-  container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Loading waiver...</p>';
+  container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('wv_loading_waiver')}</p>`;
   window.currentSignTemplate = null;
   window.currentSignQuestions = [];
 
@@ -6522,9 +6800,9 @@ function renderSignTemplateContent(type, template, questions) {
 
   if (blocked) {
     const ownerNote = currentUserRole === 'owner'
-      ? `Add one in <a href="#" onclick="closeSignatureModal();showPage('settings');return false;">Settings → Waiver Templates</a>.`
-      : `Ask your owner or manager to add one in Settings before this can be signed.`;
-    container.innerHTML = `<div class="warning-banner caution" style="font-size:0.82rem;">No waiver template is set up for this type yet. ${ownerNote}</div>`;
+      ? `${t('wv_add_one_in')} <a href="#" onclick="closeSignatureModal();showPage('settings');return false;">${t('wv_settings_waiver_templates_link')}</a>.`
+      : t('wv_ask_owner_add_one');
+    container.innerHTML = `<div class="warning-banner caution" style="font-size:0.82rem;">${t('wv_no_template_set_up')} ${ownerNote}</div>`;
     methodRow.style.display = 'none';
     document.getElementById('sig-canvas-wrap').style.display = 'none';
     saveBtn.disabled = true;
@@ -6539,7 +6817,7 @@ function renderSignTemplateContent(type, template, questions) {
   if (type === 'medical') {
     window.currentSignResponses = {};
     container.innerHTML = `
-      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : 'Medical questionnaire'} — tick anything that applies</p>
+      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : t('wv_medical_questionnaire')} ${t('wv_tick_anything_applies')}</p>
       <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto;background:var(--foam);">
         ${questions.map(q => `
           <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.85rem;padding:6px 0;cursor:pointer;">
@@ -6603,14 +6881,14 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
   const sp = window.currentSignatureParticipant;
   if (!sp) return;
   if (window.currentSignBlocked) {
-    feedback.textContent = 'No waiver template is set up for this type yet.';
+    feedback.textContent = t('wv_no_template_set_up');
     feedback.className = 'save-feedback error visible';
     return;
   }
   const type = document.getElementById('signature-waiver-type').value;
   const method = window.currentSignMethod || 'digital';
   if (method === 'digital' && !sigHasStroke) {
-    feedback.textContent = 'Please draw a signature, or switch to "Logged on paper".';
+    feedback.textContent = t('wv_please_draw_signature');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -6637,12 +6915,12 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
   let error = null;
   if (isOffline) {
     queueOfflineAction('waiver_signature', payload);
-    await showAlertModal('Saved offline — this waiver will sync automatically once your connection is back.');
+    await showAlertModal(t('wv_saved_offline'));
   } else {
     ({ error } = await sb.from('waivers').insert(payload));
   }
   if (error) {
-    feedback.textContent = 'Error saving waiver: ' + (error.message || 'unknown error');
+    feedback.textContent = t('wv_error_saving') + (error.message || t('wv_unknown_error'));
     feedback.className = 'save-feedback error visible';
     console.error('Waiver save error:', error);
     return;
@@ -6655,7 +6933,7 @@ document.getElementById('btn-export-waivers').addEventListener('click', () => {
   const canExport = ['owner', 'manager', 'front_desk'].includes(currentUserRole) || (currentUserRole === 'captain' && window.currentCaptainElevated);
   if (!canExport) {
     const feedback = document.getElementById('waiver-export-feedback');
-    feedback.textContent = 'Only owners, managers, front desk, and elevated captains can export waivers.';
+    feedback.textContent = t('wv_export_no_permission');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -6665,7 +6943,7 @@ document.getElementById('btn-export-waivers').addEventListener('click', () => {
 
 async function exportWaiversForDay(date) {
   const feedback = document.getElementById('waiver-export-feedback');
-  feedback.textContent = 'Preparing export...';
+  feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
 
   const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -9496,14 +9774,14 @@ async function renderActiveCategories() {
   const addPicker = document.getElementById('add-category-picker');
 
   if (!active.length) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No categories set yet — set these up in the Organisation section above.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('set_no_categories_yet')}</p>`;
   } else {
     list.innerHTML = active.map(c => `<span class="active-category-pill">${CATEGORY_LABELS[c] || c}</span>`).join('');
   }
 
   const remaining = Object.keys(CATEGORY_LABELS).filter(c => !active.includes(c));
   if (!remaining.length) {
-    addPicker.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">All categories active.</p>';
+    addPicker.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('set_all_categories_active')}</p>`;
     return;
   }
 
@@ -9515,12 +9793,13 @@ async function renderActiveCategories() {
 function confirmAddCategory(category) {
   const zone = document.getElementById('category-confirm-zone');
   const starterCount = (CATEGORY_STARTER_TYPES[category] || []).length;
+  const msg = t(starterCount !== 1 ? 'set_adding_category_confirm_plural' : 'set_adding_category_confirm_singular').replace('{cat}', CATEGORY_LABELS[category]).replace('{n}', starterCount);
   zone.innerHTML = `
     <div class="confirm-banner">
-      Adding <strong>${CATEGORY_LABELS[category]}</strong> will create ${starterCount} starter trip type${starterCount !== 1 ? 's' : ''} you can edit afterward. This action is owner-only.
+      ${msg}
       <div class="confirm-banner-actions">
-        <button class="btn-confirm-yes" onclick="doAddCategory('${category}')">Add category</button>
-        <button class="btn-confirm-no" onclick="document.getElementById('category-confirm-zone').innerHTML=''">Cancel</button>
+        <button class="btn-confirm-yes" onclick="doAddCategory('${category}')">${t('set_add_category_btn')}</button>
+        <button class="btn-confirm-no" onclick="document.getElementById('category-confirm-zone').innerHTML=''">${t('tt_cancel')}</button>
       </div>
     </div>`;
 }
@@ -9528,7 +9807,7 @@ function confirmAddCategory(category) {
 async function doAddCategory(category) {
   const existing = await loadActiveCategories();
   if (existing.includes(category)) {
-    document.getElementById('category-confirm-zone').innerHTML = '<p style="color:var(--error);font-size:0.83rem;">This category is already active.</p>';
+    document.getElementById('category-confirm-zone').innerHTML = `<p style="color:var(--error);font-size:0.83rem;">${t('set_category_already_active')}</p>`;
     return;
   }
   await seedTripTypesForCategory(category);
@@ -9551,29 +9830,29 @@ async function renderTripTypesList() {
 
   const list = document.getElementById('trip-types-list');
   if (!types || types.length === 0) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No trip types yet. Select an operation category above to get started.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('set_no_trip_types_yet')}</p>`;
     return;
   }
 
-  list.innerHTML = types.map(t => `
+  list.innerHTML = types.map(tt => `
     <div class="trip-type-row">
       <div>
-        <div class="trip-type-name">${t.name}</div>
-        <div class="trip-type-meta">${CATEGORY_LABELS[t.category] || t.category}${t.needs_tank_count ? ' · ' + t.num_tanks + ' tank' + (t.num_tanks > 1 ? 's' : '') : ''}${t.can_be_private ? ' · can be private' : ''}${t.is_multi_day ? ' · multi-day' : ''}</div>
+        <div class="trip-type-name">${tt.name}</div>
+        <div class="trip-type-meta">${CATEGORY_LABELS[tt.category] || tt.category}${tt.needs_tank_count ? ' · ' + tt.num_tanks + (tt.num_tanks > 1 ? t('set_tanks_plural') : t('set_tank_singular')) : ''}${tt.can_be_private ? t('set_can_be_private') : ''}${tt.is_multi_day ? t('set_multi_day_suffix') : ''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <input class="trip-type-price-input" type="number" min="0" value="${t.default_price || ''}" placeholder="0"
-          onchange="updateTripTypePrice('${t.id}', this.value, this)">
-        <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRentalFees('${t.id}')">Rental fees</button>
-        <button class="btn-icon danger" onclick="deactivateTripType('${t.id}')">Remove</button>
+        <input class="trip-type-price-input" type="number" min="0" value="${tt.default_price || ''}" placeholder="0"
+          onchange="updateTripTypePrice('${tt.id}', this.value, this)">
+        <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRentalFees('${tt.id}')">${t('set_rental_fees_btn')}</button>
+        <button class="btn-icon danger" onclick="deactivateTripType('${tt.id}')">${t('fleet_remove')}</button>
       </div>
     </div>
-    ${t.category === 'charter_yacht' ? `
+    ${tt.category === 'charter_yacht' ? `
     <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted);margin:-6px 0 12px;cursor:pointer;">
-      <input type="checkbox" ${t.is_multi_day ? 'checked' : ''} onchange="updateTripTypeMultiDay('${t.id}', this.checked)">
-      Multi-day trip (adds an end date + lets you hire crew per day on this trip type)
+      <input type="checkbox" ${tt.is_multi_day ? 'checked' : ''} onchange="updateTripTypeMultiDay('${tt.id}', this.checked)">
+      ${t('set_multiday_checkbox_label')}
     </label>` : ''}
-    <div id="rental-fees-${t.id}" style="display:none;margin:-4px 0 12px;"></div>
+    <div id="rental-fees-${tt.id}" style="display:none;margin:-4px 0 12px;"></div>
   `).join('');
 }
 async function updateTripTypeMultiDay(id, checked) {
@@ -9594,20 +9873,20 @@ async function toggleRentalFees(tripTypeId) {
   const panel = document.getElementById('rental-fees-' + tripTypeId);
   if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
   panel.style.display = 'block';
-  panel.innerHTML = '<p style="font-size:0.8rem;color:var(--muted);">Loading...</p>';
+  panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);">${t('common_loading')}</p>`;
   const { data: ttgf } = await sb.from('trip_type_gear_fields')
     .select('id, rental_fee, gear_field_definitions(field_key, label)')
     .eq('trip_type_id', tripTypeId);
   if (!ttgf || !ttgf.length) {
-    panel.innerHTML = '<p style="font-size:0.8rem;color:var(--muted);padding:4px 0 12px;">No gear fields attached to this trip type.</p>';
+    panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);padding:4px 0 12px;">${t('set_no_gear_fields')}</p>`;
     return;
   }
   panel.innerHTML = `
     <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
-      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Rental gear fees (optional — added per guest who selects rental)</div>
+      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">${t('set_rental_gear_fees_header')}</div>
       ${ttgf.map(r => `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">
-          <label style="font-size:0.85rem;">${r.gear_field_definitions?.label || r.gear_field_definitions?.field_key || 'Field'}</label>
+          <label style="font-size:0.85rem;">${r.gear_field_definitions?.label || r.gear_field_definitions?.field_key || t('set_field_fallback')}</label>
           <input class="sf-input" type="number" min="0" style="max-width:110px;margin-bottom:0;" value="${r.rental_fee ?? ''}" placeholder="0"
             onchange="updateGearFieldRentalFee('${r.id}', this.value, this)">
         </div>
@@ -9624,13 +9903,13 @@ async function updateGearFieldRentalFee(ttgfId, value, inputEl) {
 }
 
 async function deactivateTripType(id) {
-  if (!(await showConfirmModal('Remove this trip type? Existing bookings using it are unaffected.'))) return;
+  if (!(await showConfirmModal(t('set_confirm_remove_trip_type')))) return;
   await sb.from('trip_types').update({ is_active: false }).eq('id', id);
   await renderTripTypesList();
 }
 
 document.getElementById('btn-add-trip-type').addEventListener('click', async () => {
-  const name = await showPromptModal('Trip type name:', 'e.g. Wreck Dive, Yoga Charter');
+  const name = await showPromptModal(t('set_trip_type_name_prompt'), t('set_trip_type_name_ph'));
   if (!name || !name.trim()) return;
   await sb.from('trip_types').insert({
     org_id: currentOrgId, name: name.trim(), category: 'other',
