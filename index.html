@@ -2362,8 +2362,9 @@ body { background: var(--navy); color: var(--text); }
               </div>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Contact email</label>
+              <label class="sf-label">Contact email <span class="required-star">*</span></label>
               <input class="sf-input" type="email" id="org-email" placeholder="hello@yourdiveshop.com">
+              <p style="font-size:0.78rem;color:var(--muted);margin-top:4px;">Guests see this as the reply-to address on booking confirmation emails.</p>
             </div>
             <div class="sf-group" id="org-categories-group">
               <label class="sf-label">What does your operation run? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">— select all that apply</span></label>
@@ -3438,6 +3439,11 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     feedback.className = 'save-feedback error visible';
     return;
   }
+  if (!email) {
+    feedback.textContent = 'Contact email is required — guests see it on booking confirmations.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = 'Saving...';
@@ -4091,13 +4097,13 @@ function checkInButtonHTML(groupId, participants) {
   let label, style;
   if (checkedInCount === 0) {
     label = 'Check In';
-    style = '';
+    style = 'background:var(--blue);color:var(--white);border-color:var(--blue);';
   } else if (checkedInCount < total) {
     label = `Checked In (${checkedInCount}/${total})`;
-    style = 'color:#b7791f;border-color:#b7791f;';
+    style = 'background:#b7791f;color:var(--white);border-color:#b7791f;';
   } else {
     label = 'Checked In ✓';
-    style = 'color:var(--success);border-color:var(--success);';
+    style = 'background:var(--success);color:var(--white);border-color:var(--success);';
   }
   return `<button class="btn-cancel" style="font-size:0.8rem;padding:6px 12px;${style}" onclick="showCheckInPanel('${groupId}')">${label}</button>`;
 }
