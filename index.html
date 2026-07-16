@@ -497,9 +497,10 @@ body { background: var(--navy); color: var(--text); }
 }
 .trip-type-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 0; border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap;
+  padding: 12px 0 0; gap: 12px; flex-wrap: wrap;
 }
-.trip-type-row:last-child { border-bottom: none; }
+.trip-type-block { border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.trip-type-block:last-child { border-bottom: none; padding-bottom: 0; }
 .trip-type-name { font-weight: 600; color: var(--navy); font-size: 0.9rem; }
 .trip-type-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
 .trip-type-price-input {
@@ -2676,6 +2677,35 @@ const TRANSLATIONS = {
     tk_no_due_date: 'No due date', tk_no_task_lists_yet: 'No task lists yet.', tk_unknown: 'Unknown',
     tk_task_list_fallback: 'Task list', tk_assigned_to: 'Assigned to:', tk_note_saved: 'Note saved.',
 
+    stt_1_dive: '1 Dive', stt_2_dives: '2 Dives', stt_night_dive: 'Night Dive', stt_nitrox_dive: 'Nitrox Dive',
+    stt_discover_scuba: 'Discover Scuba Diving', stt_confined_water: 'Confined Water / Pool', stt_shore_dive: 'Shore Dive',
+    stt_half_day_charter: 'Half Day Charter', stt_day_charter: 'Day Charter', stt_sunset_cruise: 'Sunset Cruise',
+    stt_private_charter: 'Private Charter', stt_island_hopping: 'Island Hopping',
+    stt_surf_lesson: 'Surf Lesson', stt_surf_trip: 'Surf Trip', stt_fishing_trip: 'Fishing Trip', stt_freediving_session: 'Freediving Session',
+
+    gt_no_tabs_yet: 'No guest tabs yet.', gt_status_settled: 'Settled', gt_status_overdue: 'Overdue', gt_status_open: 'Open',
+    gt_bookings_label: 'booking(s)', gt_settle_by_label: 'Settle by', gt_owed_label: 'Owed:', gt_view_close_tab: 'View / Close Tab',
+    gt_open_tab_heading: 'Open a Guest Tab', gt_guest_full_name: 'Guest full name', gt_settle_by_date_label: 'Settle by date',
+    gt_email_label: 'Email', gt_phone_label: 'Phone', gt_country_label: 'Country of residence', gt_notes_label: 'Notes',
+    gt_open_tab_btn: 'Open Tab', gt_fields_required: 'Guest name and settle-by date are required.',
+    gt_back_to_tabs: '← Back to tabs', gt_no_bookings_linked: 'No bookings linked to this tab yet. Link a group when creating or editing a booking.',
+    gt_owed_dollar: 'Owed $', gt_paid_in_full: 'Paid in full', gt_open_trip_log_payment: 'Open trip to log payment',
+    gt_pay_tab_full_prefix: 'Pay Tab in Full — ', gt_settle_full_balance: 'Settle Full Balance', gt_total_label: 'Total:',
+    gt_confirm_payment: 'Confirm Payment', gt_close_tab: 'Close Tab', gt_select_payment_method: 'Select a payment method.',
+    gt_cannot_close_prefix: 'Cannot close: ', gt_cannot_close_suffix: ' still owed across linked bookings.', gt_guest_singular: 'guest',
+
+    gp_no_price_set: 'No price set', gp_partial_owed: 'Partial — {amount} owed', gp_nothing_paid_yet: 'Nothing paid yet',
+    gp_amount_label: 'Amount', gp_total_amount_btn: 'Total Amount', gp_method_label: 'Method',
+    gp_cash: 'Cash', gp_card: 'Card', gp_transfer: 'Transfer',
+    gp_note_required_label: "Note (required — this exceeds what's owed)", gp_confirm: 'Confirm', gp_no_payments_logged_yet: 'No payments logged yet.',
+    gp_log_payment_btn: '+ Log Payment', gp_per_person: 'person', gp_rental_gear: 'rental gear', gp_crew_hire: 'crew hire',
+    gp_no_price_breakdown: '{count} {unit} added, but no price per person set yet — nothing will be charged until you add one above.',
+
+    gr_available_label: 'Available:', gr_add_btn: '+ Add', gr_repair_btn: 'Repair', gr_in_repair_label: 'In Repair:',
+    gr_avail_btn: 'Avail', gr_available_btn: 'Available', gr_discard_btn: '✕ Discard',
+    gr_no_categories_active: 'No gear categories active. Enable categories in Settings.',
+    gr_unit_units: 'units', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'bars', gr_unit_sets: 'sets',
+
     getting_started_title: 'Getting started',
     getting_started_sub: 'Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.',
 
@@ -3012,6 +3042,35 @@ const TRANSLATIONS = {
     tk_no_tasks_assigned: 'No tienes tareas asignadas por ahora.', tk_complete: 'completado',
     tk_no_due_date: 'Sin fecha límite', tk_no_task_lists_yet: 'Aún no hay listas de tareas.', tk_unknown: 'Desconocido',
     tk_task_list_fallback: 'Lista de tareas', tk_assigned_to: 'Asignado a:', tk_note_saved: 'Nota guardada.',
+
+    stt_1_dive: '1 Inmersión', stt_2_dives: '2 Inmersiones', stt_night_dive: 'Inmersión Nocturna', stt_nitrox_dive: 'Inmersión con Nitrox',
+    stt_discover_scuba: 'Buceo de Prueba', stt_confined_water: 'Aguas Confinadas / Piscina', stt_shore_dive: 'Inmersión desde la Costa',
+    stt_half_day_charter: 'Charter de Medio Día', stt_day_charter: 'Charter de Día Completo', stt_sunset_cruise: 'Paseo al Atardecer',
+    stt_private_charter: 'Charter Privado', stt_island_hopping: 'Recorrido por Islas',
+    stt_surf_lesson: 'Clase de Surf', stt_surf_trip: 'Salida de Surf', stt_fishing_trip: 'Salida de Pesca', stt_freediving_session: 'Sesión de Apnea',
+
+    gt_no_tabs_yet: 'Aún no hay cuentas de huéspedes.', gt_status_settled: 'Liquidada', gt_status_overdue: 'Vencida', gt_status_open: 'Abierta',
+    gt_bookings_label: 'reserva(s)', gt_settle_by_label: 'Vence el', gt_owed_label: 'Adeudado:', gt_view_close_tab: 'Ver / Cerrar Cuenta',
+    gt_open_tab_heading: 'Abrir una Cuenta de Huésped', gt_guest_full_name: 'Nombre completo del huésped', gt_settle_by_date_label: 'Fecha de vencimiento',
+    gt_email_label: 'Correo electrónico', gt_phone_label: 'Teléfono', gt_country_label: 'País de residencia', gt_notes_label: 'Notas',
+    gt_open_tab_btn: 'Abrir Cuenta', gt_fields_required: 'El nombre del huésped y la fecha de vencimiento son obligatorios.',
+    gt_back_to_tabs: '← Volver a las cuentas', gt_no_bookings_linked: 'Aún no hay reservas vinculadas a esta cuenta. Vincula un grupo al crear o editar una reserva.',
+    gt_owed_dollar: 'Adeudado $', gt_paid_in_full: 'Pagado en su totalidad', gt_open_trip_log_payment: 'Abrir salida para registrar pago',
+    gt_pay_tab_full_prefix: 'Pagar Cuenta Completa — ', gt_settle_full_balance: 'Liquidar Saldo Completo', gt_total_label: 'Total:',
+    gt_confirm_payment: 'Confirmar Pago', gt_close_tab: 'Cerrar Cuenta', gt_select_payment_method: 'Selecciona un método de pago.',
+    gt_cannot_close_prefix: 'No se puede cerrar: ', gt_cannot_close_suffix: ' aún se adeuda en las reservas vinculadas.', gt_guest_singular: 'huésped',
+
+    gp_no_price_set: 'Sin precio establecido', gp_partial_owed: 'Parcial — se adeudan {amount}', gp_nothing_paid_yet: 'Aún no se ha pagado nada',
+    gp_amount_label: 'Monto', gp_total_amount_btn: 'Monto Total', gp_method_label: 'Método',
+    gp_cash: 'Efectivo', gp_card: 'Tarjeta', gp_transfer: 'Transferencia',
+    gp_note_required_label: 'Nota (obligatoria — esto excede lo adeudado)', gp_confirm: 'Confirmar', gp_no_payments_logged_yet: 'Aún no hay pagos registrados.',
+    gp_log_payment_btn: '+ Registrar Pago', gp_per_person: 'persona', gp_rental_gear: 'equipo de alquiler', gp_crew_hire: 'contratación de tripulación',
+    gp_no_price_breakdown: 'Se agregaron {count} {unit}, pero aún no se estableció un precio por persona — no se cobrará nada hasta que agregues uno arriba.',
+
+    gr_available_label: 'Disponible:', gr_add_btn: '+ Agregar', gr_repair_btn: 'Reparar', gr_in_repair_label: 'En Reparación:',
+    gr_avail_btn: 'Disp.', gr_available_btn: 'Disponible', gr_discard_btn: '✕ Descartar',
+    gr_no_categories_active: 'No hay categorías de equipo activas. Actívalas en Configuración.',
+    gr_unit_units: 'unidades', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'barras', gr_unit_sets: 'juegos',
 
     getting_started_title: 'Primeros pasos',
     getting_started_sub: 'Tu cuenta de Seven Seas ya está activa. Ve a Configuración para agregar los datos de tu operación y luego empieza a agregar embarcaciones y tripulación.',
@@ -4925,11 +4984,11 @@ function tripCard(trip, paid) {
   <div class="trip-card ${trip.status}" onclick="event.stopPropagation();openTrip('${trip.id}')">
     <div class="trip-card-header">
       <div>
-        <div class="trip-card-title">${trip.trip_name || trip.trip_type?.replace(/_/g,' ') || t('cal_trip_fallback')}</div>
+        <div class="trip-card-title">${trip.trip_name || trTypeName(trip.trip_type)?.replace(/_/g,' ') || t('cal_trip_fallback')}</div>
         <div class="trip-card-meta">
           <span>${trip.trip_time ? trip.trip_time.slice(0,5) : '—'}${trip.arrival_time ? ' – ' + trip.arrival_time.slice(0,5) : ''}</span>
           <span>${trip.boats?.name || t('cal_no_boat')}</span>
-          <span>${trip.trip_type?.replace(/_/g,' ') || ''}</span>
+          <span>${trTypeName(trip.trip_type)?.replace(/_/g,' ') || ''}</span>
         </div>
       </div>
       <span class="trip-status-badge ${trip.status}">${trip.status}</span>
@@ -4976,7 +5035,7 @@ async function renderWeekView() {
     const chips = dayT.map(tr => `
       <div class="week-chip" onclick="event.stopPropagation();openTrip('${tr.id}')">
         <div class="week-chip-time">${tr.trip_time?.slice(0,5)||''}${tr.arrival_time ? ' – ' + tr.arrival_time.slice(0,5) : ''}</div>
-        <div class="week-chip-title">${tr.trip_name || tr.trip_type?.replace(/_/g,' ') || t('cal_trip_fallback')}</div>
+        <div class="week-chip-title">${tr.trip_name || trTypeName(tr.trip_type)?.replace(/_/g,' ') || t('cal_trip_fallback')}</div>
         <div class="week-chip-meta">${tr.boats?.name || t('cal_no_boat')}${tr.max_guests ? ' · ' + tr.max_guests + (tr.boats?.capacity ? '/' + tr.boats.capacity : '') + ' ' + t('cal_guests_suffix') : ''}</div>
       </div>
     `).join('');
@@ -5019,7 +5078,7 @@ async function renderMonthView() {
     const shown = dayTrips.slice(0, 3);
     const chips = shown.map(tr => `
       <div class="month-mini-chip" onclick="event.stopPropagation();openTrip('${tr.id}')">
-        ${tr.trip_time?.slice(0,5)||''} ${tr.trip_name || tr.trip_type?.replace(/_/g,' ') || t('cal_trip_fallback')}
+        ${tr.trip_time?.slice(0,5)||''} ${tr.trip_name || trTypeName(tr.trip_type)?.replace(/_/g,' ') || t('cal_trip_fallback')}
       </div>
     `).join('');
     html += `
@@ -5091,14 +5150,14 @@ async function populateTripTypeSelect(selectedId) {
     return;
   }
   const grouped = {};
-  types.forEach(t => {
-    const cat = CATEGORY_LABELS[t.category] || t.category || 'Other';
+  types.forEach(tType => {
+    const cat = CATEGORY_LABELS[tType.category] || tType.category || 'Other';
     if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(t);
+    grouped[cat].push(tType);
   });
   sel.innerHTML = Object.entries(grouped).map(([cat, items]) =>
     `<optgroup label="${cat}">` +
-    items.map(t => `<option value="${t.id}" ${t.id === selectedId ? 'selected' : ''}>${t.name}</option>`).join('') +
+    items.map(tType => `<option value="${tType.id}" ${tType.id === selectedId ? 'selected' : ''}>${trTypeName(tType.name)}</option>`).join('') +
     `</optgroup>`
   ).join('');
 }
@@ -5844,12 +5903,12 @@ async function loadGuestTabs() {
     .eq('location_id', currentLocationId)
     .order('created_at', { ascending: false });
   if (!tabs || !tabs.length) {
-    container.innerHTML = '<p style="color:var(--muted);">No guest tabs yet.</p>';
+    container.innerHTML = `<p style="color:var(--muted);">${t('gt_no_tabs_yet')}</p>`;
     return;
   }
   const today = formatDate(new Date());
-  const rowsHtml = await Promise.all(tabs.map(async t => {
-    const { data: linkedGroups } = await sb.from('trip_groups').select('id, price_per_person, participants(id, rental_surcharge)').eq('tab_id', t.id);
+  const rowsHtml = await Promise.all(tabs.map(async tab => {
+    const { data: linkedGroups } = await sb.from('trip_groups').select('id, price_per_person, participants(id, rental_surcharge)').eq('tab_id', tab.id);
     const groupIds = (linkedGroups || []).map(g => g.id);
     let paid = 0;
     if (groupIds.length) {
@@ -5860,18 +5919,18 @@ async function loadGuestTabs() {
       const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
       return sum + (parseFloat(g.price_per_person) || 0) * Math.max(1, g.participants?.length || 0) + rentalTotal;
     }, 0);
-    const owed = total - paid - parseFloat(t.deposit_amount || 0);
-    const isOverdue = t.status === 'open' && t.settle_by_date < today;
-    const statusLabel = t.status === 'closed' ? 'Settled' : isOverdue ? 'Overdue' : 'Open';
-    const statusColor = t.status === 'closed' ? 'var(--success)' : isOverdue ? 'var(--error)' : 'var(--warning)';
+    const owed = total - paid - parseFloat(tab.deposit_amount || 0);
+    const isOverdue = tab.status === 'open' && tab.settle_by_date < today;
+    const statusLabel = tab.status === 'closed' ? t('gt_status_settled') : isOverdue ? t('gt_status_overdue') : t('gt_status_open');
+    const statusColor = tab.status === 'closed' ? 'var(--success)' : isOverdue ? 'var(--error)' : 'var(--warning)';
     return `<div class="gear-item-row">
       <div class="gear-item-header">
-        <span class="gear-item-name">${t.guest_name}</span>
+        <span class="gear-item-name">${tab.guest_name}</span>
         <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${linkedGroups?.length || 0} booking(s) · Settle by ${t.settle_by_date}</div>
-      <div style="font-size:0.85rem;font-weight:600;margin-top:6px;">Owed: $${owed.toFixed(2)}</div>
-      ${t.status === 'open' ? `<button class="gear-action-btn" style="margin-top:8px;" onclick="openTabDetail('${t.id}')">View / Close Tab</button>` : ''}
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${linkedGroups?.length || 0} ${t('gt_bookings_label')} · ${t('gt_settle_by_label')} ${tab.settle_by_date}</div>
+      <div style="font-size:0.85rem;font-weight:600;margin-top:6px;">${t('gt_owed_label')} $${owed.toFixed(2)}</div>
+      ${tab.status === 'open' ? `<button class="gear-action-btn" style="margin-top:8px;" onclick="openTabDetail('${tab.id}')">${t('gt_view_close_tab')}</button>` : ''}
     </div>`;
   }));
   container.innerHTML = rowsHtml.join('');
@@ -5883,38 +5942,38 @@ function showOpenTabForm() {
   const container = document.getElementById('guest-tabs-list');
   container.insertAdjacentHTML('afterbegin', `
     <div class="inline-form" id="form-open-tab" style="margin-bottom:16px;">
-      <div class="card-section-title">Open a Guest Tab</div>
+      <div class="card-section-title">${t('gt_open_tab_heading')}</div>
       <div class="sf-row">
         <div class="sf-group">
-          <label class="sf-label">Guest full name</label>
+          <label class="sf-label">${t('gt_guest_full_name')}</label>
           <input class="sf-input" type="text" id="tab-guest-name" placeholder="e.g. Maria Lopez">
         </div>
         <div class="sf-group">
-          <label class="sf-label">Settle by date</label>
+          <label class="sf-label">${t('gt_settle_by_date_label')}</label>
           <input class="sf-input" type="date" id="tab-settle-date">
         </div>
       </div>
       <div class="sf-row">
         <div class="sf-group">
-          <label class="sf-label">Email</label>
-          <input class="sf-input" type="email" id="tab-guest-email" placeholder="Optional">
+          <label class="sf-label">${t('gt_email_label')}</label>
+          <input class="sf-input" type="email" id="tab-guest-email" placeholder="${t('tk_optional_ph')}">
         </div>
         <div class="sf-group">
-          <label class="sf-label">Phone</label>
-          <input class="sf-input" type="tel" id="tab-guest-phone" placeholder="Optional">
+          <label class="sf-label">${t('gt_phone_label')}</label>
+          <input class="sf-input" type="tel" id="tab-guest-phone" placeholder="${t('tk_optional_ph')}">
         </div>
       </div>
       <div class="sf-group">
-        <label class="sf-label">Country of residence</label>
-        <input class="sf-input" type="text" id="tab-guest-country" placeholder="Optional">
+        <label class="sf-label">${t('gt_country_label')}</label>
+        <input class="sf-input" type="text" id="tab-guest-country" placeholder="${t('tk_optional_ph')}">
       </div>
       <div class="sf-group">
-        <label class="sf-label">Notes</label>
+        <label class="sf-label">${t('gt_notes_label')}</label>
         <input class="sf-input" type="text" id="tab-notes" placeholder="Optional — e.g. ID reference if needed">
       </div>
       <div class="settings-actions">
-        <button class="btn-save" id="btn-confirm-open-tab">Open Tab</button>
-        <button class="btn-cancel" onclick="loadGuestTabs()">Cancel</button>
+        <button class="btn-save" id="btn-confirm-open-tab">${t('gt_open_tab_btn')}</button>
+        <button class="btn-cancel" onclick="loadGuestTabs()">${t('tt_cancel')}</button>
         <span class="save-feedback" id="open-tab-feedback"></span>
       </div>
     </div>
@@ -5926,7 +5985,7 @@ async function confirmOpenTab() {
   const name = document.getElementById('tab-guest-name').value.trim();
   const settleDate = document.getElementById('tab-settle-date').value;
   if (!name || !settleDate) {
-    feedback.textContent = 'Guest name and settle-by date are required.';
+    feedback.textContent = t('gt_fields_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -5953,18 +6012,18 @@ async function openTabDetail(tabId) {
     .order('created_at');
 
   let html = `
-    <button class="btn-cancel" onclick="loadGuestTabs()" style="margin-bottom:16px;">← Back to tabs</button>
+    <button class="btn-cancel" onclick="loadGuestTabs()" style="margin-bottom:16px;">${t('gt_back_to_tabs')}</button>
     <div class="card-section-title">${tab.guest_name}</div>
     <div style="font-size:0.8rem;color:var(--muted);margin-bottom:16px;">
       ${tab.guest_email || ''}${tab.guest_email && tab.guest_phone ? ' · ' : ''}${tab.guest_phone || ''}
       ${tab.guest_country ? ' · ' + tab.guest_country : ''}<br>
-      Settle by ${tab.settle_by_date}${tab.notes ? ' · ' + tab.notes : ''}
+      ${t('gt_settle_by_label')} ${tab.settle_by_date}${tab.notes ? ' · ' + tab.notes : ''}
     </div>
   `;
 
   let unpaidGroups = [];
   if (!linkedGroups || !linkedGroups.length) {
-    html += `<p style="color:var(--muted);">No bookings linked to this tab yet. Link a group when creating or editing a booking.</p>`;
+    html += `<p style="color:var(--muted);">${t('gt_no_bookings_linked')}</p>`;
   } else {
     const groupIds = linkedGroups.map(g => g.id);
     const { data: allPayments } = await sb.from('payments').select('group_id, amount').in('group_id', groupIds);
@@ -5975,16 +6034,16 @@ async function openTabDetail(tabId) {
       const total = perPerson * guestCount + rentalTotal;
       const paid = (allPayments || []).filter(p => p.group_id === g.id).reduce((sum, p) => sum + parseFloat(p.amount), 0);
       const owed = total - paid;
-      const tripType = g.trips?.trip_type || 'Trip';
+      const tripType = trTypeName(g.trips?.trip_type) || t('cal_trip_fallback');
       const tripDate = g.trips?.trip_date || '';
       if (owed > 0.01) unpaidGroups.push({ id: g.id, trip_id: g.trip_id, trip_type: tripType, trip_date: tripDate, guestCount, owed });
       html += `
         <div class="gear-item-row">
           <div class="gear-item-header">
             <span class="gear-item-name">${g.contact_name || tripType} — ${tripDate}</span>
-            <span style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};font-weight:600;">${owed > 0 ? 'Owed $' + owed.toFixed(2) : 'Paid in full'}</span>
+            <span style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};font-weight:600;">${owed > 0 ? t('gt_owed_dollar') + owed.toFixed(2) : t('gt_paid_in_full')}</span>
           </div>
-          <button class="gear-action-btn" style="margin-top:8px;" onclick="openTrip('${g.trip_id}')">Open trip to log payment</button>
+          <button class="gear-action-btn" style="margin-top:8px;" onclick="openTrip('${g.trip_id}')">${t('gt_open_trip_log_payment')}</button>
         </div>
       `;
     });
@@ -5995,32 +6054,32 @@ async function openTabDetail(tabId) {
   if (unpaidGroups.length) {
     html += `
       <div style="margin:16px 0;">
-        <button class="btn-save" id="btn-pay-tab-full">Pay Tab in Full — $${grandTotal.toFixed(2)}</button>
+        <button class="btn-save" id="btn-pay-tab-full">${t('gt_pay_tab_full_prefix')}$${grandTotal.toFixed(2)}</button>
       </div>
       <div class="inline-form" id="form-pay-tab-full" style="display:none;margin-bottom:16px;">
-        <div class="card-section-title">Settle Full Balance</div>
+        <div class="card-section-title">${t('gt_settle_full_balance')}</div>
         ${unpaidGroups.map(g => `
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:4px;">${g.trip_type} — ${g.trip_date} · ${g.guestCount} guest${g.guestCount>1?'s':''} · $${g.owed.toFixed(2)}</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:4px;">${g.trip_type} — ${g.trip_date} · ${g.guestCount} ${g.guestCount > 1 ? t('cal_guests_suffix') : t('gt_guest_singular')} · $${g.owed.toFixed(2)}</div>
         `).join('')}
-        <div style="font-weight:700;font-size:1rem;margin:10px 0;">Total: $${grandTotal.toFixed(2)}</div>
+        <div style="font-weight:700;font-size:1rem;margin:10px 0;">${t('gt_total_label')} $${grandTotal.toFixed(2)}</div>
         <div class="sf-group">
-          <label class="sf-label">Method</label>
+          <label class="sf-label">${t('gp_method_label')}</label>
           <div class="radio-group">
-            <div class="radio-btn" id="pm-tab-cash" onclick="selectTabPaymentMethod('cash')">Cash</div>
-            <div class="radio-btn" id="pm-tab-card" onclick="selectTabPaymentMethod('card')">Card</div>
-            <div class="radio-btn" id="pm-tab-transfer" onclick="selectTabPaymentMethod('transfer')">Transfer</div>
+            <div class="radio-btn" id="pm-tab-cash" onclick="selectTabPaymentMethod('cash')">${t('gp_cash')}</div>
+            <div class="radio-btn" id="pm-tab-card" onclick="selectTabPaymentMethod('card')">${t('gp_card')}</div>
+            <div class="radio-btn" id="pm-tab-transfer" onclick="selectTabPaymentMethod('transfer')">${t('gp_transfer')}</div>
           </div>
         </div>
         <div class="settings-actions">
-          <button class="btn-save" id="btn-confirm-pay-tab-full">Confirm Payment</button>
-          <button class="btn-cancel" onclick="document.getElementById('form-pay-tab-full').style.display='none';document.getElementById('btn-pay-tab-full').style.display='inline-block';">Cancel</button>
+          <button class="btn-save" id="btn-confirm-pay-tab-full">${t('gt_confirm_payment')}</button>
+          <button class="btn-cancel" onclick="document.getElementById('form-pay-tab-full').style.display='none';document.getElementById('btn-pay-tab-full').style.display='inline-block';">${t('tt_cancel')}</button>
         </div>
         <span class="save-feedback" id="pay-tab-feedback"></span>
       </div>
     `;
   }
 
-  html += `<button class="btn-save" id="btn-close-tab">Close Tab</button><span class="save-feedback" id="close-tab-feedback"></span>`;
+  html += `<button class="btn-save" id="btn-close-tab">${t('gt_close_tab')}</button><span class="save-feedback" id="close-tab-feedback"></span>`;
 
   container.innerHTML = html;
 
@@ -6043,7 +6102,7 @@ async function confirmPayTabFull(tabId, unpaidGroups) {
   const feedback = document.getElementById('pay-tab-feedback');
   const method = window.currentTabPaymentMethod;
   if (!method) {
-    feedback.textContent = 'Select a payment method.';
+    feedback.textContent = t('gt_select_payment_method');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -6071,7 +6130,7 @@ async function closeGuestTab(tabId, linkedGroups) {
     totalOwed += (total - paid);
   }
   if (totalOwed > 0.01) {
-    feedback.textContent = `Cannot close: $${totalOwed.toFixed(2)} still owed across linked bookings.`;
+    feedback.textContent = `${t('gt_cannot_close_prefix')}$${totalOwed.toFixed(2)}${t('gt_cannot_close_suffix')}`;
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -6266,7 +6325,7 @@ function svgDivergingBarChart(data) {
 
 function renderHorizontalBars(map) {
   const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return '<p style="font-size:0.83rem;color:var(--muted)">No revenue in this range.</p>';
+  if (!entries.length) return `<p style="font-size:0.83rem;color:var(--muted)">${t('rep_no_data_range')}</p>`;
   const max = Math.max(...entries.map(e => e[1]));
   return entries.map(([label, value]) => `
     <div style="margin-bottom:12px;">
@@ -6371,7 +6430,7 @@ function renderRevenueReport(payments, startDate, endDate) {
     ]
   }));
   document.getElementById('rep-revenue-chart').innerHTML = chartData.every(d => d.segments.every(s => s.value === 0))
-    ? '<p style="font-size:0.83rem;color:var(--muted)">No payments logged in this range.</p>'
+    ? `<p style="font-size:0.83rem;color:var(--muted)">${t('rep_no_data_range')}</p>`
     : svgStackedBarChart(chartData);
 }
 
@@ -6474,7 +6533,7 @@ function renderTripTypeAndBoatBreakdown(payments) {
   const byBoat = {};
   payments.forEach(p => {
     const amount = parseFloat(p.amount) || 0;
-    const tripType = p.trips?.trip_type || t('rep_other');
+    const tripType = trTypeName(p.trips?.trip_type) || t('rep_other');
     const boatName = p.trips?.boats?.name || t('rep_no_boat_shore');
     byTripType[tripType] = (byTripType[tripType] || 0) + amount;
     byBoat[boatName] = (byBoat[boatName] || 0) + amount;
@@ -6788,7 +6847,7 @@ async function loadWaivers() {
 
   const pendingListEl = document.getElementById('pending-waivers-list');
   pendingListEl.innerHTML = pendingRows.length ? pendingRows.map(({ p, trip, type, isMinor }) => {
-    const tripLabel = trip ? `${trip.trip_type || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
+    const tripLabel = trip ? `${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
     const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
     return `<div class="participant-row">
       <div>
@@ -7426,41 +7485,42 @@ async function groupPaymentHTML(g, participants) {
     </div>
   `).join('');
   const noPriceSet = !g.price_per_person && participants.length > 0;
-  const statusLabel = noPriceSet ? 'No price set' : balance <= 0 && total > 0 ? 'Paid in full' : paid > 0 ? `Partial — $${balance.toFixed(2)} owed` : 'Nothing paid yet';
+  const guestUnit = guests > 1 ? t('cal_guests_suffix') : t('gt_guest_singular');
+  const statusLabel = noPriceSet ? t('gp_no_price_set') : balance <= 0 && total > 0 ? t('gt_paid_in_full') : paid > 0 ? t('gp_partial_owed').replace('{amount}', '$' + balance.toFixed(2)) : t('gp_nothing_paid_yet');
   const statusColor = noPriceSet ? 'var(--warning, #b7791f)' : balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
   const breakdownText = noPriceSet
-    ? `${guests} guest${guests>1?'s':''} added, but no price per person set yet — nothing will be charged until you add one above.`
-    : `$${perPerson.toFixed(2)}/person × ${guests} guest${guests>1?'s':''} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' rental gear' : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' crew hire' : ''} = $${total.toFixed(2)}`;
+    ? t('gp_no_price_breakdown').replace('{count}', guests).replace('{unit}', guestUnit)
+    : `$${perPerson.toFixed(2)}/${t('gp_per_person')} × ${guests} ${guestUnit} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`;
   return `
     <div style="font-size:0.83rem;font-weight:600;color:${statusColor};margin-bottom:8px;">${statusLabel}</div>
     <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">${breakdownText}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${paymentsHtml || '<span style="font-size:0.8rem;color:var(--muted)">No payments logged yet.</span>'}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${paymentsHtml || `<span style="font-size:0.8rem;color:var(--muted)">${t('gp_no_payments_logged_yet')}</span>`}</div>
     <div id="log-payment-btn-wrap-${g.id}">
-      <button class="btn-cancel" onclick="showLogPaymentForm('${g.id}', ${total}, ${paid})">+ Log Payment</button>
+      <button class="btn-cancel" onclick="showLogPaymentForm('${g.id}', ${total}, ${paid})">${t('gp_log_payment_btn')}</button>
     </div>
     <div id="log-payment-form-${g.id}" style="display:none;margin-top:10px;padding:12px;background:var(--white);border-radius:10px;">
       <div class="sf-group">
-        <label class="sf-label">Amount</label>
+        <label class="sf-label">${t('gp_amount_label')}</label>
         <div style="display:flex;gap:8px;align-items:center;">
           <input class="sf-input" type="number" step="0.01" autocomplete="off" id="new-payment-amount-${g.id}" placeholder="e.g. 50" style="max-width:140px;margin-bottom:0;">
-          <button type="button" class="gear-action-btn" onclick="fillTotalAmount('${g.id}', ${balance})">Total Amount</button>
+          <button type="button" class="gear-action-btn" onclick="fillTotalAmount('${g.id}', ${balance})">${t('gp_total_amount_btn')}</button>
         </div>
       </div>
       <div class="sf-group">
-        <label class="sf-label">Method</label>
+        <label class="sf-label">${t('gp_method_label')}</label>
         <div class="radio-group">
-          <div class="radio-btn" id="pm-cash-${g.id}" onclick="selectPaymentMethod('${g.id}','cash')">Cash</div>
-          <div class="radio-btn" id="pm-card-${g.id}" onclick="selectPaymentMethod('${g.id}','card')">Card</div>
-          <div class="radio-btn" id="pm-transfer-${g.id}" onclick="selectPaymentMethod('${g.id}','transfer')">Transfer</div>
+          <div class="radio-btn" id="pm-cash-${g.id}" onclick="selectPaymentMethod('${g.id}','cash')">${t('gp_cash')}</div>
+          <div class="radio-btn" id="pm-card-${g.id}" onclick="selectPaymentMethod('${g.id}','card')">${t('gp_card')}</div>
+          <div class="radio-btn" id="pm-transfer-${g.id}" onclick="selectPaymentMethod('${g.id}','transfer')">${t('gp_transfer')}</div>
         </div>
       </div>
       <div class="sf-group" id="payment-note-wrap-${g.id}" style="display:none;">
-        <label class="sf-label">Note (required — this exceeds what's owed)</label>
+        <label class="sf-label">${t('gp_note_required_label')}</label>
         <input class="sf-input" type="text" autocomplete="off" id="new-payment-note-${g.id}" placeholder="e.g. Includes $10 tip">
       </div>
       <div class="settings-actions">
-        <button class="btn-save" onclick="confirmLogPayment('${g.id}', ${total}, ${paid})">Confirm</button>
-        <button class="btn-cancel" onclick="cancelLogPayment('${g.id}')">Cancel</button>
+        <button class="btn-save" onclick="confirmLogPayment('${g.id}', ${total}, ${paid})">${t('gp_confirm')}</button>
+        <button class="btn-cancel" onclick="cancelLogPayment('${g.id}')">${t('tt_cancel')}</button>
       </div>
       <span class="save-feedback" id="log-payment-feedback-${g.id}"></span>
     </div>
@@ -7922,7 +7982,7 @@ async function loadTodaysTripList() {
   }
 
   list.innerHTML = trips.map(tr => {
-    const name = tr.trip_name || tr.trip_types?.name || tr.trip_type || t('cal_trip_fallback');
+    const name = tr.trip_name || trTypeName(tr.trip_types?.name) || trTypeName(tr.trip_type) || t('cal_trip_fallback');
     const time = tr.trip_time?.slice(0,5) || '';
     const guests = tr.participants?.length || 0;
     const numTanks = tr.trip_types?.num_tanks || 1;
@@ -9326,7 +9386,7 @@ async function loadGearInventory() {
   noLocEl.style.display = 'none';
   const { data: categories } = await sb.from('gear_categories').select('*').eq('org_id', currentOrgId).eq('active', true).order('label');
   if (!categories || !categories.length) {
-    catEl.innerHTML = '<p style="color:var(--muted);">No gear categories active. Enable categories in Settings.</p>';
+    catEl.innerHTML = `<p style="color:var(--muted);">${t('gr_no_categories_active')}</p>`;
     return;
   }
   const catIds = categories.map(c => c.id);
@@ -9351,15 +9411,15 @@ function renderGearInventory(categories, items, stockMap) {
             const s = stockMap[item.id + '|' + sz] || { available_count: 0, repair_count: 0 };
             return `<div class="gear-size-box">
               <div class="gear-size-label">${sz}</div>
-              <div style="font-size:0.7rem;color:var(--muted);margin-bottom:2px;">Available: <span class="gear-stock-value">${s.available_count}</span></div>
+              <div style="font-size:0.7rem;color:var(--muted);margin-bottom:2px;">${t('gr_available_label')} <span class="gear-stock-value">${s.available_count}</span></div>
               <div style="display:flex;gap:3px;margin-bottom:4px;">
-                <button class="gear-action-btn add" onclick="gearStockAdd('${item.id}','${sz}')">+ Add</button>
-                <button class="gear-action-btn" onclick="gearStockRepair('${item.id}','${sz}')">Repair</button>
+                <button class="gear-action-btn add" onclick="gearStockAdd('${item.id}','${sz}')">${t('gr_add_btn')}</button>
+                <button class="gear-action-btn" onclick="gearStockRepair('${item.id}','${sz}')">${t('gr_repair_btn')}</button>
               </div>
-              <div style="font-size:0.7rem;color:var(--warning);margin-bottom:2px;">In Repair: <span class="gear-stock-value repair">${s.repair_count}</span></div>
+              <div style="font-size:0.7rem;color:var(--warning);margin-bottom:2px;">${t('gr_in_repair_label')} <span class="gear-stock-value repair">${s.repair_count}</span></div>
               <div style="display:flex;gap:3px;">
-                <button class="gear-action-btn" onclick="gearStockReturn('${item.id}','${sz}')">Avail</button>
-                <button class="gear-action-btn discard" onclick="gearStockDiscard('${item.id}','${sz}')">✕ Discard</button>
+                <button class="gear-action-btn" onclick="gearStockReturn('${item.id}','${sz}')">${t('gr_avail_btn')}</button>
+                <button class="gear-action-btn discard" onclick="gearStockDiscard('${item.id}','${sz}')">${t('gr_discard_btn')}</button>
               </div>
             </div>`;
           }).join('') + '</div>';
@@ -9367,21 +9427,21 @@ function renderGearInventory(categories, items, stockMap) {
         const s = stockMap[item.id + '|total'] || { available_count: 0, repair_count: 0 };
         stockHtml = `<div style="margin-top:8px;">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-            <span class="gear-stock-label">Available: <span class="gear-stock-value-lg">${s.available_count}</span></span>
-            <button class="gear-action-btn-lg add" onclick="gearStockAdd('${item.id}','total')">+ Add</button>
-            <button class="gear-action-btn-lg" onclick="gearStockRepair('${item.id}','total')">Repair</button>
+            <span class="gear-stock-label">${t('gr_available_label')} <span class="gear-stock-value-lg">${s.available_count}</span></span>
+            <button class="gear-action-btn-lg add" onclick="gearStockAdd('${item.id}','total')">${t('gr_add_btn')}</button>
+            <button class="gear-action-btn-lg" onclick="gearStockRepair('${item.id}','total')">${t('gr_repair_btn')}</button>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
-            <span class="gear-stock-label">In Repair: <span class="gear-stock-value-lg repair">${s.repair_count}</span></span>
-            <button class="gear-action-btn-lg" onclick="gearStockReturn('${item.id}','total')">Available</button>
-            <button class="gear-action-btn-lg discard" onclick="gearStockDiscard('${item.id}','total')">✕ Discard</button>
+            <span class="gear-stock-label">${t('gr_in_repair_label')} <span class="gear-stock-value-lg repair">${s.repair_count}</span></span>
+            <button class="gear-action-btn-lg" onclick="gearStockReturn('${item.id}','total')">${t('gr_available_btn')}</button>
+            <button class="gear-action-btn-lg discard" onclick="gearStockDiscard('${item.id}','total')">${t('gr_discard_btn')}</button>
           </div>
         </div>`;
       }
       return `<div class="gear-item-row">
         <div class="gear-item-header">
           <span class="gear-item-name">${item.name}</span>
-          <span class="gear-item-unit">${item.unit}</span>
+          <span class="gear-item-unit">${trGearUnit(item.unit)}</span>
         </div>
         ${stockHtml}
       </div>`;
@@ -9955,6 +10015,31 @@ const CATEGORY_STARTER_TYPES = {
   ]
 };
 
+// Maps a starter/seed trip type's stored English name to its i18n key, so the
+// built-in trip types show translated even though the name itself is plain
+// text in the database. Custom/renamed trip types fall through unchanged.
+const TRIP_TYPE_NAME_KEYS = {
+  '1 Dive': 'stt_1_dive', '2 Dives': 'stt_2_dives', 'Night Dive': 'stt_night_dive', 'Nitrox Dive': 'stt_nitrox_dive',
+  'Discover Scuba Diving': 'stt_discover_scuba', 'Confined Water / Pool': 'stt_confined_water', 'Shore Dive': 'stt_shore_dive',
+  'Half Day Charter': 'stt_half_day_charter', 'Day Charter': 'stt_day_charter', 'Sunset Cruise': 'stt_sunset_cruise',
+  'Private Charter': 'stt_private_charter', 'Island Hopping': 'stt_island_hopping',
+  'Surf Lesson': 'stt_surf_lesson', 'Surf Trip': 'stt_surf_trip', 'Fishing Trip': 'stt_fishing_trip', 'Freediving Session': 'stt_freediving_session'
+};
+function trTypeName(name) {
+  if (!name) return name;
+  const key = TRIP_TYPE_NAME_KEYS[name];
+  return key ? t(key) : name;
+}
+
+// Same idea, for the small fixed set of gear stock units ('units','kg','lb','bars','sets')
+// used across every seeded gear item — these are plain data in gear_items.unit.
+const GEAR_UNIT_KEYS = { units: 'gr_unit_units', kg: 'gr_unit_kg', lb: 'gr_unit_lb', bars: 'gr_unit_bars', sets: 'gr_unit_sets' };
+function trGearUnit(unit) {
+  if (!unit) return unit;
+  const key = GEAR_UNIT_KEYS[unit];
+  return key ? t(key) : unit;
+}
+
 let gearFieldCatalog = []; // loaded once from DB
 
 async function loadGearFieldCatalog() {
@@ -10091,9 +10176,10 @@ async function renderTripTypesList() {
   window._settingsTripTypes = types;
 
   list.innerHTML = types.map(tt => `
+    <div class="trip-type-block">
     <div class="trip-type-row">
       <div>
-        <div class="trip-type-name">${tt.name}</div>
+        <div class="trip-type-name">${trTypeName(tt.name)}</div>
         <div class="trip-type-meta">${CATEGORY_LABELS[tt.category] || tt.category}${tt.needs_tank_count ? ' · ' + tt.num_tanks + (tt.num_tanks > 1 ? t('set_tanks_plural') : t('set_tank_singular')) : ''}${tt.can_be_private ? t('set_can_be_private') : ''}${tt.is_multi_day ? t('set_multi_day_suffix') : ''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -10105,12 +10191,13 @@ async function renderTripTypesList() {
       </div>
     </div>
     ${tt.category === 'charter_yacht' ? `
-    <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted);margin:-6px 0 12px;cursor:pointer;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted);margin:6px 0 0;cursor:pointer;">
       <input type="checkbox" ${tt.is_multi_day ? 'checked' : ''} onchange="updateTripTypeMultiDay('${tt.id}', this.checked)">
       ${t('set_multiday_checkbox_label')}
     </label>` : ''}
-    <div id="rental-fees-${tt.id}" style="display:none;margin:-4px 0 12px;"></div>
-    <div id="required-waivers-${tt.id}" style="display:none;margin:-4px 0 12px;"></div>
+    <div id="rental-fees-${tt.id}" style="display:none;margin:6px 0 0;"></div>
+    <div id="required-waivers-${tt.id}" style="display:none;margin:6px 0 0;"></div>
+    </div>
   `).join('');
 }
 
