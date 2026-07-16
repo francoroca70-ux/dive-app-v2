@@ -1285,9 +1285,9 @@ body { background: var(--navy); color: var(--text); }
       <p id="task-detail-meta" style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;"></p>
       <div id="task-detail-items"></div>
       <div class="sf-group" style="margin-top:16px;" id="task-note-wrap">
-        <label class="sf-label">Note for the manager</label>
-        <textarea class="sf-input" id="task-note-input" rows="3" placeholder="Optional"></textarea>
-        <button class="btn-cancel" id="btn-save-task-note" style="margin-top:8px;">Save Note</button>
+        <label class="sf-label" data-i18n="tk_note_for_manager">Note for the manager</label>
+        <textarea class="sf-input" id="task-note-input" rows="3" placeholder="Optional" data-i18n-placeholder="tk_optional_ph"></textarea>
+        <button class="btn-cancel" id="btn-save-task-note" style="margin-top:8px;" data-i18n="tk_save_note">Save Note</button>
       </div>
       <span class="save-feedback" id="task-detail-feedback"></span>
     </div>
@@ -2363,39 +2363,39 @@ body { background: var(--navy); color: var(--text); }
             <h1 data-i18n="header_tasks_title">Tasks</h1>
             <p data-i18n="header_tasks_sub">Crew task management</p>
           </div>
-          <button class="btn-save" id="btn-new-task-list">+ New Task List</button>
+          <button class="btn-save" id="btn-new-task-list" data-i18n="tk_new_task_list">+ New Task List</button>
         </div>
         <div class="cl-tab-row">
-          <div class="cl-tab active" onclick="showTaskView('mine',this)">My Tasks</div>
-          <div class="cl-tab" onclick="showTaskView('all',this)">All Tasks</div>
+          <div class="cl-tab active" onclick="showTaskView('mine',this)" data-i18n="tk_my_tasks">My Tasks</div>
+          <div class="cl-tab" onclick="showTaskView('all',this)" data-i18n="tk_all_tasks">All Tasks</div>
         </div>
         <div class="inline-form" id="form-new-task-list" style="display:none;margin-bottom:16px;">
-          <div class="card-section-title">New Task List</div>
+          <div class="card-section-title" data-i18n="tk_new_task_list_title">New Task List</div>
           <div class="sf-row">
             <div class="sf-group">
-              <label class="sf-label">Title</label>
-              <input class="sf-input" type="text" id="tasklist-title" placeholder="e.g. Morning boat check">
+              <label class="sf-label" data-i18n="tk_title">Title</label>
+              <input class="sf-input" type="text" id="tasklist-title" placeholder="e.g. Morning boat check" data-i18n-placeholder="tk_title_ph">
             </div>
             <div class="sf-group">
-              <label class="sf-label">Due date</label>
+              <label class="sf-label" data-i18n="tk_due_date">Due date</label>
               <input class="sf-input" type="date" id="tasklist-date">
             </div>
           </div>
           <div class="sf-group">
-            <label class="sf-label">Tasks — one per line</label>
-            <textarea class="sf-input" id="tasklist-items" rows="5" placeholder="Check fuel level&#10;Test radio&#10;Inspect lines"></textarea>
+            <label class="sf-label" data-i18n="tk_tasks_one_per_line">Tasks — one per line</label>
+            <textarea class="sf-input" id="tasklist-items" rows="5" placeholder="Check fuel level&#10;Test radio&#10;Inspect lines" data-i18n-placeholder="tk_tasks_ph"></textarea>
           </div>
           <div class="sf-group">
-            <label class="sf-label">Assign to</label>
+            <label class="sf-label" data-i18n="tk_assign_to">Assign to</label>
             <div style="display:flex;gap:8px;margin-bottom:8px;">
               <select class="sf-input" id="tasklist-assignee-select" style="margin-bottom:0;max-width:220px;"></select>
-              <button class="btn-save" onclick="addTaskListAssignee()" style="white-space:nowrap;">+ Add</button>
+              <button class="btn-save" onclick="addTaskListAssignee()" style="white-space:nowrap;" data-i18n="tk_add_btn">+ Add</button>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:6px;" id="tasklist-assignee-tags"></div>
           </div>
           <div class="settings-actions">
-            <button class="btn-save" id="btn-save-task-list">Save Task List</button>
-            <button class="btn-cancel" id="btn-cancel-task-list">Cancel</button>
+            <button class="btn-save" id="btn-save-task-list" data-i18n="tk_save_task_list">Save Task List</button>
+            <button class="btn-cancel" id="btn-cancel-task-list" data-i18n="tt_cancel">Cancel</button>
             <span class="save-feedback" id="tasklist-feedback"></span>
           </div>
         </div>
@@ -2664,6 +2664,18 @@ const TRANSLATIONS = {
 
     greeting_morning: 'Good morning', greeting_afternoon: 'Good afternoon', greeting_evening: 'Good evening',
     home_banner_ready: 'Your operations dashboard. All systems ready.', home_banner_view_calendar: 'View Calendar',
+    home_current_shop_prefix: 'Currently viewing: ',
+
+    tk_new_task_list: '+ New Task List', tk_my_tasks: 'My Tasks', tk_all_tasks: 'All Task Lists',
+    tk_new_task_list_title: 'New Task List', tk_title: 'Title', tk_title_ph: 'e.g. Morning boat prep',
+    tk_due_date: 'Due date', tk_tasks_one_per_line: 'Tasks (one per line)', tk_tasks_ph: 'Check fuel levels\nWipe down seats\nRestock first aid kit',
+    tk_assign_to: 'Assign to', tk_add_btn: '+ Add', tk_save_task_list: 'Save Task List',
+    tk_note_for_manager: 'Note for manager', tk_optional_ph: 'Optional', tk_save_note: 'Save Note',
+    tk_select_crew_member: 'Select crew member', tk_fields_required: 'Title and at least one task are required.',
+    tk_no_tasks_assigned: 'No tasks assigned to you right now.', tk_complete: 'complete',
+    tk_no_due_date: 'No due date', tk_no_task_lists_yet: 'No task lists yet.', tk_unknown: 'Unknown',
+    tk_task_list_fallback: 'Task list', tk_assigned_to: 'Assigned to:', tk_note_saved: 'Note saved.',
+
     getting_started_title: 'Getting started',
     getting_started_sub: 'Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.',
 
@@ -2989,6 +3001,18 @@ const TRANSLATIONS = {
 
     greeting_morning: 'Buenos días', greeting_afternoon: 'Buenas tardes', greeting_evening: 'Buenas noches',
     home_banner_ready: 'Tu panel de operaciones. Todo listo.', home_banner_view_calendar: 'Ver Calendario',
+    home_current_shop_prefix: 'Viendo actualmente: ',
+
+    tk_new_task_list: '+ Nueva Lista de Tareas', tk_my_tasks: 'Mis Tareas', tk_all_tasks: 'Todas las Listas',
+    tk_new_task_list_title: 'Nueva Lista de Tareas', tk_title: 'Título', tk_title_ph: 'ej. Preparación matutina del bote',
+    tk_due_date: 'Fecha límite', tk_tasks_one_per_line: 'Tareas (una por línea)', tk_tasks_ph: 'Revisar niveles de combustible\nLimpiar los asientos\nReabastecer botiquín',
+    tk_assign_to: 'Asignar a', tk_add_btn: '+ Agregar', tk_save_task_list: 'Guardar Lista de Tareas',
+    tk_note_for_manager: 'Nota para el encargado', tk_optional_ph: 'Opcional', tk_save_note: 'Guardar Nota',
+    tk_select_crew_member: 'Seleccionar miembro de tripulación', tk_fields_required: 'El título y al menos una tarea son obligatorios.',
+    tk_no_tasks_assigned: 'No tienes tareas asignadas por ahora.', tk_complete: 'completado',
+    tk_no_due_date: 'Sin fecha límite', tk_no_task_lists_yet: 'Aún no hay listas de tareas.', tk_unknown: 'Desconocido',
+    tk_task_list_fallback: 'Lista de tareas', tk_assigned_to: 'Asignado a:', tk_note_saved: 'Nota guardada.',
+
     getting_started_title: 'Primeros pasos',
     getting_started_sub: 'Tu cuenta de Seven Seas ya está activa. Ve a Configuración para agregar los datos de tu operación y luego empieza a agregar embarcaciones y tripulación.',
 
@@ -3348,6 +3372,10 @@ function refreshDynamicTranslations() {
     }
     if (typeof loadGearRegistry === 'function' && document.getElementById('gear-registry-list')) loadGearRegistry();
     if (typeof loadCompressors === 'function') loadCompressors();
+    if (document.getElementById('page-tasks') && document.getElementById('page-tasks').classList.contains('active')) {
+      if (typeof renderTasksMine === 'function') renderTasksMine();
+      if (typeof renderTasksAll === 'function') renderTasksAll();
+    }
   }
 }
 
@@ -3651,12 +3679,16 @@ async function updateHomeBanner() {
     // Replace banner with welcome banner showing operation name
     banner.innerHTML = `<div>
       <h2 style="color:var(--white);font-size:1.1rem;margin-bottom:4px;">${org.name}</h2>
+      <p id="home-current-shop" style="color:rgba(255,255,255,0.7);font-size:0.85rem;margin-bottom:4px;"></p>
       <p>${t('home_banner_ready')}</p>
     </div>
     <button class="btn-setup" onclick="showPage('calendar')">${t('home_banner_view_calendar')}</button>`;
   }
   await updateAppContext(org && org.name);
+  await refreshHomeStats();
 }
+function locationStorageKey() { return 'sevenSeasLocationId_' + (currentOrgId || 'none'); }
+
 async function updateAppContext(orgName) {
   if (!currentOrgId) return;
   const { data: locations } = await sb.from('locations').select('id,name').eq('org_id', currentOrgId).order('created_at');
@@ -3667,12 +3699,21 @@ async function updateAppContext(orgName) {
   if (!orgName) { contextEl.style.display = 'none'; return; }
   orgEl.textContent = orgName;
   contextEl.style.display = 'flex';
+
+  if (!currentLocationId) {
+    const saved = localStorage.getItem(locationStorageKey());
+    if (saved) currentLocationId = saved;
+  }
+
+  const shopLabelEl = document.getElementById('home-current-shop');
   if (!locations || locations.length === 0) {
     locWrap.style.display = 'none';
     currentLocationId = null;
+    if (shopLabelEl) shopLabelEl.textContent = '';
   } else if (locations.length === 1) {
     locWrap.style.display = 'none';
     currentLocationId = locations[0].id;
+    if (shopLabelEl) shopLabelEl.textContent = t('home_current_shop_prefix') + locations[0].name;
   } else {
     locWrap.style.display = 'inline-flex';
     picker.innerHTML = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
@@ -3680,13 +3721,60 @@ async function updateAppContext(orgName) {
       currentLocationId = locations[0].id;
     }
     picker.value = currentLocationId;
+    const current = locations.find(l => l.id === currentLocationId);
+    if (shopLabelEl) shopLabelEl.textContent = current ? t('home_current_shop_prefix') + current.name : '';
+  }
+  localStorage.setItem(locationStorageKey(), currentLocationId || '');
+}
+
+async function refreshHomeStats() {
+  if (!currentOrgId) return;
+  const today = new Date().toISOString().split('T')[0];
+  let tripsQuery = sb.from('trips').select('id').eq('org_id', currentOrgId).eq('trip_date', today);
+  if (currentLocationId) tripsQuery = tripsQuery.eq('location_id', currentLocationId);
+  const { data: todaysTrips } = await tripsQuery;
+  const tripIds = (todaysTrips || []).map(t => t.id);
+
+  const tripsEl = document.getElementById('stat-trips');
+  if (tripsEl) tripsEl.textContent = tripIds.length;
+
+  const guestsEl = document.getElementById('stat-guests');
+  if (guestsEl) {
+    if (!tripIds.length) {
+      guestsEl.textContent = '0';
+    } else {
+      const { count } = await sb.from('participants').select('id', { count: 'exact', head: true }).in('trip_id', tripIds);
+      guestsEl.textContent = count || 0;
+    }
   }
 }
+
 document.getElementById('location-picker').addEventListener('change', (e) => {
   currentLocationId = e.target.value;
+  localStorage.setItem(locationStorageKey(), currentLocationId || '');
+  const current = (e.target.options[e.target.selectedIndex] || {}).text;
+  const shopLabelEl = document.getElementById('home-current-shop');
+  if (shopLabelEl && current) shopLabelEl.textContent = t('home_current_shop_prefix') + current;
   refreshCurrentView();
 });
+
 function refreshCurrentView() {
+  refreshHomeStats();
+  const activePage = document.querySelector('.page.active');
+  const pageId = activePage ? activePage.id : '';
+
+  if (pageId === 'page-calendar' && typeof renderCalendar === 'function') renderCalendar();
+  if (pageId === 'page-fleet' && typeof loadFleet === 'function') loadFleet();
+  if (pageId === 'page-crew' && typeof loadCrew === 'function') loadCrew();
+  if (pageId === 'page-checklists') {
+    if (typeof initCaptainChecklist === 'function') initCaptainChecklist();
+    if (typeof initInstructorChecklist === 'function') initInstructorChecklist();
+    if (typeof initDeptChecklists === 'function') initDeptChecklists();
+  }
+  if (pageId === 'page-waivers' && typeof loadWaivers === 'function') loadWaivers();
+  if (pageId === 'page-cashup' && typeof loadCashUp === 'function') loadCashUp();
+  if (pageId === 'page-tasks' && typeof loadTasks === 'function') loadTasks();
+
   const gearInvView = document.getElementById('gear-inventory-view');
   if (gearInvView && gearInvView.style.display !== 'none') {
     loadGearInventory();
@@ -3695,11 +3783,13 @@ function refreshCurrentView() {
   if (inspectionView && inspectionView.style.display !== 'none') {
     loadInspectionChecklist();
   }
-  const reportsPage = document.getElementById('page-reports');
-  if (reportsPage && reportsPage.classList.contains('active')) {
+  if (pageId === 'page-gear') {
+    if (typeof loadGearRegistry === 'function' && document.getElementById('gear-registry-list')) loadGearRegistry();
+    if (typeof loadCompressors === 'function') loadCompressors();
+  }
+  if (pageId === 'page-reports') {
     loadReports();
   }
-  // Add more location-aware view refreshes here as new pages become location-aware
 }
 
 // ─── AUTH ───
@@ -3905,7 +3995,7 @@ async function loadTasks() {
   if (!currentOrgId) return;
   const { data: staffList } = await sb.from('staff').select('id, full_name').eq('org_id', currentOrgId);
   const sel = document.getElementById('tasklist-assignee-select');
-  sel.innerHTML = '<option value="">Select crew member</option>' + (staffList || []).map(s => `<option value="${s.id}" data-name="${s.full_name}">${s.full_name}</option>`).join('');
+  sel.innerHTML = `<option value="">${t('tk_select_crew_member')}</option>` + (staffList || []).map(s => `<option value="${s.id}" data-name="${s.full_name}">${s.full_name}</option>`).join('');
   await renderTasksMine();
   await renderTasksAll();
 }
@@ -3948,7 +4038,7 @@ document.getElementById('btn-save-task-list').addEventListener('click', async ()
   const date = document.getElementById('tasklist-date').value;
   const itemsRaw = document.getElementById('tasklist-items').value.trim();
   if (!title || !itemsRaw || !taskListAssigneeIds.length) {
-    feedback.textContent = 'Title, at least one task, and at least one assignee are required.';
+    feedback.textContent = t('tk_fields_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -3956,7 +4046,7 @@ document.getElementById('btn-save-task-list').addEventListener('click', async ()
   const { data: list, error } = await sb.from('task_lists').insert({
     org_id: currentOrgId, location_id: currentLocationId, title, due_date: date || null, created_by: user.email
   }).select().single();
-  if (error) { feedback.textContent = 'Error saving.'; feedback.className = 'save-feedback error visible'; return; }
+  if (error) { feedback.textContent = t('cu_error_saving'); feedback.className = 'save-feedback error visible'; return; }
   const items = itemsRaw.split('\n').map(l => l.trim()).filter(Boolean).map((text, i) => ({ task_list_id: list.id, text, sort_order: i }));
   await sb.from('task_list_items').insert(items);
   await sb.from('task_list_assignees').insert(taskListAssigneeIds.map(a => ({ task_list_id: list.id, staff_id: a.id })));
@@ -3973,7 +4063,7 @@ async function renderTasksMine() {
 
   const { data: myAssignments } = await sb.from('task_list_assignees').select('*, task_lists(*)').eq('staff_id', myStaffId);
   if (!myAssignments || !myAssignments.length) {
-    container.innerHTML = '<p style="color:var(--muted);">No tasks assigned to you right now.</p>';
+    container.innerHTML = `<p style="color:var(--muted);">${t('tk_no_tasks_assigned')}</p>`;
     return;
   }
   const listIds = myAssignments.map(a => a.task_list_id);
@@ -3987,9 +4077,9 @@ async function renderTasksMine() {
     return `<div class="gear-item-row" onclick="openTaskDetail('${a.task_list_id}')" style="cursor:pointer;">
       <div class="gear-item-header">
         <span class="gear-item-name">${a.task_lists.title}</span>
-        <span style="font-size:0.75rem;color:${isComplete ? 'var(--success)' : 'var(--muted)'};font-weight:600;">${doneCount}/${items.length} complete</span>
+        <span style="font-size:0.75rem;color:${isComplete ? 'var(--success)' : 'var(--muted)'};font-weight:600;">${doneCount}/${items.length} ${t('tk_complete')}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${a.task_lists.due_date || 'No due date'}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${a.task_lists.due_date || t('tk_no_due_date')}</div>
     </div>`;
   }).join('');
 }
@@ -3998,7 +4088,7 @@ async function renderTasksAll() {
   if (!currentOrgId || !currentLocationId) { container.innerHTML = ''; return; }
   const { data: lists } = await sb.from('task_lists').select('*').eq('org_id', currentOrgId).eq('location_id', currentLocationId).order('created_at', { ascending: false });
   if (!lists || !lists.length) {
-    container.innerHTML = '<p style="color:var(--muted);">No task lists yet.</p>';
+    container.innerHTML = `<p style="color:var(--muted);">${t('tk_no_task_lists_yet')}</p>`;
     return;
   }
   const listIds = lists.map(l => l.id);
@@ -4011,16 +4101,16 @@ async function renderTasksAll() {
     const listItems = (items || []).filter(i => i.task_list_id === l.id);
     const perAssignee = listAssignees.map(a => {
       const done = listItems.filter(i => (completions || []).some(c => c.task_list_item_id === i.id && c.staff_id === a.staff_id)).length;
-      return `${a.staff?.full_name || 'Unknown'} (${done}/${listItems.length})`;
+      return `${a.staff?.full_name || t('tk_unknown')} (${done}/${listItems.length})`;
     }).join(', ');
     const notesHtml = listAssignees.filter(a => a.note).map(a =>
-      `<div style="font-size:0.78rem;color:var(--warning);margin-top:4px;">📝 ${a.staff?.full_name || 'Unknown'}: ${a.note}</div>`
+      `<div style="font-size:0.78rem;color:var(--warning);margin-top:4px;">📝 ${a.staff?.full_name || t('tk_unknown')}: ${a.note}</div>`
     ).join('');
     return `<div class="gear-item-row" onclick="openTaskDetail('${l.id}')" style="cursor:pointer;">
       <div class="gear-item-header">
         <span class="gear-item-name">${l.title}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${l.due_date || 'No due date'} · ${perAssignee}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${l.due_date || t('tk_no_due_date')} · ${perAssignee}</div>
       ${notesHtml}
     </div>`;
   }).join('');
@@ -4064,8 +4154,8 @@ async function openTaskDetail(taskListId) {
   currentTaskItemsCache = items || [];
   currentTaskMyCompletedIds = (completions || []).filter(c => c.staff_id === currentTaskStaffId).map(c => c.task_list_item_id);
 
-  document.getElementById('task-detail-title').textContent = list?.title || 'Task list';
-  document.getElementById('task-detail-meta').textContent = `${list?.due_date || 'No due date'} · Assigned to: ${(assignees || []).map(a => a.staff?.full_name).filter(Boolean).join(', ')}`;
+  document.getElementById('task-detail-title').textContent = list?.title || t('tk_task_list_fallback');
+  document.getElementById('task-detail-meta').textContent = `${list?.due_date || t('tk_no_due_date')} · ${t('tk_assigned_to')} ${(assignees || []).map(a => a.staff?.full_name).filter(Boolean).join(', ')}`;
 
   renderTaskDetailItems();
 
@@ -4121,7 +4211,7 @@ document.getElementById('btn-save-task-note').addEventListener('click', async ()
   const feedback = document.getElementById('task-detail-feedback');
   const note = document.getElementById('task-note-input').value.trim();
   await sb.from('task_list_assignees').update({ note: note || null }).eq('task_list_id', currentTaskListId).eq('staff_id', currentTaskStaffId);
-  feedback.textContent = 'Note saved.';
+  feedback.textContent = t('tk_note_saved');
   feedback.className = 'save-feedback visible';
   setTimeout(() => feedback.className = 'save-feedback', 2000);
 });
@@ -6538,7 +6628,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   document.getElementById('modal-trip-title').textContent = primaryGroup.contact_name || 'Trip details';
   document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared') ? 'inline-block' : 'none';
 
-  document.getElementById('stat-trips').textContent = '↑';
+  if (typeof refreshHomeStats === 'function') refreshHomeStats();
   setTimeout(() => feedback.className = 'save-feedback', 3000);
 });
 
