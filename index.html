@@ -1094,19 +1094,21 @@ body { background: var(--navy); color: var(--text); }
       <button class="modal-close" id="modal-signature-close">&times;</button>
     </div>
     <div class="modal-body">
-      <p id="signature-guest-name" style="font-weight:600;color:var(--navy);margin-bottom:12px;"></p>
-      <div class="sf-group">
-        <label class="sf-label" data-i18n="wv_waiver_type">Waiver type</label>
-        <select class="sf-input" id="signature-waiver-type">
-          <option value="liability" data-i18n="wv_type_liability">Liability Waiver</option>
-          <option value="minor" data-i18n="wv_type_minor">Minor / Youth Waiver</option>
-          <option value="freediving" data-i18n="wv_type_freediving">Freediving / Apnea Waiver</option>
-          <option value="snorkel" data-i18n="wv_type_snorkel">Snorkel / Charter Waiver</option>
-          <option value="medical" data-i18n="wv_type_medical">Medical</option>
-          <option value="custom" data-i18n="wv_type_custom">Other</option>
-        </select>
-      </div>
+      <p id="signature-guest-name" style="font-weight:600;color:var(--navy);margin-bottom:4px;"></p>
+      <p id="signature-waiver-type-label" style="font-size:0.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;"></p>
       <div id="sig-template-content" style="margin-top:10px;"></div>
+
+      <div class="card-section-title" style="margin-top:16px;" data-i18n="wv_participant_section">Participant</div>
+      <div class="sf-row">
+        <div class="sf-group">
+          <label class="sf-label" data-i18n="wv_printed_name">Printed name</label>
+          <input class="sf-input" type="text" autocomplete="off" id="sig-printed-name">
+        </div>
+        <div class="sf-group">
+          <label class="sf-label" data-i18n="wv_date">Date</label>
+          <input class="sf-input" type="date" id="sig-date">
+        </div>
+      </div>
       <div class="radio-group" style="margin-top:6px;" id="sig-method-row">
         <div class="radio-btn selected" id="sig-method-digital" onclick="setSignMethod('digital')" data-i18n="wv_sign_digitally">Sign digitally</div>
         <div class="radio-btn" id="sig-method-paper" onclick="setSignMethod('paper')" data-i18n="wv_logged_paper">Logged on paper</div>
@@ -1117,6 +1119,27 @@ body { background: var(--navy); color: var(--text); }
         </div>
         <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearSignatureCanvas()" data-i18n="wv_clear">Clear</button>
       </div>
+
+      <div id="sig-guardian-section" style="display:none;margin-top:18px;padding-top:14px;border-top:1px dashed var(--border);">
+        <div class="card-section-title" data-i18n="wv_guardian_section">Parent / Guardian (guest is a minor)</div>
+        <div class="sf-row">
+          <div class="sf-group">
+            <label class="sf-label" data-i18n="wv_guardian_printed_name">Parent/guardian printed name</label>
+            <input class="sf-input" type="text" autocomplete="off" id="sig-guardian-name">
+          </div>
+          <div class="sf-group">
+            <label class="sf-label" data-i18n="wv_date">Date</label>
+            <input class="sf-input" type="date" id="sig-guardian-date">
+          </div>
+        </div>
+        <div id="sig-guardian-canvas-wrap" style="margin-top:6px;">
+          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
+            <canvas id="guardian-signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
+          </div>
+          <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearGuardianSignatureCanvas()" data-i18n="wv_clear">Clear</button>
+        </div>
+      </div>
+
       <div class="sf-group" style="margin-top:14px;">
         <label class="sf-label" data-i18n="wv_notes_optional">Notes (optional)</label>
         <input class="sf-input" type="text" autocomplete="off" id="sig-notes" placeholder="e.g. Paper copy filed at front desk" data-i18n-placeholder="wv_notes_ph">
@@ -2917,6 +2940,17 @@ const TRANSLATIONS = {
     wv_error_saving: 'Error saving waiver: ', wv_unknown_error: 'unknown error',
     wv_export_no_permission: 'Only owners, managers, front desk, and elevated captains can export waivers.',
     wv_preparing_export: 'Preparing export...',
+    wv_participant_section: 'Participant', wv_printed_name: 'Printed name', wv_date: 'Date',
+    wv_guardian_section: 'Parent / Guardian (guest is a minor)', wv_guardian_printed_name: 'Parent/guardian printed name',
+    wv_printed_name_required: 'Printed name is required.', wv_date_required: 'Date is required.',
+    wv_guardian_name_required: "Parent/guardian's printed name is required.",
+    wv_guardian_signature_required: 'Please draw the parent/guardian signature, or switch to "Logged on paper".',
+    wv_minor_badge: 'Minor', wv_cosigned_by: 'Co-signed by parent/guardian:',
+    set_required_waivers_btn: 'Required waivers',
+    set_required_waivers_header: 'Waivers required for this trip type',
+    set_required_waivers_desc: 'Guests booked on this trip type must sign each of these before their trip. Defaults to Liability if none are selected.',
+    guest_dob: 'Date of birth',
+    guest_dob_hint: 'Used to show a parent/guardian signature section on waivers for minors.',
   },
   es: {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
@@ -3231,6 +3265,17 @@ const TRANSLATIONS = {
     wv_error_saving: 'Error al guardar la exención: ', wv_unknown_error: 'error desconocido',
     wv_export_no_permission: 'Solo propietarios, gerentes, recepción y capitanes con permisos elevados pueden exportar exenciones.',
     wv_preparing_export: 'Preparando exportación...',
+    wv_participant_section: 'Participante', wv_printed_name: 'Nombre en letra de imprenta', wv_date: 'Fecha',
+    wv_guardian_section: 'Padre/Madre / Tutor (el huésped es menor de edad)', wv_guardian_printed_name: 'Nombre del padre/madre o tutor en letra de imprenta',
+    wv_printed_name_required: 'El nombre en letra de imprenta es obligatorio.', wv_date_required: 'La fecha es obligatoria.',
+    wv_guardian_name_required: 'El nombre del padre/madre o tutor en letra de imprenta es obligatorio.',
+    wv_guardian_signature_required: 'Por favor dibuja la firma del padre/madre o tutor, o cambia a "Registrado en papel".',
+    wv_minor_badge: 'Menor', wv_cosigned_by: 'Co-firmado por padre/madre o tutor:',
+    set_required_waivers_btn: 'Exenciones requeridas',
+    set_required_waivers_header: 'Exenciones requeridas para este tipo de salida',
+    set_required_waivers_desc: 'Los huéspedes reservados en este tipo de salida deben firmar cada una de estas antes de su salida. Por defecto es Responsabilidad si no seleccionas ninguna.',
+    guest_dob: 'Fecha de nacimiento',
+    guest_dob_hint: 'Se usa para mostrar una sección de firma de padre/madre o tutor en las exenciones de menores.',
   }
 };
 
@@ -6609,38 +6654,58 @@ async function loadWaivers() {
   if (!currentOrgId) return;
   const today = new Date().toISOString().split('T')[0];
 
-  let tripsQuery = sb.from('trips').select('id, trip_time, trip_type, contact_name').eq('org_id', currentOrgId).eq('trip_date', today);
+  let tripsQuery = sb.from('trips').select('id, trip_time, trip_type, trip_type_id, contact_name').eq('org_id', currentOrgId).eq('trip_date', today);
   if (currentLocationId) tripsQuery = tripsQuery.eq('location_id', currentLocationId);
   const { data: todaysTrips } = await tripsQuery;
   const tripIds = (todaysTrips || []).map(t => t.id);
   const tripById = {};
   (todaysTrips || []).forEach(t => tripById[t.id] = t);
 
+  const tripTypeIds = [...new Set((todaysTrips || []).map(t => t.trip_type_id).filter(Boolean))];
+  const requiredWaiversByTripTypeId = {};
+  if (tripTypeIds.length) {
+    const { data: tts } = await sb.from('trip_types').select('id, required_waiver_types').in('id', tripTypeIds);
+    (tts || []).forEach(tt => { requiredWaiversByTripTypeId[tt.id] = (tt.required_waiver_types && tt.required_waiver_types.length) ? tt.required_waiver_types : ['liability']; });
+  }
+
   let participants = [];
   if (tripIds.length) {
-    const { data } = await sb.from('participants').select('id, full_name, trip_id, group_id').in('trip_id', tripIds);
+    const { data } = await sb.from('participants').select('id, full_name, trip_id, group_id, date_of_birth').in('trip_id', tripIds);
     participants = data || [];
   }
 
   const participantIds = participants.map(p => p.id);
-  const signedIds = new Set();
+  const signedTypesByParticipant = {};
   if (participantIds.length) {
-    const { data: signed } = await sb.from('waivers').select('participant_id').in('participant_id', participantIds);
-    (signed || []).forEach(s => { if (s.participant_id) signedIds.add(s.participant_id); });
+    const { data: signed } = await sb.from('waivers').select('participant_id, waiver_type').in('participant_id', participantIds);
+    (signed || []).forEach(s => {
+      if (!s.participant_id) return;
+      if (!signedTypesByParticipant[s.participant_id]) signedTypesByParticipant[s.participant_id] = new Set();
+      signedTypesByParticipant[s.participant_id].add(s.waiver_type);
+    });
   }
 
-  const pending = participants.filter(p => !signedIds.has(p.id));
-  const pendingListEl = document.getElementById('pending-waivers-list');
-  pendingListEl.innerHTML = pending.length ? pending.map(p => {
+  const pendingRows = [];
+  participants.forEach(p => {
     const trip = tripById[p.trip_id];
+    const requiredTypes = (trip && requiredWaiversByTripTypeId[trip.trip_type_id]) || ['liability'];
+    const signedTypes = signedTypesByParticipant[p.id] || new Set();
+    const isMinor = calcAge(p.date_of_birth) !== null && calcAge(p.date_of_birth) < 18;
+    requiredTypes.forEach(type => {
+      if (!signedTypes.has(type)) pendingRows.push({ p, trip, type, isMinor });
+    });
+  });
+
+  const pendingListEl = document.getElementById('pending-waivers-list');
+  pendingListEl.innerHTML = pendingRows.length ? pendingRows.map(({ p, trip, type, isMinor }) => {
     const tripLabel = trip ? `${trip.trip_type || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
     const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
     return `<div class="participant-row">
       <div>
-        <div class="p-name">${p.full_name}</div>
-        <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}</div>
+        <div class="p-name">${p.full_name}${isMinor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
+        <div style="font-size:0.78rem;color:var(--muted);">${tripLabel} · ${waiverTypeLabels[type] || type}</div>
       </div>
-      <button class="btn-save" style="padding:6px 12px;font-size:0.82rem;" onclick="openSignWaiverModal('${p.id}','${p.trip_id}','${p.group_id || ''}','${nameEsc}')">${t('wv_sign_waiver')}</button>
+      <button class="btn-save" style="padding:6px 12px;font-size:0.82rem;" onclick="openSignWaiverModal('${p.id}','${p.trip_id}','${p.group_id || ''}','${nameEsc}','${type}',${isMinor})">${t('wv_sign_waiver')}</button>
     </div>`;
   }).join('') : `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
 
@@ -6652,6 +6717,7 @@ function waiverLogRowHtml(w) {
     <div>
       <div class="p-name">${w.participants?.full_name || t('wv_unknown_guest')}</div>
       <div style="font-size:0.78rem;color:var(--muted);">${waiverTypeLabels[w.waiver_type] || w.waiver_type} · ${w.method === 'paper' ? t('wv_paper') : t('wv_digital')} · ${new Date(w.signed_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + w.signed_by_name : ''}</div>
+      ${w.guardian_printed_name ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${t('wv_cosigned_by')} ${w.guardian_printed_name}</div>` : ''}
     </div>
   </div>`;
 }
@@ -6762,18 +6828,33 @@ async function searchWaiverLog(term) {
 window.currentSignatureParticipant = null;
 window.currentSignMethod = 'digital';
 
-function openSignWaiverModal(participantId, tripId, groupId, guestName) {
-  window.currentSignatureParticipant = { id: participantId, trip_id: tripId || null, group_id: groupId || null, full_name: guestName };
+function calcAge(dob) {
+  if (!dob) return null;
+  const b = new Date(dob + 'T12:00:00');
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+  return age;
+}
+
+function openSignWaiverModal(participantId, tripId, groupId, guestName, waiverType, isMinor) {
+  window.currentSignatureParticipant = { id: participantId, trip_id: tripId || null, group_id: groupId || null, full_name: guestName, waiver_type: waiverType, is_minor: !!isMinor };
   document.getElementById('signature-guest-name').textContent = guestName;
-  document.getElementById('signature-waiver-type').value = 'liability';
+  document.getElementById('signature-waiver-type-label').textContent = waiverTypeLabels[waiverType] || waiverType;
+  document.getElementById('sig-printed-name').value = guestName || '';
+  document.getElementById('sig-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('sig-guardian-name').value = '';
+  document.getElementById('sig-guardian-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('sig-guardian-section').style.display = isMinor ? 'block' : 'none';
   document.getElementById('sig-notes').value = '';
   const feedback = document.getElementById('signature-save-feedback');
   feedback.textContent = '';
   feedback.className = 'save-feedback';
   setSignMethod('digital');
   document.getElementById('modal-signature').style.display = 'flex';
-  setTimeout(initSignatureCanvas, 50);
-  loadSignTemplate('liability');
+  setTimeout(() => { initSignatureCanvas(); if (isMinor) initGuardianSignatureCanvas(); }, 50);
+  loadSignTemplate(waiverType);
 }
 
 function closeSignatureModal() {
@@ -6781,10 +6862,6 @@ function closeSignatureModal() {
 }
 
 document.getElementById('modal-signature-close').addEventListener('click', closeSignatureModal);
-
-document.getElementById('signature-waiver-type').addEventListener('change', (e) => {
-  loadSignTemplate(e.target.value);
-});
 
 window.currentSignTemplate = null;
 window.currentSignQuestions = [];
@@ -6824,6 +6901,8 @@ function renderSignTemplateContent(type, template, questions) {
     container.innerHTML = `<div class="warning-banner caution" style="font-size:0.82rem;">${t('wv_no_template_set_up')} ${ownerNote}</div>`;
     methodRow.style.display = 'none';
     document.getElementById('sig-canvas-wrap').style.display = 'none';
+    const guardianCanvasWrap = document.getElementById('sig-guardian-canvas-wrap');
+    if (guardianCanvasWrap) guardianCanvasWrap.style.display = 'none';
     saveBtn.disabled = true;
     saveBtn.style.opacity = '0.5';
     return;
@@ -6859,40 +6938,50 @@ function setSignMethod(method) {
   window.currentSignMethod = method;
   document.getElementById('sig-method-digital').classList.toggle('selected', method === 'digital');
   document.getElementById('sig-method-paper').classList.toggle('selected', method === 'paper');
-  document.getElementById('sig-canvas-wrap').style.display = (method === 'digital' && !window.currentSignBlocked) ? 'block' : 'none';
+  const showCanvas = (method === 'digital' && !window.currentSignBlocked);
+  document.getElementById('sig-canvas-wrap').style.display = showCanvas ? 'block' : 'none';
+  const guardianCanvasWrap = document.getElementById('sig-guardian-canvas-wrap');
+  if (guardianCanvasWrap) guardianCanvasWrap.style.display = showCanvas ? 'block' : 'none';
 }
 
-let sigCanvas, sigCtx, sigDrawing = false, sigHasStroke = false;
-function initSignatureCanvas() {
-  sigCanvas = document.getElementById('signature-canvas');
-  if (!sigCanvas) return;
-  sigCtx = sigCanvas.getContext('2d');
-  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-  sigCtx.strokeStyle = '#1a2b3c';
-  sigCtx.lineWidth = 2;
-  sigCtx.lineCap = 'round';
-  sigHasStroke = false;
+function makeSignaturePad(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#1a2b3c';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  const pad = { canvas, ctx, drawing: false, hasStroke: false };
 
   const getPos = (e) => {
-    const rect = sigCanvas.getBoundingClientRect();
-    const scaleX = sigCanvas.width / rect.width;
-    const scaleY = sigCanvas.height / rect.height;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
-  const start = (e) => { sigDrawing = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); e.preventDefault(); };
-  const move = (e) => { if (!sigDrawing) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); sigHasStroke = true; e.preventDefault(); };
-  const end = () => { sigDrawing = false; };
+  const start = (e) => { pad.drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); };
+  const move = (e) => { if (!pad.drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); pad.hasStroke = true; e.preventDefault(); };
+  const end = () => { pad.drawing = false; };
 
-  sigCanvas.onmousedown = start; sigCanvas.onmousemove = move; sigCanvas.onmouseup = end; sigCanvas.onmouseleave = end;
-  sigCanvas.ontouchstart = start; sigCanvas.ontouchmove = move; sigCanvas.ontouchend = end;
+  canvas.onmousedown = start; canvas.onmousemove = move; canvas.onmouseup = end; canvas.onmouseleave = end;
+  canvas.ontouchstart = start; canvas.ontouchmove = move; canvas.ontouchend = end;
+  return pad;
 }
 
+function initSignatureCanvas() { window._sigPad = makeSignaturePad('signature-canvas'); }
 function clearSignatureCanvas() {
-  if (!sigCtx || !sigCanvas) return;
-  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-  sigHasStroke = false;
+  if (!window._sigPad) return;
+  window._sigPad.ctx.clearRect(0, 0, window._sigPad.canvas.width, window._sigPad.canvas.height);
+  window._sigPad.hasStroke = false;
+}
+function initGuardianSignatureCanvas() { window._guardianSigPad = makeSignaturePad('guardian-signature-canvas'); }
+function clearGuardianSignatureCanvas() {
+  if (!window._guardianSigPad) return;
+  window._guardianSigPad.ctx.clearRect(0, 0, window._guardianSigPad.canvas.width, window._guardianSigPad.canvas.height);
+  window._guardianSigPad.hasStroke = false;
 }
 
 document.getElementById('btn-confirm-signature').addEventListener('click', async () => {
@@ -6904,13 +6993,48 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const type = document.getElementById('signature-waiver-type').value;
+  const type = sp.waiver_type;
   const method = window.currentSignMethod || 'digital';
-  if (method === 'digital' && !sigHasStroke) {
+  const printedName = document.getElementById('sig-printed-name').value.trim();
+  const signedDate = document.getElementById('sig-date').value;
+  if (!printedName) {
+    feedback.textContent = t('wv_printed_name_required');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!signedDate) {
+    feedback.textContent = t('wv_date_required');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (method === 'digital' && !(window._sigPad && window._sigPad.hasStroke)) {
     feedback.textContent = t('wv_please_draw_signature');
     feedback.className = 'save-feedback error visible';
     return;
   }
+
+  let guardianName = null, guardianDate = null, guardianSignatureData = null;
+  if (sp.is_minor) {
+    guardianName = document.getElementById('sig-guardian-name').value.trim();
+    guardianDate = document.getElementById('sig-guardian-date').value;
+    if (!guardianName) {
+      feedback.textContent = t('wv_guardian_name_required');
+      feedback.className = 'save-feedback error visible';
+      return;
+    }
+    if (!guardianDate) {
+      feedback.textContent = t('wv_date_required');
+      feedback.className = 'save-feedback error visible';
+      return;
+    }
+    if (method === 'digital' && !(window._guardianSigPad && window._guardianSigPad.hasStroke)) {
+      feedback.textContent = t('wv_guardian_signature_required');
+      feedback.className = 'save-feedback error visible';
+      return;
+    }
+    guardianSignatureData = method === 'digital' ? window._guardianSigPad.canvas.toDataURL('image/png') : null;
+  }
+
   const { data: { user } } = await sb.auth.getUser();
   const { data: staffRow } = await sb.from('staff').select('full_name').eq('id', user.id).single();
 
@@ -6923,7 +7047,12 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     trip_id: sp.trip_id || null,
     waiver_type: type,
     method: method,
-    signature_data: method === 'digital' ? sigCanvas.toDataURL('image/png') : null,
+    signature_data: method === 'digital' ? window._sigPad.canvas.toDataURL('image/png') : null,
+    participant_printed_name: printedName,
+    participant_signed_date: signedDate,
+    guardian_printed_name: guardianName,
+    guardian_signed_date: guardianDate,
+    guardian_signature_data: guardianSignatureData,
     notes: document.getElementById('sig-notes').value.trim() || null,
     signed_by_name: staffRow?.full_name || null,
     template_id: window.currentSignTemplate?.id || null,
@@ -6995,6 +7124,7 @@ async function exportWaiversForDay(date) {
         <span>${new Date(w.signed_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
         <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
       </div>
+      <div class="waiver-entry-signee">Printed name: ${escapeHtml(w.participant_printed_name || w.participants?.full_name || '—')} &nbsp;·&nbsp; Date: ${w.participant_signed_date || '—'}</div>
       ${w.notes ? `<p class="waiver-entry-notes">${escapeHtml(w.notes)}</p>` : ''}
       ${w.responses && w.responses.length ? `
         <div class="waiver-entry-responses">
@@ -7003,6 +7133,12 @@ async function exportWaiversForDay(date) {
       ` : ''}
       ${w.body_snapshot ? `<div class="waiver-entry-body">${escapeHtml(w.body_snapshot)}</div>` : ''}
       ${w.method === 'digital' && w.signature_data ? `<img src="${w.signature_data}" style="max-width:280px;border:1px solid #ccc;margin-top:6px;">` : '<p style="font-size:12px;color:#888;">Paper copy on file — no digital signature.</p>'}
+      ${w.guardian_printed_name ? `
+        <div class="waiver-entry-guardian">
+          <div class="waiver-entry-signee">Parent/guardian: ${escapeHtml(w.guardian_printed_name)} &nbsp;·&nbsp; Date: ${w.guardian_signed_date || '—'}</div>
+          ${w.method === 'digital' && w.guardian_signature_data ? `<img src="${w.guardian_signature_data}" style="max-width:280px;border:1px solid #ccc;margin-top:6px;">` : ''}
+        </div>
+      ` : ''}
     </div>
   `).join('');
 
@@ -7014,6 +7150,8 @@ async function exportWaiversForDay(date) {
   .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
   .waiver-entry { border-bottom: 1px solid #ddd; padding: 14px 0; page-break-inside: avoid; }
   .waiver-entry-header { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; align-items:baseline; }
+  .waiver-entry-signee { font-size: 12px; color: #444; margin: 4px 0 0; }
+  .waiver-entry-guardian { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc; }
   .waiver-entry-notes { font-size: 12px; color: #555; font-style: italic; margin: 4px 0 0; }
   .waiver-entry-responses { font-size: 12px; color: #333; margin: 6px 0 0; }
   .waiver-entry-responses div { padding: 1px 0; }
@@ -7359,6 +7497,11 @@ function renderGroupParticipantsBlock(groupId, participants) {
           <input class="sf-input" type="tel" autocomplete="off" id="p-phone-${groupId}" placeholder="Optional">
         </div>
       </div>
+      <div class="sf-group">
+        <label class="sf-label" data-i18n="guest_dob">Date of birth</label>
+        <input class="sf-input" type="date" id="p-dob-${groupId}">
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:4px;" data-i18n="guest_dob_hint">Used to show a parent/guardian signature section on waivers for minors.</p>
+      </div>
       <div id="cert-section-${groupId}" style="display:none;">
         <div class="sf-group">
           <label class="sf-label">Certified diver? <span class="required-star">*</span></label>
@@ -7443,6 +7586,7 @@ function showAddGuestForm(groupId, prefill) {
 
   document.getElementById('p-name-' + groupId).value = prefill?.full_name || '';
   document.getElementById('p-phone-' + groupId).value = prefill?.phone || '';
+  document.getElementById('p-dob-' + groupId).value = prefill?.date_of_birth || '';
   document.getElementById('p-notes-' + groupId).value = prefill?.notes || '';
 
   const typeId = document.getElementById('trip-type-select').value;
@@ -7521,6 +7665,7 @@ async function saveGroupParticipant(groupId) {
   const payload = {
     full_name: name,
     phone: document.getElementById('p-phone-' + groupId).value.trim() || null,
+    date_of_birth: document.getElementById('p-dob-' + groupId).value || null,
     is_certified: isDiving ? certStatus : null,
     certification_level: certLevel,
     gear: gear,
@@ -9853,16 +9998,19 @@ async function renderTripTypesList() {
     return;
   }
 
+  window._settingsTripTypes = types;
+
   list.innerHTML = types.map(tt => `
     <div class="trip-type-row">
       <div>
         <div class="trip-type-name">${tt.name}</div>
         <div class="trip-type-meta">${CATEGORY_LABELS[tt.category] || tt.category}${tt.needs_tank_count ? ' · ' + tt.num_tanks + (tt.num_tanks > 1 ? t('set_tanks_plural') : t('set_tank_singular')) : ''}${tt.can_be_private ? t('set_can_be_private') : ''}${tt.is_multi_day ? t('set_multi_day_suffix') : ''}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <input class="trip-type-price-input" type="number" min="0" value="${tt.default_price || ''}" placeholder="0"
           onchange="updateTripTypePrice('${tt.id}', this.value, this)">
         <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRentalFees('${tt.id}')">${t('set_rental_fees_btn')}</button>
+        <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRequiredWaivers('${tt.id}')">${t('set_required_waivers_btn')}</button>
         <button class="btn-icon danger" onclick="deactivateTripType('${tt.id}')">${t('fleet_remove')}</button>
       </div>
     </div>
@@ -9872,7 +10020,43 @@ async function renderTripTypesList() {
       ${t('set_multiday_checkbox_label')}
     </label>` : ''}
     <div id="rental-fees-${tt.id}" style="display:none;margin:-4px 0 12px;"></div>
+    <div id="required-waivers-${tt.id}" style="display:none;margin:-4px 0 12px;"></div>
   `).join('');
+}
+
+function toggleRequiredWaivers(tripTypeId) {
+  const panel = document.getElementById('required-waivers-' + tripTypeId);
+  if (!panel) return;
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+  const tt = (window._settingsTripTypes || []).find(x => x.id === tripTypeId);
+  const required = new Set((tt && tt.required_waiver_types) || []);
+  const waiverTypeOptions = [
+    ['liability', 'wv_type_liability'], ['minor', 'wv_type_minor'], ['freediving', 'wv_type_freediving'],
+    ['snorkel', 'wv_type_snorkel'], ['medical', 'wv_type_medical'], ['custom', 'wv_type_custom']
+  ];
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">${t('set_required_waivers_header')}</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">${t('set_required_waivers_desc')}</p>
+      ${waiverTypeOptions.map(([val, key]) => `
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;padding:5px 0;cursor:pointer;">
+          <input type="checkbox" ${required.has(val) ? 'checked' : ''} onchange="updateTripTypeRequiredWaivers('${tripTypeId}', '${val}', this.checked)">
+          ${t(key)}
+        </label>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function updateTripTypeRequiredWaivers(tripTypeId, waiverType, checked) {
+  const tt = (window._settingsTripTypes || []).find(x => x.id === tripTypeId);
+  if (!tt) return;
+  const current = new Set(tt.required_waiver_types || []);
+  if (checked) current.add(waiverType); else current.delete(waiverType);
+  const updated = [...current];
+  tt.required_waiver_types = updated;
+  await sb.from('trip_types').update({ required_waiver_types: updated }).eq('id', tripTypeId);
 }
 async function updateTripTypeMultiDay(id, checked) {
   await sb.from('trip_types').update({ is_multi_day: checked }).eq('id', id);
