@@ -198,6 +198,7 @@ body { background: var(--navy); color: var(--text); }
   border-bottom: 1px solid rgba(255,255,255,0.06);
   position: sticky; top: 0; z-index: 50;
   flex-shrink: 0;
+  overflow: hidden;
 }
 .app-logo {
   font-size: 1.3rem; font-weight: 800; color: var(--white);
@@ -1076,6 +1077,10 @@ body { background: var(--navy); color: var(--text); }
   .app-main { padding: 20px 16px; }
   .setup-banner { flex-direction: column; }
   .login-card { padding: 28px 20px; }
+  /* Org name + shop switcher don't fit next to the full wordmark on narrow
+     screens — it's shown clearly in the Home banner ("Currently viewing: ...")
+     instead, so hide it here rather than let it wrap/overflow over the page. */
+  .app-context { display: none !important; }
 }
 </style>
 </head>
