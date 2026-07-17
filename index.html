@@ -1082,6 +1082,47 @@ body { background: var(--navy); color: var(--text); }
      instead, so hide it here rather than let it wrap/overflow over the page. */
   .app-context { display: none !important; }
 }
+
+/* ─── HELP / FAQ ─── */
+.help-search-wrap { margin-bottom: 20px; }
+.help-search-input {
+  width: 100%; padding: 12px 16px; border: 1px solid var(--border);
+  border-radius: 10px; font-size: 0.9rem; font-family: 'Inter', sans-serif;
+  background: var(--white); color: var(--text); outline: none;
+}
+.help-search-input:focus { border-color: var(--blue); }
+.help-search-empty {
+  text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.875rem; display: none;
+}
+.help-section { margin-bottom: 20px; }
+.help-section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.95rem; font-weight: 700; color: var(--text);
+  margin-bottom: 10px;
+}
+.help-section-title .help-icon { color: var(--blue); display: flex; }
+.help-item {
+  border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 8px; overflow: hidden; background: var(--white);
+}
+.help-item[open] { border-color: var(--blue); }
+.help-item summary {
+  padding: 13px 16px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+  color: var(--text); list-style: none; display: flex; align-items: center;
+  justify-content: space-between; gap: 10px;
+}
+.help-item summary::-webkit-details-marker { display: none; }
+.help-item summary::after {
+  content: '+'; font-size: 1.1rem; font-weight: 400; color: var(--muted);
+  flex-shrink: 0; transition: transform 0.15s;
+}
+.help-item[open] summary::after { content: '−'; color: var(--blue); }
+.help-item summary:hover { background: var(--foam); }
+.help-answer {
+  padding: 0 16px 16px; font-size: 0.83rem; line-height: 1.55; color: var(--muted);
+}
+.help-answer p { margin-bottom: 8px; }
+.help-answer p:last-child { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -1470,6 +1511,9 @@ body { background: var(--navy); color: var(--text); }
       </div>
       <div class="nav-item" data-page="settings">
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span> <span data-i18n="nav_settings">Settings</span>
+      </div>
+      <div class="nav-item" data-page="help">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> <span data-i18n="nav_help">Help &amp; FAQ</span>
       </div>
     </aside>
 
@@ -2631,6 +2675,21 @@ body { background: var(--navy); color: var(--text); }
 
       </div>
 
+      <!-- Help / FAQ page -->
+      <div class="page" id="page-help">
+        <div class="page-header">
+          <h1 data-i18n="header_help_title">Help &amp; FAQ</h1>
+          <p data-i18n="header_help_sub">How each part of Seven Seas works, and quick fixes for common mix-ups</p>
+        </div>
+
+        <div class="help-search-wrap">
+          <input class="help-search-input" type="text" id="help-search" data-i18n-placeholder="help_search_ph" placeholder="Search the FAQ...">
+        </div>
+
+        <div id="help-content"></div>
+        <div class="help-search-empty" id="help-search-empty" data-i18n="help_search_empty">No matches. Try a different word.</div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -2652,6 +2711,7 @@ const TRANSLATIONS = {
     nav_home: 'Home', nav_calendar: 'Calendar', nav_fleet: 'Fleet', nav_crew: 'Crew',
     nav_checklists: 'Checklists', nav_tasks: 'Tasks', nav_gear: 'Gear & Equipment',
     nav_waivers: 'Waivers', nav_cashup: 'Daily Cash-Up', nav_reports: 'Reports', nav_settings: 'Settings',
+    nav_help: 'Help & FAQ',
     signed_in_as: 'Signed in as', sign_out: 'Sign out',
 
     login_title: 'Sign in to your account', login_tagline: 'Water operations platform',
@@ -2673,6 +2733,8 @@ const TRANSLATIONS = {
     header_reports_title: 'Reports', header_reports_sub: 'Revenue trends and cash accountability — owner only',
     header_tasks_title: 'Tasks', header_tasks_sub: 'Crew task management',
     header_settings_title: 'Settings', header_settings_sub: 'Operation details and account',
+    header_help_title: 'Help & FAQ', header_help_sub: 'How each part of Seven Seas works, and quick fixes for common mix-ups',
+    help_search_ph: 'Search the FAQ...', help_search_empty: 'No matches. Try a different word.',
 
     cal_today: 'Today', cal_day: 'Day', cal_week: 'Week', cal_month: 'Month', cal_new_trip: '+ New trip',
 
@@ -3019,6 +3081,7 @@ const TRANSLATIONS = {
     nav_home: 'Inicio', nav_calendar: 'Calendario', nav_fleet: 'Flota', nav_crew: 'Tripulación',
     nav_checklists: 'Checklists', nav_tasks: 'Tareas', nav_gear: 'Equipo y Material',
     nav_waivers: 'Formularios', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
+    nav_help: 'Ayuda y Preguntas',
     signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
 
     login_title: 'Inicia sesión en tu cuenta', login_tagline: 'Plataforma de operaciones marítimas',
@@ -3040,6 +3103,8 @@ const TRANSLATIONS = {
     header_reports_title: 'Informes', header_reports_sub: 'Tendencias de ingresos y control de caja — solo propietario',
     header_tasks_title: 'Tareas', header_tasks_sub: 'Gestión de tareas de la tripulación',
     header_settings_title: 'Configuración', header_settings_sub: 'Detalles de la operación y cuenta',
+    header_help_title: 'Ayuda y Preguntas Frecuentes', header_help_sub: 'Cómo funciona cada parte de Seven Seas, y soluciones rápidas a confusiones comunes',
+    help_search_ph: 'Buscar en las preguntas frecuentes...', help_search_empty: 'Sin resultados. Probá con otra palabra.',
 
     cal_today: 'Hoy', cal_day: 'Día', cal_week: 'Semana', cal_month: 'Mes', cal_new_trip: '+ Nueva salida',
 
@@ -3456,6 +3521,7 @@ function refreshDynamicTranslations() {
       if (typeof renderTasksMine === 'function') renderTasksMine();
       if (typeof renderTasksAll === 'function') renderTasksAll();
     }
+    if (document.getElementById('page-help') && document.getElementById('page-help').classList.contains('active') && typeof renderHelpPage === 'function') renderHelpPage();
   }
 }
 
@@ -3467,6 +3533,161 @@ function setLanguage(lang) {
 }
 
 applyTranslations();
+
+// ─── HELP / FAQ ───
+const HELP_CONTENT = [
+  {
+    title: { en: 'Getting started', es: 'Para empezar' },
+    items: [
+      { q: { en: 'How do I switch between shops if I run more than one location?', es: '¿Cómo cambio entre locales si manejo más de uno?' },
+        a: { en: 'Use the shop switcher next to your operation name in the top bar. Everything shop-specific — boats, compressors, calendar, crew — automatically filters to whichever shop is selected. Reports and Fleet stats follow it too.', es: 'Usá el selector de local junto al nombre de tu operación en la barra superior. Todo lo específico de cada local (botes, compresores, calendario, tripulación) se filtra automáticamente según el local seleccionado. Informes y Flota también lo siguen.' } },
+      { q: { en: 'Why did I see a banner saying I might be viewing the wrong shop?', es: '¿Por qué vi un aviso de que podría estar viendo el local equivocado?' },
+        a: { en: 'Crew members assigned to a specific shop (Settings → Crew) get a one-time-per-session reminder if they switch into a different shop. Owners and managers never see it, since moving between shops is expected for those roles. Click "Got it" to dismiss it for the session.', es: 'La tripulación asignada a un local específico (Configuración → Tripulación) recibe un aviso, una vez por sesión, si cambia a otro local. Dueños y gerentes nunca lo ven, ya que se espera que ellos se muevan entre locales. Tocá "Entendido" para cerrarlo por esa sesión.' } },
+      { q: { en: 'How do I change the app language?', es: '¿Cómo cambio el idioma de la app?' },
+        a: { en: 'Use the EN/ES toggle in the top nav. Every page, button, and label is fully bilingual — the change applies immediately and is remembered next time you log in.', es: 'Usá el botón EN/ES en la barra superior. Toda la app está en ambos idiomas — el cambio se aplica al instante y se recuerda la próxima vez que inicies sesión.' } },
+      { q: { en: 'Does Seven Seas work without wifi?', es: '¿Seven Seas funciona sin wifi?' },
+        a: { en: 'Yes, for checklists, waivers, and gear/maintenance logs — those save on your device and sync automatically once you\'re back online. Calendar and booking changes need a live connection, since several crew members can be editing shared trip data at the same time.', es: 'Sí, para checklists, formularios y registros de equipo/mantenimiento — se guardan en tu dispositivo y se sincronizan solos al volver a tener conexión. El calendario y las reservas necesitan conexión, ya que varios tripulantes pueden estar editando los mismos datos de viaje al mismo tiempo.' } },
+      { q: { en: 'What can each crew role see and do?', es: '¿Qué puede ver y hacer cada rol de tripulación?' },
+        a: { en: 'Owner sees and manages everything across all shops. Manager runs day-to-day operations for their shop. Captain, First Mate, Instructor, and Front Desk have narrower access suited to their job — for example, Reports is owner-only. A captain can be given temporary "elevated" permissions for things like approving crew requests.', es: 'El Dueño ve y gestiona todo en todos los locales. El Gerente maneja el día a día de su local. Capitán, Primer Oficial, Instructor y Recepción tienen acceso más limitado según su función — por ejemplo, Informes es solo para el dueño. Un capitán puede recibir permisos "elevados" temporales para cosas como aprobar pedidos de la tripulación.' } }
+    ]
+  },
+  {
+    title: { en: 'Home', es: 'Inicio' },
+    items: [
+      { q: { en: 'What do the numbers on the Home dashboard mean?', es: '¿Qué significan los números del panel de Inicio?' },
+        a: { en: 'Trips, guests, and boats are counted for whichever shop you currently have selected. Crew count is org-wide (all shops combined).', es: 'Viajes, huéspedes y botes se cuentan para el local que tenés seleccionado. La cantidad de tripulación es de toda la organización (todos los locales juntos).' } },
+      { q: { en: 'Why is Home asking me to finish setup?', es: '¿Por qué Inicio me pide terminar la configuración?' },
+        a: { en: 'That banner shows until your organisation name and country are filled in under Settings → Organisation. Once saved, it\'s replaced with your operation name and a "ready" message.', es: 'Ese aviso aparece hasta que completes el nombre y país de tu organización en Configuración → Organización. Una vez guardado, se reemplaza por el nombre de tu operación y un mensaje de "listo".' } }
+    ]
+  },
+  {
+    title: { en: 'Calendar', es: 'Calendario' },
+    items: [
+      { q: { en: 'How do I create a new trip or booking?', es: '¿Cómo creo un viaje o reserva nueva?' },
+        a: { en: 'Go to Calendar and click "+ New Trip" (or click an empty slot on the day you want). Pick a trip type, date, and boat, then add guests into guest groups.', es: 'Andá a Calendario y tocá "+ Nuevo Viaje" (o tocá un horario libre del día que querés). Elegí tipo de viaje, fecha y bote, y después agregá los huéspedes en grupos.' } },
+      { q: { en: 'What\'s the difference between week and month view?', es: '¿Cuál es la diferencia entre la vista semanal y la mensual?' },
+        a: { en: 'Week view shows full trip cards with guest counts, boat, and crew. Month view shows compact chips for a quick overview — click any day to open its detail.', es: 'La vista semanal muestra tarjetas completas con cantidad de huéspedes, bote y tripulación. La vista mensual muestra chips compactos para una vista rápida — tocá cualquier día para ver el detalle.' } },
+      { q: { en: 'Where do trip type defaults (price, gear, waivers) come from?', es: '¿De dónde salen los valores por defecto de cada tipo de viaje (precio, equipo, formularios)?' },
+        a: { en: 'From Settings → Trip Types. Each trip type has its own default price, gear requirements, and required waivers, which auto-fill when you create a booking of that type — you can still override them per booking.', es: 'De Configuración → Tipos de Viaje. Cada tipo de viaje tiene su propio precio, requisitos de equipo y formularios requeridos, que se completan solos al crear una reserva de ese tipo — igual podés cambiarlos en cada reserva puntual.' } }
+    ]
+  },
+  {
+    title: { en: 'Fleet', es: 'Flota' },
+    items: [
+      { q: { en: 'How do I add a boat?', es: '¿Cómo agrego un bote?' },
+        a: { en: 'Fleet → "+ Add boat". Boats belong to a specific shop location, so make sure the right shop is selected first.', es: 'Flota → "+ Agregar bote". Los botes pertenecen a un local específico, así que asegurate de tener seleccionado el local correcto primero.' } },
+      { q: { en: 'Where do I log engine hours or maintenance?', es: '¿Dónde registro horas de motor o mantenimiento?' },
+        a: { en: 'Click a boat in the Fleet list, then "Manage boat" to see its engines and maintenance history and log new entries.', es: 'Tocá un bote en la lista de Flota, y después "Gestionar bote" para ver sus motores e historial de mantenimiento, y registrar nuevas entradas.' } }
+    ]
+  },
+  {
+    title: { en: 'Crew', es: 'Tripulación' },
+    items: [
+      { q: { en: 'How do I invite a crew member?', es: '¿Cómo invito a un tripulante?' },
+        a: { en: 'Crew → "+ Invite crew". Enter their email and role — they\'ll get an invite to set up their own login.', es: 'Tripulación → "+ Invitar tripulante". Ingresá su email y rol — van a recibir una invitación para crear su propio acceso.' } },
+      { q: { en: 'What\'s the small red dot on the Crew tab?', es: '¿Qué es el puntito rojo en la pestaña de Tripulación?' },
+        a: { en: 'It flags pending items waiting on you — invite approvals or day-off requests.', es: 'Marca que hay algo pendiente esperando tu revisión — aprobaciones de invitación o pedidos de día libre.' } },
+      { q: { en: 'How do day-off requests work?', es: '¿Cómo funcionan los pedidos de día libre?' },
+        a: { en: 'Crew request time off from their own account; managers or owners approve or deny the request from the Crew page, with an optional note.', es: 'La tripulación pide días libres desde su propia cuenta; gerentes o dueños aprueban o rechazan el pedido desde la página de Tripulación, con una nota opcional.' } }
+    ]
+  },
+  {
+    title: { en: 'Checklists', es: 'Checklists' },
+    items: [
+      { q: { en: 'What checklists are available?', es: '¿Qué checklists hay disponibles?' },
+        a: { en: 'Pre-dive checklists, daily and monthly boat-loading checklists, and equipment inspection forms, organized by department/role.', es: 'Checklists de pre-inmersión, checklists diarios y mensuales de carga del bote, y formularios de inspección de equipo, organizados por departamento/rol.' } },
+      { q: { en: 'Do checklists save if I lose signal?', es: '¿Los checklists se guardan si pierdo señal?' },
+        a: { en: 'Yes — they auto-save on your device and sync to the server automatically once you\'re back online.', es: 'Sí — se guardan solos en tu dispositivo y se sincronizan con el servidor automáticamente al volver a tener conexión.' } }
+    ]
+  },
+  {
+    title: { en: 'Tasks', es: 'Tareas' },
+    items: [
+      { q: { en: 'How do I assign a task to someone?', es: '¿Cómo le asigno una tarea a alguien?' },
+        a: { en: 'Tasks → "+ New task", assign it to a crew member and set a due date.', es: 'Tareas → "+ Nueva tarea", asignala a un tripulante y poné una fecha límite.' } },
+      { q: { en: 'What does the red dot on Tasks mean?', es: '¿Qué significa el puntito rojo en Tareas?' },
+        a: { en: 'You have tasks assigned to you that are new or overdue.', es: 'Tenés tareas asignadas que son nuevas o están vencidas.' } }
+    ]
+  },
+  {
+    title: { en: 'Gear & Equipment', es: 'Equipo y Material' },
+    items: [
+      { q: { en: 'How do I track gear stock and sizes?', es: '¿Cómo controlo el stock y talles del equipo?' },
+        a: { en: 'Gear & Equipment lists each item with its sizes and current stock — adjust the counts as gear is repaired, added, or taken out of service.', es: 'Equipo y Material lista cada ítem con sus talles y stock actual — ajustá las cantidades cuando se repara, agrega o da de baja equipo.' } },
+      { q: { en: 'How do compressor fill logs work?', es: '¿Cómo funcionan los registros de carga de compresores?' },
+        a: { en: 'Open a compressor card and log who did the fill and the start/stop time. You can assign a compressor to a specific boat, or leave it as shop-based if it\'s not mounted on a boat.', es: 'Abrí la tarjeta de un compresor y registrá quién hizo la carga y la hora de inicio/fin. Podés asignar un compresor a un bote específico, o dejarlo como "del local" si no está montado en un bote.' } }
+    ]
+  },
+  {
+    title: { en: 'Waivers', es: 'Formularios' },
+    items: [
+      { q: { en: 'How do digital waivers work?', es: '¿Cómo funcionan los formularios digitales?' },
+        a: { en: 'Guests sign on-screen (your phone, tablet, or a shared device); the signature and timestamp save automatically and can be exported as a PDF.', es: 'Los huéspedes firman en pantalla (tu teléfono, tablet, o un dispositivo compartido); la firma y la hora se guardan solas y se pueden exportar como PDF.' } },
+      { q: { en: 'Why does a booking sometimes ask for date of birth and sometimes not?', es: '¿Por qué a veces una reserva pide fecha de nacimiento y a veces no?' },
+        a: { en: 'Date of birth only appears when that trip type requires a minor/youth waiver. Set this per trip type in Settings → Trip Types → required waivers, by adding "Minor / Youth" to the list.', es: 'La fecha de nacimiento solo aparece cuando ese tipo de viaje requiere un formulario de menor. Se configura por tipo de viaje en Configuración → Tipos de Viaje → formularios requeridos, agregando "Menor / Joven" a la lista.' } },
+      { q: { en: 'Where do I write the actual waiver wording?', es: '¿Dónde escribo el texto real del formulario?' },
+        a: { en: 'Settings → Waiver Templates — there\'s a tab per waiver type (Liability, Minor/Youth, Freediving, Snorkel/Charter, Medical, Other). A waiver type can\'t be signed by staff until it has a template written.', es: 'Configuración → Plantillas de Formularios — hay una pestaña por tipo (Responsabilidad, Menor/Joven, Buceo Libre, Snorkel/Charter, Médico, Otro). Un tipo de formulario no se puede firmar hasta que tenga una plantilla escrita.' } }
+    ]
+  },
+  {
+    title: { en: 'Daily Cash-Up', es: 'Arqueo de Caja Diario' },
+    items: [
+      { q: { en: 'What is Cash-Up for?', es: '¿Para qué sirve el Arqueo de Caja?' },
+        a: { en: 'It\'s your end-of-day reconciliation — guest tabs, payments, and totals for the shop and day you\'re viewing.', es: 'Es tu cierre de caja de fin de día — cuentas de huéspedes, pagos y totales del local y día que estás viendo.' } },
+      { q: { en: 'What\'s a "Group Payment"?', es: '¿Qué es un "Pago Grupal"?' },
+        a: { en: 'When one person pays for their whole guest group instead of splitting the charge per person. Cash-Up totals work correctly either way.', es: 'Cuando una persona paga por todo su grupo de huéspedes en vez de dividir el cargo por persona. Los totales del Arqueo funcionan bien de las dos formas.' } }
+    ]
+  },
+  {
+    title: { en: 'Reports', es: 'Informes' },
+    items: [
+      { q: { en: 'Who can see Reports?', es: '¿Quién puede ver Informes?' },
+        a: { en: 'Owner-only, for now.', es: 'Por ahora, solo el dueño.' } },
+      { q: { en: 'What do the revenue charts show?', es: '¿Qué muestran los gráficos de ingresos?' },
+        a: { en: 'Revenue broken out by date range and trip type. Use the scope selector to view a single shop or the whole organisation.', es: 'Ingresos desglosados por rango de fechas y tipo de viaje. Usá el selector de alcance para ver un solo local o toda la organización.' } }
+    ]
+  },
+  {
+    title: { en: 'Settings', es: 'Configuración' },
+    items: [
+      { q: { en: 'What\'s in Settings?', es: '¿Qué hay en Configuración?' },
+        a: { en: 'Organisation info, shop locations, trip types, waiver templates, and your account details.', es: 'Información de la organización, locales, tipos de viaje, plantillas de formularios, y los datos de tu cuenta.' } },
+      { q: { en: 'How do I add a second shop or location?', es: '¿Cómo agrego un segundo local?' },
+        a: { en: 'Settings → Locations → "+ Add location". Each location gets its own boats, crew assignments, compressors, and calendar view.', es: 'Configuración → Locales → "+ Agregar local". Cada local tiene sus propios botes, tripulación asignada, compresores y calendario.' } }
+    ]
+  }
+];
+
+function renderHelpPage() {
+  const container = document.getElementById('help-content');
+  if (!container) return;
+  const query = (document.getElementById('help-search')?.value || '').trim().toLowerCase();
+  let anyVisible = false;
+  container.innerHTML = HELP_CONTENT.map(section => {
+    const items = section.items.filter(item => {
+      if (!query) return true;
+      const hay = (item.q.en + ' ' + item.q.es + ' ' + item.a.en + ' ' + item.a.es).toLowerCase();
+      return hay.includes(query);
+    });
+    if (!items.length) return '';
+    anyVisible = true;
+    return `<div class="help-section">
+      <div class="help-section-title">${section.title[currentLanguage] || section.title.en}</div>
+      ${items.map((item, i) => `
+        <details class="help-item" ${(!query && i === 0 && HELP_CONTENT.indexOf(section) === 0) ? 'open' : ''}>
+          <summary>${item.q[currentLanguage] || item.q.en}</summary>
+          <div class="help-answer"><p>${item.a[currentLanguage] || item.a.en}</p></div>
+        </details>`).join('')}
+    </div>`;
+  }).join('');
+  const emptyEl = document.getElementById('help-search-empty');
+  if (emptyEl) emptyEl.style.display = anyVisible ? 'none' : 'block';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const searchEl = document.getElementById('help-search');
+  if (searchEl) searchEl.addEventListener('input', renderHelpPage);
+});
 
 // ─── OFFLINE SUPPORT (light resilience layer) ───
 // Scope: checklists, waiver signing, and maintenance/gear logs queue locally and sync
@@ -3716,6 +3937,7 @@ function showPage(id) {
   if (id === 'tasks') loadTasks();
   if (id === 'waivers') loadWaivers();
   if (id === 'reports') loadReports();
+  if (id === 'help') renderHelpPage();
 }
 
 // ─── NAV ITEMS ───
@@ -6356,7 +6578,7 @@ function svgStackedBarChart(data) {
       bars += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" font-size="9" fill="var(--muted)" text-anchor="middle">${d.label}</text>`;
     }
   });
-  return `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:${height}px;overflow:visible;">
+  return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%;height:${height}px;overflow:visible;">
     <line x1="${padding.left}" y1="${padding.top + chartH}" x2="${width - padding.right}" y2="${padding.top + chartH}" stroke="var(--border)" stroke-width="1"></line>
     ${bars}
   </svg>`;
@@ -6383,7 +6605,7 @@ function svgDivergingBarChart(data) {
       bars += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" font-size="9" fill="var(--muted)" text-anchor="middle">${d.label}</text>`;
     }
   });
-  return `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:${height}px;overflow:visible;">
+  return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%;height:${height}px;overflow:visible;">
     <line x1="${padding.left}" y1="${zeroY}" x2="${width - padding.right}" y2="${zeroY}" stroke="var(--border)" stroke-width="1"></line>
     ${bars}
   </svg>`;
@@ -7713,7 +7935,7 @@ function renderGroupParticipantsBlock(groupId, participants) {
           <input class="sf-input" type="tel" autocomplete="off" id="p-phone-${groupId}" placeholder="Optional">
         </div>
       </div>
-      <div class="sf-group">
+      <div class="sf-group" id="dob-section-${groupId}" style="display:none;">
         <label class="sf-label" data-i18n="guest_dob">Date of birth</label>
         <input class="sf-input" type="date" id="p-dob-${groupId}">
         <p style="font-size:0.75rem;color:var(--muted);margin-top:4px;" data-i18n="guest_dob_hint">Used to show a parent/guardian signature section on waivers for minors.</p>
@@ -7809,6 +8031,9 @@ function showAddGuestForm(groupId, prefill) {
   const tripType = currentTripTypes.find(t => t.id === typeId);
   const isDiving = tripType?.category === 'diving';
   document.getElementById('cert-section-' + groupId).style.display = isDiving ? 'block' : 'none';
+  const needsDob = !!(tripType?.required_waiver_types || []).includes('minor');
+  const dobSection = document.getElementById('dob-section-' + groupId);
+  if (dobSection) dobSection.style.display = needsDob ? 'block' : 'none';
   const certStatus = prefill && (prefill.is_certified === true || prefill.is_certified === false) ? prefill.is_certified : null;
   window.currentGuestCertStatus[groupId] = certStatus;
   document.getElementById('cert-yes-' + groupId).classList.toggle('selected', certStatus === true);
@@ -9602,10 +9827,16 @@ async function gearStockDiscard(itemId, size) {
 async function populateCompressorSelects(selectedLoc, selectedBoat) {
   if (!currentOrgId) return;
   const { data: locs } = await sb.from('locations').select('id,name').eq('org_id', currentOrgId);
-  const { data: boats } = await sb.from('boats').select('id,name').eq('org_id', currentOrgId).eq('active', true);
   const locSel = document.getElementById('compressor-location');
-  locSel.innerHTML = (locs || []).map(l => `<option value="${l.id}" ${l.id===selectedLoc?'selected':''}>${l.name}</option>`).join('') || '<option value="">No locations — add in Settings</option>';
+  const effectiveLoc = selectedLoc || currentLocationId || (locs && locs[0] && locs[0].id) || '';
+  locSel.innerHTML = (locs || []).map(l => `<option value="${l.id}" ${l.id===effectiveLoc?'selected':''}>${l.name}</option>`).join('') || '<option value="">No locations — add in Settings</option>';
+  await populateCompressorBoatSelect(effectiveLoc, selectedBoat);
+  locSel.onchange = () => populateCompressorBoatSelect(locSel.value, null);
+}
+async function populateCompressorBoatSelect(locationId, selectedBoat) {
   const boatSel = document.getElementById('compressor-boat');
+  if (!locationId) { boatSel.innerHTML = '<option value="">— Shop-based, no boat —</option>'; return; }
+  const { data: boats } = await sb.from('boats').select('id,name').eq('org_id', currentOrgId).eq('active', true).eq('location_id', locationId);
   boatSel.innerHTML = '<option value="">— Shop-based, no boat —</option>' + (boats || []).map(b => `<option value="${b.id}" ${b.id===selectedBoat?'selected':''}>${b.name}</option>`).join('');
 }
 
@@ -9677,7 +9908,7 @@ function renderCompressorCard(c, logs) {
       ${parseFloat(c.current_hours || 0).toFixed(1)}h / ${c.filter_interval_hours}${t('gear_hours_used')}${remaining}${t('gear_hours_remaining')}
     </p>
     <div class="card-section-title">${t('gear_log_a_fill')}</div>
-    <div class="sf-row">
+    <div class="sf-row" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="sf-group">
         <label class="sf-label">${t('gear_who_filled')}</label>
         <input class="sf-input" type="text" id="comp-logby-${c.id}" placeholder="Name">
@@ -10085,6 +10316,19 @@ const CATEGORY_STARTER_TYPES = {
   ]
 };
 
+// Default required waivers per category when a new trip type is seeded. Diving,
+// freediving and surf are instructor-led activities with real physical risk, where a
+// minor/youth consent form is standard industry practice — charter and fishing are
+// typically supervised-by-the-guardian passenger activities where one general liability
+// waiver for the group is the norm. Fully editable per trip type afterward in Settings.
+const CATEGORY_DEFAULT_WAIVERS = {
+  diving: ['liability', 'minor'],
+  freediving: ['liability', 'minor'],
+  surf: ['liability', 'minor'],
+  charter_yacht: ['liability'],
+  fishing: ['liability']
+};
+
 // Maps a starter/seed trip type's stored English name to its i18n key, so the
 // built-in trip types show translated even though the name itself is plain
 // text in the database. Custom/renamed trip types fall through unchanged.
@@ -10148,6 +10392,7 @@ async function seedTripTypesForCategory(category) {
       can_be_private: t.can_be_private || false,
       needs_tank_count: t.needs_tank_count || false,
       num_tanks: t.num_tanks || null,
+      required_waiver_types: t.required_waiver_types || CATEGORY_DEFAULT_WAIVERS[category] || ['liability'],
       is_system_default: true
     }).select().single();
 
