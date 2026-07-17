@@ -1489,6 +1489,10 @@ body { background: var(--navy); color: var(--text); }
           </div>
           <button class="btn-setup" onclick="showPage('settings')" data-i18n="setup_banner_btn">Go to Settings</button>
         </div>
+        <div class="warning-banner caution" id="shop-mismatch-banner" style="display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <span id="shop-mismatch-text"></span>
+          <button class="btn-cancel" style="padding:4px 10px;font-size:0.75rem;flex-shrink:0;" onclick="dismissShopMismatchBanner()" data-i18n="shop_mismatch_dismiss">Got it</button>
+        </div>
         <div class="stat-grid">
           <div class="stat-card">
             <div class="stat-label" data-i18n="stat_trips_today">Trips today</div>
@@ -2681,6 +2685,7 @@ const TRANSLATIONS = {
     greeting_morning: 'Good morning', greeting_afternoon: 'Good afternoon', greeting_evening: 'Good evening',
     home_banner_ready: 'Your operations dashboard. All systems ready.', home_banner_view_calendar: 'View Calendar',
     home_current_shop_prefix: 'Currently viewing: ',
+    shop_mismatch_dismiss: 'Got it', shop_mismatch_text: "You're viewing {shop}, which isn't one of your assigned shops. Double-check this is where you mean to log bookings, checklists, or waivers today.",
 
     tk_new_task_list: '+ New Task List', tk_my_tasks: 'My Tasks', tk_all_tasks: 'All Task Lists',
     tk_new_task_list_title: 'New Task List', tk_title: 'Title', tk_title_ph: 'e.g. Morning boat prep',
@@ -3047,6 +3052,7 @@ const TRANSLATIONS = {
     greeting_morning: 'Buenos días', greeting_afternoon: 'Buenas tardes', greeting_evening: 'Buenas noches',
     home_banner_ready: 'Tu panel de operaciones. Todo listo.', home_banner_view_calendar: 'Ver Calendario',
     home_current_shop_prefix: 'Viendo actualmente: ',
+    shop_mismatch_dismiss: 'Entendido', shop_mismatch_text: 'Estás viendo {shop}, que no es uno de tus locales asignados. Verificá que sea donde querés registrar reservas, checklists o waivers hoy.',
 
     tk_new_task_list: '+ Nueva Lista de Tareas', tk_my_tasks: 'Mis Tareas', tk_all_tasks: 'Todas las Listas',
     tk_new_task_list_title: 'Nueva Lista de Tareas', tk_title: 'Título', tk_title_ph: 'ej. Preparación matutina del bote',
@@ -3799,6 +3805,7 @@ async function updateAppContext(orgName) {
     if (shopLabelEl) shopLabelEl.textContent = current ? t('home_current_shop_prefix') + current.name : '';
   }
   localStorage.setItem(locationStorageKey(), currentLocationId || '');
+  await checkShopMismatchBanner();
 }
 
 async function refreshHomeStats() {
@@ -3821,6 +3828,14 @@ async function refreshHomeStats() {
       guestsEl.textContent = count || 0;
     }
   }
+
+  const boatsEl = document.getElementById('stat-boats');
+  if (boatsEl) {
+    let boatsCountQuery = sb.from('boats').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('active', true);
+    if (currentLocationId) boatsCountQuery = boatsCountQuery.eq('location_id', currentLocationId);
+    const { count: boatsCount } = await boatsCountQuery;
+    boatsEl.textContent = boatsCount || 0;
+  }
 }
 
 document.getElementById('location-picker').addEventListener('change', (e) => {
@@ -3829,8 +3844,34 @@ document.getElementById('location-picker').addEventListener('change', (e) => {
   const current = (e.target.options[e.target.selectedIndex] || {}).text;
   const shopLabelEl = document.getElementById('home-current-shop');
   if (shopLabelEl && current) shopLabelEl.textContent = t('home_current_shop_prefix') + current;
+  checkShopMismatchBanner();
   refreshCurrentView();
 });
+
+// Nudges crew (not owners/managers, who are expected to move between shops) when the
+// shop they're currently viewing isn't one they're assigned to in Settings — catches
+// the case where someone switched shops once (e.g. covering a shift) and the app quietly
+// remembered that choice on a later, ordinary day at their usual shop.
+function shopMismatchDismissKey() { return 'sevenSeasShopBannerDismissed_' + (currentLocationId || 'none'); }
+async function checkShopMismatchBanner() {
+  const banner = document.getElementById('shop-mismatch-banner');
+  if (!banner) return;
+  const isExempt = currentUserRole === 'owner' || currentUserRole === 'manager';
+  const hasAssignments = currentStaffAssignedLocationIds.length > 0;
+  const isMismatch = currentLocationId && hasAssignments && !currentStaffAssignedLocationIds.includes(currentLocationId);
+  if (isExempt || !isMismatch || sessionStorage.getItem(shopMismatchDismissKey())) {
+    banner.style.display = 'none';
+    return;
+  }
+  const { data: loc } = await sb.from('locations').select('name').eq('id', currentLocationId).single();
+  const textEl = document.getElementById('shop-mismatch-text');
+  if (textEl) textEl.textContent = t('shop_mismatch_text').replace('{shop}', loc?.name || '');
+  banner.style.display = 'flex';
+}
+function dismissShopMismatchBanner() {
+  sessionStorage.setItem(shopMismatchDismissKey(), '1');
+  document.getElementById('shop-mismatch-banner').style.display = 'none';
+}
 
 function refreshCurrentView() {
   refreshHomeStats();
@@ -3867,11 +3908,14 @@ function refreshCurrentView() {
 }
 
 // ─── AUTH ───
+let currentStaffAssignedLocationIds = [];
 async function loadCurrentUserRole() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
   const { data: s } = await sb.from('staff').select('role').eq('id', user.id).single();
   currentUserRole = s?.role || 'instructor';
+  const { data: locRows } = await sb.from('staff_locations').select('location_id').eq('staff_id', user.id);
+  currentStaffAssignedLocationIds = (locRows || []).map(r => r.location_id);
 }
 let rosterView = 'week';
 let rosterDate = new Date();
@@ -4443,6 +4487,9 @@ async function loadSettings(user) {
 
   if (staffRow) {
     currentOrgId = staffRow.org_id;
+    currentUserRole = staffRow.role || currentUserRole;
+    const { data: locRows } = await sb.from('staff_locations').select('location_id').eq('staff_id', user.id);
+    currentStaffAssignedLocationIds = (locRows || []).map(r => r.location_id);
     document.getElementById('settings-role').textContent =
       staffRow.role.charAt(0).toUpperCase() + staffRow.role.slice(1);
     // Update home banner with operation name
@@ -4958,13 +5005,15 @@ async function checkDoubleBookings() {
 
 async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
-  const { data } = await sb
+  let query = sb
     .from('trips')
     .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(price_per_person, crew_hire_total, participants(id, rental_surcharge))')
     .eq('org_id', currentOrgId)
     .gte('trip_date', formatDate(start))
     .lte('trip_date', formatDate(end))
     .order('trip_time');
+  if (currentLocationId) query = query.eq('location_id', currentLocationId);
+  const { data } = await query;
   return data || [];
 }
 
@@ -5595,11 +5644,13 @@ async function recalcTripGuestCount(tripId) {
 
 async function populateTripBoats(selectedId) {
   if (!currentOrgId) return;
-  const { data: boats } = await sb
+  let boatsQuery = sb
     .from('boats')
     .select('id, name, capacity')
     .eq('org_id', currentOrgId)
     .eq('active', true);
+  if (currentLocationId) boatsQuery = boatsQuery.eq('location_id', currentLocationId);
+  const { data: boats } = await boatsQuery;
   const sel = document.getElementById('trip-boat');
   sel.innerHTML = `<option value="">${t('tt_no_boat_select')}</option>` +
     (boats || []).map(b => `<option value="${b.id}" data-capacity="${b.capacity||''}" ${b.id===selectedId?'selected':''}>${b.name}${b.capacity ? ' · Max ' + b.capacity : ''}</option>`).join('');
@@ -8587,11 +8638,13 @@ async function cancelInvite(id) {
 // ─── FLEET ───
 async function loadFleet() {
   if (!currentOrgId) return;
-  const { data: boats } = await sb
+  let boatsQuery = sb
     .from('boats')
     .select('*, locations(name)')
     .eq('org_id', currentOrgId)
     .order('created_at');
+  if (currentLocationId) boatsQuery = boatsQuery.eq('location_id', currentLocationId);
+  const { data: boats } = await boatsQuery;
 
   const list = document.getElementById('fleet-list');
   const manageSel = document.getElementById('fleet-manage-boat-select');
@@ -9590,7 +9643,9 @@ document.getElementById('btn-save-compressor').addEventListener('click', async (
 async function loadCompressors() {
   if (!currentOrgId) return;
   await populateCompressorSelects();
-  const { data: compressors } = await sb.from('compressors').select('*, locations(name), boats(name)').eq('org_id', currentOrgId).order('created_at');
+  let compressorsQuery = sb.from('compressors').select('*, locations(name), boats(name)').eq('org_id', currentOrgId).order('created_at');
+  if (currentLocationId) compressorsQuery = compressorsQuery.eq('location_id', currentLocationId);
+  const { data: compressors } = await compressorsQuery;
   const list = document.getElementById('compressors-list');
   if (!compressors || !compressors.length) {
     list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('gear_no_compressors_yet')}</p>`;
