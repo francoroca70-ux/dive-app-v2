@@ -7,7 +7,7 @@
 //
 // Bump CACHE_VERSION whenever you want returning users to pick up a fresh
 // app shell faster (old caches are cleaned up automatically on activate).
-const CACHE_VERSION = 'seven-seas-v1';
+const CACHE_VERSION = 'seven-seas-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -24,7 +24,9 @@ const APP_SHELL = [
   '/assets/icons/maskable-512.png',
   '/assets/icons/apple-touch-icon.png',
   '/assets/logo-icon.png',
-  '/assets/logo-full.png'
+  '/assets/logo-full.png',
+  '/assets/logo-wordmark-white.png',
+  '/assets/logo-wordmark-navy.png'
 ];
 
 self.addEventListener('install', (event) => {
