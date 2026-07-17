@@ -490,7 +490,10 @@ body { background: var(--navy); color: var(--text); }
   background: rgba(26,107,138,0.08); color: var(--blue);
   padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
   margin: 0 8px 8px 0;
+  cursor: pointer; border: 1px solid transparent; transition: all 0.15s;
 }
+.active-category-pill:hover { background: rgba(229,62,62,0.1); color: var(--error); border-color: rgba(229,62,62,0.25); }
+.active-category-pill:hover::after { content: '✕'; font-size: 0.7rem; }
 .confirm-banner {
   background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3);
   border-radius: 10px; padding: 14px 16px; margin-top: 14px;
@@ -2996,6 +2999,8 @@ const TRANSLATIONS = {
     set_adding_category_confirm_singular: 'Adding <strong>{cat}</strong> will create {n} starter trip type you can edit afterward. This action is owner-only.',
     set_adding_category_confirm_plural: 'Adding <strong>{cat}</strong> will create {n} starter trip types you can edit afterward. This action is owner-only.',
     set_add_category_btn: 'Add category', set_category_already_active: 'This category is already active.',
+    set_click_to_deactivate: 'Click to deactivate this category', set_deactivate_category_btn: 'Deactivate category',
+    set_removing_category_confirm: 'Deactivate <strong>{cat}</strong>? It will drop off this list. Its existing trip types, gear, and checklists stay exactly as they are and can still be managed individually — this only affects whether the category shows as active here. Owner only.',
     set_no_trip_types_yet: 'No trip types yet. Select an operation category above to get started.',
     set_tanks_plural: ' tanks', set_tank_singular: ' tank',
     set_can_be_private: ' · can be private', set_multi_day_suffix: ' · multi-day',
@@ -3369,6 +3374,8 @@ const TRANSLATIONS = {
     set_adding_category_confirm_singular: 'Agregar <strong>{cat}</strong> creará {n} tipo de salida inicial que podrás editar después. Esta acción es solo para el propietario.',
     set_adding_category_confirm_plural: 'Agregar <strong>{cat}</strong> creará {n} tipos de salida iniciales que podrás editar después. Esta acción es solo para el propietario.',
     set_add_category_btn: 'Agregar categoría', set_category_already_active: 'Esta categoría ya está activa.',
+    set_click_to_deactivate: 'Tocá para desactivar esta categoría', set_deactivate_category_btn: 'Desactivar categoría',
+    set_removing_category_confirm: '¿Desactivar <strong>{cat}</strong>? Desaparecerá de esta lista. Sus tipos de salida, equipo y checklists existentes se mantienen tal cual y se siguen pudiendo gestionar individualmente — esto solo afecta si la categoría aparece como activa acá. Solo para el propietario.',
     set_no_trip_types_yet: 'Aún no hay tipos de salida. Selecciona una categoría de operación arriba para empezar.',
     set_tanks_plural: ' tanques', set_tank_singular: ' tanque',
     set_can_be_private: ' · puede ser privada', set_multi_day_suffix: ' · varios días',
@@ -10513,7 +10520,8 @@ async function renderActiveCategories() {
   if (!active.length) {
     list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('set_no_categories_yet')}</p>`;
   } else {
-    list.innerHTML = active.map(c => `<span class="active-category-pill">${CATEGORY_LABELS[c] || c}</span>`).join('');
+    list.innerHTML = active.map(c => `<span class="active-category-pill" title="${t('set_click_to_deactivate')}" onclick="confirmRemoveCategory('${c}')">${CATEGORY_LABELS[c] || c}</span>`).join('')
+      + '<div id="category-remove-confirm-zone" style="width:100%;"></div>';
   }
 
   const remaining = Object.keys(CATEGORY_LABELS).filter(c => !active.includes(c));
@@ -10550,6 +10558,26 @@ async function doAddCategory(category) {
   await seedTripTypesForCategory(category);
   await seedGearForCategory(category);
   await seedInspectionChecklistForCategory(category);
+  await renderActiveCategories();
+  await renderTripTypesList();
+}
+
+function confirmRemoveCategory(category) {
+  const zone = document.getElementById('category-remove-confirm-zone');
+  if (!zone) return;
+  const msg = t('set_removing_category_confirm').replace('{cat}', CATEGORY_LABELS[category] || category);
+  zone.innerHTML = `
+    <div class="confirm-banner">
+      ${msg}
+      <div class="confirm-banner-actions">
+        <button class="btn-confirm-yes" style="background:var(--error);" onclick="doRemoveCategory('${category}')">${t('set_deactivate_category_btn')}</button>
+        <button class="btn-confirm-no" onclick="document.getElementById('category-remove-confirm-zone').innerHTML=''">${t('tt_cancel')}</button>
+      </div>
+    </div>`;
+}
+
+async function doRemoveCategory(category) {
+  await sb.from('org_operation_categories').delete().eq('org_id', currentOrgId).eq('category', category);
   await renderActiveCategories();
   await renderTripTypesList();
 }
