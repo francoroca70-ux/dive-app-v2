@@ -2903,6 +2903,7 @@ const TRANSLATIONS = {
     crew_approve_confirm: 'Approve this day-off request?', crew_deny_reason_prompt: 'Reason for denying this request',
     crew_deny_reason_placeholder: 'e.g. Needed for the Thursday charter', crew_no_location: 'No location',
     crew_invited_prefix: 'Invited ', crew_status_pending_badge: 'Pending', crew_cancel_invite: 'Cancel',
+    crew_copy_invite_link: 'Copy link', crew_link_copied: 'Copied!', crew_copy_link_manual: 'Copy this invite link:',
     crew_no_locations_settings: 'No locations — add in Settings',
     crew_email_name_required: 'Email and name are required.', crew_setup_org_first: 'Set up your organisation in Settings first.',
     crew_sending: 'Sending...', crew_error_creating_invite: 'Error creating invite.',
@@ -3298,6 +3299,7 @@ const TRANSLATIONS = {
     crew_approve_confirm: '¿Aprobar esta solicitud de día libre?', crew_deny_reason_prompt: 'Motivo para rechazar esta solicitud',
     crew_deny_reason_placeholder: 'ej. Necesario para el charter del jueves', crew_no_location: 'Sin ubicación',
     crew_invited_prefix: 'Invitado ', crew_status_pending_badge: 'Pendiente', crew_cancel_invite: 'Cancelar',
+    crew_copy_invite_link: 'Copiar enlace', crew_link_copied: '¡Copiado!', crew_copy_link_manual: 'Copia este enlace de invitación:',
     crew_no_locations_settings: 'Sin ubicaciones — agrega una en Configuración',
     crew_email_name_required: 'El correo y el nombre son obligatorios.', crew_setup_org_first: 'Configura tu operación en Configuración primero.',
     crew_sending: 'Enviando...', crew_error_creating_invite: 'Error al crear la invitación.',
@@ -8851,10 +8853,24 @@ async function loadPendingInvites() {
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="invite-status">${t('crew_status_pending_badge')}</span>
+        <button class="btn-icon" onclick="copyInviteLink('${inv.token}', this)">${t('crew_copy_invite_link')}</button>
         <button class="btn-icon danger" onclick="cancelInvite('${inv.id}')">${t('crew_cancel_invite')}</button>
       </div>
     </div>
   `).join('');
+}
+
+async function copyInviteLink(token, btnEl) {
+  const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${token}`;
+  const originalLabel = btnEl.textContent;
+  try {
+    await navigator.clipboard.writeText(inviteUrl);
+    btnEl.textContent = t('crew_link_copied');
+  } catch (err) {
+    // Clipboard API unavailable (older browser / non-HTTPS) — fall back to a prompt so it can still be copied manually.
+    window.prompt(t('crew_copy_link_manual'), inviteUrl);
+  }
+  setTimeout(() => { btnEl.textContent = originalLabel; }, 2000);
 }
 
 // Show/hide invite form
