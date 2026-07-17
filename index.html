@@ -867,7 +867,10 @@ body { background: var(--navy); color: var(--text); }
   z-index: 200; display: flex; align-items: flex-start;
   justify-content: center; padding: 40px 20px; overflow-y: auto;
 }
-#modal-confirm { align-items: center; z-index: 300; }
+/* Confirm dialogs can be triggered from inside other modals (gear detail, roster
+   cell, task detail — all z-index:300), so this needs to sit above all of them
+   or it renders behind whichever modal opened it. */
+#modal-confirm { align-items: center; z-index: 500; }
 #modal-roster-cell { align-items: center; }
 .modal-box {
   background: var(--white); border-radius: 16px;
@@ -2232,16 +2235,16 @@ body { background: var(--navy); color: var(--text); }
 
           <div class="sf-row" style="max-width:560px;margin-bottom:16px;">
             <div class="sf-group">
-              <label class="sf-label">Category</label>
-              <select class="sf-input" id="reg-filter-category"><option value="">All categories</option></select>
+              <label class="sf-label" data-i18n="gear_category">Category</label>
+              <select class="sf-input" id="reg-filter-category"><option value="" data-i18n="gear_all_categories">All categories</option></select>
             </div>
             <div class="sf-group">
-              <label class="sf-label">Status</label>
+              <label class="sf-label" data-i18n="gear_status">Status</label>
               <select class="sf-input" id="reg-filter-status">
-                <option value="">All statuses</option>
-                <option value="available">Active</option>
-                <option value="in_repair">In repair</option>
-                <option value="retired">Retired</option>
+                <option value="" data-i18n="gear_all_statuses">All statuses</option>
+                <option value="available" data-i18n="gear_status_active">Active</option>
+                <option value="in_repair" data-i18n="gear_status_in_repair">In repair</option>
+                <option value="retired" data-i18n="gear_status_retired">Retired</option>
               </select>
             </div>
           </div>
@@ -2939,8 +2942,9 @@ const TRANSLATIONS = {
     gear_title_label: 'Title', gear_what_was_done: 'What was done', gear_parts_used: 'Parts used (optional)',
     gear_cost: 'Cost (optional)', gear_currency: 'Currency', gear_done_by: 'Done by', gear_date_performed: 'Date performed',
     gear_next_due: 'Next due (optional)', gear_save_entry: 'Save entry', gear_cancel: 'Cancel',
-    gear_all_categories: 'All categories', gear_no_registered_yet: 'No gear registered yet.', gear_service_due: 'Service due',
+    gear_all_categories: 'All categories', gear_all_statuses: 'All statuses', gear_no_registered_yet: 'No gear registered yet.', gear_service_due: 'Service due',
     gear_next_service_prefix: 'Next service: ', gear_due_now: ' — due now', gear_error_prefix: 'Error: ', gear_saved: 'Saved',
+    gear_save_no_rows: 'Nothing was saved — you may not have permission to edit this item, or it may have been removed.',
     gear_no_compressors_yet: 'No compressors tracked yet. Add one above.', gear_no_location: 'No location', gear_shop_based: 'Shop-based',
     gear_filter_due_soon: 'Filter change due soon — ', gear_hours_remaining_plan: 'h remaining. Plan it in.', gear_hours_used: 'h used — ',
     gear_hours_remaining: 'h remaining', gear_log_a_fill: 'Log a Fill', gear_who_filled: 'Who filled', gear_start_time: 'Start time', gear_stop_time: 'Stop time',
@@ -3309,8 +3313,9 @@ const TRANSLATIONS = {
     gear_title_label: 'Título', gear_what_was_done: 'Qué se hizo', gear_parts_used: 'Repuestos utilizados (opcional)',
     gear_cost: 'Costo (opcional)', gear_currency: 'Moneda', gear_done_by: 'Realizado por', gear_date_performed: 'Fecha realizada',
     gear_next_due: 'Próximo vencimiento (opcional)', gear_save_entry: 'Guardar registro', gear_cancel: 'Cancelar',
-    gear_all_categories: 'Todas las categorías', gear_no_registered_yet: 'Aún no hay equipo registrado.', gear_service_due: 'Servicio pendiente',
+    gear_all_categories: 'Todas las categorías', gear_all_statuses: 'Todos los estados', gear_no_registered_yet: 'Aún no hay equipo registrado.', gear_service_due: 'Servicio pendiente',
     gear_next_service_prefix: 'Próximo servicio: ', gear_due_now: ' — vencido', gear_error_prefix: 'Error: ', gear_saved: 'Guardado',
+    gear_save_no_rows: 'No se guardó nada — es posible que no tengas permiso para editar este artículo, o que haya sido eliminado.',
     gear_no_compressors_yet: 'Aún no hay compresores registrados. Agrega uno arriba.', gear_no_location: 'Sin ubicación', gear_shop_based: 'Basado en tienda',
     gear_filter_due_soon: 'Cambio de filtro pronto — ', gear_hours_remaining_plan: 'h restantes. Planifícalo.', gear_hours_used: 'h usadas — ',
     gear_hours_remaining: 'h restantes', gear_log_a_fill: 'Registrar una Carga', gear_who_filled: 'Quién cargó', gear_start_time: 'Hora de inicio', gear_stop_time: 'Hora de fin',
@@ -9446,13 +9451,24 @@ document.getElementById('reg-filter-category').addEventListener('change', loadGe
 document.getElementById('reg-filter-status').addEventListener('change', loadGearRegistry);
 
 const gearRegistryCategories = ['Regulator', 'Dive computer', 'BCD', 'Tank / Cylinder', 'Underwater camera', 'Radio / Communication', 'Rebreather', 'Other'];
+const GEAR_CATEGORY_KEYS = {
+  'Regulator': 'gear_cat_regulator', 'Dive computer': 'gear_cat_dive_computer', 'BCD': 'gear_cat_bcd',
+  'Tank / Cylinder': 'gear_cat_tank', 'Underwater camera': 'gear_cat_camera', 'Radio / Communication': 'gear_cat_radio',
+  'Rebreather': 'gear_cat_rebreather', 'Other': 'gear_cat_other'
+};
+// Category is stored in English in the DB (it's a fixed catalog, not free text) so it can be
+// filtered/sorted consistently — this translates it for display without touching stored data.
+function trGearCategory(cat) {
+  const key = GEAR_CATEGORY_KEYS[cat];
+  return key ? t(key) : cat;
+}
 
 async function loadGearRegistry() {
   if (!currentOrgId) return;
   const catFilterEl = document.getElementById('reg-filter-category');
-  if (!catFilterEl.options.length || catFilterEl.options.length === 1) {
-    catFilterEl.innerHTML = `<option value="">${t('gear_all_categories')}</option>` + gearRegistryCategories.map(c => `<option value="${c}">${c}</option>`).join('');
-  }
+  const prevCatValue = catFilterEl.value;
+  catFilterEl.innerHTML = `<option value="">${t('gear_all_categories')}</option>` + gearRegistryCategories.map(c => `<option value="${c}">${trGearCategory(c)}</option>`).join('');
+  catFilterEl.value = prevCatValue;
   const catFilter = catFilterEl.value;
   const statusFilter = document.getElementById('reg-filter-status').value;
 
@@ -9478,7 +9494,7 @@ function renderGearRegistry(items) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div>
           <h2 style="margin-bottom:2px;">${g.name}${dueSoon ? ` <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">${t('gear_service_due')}</span>` : ''}</h2>
-          <p style="font-size:0.8rem;color:var(--muted);">${g.category}${g.size ? ' · ' + g.size : ''}${g.serial_number ? ' · SN ' + g.serial_number : ''}${g.locations?.name ? ' · ' + g.locations.name : ''}</p>
+          <p style="font-size:0.8rem;color:var(--muted);">${trGearCategory(g.category)}${g.size ? ' · ' + g.size : ''}${g.serial_number ? ' · SN ' + g.serial_number : ''}${g.locations?.name ? ' · ' + g.locations.name : ''}</p>
         </div>
         <span class="role-badge" style="background:rgba(0,0,0,0.06);color:${statusColor};">${gearRegistryStatusLabel(g.status)}</span>
       </div>
@@ -9495,7 +9511,7 @@ async function openGearDetail(gearId) {
   const { data: g } = await sb.from('gear').select('*, locations(name)').eq('id', gearId).single();
   if (!g) return;
   document.getElementById('gear-detail-title').textContent = g.name;
-  document.getElementById('gear-detail-summary').textContent = [g.category, g.size, g.serial_number ? 'SN ' + g.serial_number : null, g.locations?.name].filter(Boolean).join(' · ');
+  document.getElementById('gear-detail-summary').textContent = [trGearCategory(g.category), g.size, g.serial_number ? 'SN ' + g.serial_number : null, g.locations?.name].filter(Boolean).join(' · ');
   document.getElementById('gd-status').value = g.status || 'available';
   document.getElementById('gd-last-service').value = g.last_service_date || '';
   document.getElementById('gd-next-service').value = g.next_service_date || '';
@@ -9520,15 +9536,22 @@ document.getElementById('modal-gear-detail-close').addEventListener('click', () 
 document.getElementById('btn-save-gear-detail').addEventListener('click', async () => {
   const feedback = document.getElementById('gear-detail-feedback');
   const gearId = window.currentGearDetailId;
-  const { error } = await sb.from('gear').update({
+  const { data, error } = await sb.from('gear').update({
     status: document.getElementById('gd-status').value,
     last_service_date: document.getElementById('gd-last-service').value || null,
     next_service_date: document.getElementById('gd-next-service').value || null,
     repair_notes: document.getElementById('gd-repair-notes').value.trim() || null,
     notes: document.getElementById('gd-notes').value.trim() || null
-  }).eq('id', gearId);
+  }).eq('id', gearId).select();
   if (error) {
     feedback.textContent = t('gear_error_prefix') + error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  // .update() with no matching/permitted rows returns no error but also no data —
+  // that silent-failure case was surfacing as a false "Saved" before this check.
+  if (!data || !data.length) {
+    feedback.textContent = t('gear_save_no_rows');
     feedback.className = 'save-feedback error visible';
     return;
   }
