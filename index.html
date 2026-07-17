@@ -2818,6 +2818,7 @@ const TRANSLATIONS = {
     tt_print_manifest: 'Print Manifest', tt_delete_trip: 'Delete trip', tt_new_trip_title: 'New trip',
     tt_contact: 'Contact', tt_lead_contact_name: 'Lead contact name', tt_phone: 'Phone', tt_email: 'Email', tt_booked_by: 'Booked by',
     tt_guests_label: 'Guests', tt_add_guest: '+ Add guest', tt_notes: 'Notes', tt_payment: 'Payment', tt_price_per_person: 'Price per person', tt_total: 'Total',
+    tt_price_per_day: 'Price per day', tt_trip_price: 'Trip price',
     tt_link_tab: 'Link to guest tab (optional)', tt_check_in: 'Check In',
     tt_group_contact: 'Group {n} — Contact', tt_booked_by_placeholder: 'Staff member name', tt_save_add_guests: 'Save the trip to add guests.',
     tt_save_log_payments: 'Save the trip to log payments.', tt_no_tab: 'No tab — pay per trip', tt_checked_in: 'Checked In', tt_checkin_disabled_title: 'Add guests first',
@@ -3000,6 +3001,7 @@ const TRANSLATIONS = {
     set_can_be_private: ' · can be private', set_multi_day_suffix: ' · multi-day',
     set_rental_fees_btn: 'Rental fees',
     set_multiday_checkbox_label: 'Multi-day trip (adds an end date + lets you hire crew per day on this trip type)',
+    set_crew_day_rate_hint: 'Crew hire rates are set per person in Crew → tap a name → Day rate, not here.',
     common_loading: 'Loading...',
     set_no_gear_fields: 'No gear fields attached to this trip type.',
     set_rental_gear_fees_header: 'Rental gear fees (optional — added per guest who selects rental)',
@@ -3189,6 +3191,7 @@ const TRANSLATIONS = {
     tt_print_manifest: 'Imprimir Manifiesto', tt_delete_trip: 'Eliminar salida', tt_new_trip_title: 'Nueva salida',
     tt_contact: 'Contacto', tt_lead_contact_name: 'Nombre del contacto principal', tt_phone: 'Teléfono', tt_email: 'Correo electrónico', tt_booked_by: 'Reservado por',
     tt_guests_label: 'Huéspedes', tt_add_guest: '+ Agregar huésped', tt_notes: 'Notas', tt_payment: 'Pago', tt_price_per_person: 'Precio por persona', tt_total: 'Total',
+    tt_price_per_day: 'Precio por día', tt_trip_price: 'Precio del viaje',
     tt_link_tab: 'Vincular a cuenta de huésped (opcional)', tt_check_in: 'Registrar Llegada',
     tt_group_contact: 'Grupo {n} — Contacto', tt_booked_by_placeholder: 'Nombre del miembro del personal', tt_save_add_guests: 'Guarda la salida para agregar huéspedes.',
     tt_save_log_payments: 'Guarda la salida para registrar pagos.', tt_no_tab: 'Sin cuenta — pagar por salida', tt_checked_in: 'Registrado', tt_checkin_disabled_title: 'Agrega huéspedes primero',
@@ -3371,6 +3374,7 @@ const TRANSLATIONS = {
     set_can_be_private: ' · puede ser privada', set_multi_day_suffix: ' · varios días',
     set_rental_fees_btn: 'Tarifas de alquiler',
     set_multiday_checkbox_label: 'Salida de varios días (agrega una fecha de fin + permite contratar tripulación por día para este tipo de salida)',
+    set_crew_day_rate_hint: 'Las tarifas de tripulación se configuran por persona en Tripulación → tocá un nombre → Tarifa diaria, no acá.',
     common_loading: 'Cargando...',
     set_no_gear_fields: 'No hay campos de equipo asociados a este tipo de salida.',
     set_rental_gear_fees_header: 'Tarifas de alquiler de equipo (opcional — se agrega por huésped que seleccione alquiler)',
@@ -5277,9 +5281,13 @@ function tripCard(trip, paid) {
   const capacity = trip.boats?.capacity;
   const tanks = trip.num_dives ? guestCount * trip.num_dives : null;
   const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(trip.trip_type);
+  // Private bookings (the whole boat) charge one trip price × days, not × headcount — see groupCardHTML.
+  const tripDays = trip.end_date ? tripDayCount(trip.trip_date, trip.end_date) : 1;
+  const tripIsPrivate = trip.booking_mode !== 'shared';
   const total = (trip.trip_groups || []).reduce((sum, g) => {
     const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
-    return sum + (parseFloat(g.price_per_person) || 0) * (g.participants?.length || 0) + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
+    const qty = tripIsPrivate ? Math.max(tripDays, 1) : (g.participants?.length || 0);
+    return sum + (parseFloat(g.price_per_person) || 0) * qty + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
   }, 0);
   const owed = total - (paid || 0);
   return `
@@ -5496,6 +5504,12 @@ async function onTripTypeChange() {
 }
 
 document.getElementById('trip-type-select').addEventListener('change', onTripTypeChange);
+// End date affects the day count used in private-booking totals and crew-hire cost,
+// so both need to re-render as soon as it changes (not just on the next unrelated update).
+document.getElementById('trip-end-date').addEventListener('change', () => {
+  renderGroupsPanel();
+  renderTripCrewSection();
+});
 
 // ─── GROUPS STATE ───
 let tripGroups_cache = [];
@@ -5616,6 +5630,7 @@ async function setBookingMode(mode) {
   }
   document.getElementById('btn-add-group').style.display = (mode === 'shared' && currentTripId) ? 'inline-block' : 'none';
   checkBoatConflict();
+  renderGroupsPanel();
 }
 
 // ─── GROUPS PANEL ───
@@ -5636,6 +5651,28 @@ async function buildTabOptionsHtml(selectedTabId) {
     .eq('status', 'open');
   return '<option value="">No tab — pay per trip</option>' +
     (openTabs || []).map(t => `<option value="${t.id}" ${t.id === selectedTabId ? 'selected' : ''}>${t.guest_name}</option>`).join('');
+}
+
+// Private bookings (the whole boat, e.g. most charter/yacht trips) charge one trip
+// price regardless of headcount — multiplied by days for multi-day trips. Shared
+// bookings (multiple independent groups on the same boat) charge per person instead.
+// Shared by every place in the trip modal that displays or logs a group's total.
+function currentTripPricingQty(guestCount) {
+  const isPrivate = window.currentBookingMode !== 'shared';
+  const typeIdNow = document.getElementById('trip-type-select')?.value;
+  const tripTypeNow = (currentTripTypes || []).find(tt => tt.id === typeIdNow);
+  const isMultiDayNow = !!tripTypeNow?.is_multi_day;
+  const daysNow = isMultiDayNow
+    ? tripDayCount(document.getElementById('trip-date')?.value, document.getElementById('trip-end-date')?.value)
+    : 1;
+  return isPrivate ? Math.max(daysNow, 1) : Math.max(guestCount, 1);
+}
+function currentTripPriceLabel() {
+  const isPrivate = window.currentBookingMode !== 'shared';
+  const typeIdNow = document.getElementById('trip-type-select')?.value;
+  const tripTypeNow = (currentTripTypes || []).find(tt => tt.id === typeIdNow);
+  const isMultiDayNow = !!tripTypeNow?.is_multi_day;
+  return isPrivate ? (isMultiDayNow ? t('tt_price_per_day') : t('tt_trip_price')) : t('tt_price_per_person');
 }
 
 async function groupCardHTML(g, index) {
@@ -5662,7 +5699,9 @@ async function groupCardHTML(g, index) {
   }
 
   const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
-  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * Math.max(guestCount, 1) + rentalTotal + crewHireTotal).toFixed(2);
+  const qtyMultiplier = currentTripPricingQty(guestCount);
+  const priceLabel = currentTripPriceLabel();
+  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * qtyMultiplier + rentalTotal + crewHireTotal).toFixed(2);
 
   return `
   <div class="group-card" data-group-key="${key}">
@@ -5704,8 +5743,8 @@ async function groupCardHTML(g, index) {
     <div class="card-section-title" style="margin-top:20px;">${t('tt_payment')}</div>
     <div class="sf-row">
       <div class="sf-group" style="max-width:160px;">
-        <label class="sf-label">${t('tt_price_per_person')}</label>
-        <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * Math.max(${Math.max(guestCount,1)},1) + ${rentalTotal} + ${crewHireTotal}).toFixed(2)">
+        <label class="sf-label">${priceLabel}</label>
+        <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * ${qtyMultiplier} + ${rentalTotal} + ${crewHireTotal}).toFixed(2)">
       </div>
       <div class="sf-group">
         <label class="sf-label">${t('tt_total')}</label>
@@ -6212,7 +6251,7 @@ async function loadGuestTabs() {
   }
   const today = formatDate(new Date());
   const rowsHtml = await Promise.all(tabs.map(async tab => {
-    const { data: linkedGroups } = await sb.from('trip_groups').select('id, price_per_person, participants(id, rental_surcharge)').eq('tab_id', tab.id);
+    const { data: linkedGroups } = await sb.from('trip_groups').select('id, price_per_person, crew_hire_total, participants(id, rental_surcharge), trips(trip_date, end_date, booking_mode)').eq('tab_id', tab.id);
     const groupIds = (linkedGroups || []).map(g => g.id);
     let paid = 0;
     if (groupIds.length) {
@@ -6221,7 +6260,9 @@ async function loadGuestTabs() {
     }
     const total = (linkedGroups || []).reduce((sum, g) => {
       const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
-      return sum + (parseFloat(g.price_per_person) || 0) * Math.max(1, g.participants?.length || 0) + rentalTotal;
+      const gDays = g.trips?.end_date ? tripDayCount(g.trips.trip_date, g.trips.end_date) : 1;
+      const qty = g.trips?.booking_mode !== 'shared' ? Math.max(gDays, 1) : Math.max(1, g.participants?.length || 0);
+      return sum + (parseFloat(g.price_per_person) || 0) * qty + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
     }, 0);
     const owed = total - paid - parseFloat(tab.deposit_amount || 0);
     const isOverdue = tab.status === 'open' && tab.settle_by_date < today;
@@ -6311,7 +6352,7 @@ async function openTabDetail(tabId) {
   const { data: tab } = await sb.from('guest_tabs').select('*').eq('id', tabId).single();
   if (!tab) return;
   const { data: linkedGroups } = await sb.from('trip_groups')
-    .select('id, trip_id, contact_name, price_per_person, participants(id, rental_surcharge), trips(trip_type, trip_date)')
+    .select('id, trip_id, contact_name, price_per_person, crew_hire_total, participants(id, rental_surcharge), trips(trip_type, trip_date, end_date, booking_mode)')
     .eq('tab_id', tabId)
     .order('created_at');
 
@@ -6334,8 +6375,10 @@ async function openTabDetail(tabId) {
     linkedGroups.forEach(g => {
       const perPerson = parseFloat(g.price_per_person) || 0;
       const guestCount = Math.max(1, g.participants?.length || 0);
+      const gDays = g.trips?.end_date ? tripDayCount(g.trips.trip_date, g.trips.end_date) : 1;
+      const qty = g.trips?.booking_mode !== 'shared' ? Math.max(gDays, 1) : guestCount;
       const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
-      const total = perPerson * guestCount + rentalTotal;
+      const total = perPerson * qty + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
       const paid = (allPayments || []).filter(p => p.group_id === g.id).reduce((sum, p) => sum + parseFloat(p.amount), 0);
       const owed = total - paid;
       const tripType = trTypeName(g.trips?.trip_type) || t('cal_trip_fallback');
@@ -6427,8 +6470,10 @@ async function closeGuestTab(tabId, linkedGroups) {
   for (const g of linkedGroups) {
     const perPerson = parseFloat(g.price_per_person) || 0;
     const guestCount = Math.max(1, g.participants?.length || 0);
+    const gDays = g.trips?.end_date ? tripDayCount(g.trips.trip_date, g.trips.end_date) : 1;
+    const qty = g.trips?.booking_mode !== 'shared' ? Math.max(gDays, 1) : guestCount;
     const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
-    const total = perPerson * guestCount + rentalTotal;
+    const total = perPerson * qty + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
     const { data: payments } = await sb.from('payments').select('amount').eq('group_id', g.id);
     const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
     totalOwed += (total - paid);
@@ -7778,9 +7823,11 @@ async function groupPaymentHTML(g, participants) {
   const { data: payments } = await sb.from('payments').select('*').eq('group_id', g.id).order('payment_date');
   const perPerson = parseFloat(g.price_per_person) || 0;
   const guests = Math.max(participants.length, 1);
+  const isPrivateBooking = window.currentBookingMode !== 'shared';
+  const qty = currentTripPricingQty(participants.length);
   const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
   const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
-  const total = perPerson * guests + rentalTotal + crewHireTotal;
+  const total = perPerson * qty + rentalTotal + crewHireTotal;
   const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
   const balance = total - paid;
   const paymentsHtml = (payments || []).map(p => `
@@ -7794,7 +7841,9 @@ async function groupPaymentHTML(g, participants) {
   const statusColor = noPriceSet ? 'var(--warning, #b7791f)' : balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
   const breakdownText = noPriceSet
     ? t('gp_no_price_breakdown').replace('{count}', guests).replace('{unit}', guestUnit)
-    : `$${perPerson.toFixed(2)}/${t('gp_per_person')} × ${guests} ${guestUnit} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`;
+    : isPrivateBooking
+      ? `$${perPerson.toFixed(2)}/${qty > 1 ? t('tt_day_plural') : t('tt_day_singular')} × ${qty} = $${(perPerson*qty).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`
+      : `$${perPerson.toFixed(2)}/${t('gp_per_person')} × ${guests} ${guestUnit} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`;
   return `
     <div style="font-size:0.83rem;font-weight:600;color:${statusColor};margin-bottom:8px;">${statusLabel}</div>
     <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">${breakdownText}</div>
@@ -7840,7 +7889,7 @@ async function refreshGroupPaymentSection(groupId) {
   const container = document.getElementById('group-payments-' + groupId);
   if (container) container.innerHTML = html;
   const totalEl = document.getElementById('group-total-' + groupId);
-  if (totalEl) totalEl.value = ((parseFloat(g.price_per_person)||0) * Math.max(participants.length,1) + rentalTotal + crewHireTotal).toFixed(2);
+  if (totalEl) totalEl.value = ((parseFloat(g.price_per_person)||0) * currentTripPricingQty(participants.length) + rentalTotal + crewHireTotal).toFixed(2);
 }
 window.currentPaymentMethod = {};
 function showLogPaymentForm(groupId, total, paid) {
@@ -10543,7 +10592,8 @@ async function renderTripTypesList() {
     <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted);margin:6px 0 0;cursor:pointer;">
       <input type="checkbox" ${tt.is_multi_day ? 'checked' : ''} onchange="updateTripTypeMultiDay('${tt.id}', this.checked)">
       ${t('set_multiday_checkbox_label')}
-    </label>` : ''}
+    </label>
+    ${tt.is_multi_day ? `<p style="font-size:0.75rem;color:var(--muted);margin:4px 0 0;">${t('set_crew_day_rate_hint')}</p>` : ''}` : ''}
     <div id="rental-fees-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     <div id="required-waivers-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     </div>
