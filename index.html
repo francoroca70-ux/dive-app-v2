@@ -4167,7 +4167,13 @@ async function updateAppContext(orgName) {
 async function refreshHomeStats() {
   if (!currentOrgId) return;
   const today = new Date().toISOString().split('T')[0];
-  let tripsQuery = sb.from('trips').select('id').eq('org_id', currentOrgId).eq('trip_date', today);
+  // Match trips whose date range covers today, not just ones that start today — otherwise
+  // a multi-day trip already underway drops out of "today's" guest/trip count the moment
+  // it's no longer day 1, same issue as the calendar's day view had.
+  let tripsQuery = sb.from('trips').select('id')
+    .eq('org_id', currentOrgId)
+    .lte('trip_date', today)
+    .or(`end_date.gte.${today},and(end_date.is.null,trip_date.eq.${today})`);
   if (currentLocationId) tripsQuery = tripsQuery.eq('location_id', currentLocationId);
   const { data: todaysTrips } = await tripsQuery;
   const tripIds = (todaysTrips || []).map(t => t.id);
@@ -4201,6 +4207,9 @@ document.getElementById('location-picker').addEventListener('change', (e) => {
   const shopLabelEl = document.getElementById('home-current-shop');
   if (shopLabelEl && current) shopLabelEl.textContent = t('home_current_shop_prefix') + current;
   checkShopMismatchBanner();
+  // Jump to Home so the shop switch is obviously reflected, instead of silently
+  // refreshing numbers behind whatever page happened to be open.
+  showPage('home');
   refreshCurrentView();
 });
 
@@ -8859,9 +8868,11 @@ async function updateStaffDayRate(staffId, value) {
   // .select() lets us tell a genuine save from a silently-blocked one (e.g. RLS) —
   // without it, Supabase can report "no error" even when zero rows were actually updated.
   const { data, error } = await sb.from('staff').update({ day_rate: dayRate }).eq('id', staffId).select();
+  if (error) console.error('updateStaffDayRate failed:', error);
   if (feedbackEl) {
     if (error || !data || !data.length) {
-      feedbackEl.textContent = t('crew_day_rate_save_failed');
+      feedbackEl.textContent = error ? `${t('crew_day_rate_save_failed')} (${error.message || error.code || 'RLS'})` : t('crew_day_rate_save_failed');
+      feedbackEl.title = error ? JSON.stringify(error) : 'Update matched 0 rows — likely blocked by a row-level security policy.';
       feedbackEl.style.color = 'var(--error)';
     } else {
       feedbackEl.textContent = '✓ ' + t('set_saved');
