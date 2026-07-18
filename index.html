@@ -3157,6 +3157,8 @@ const TRANSLATIONS = {
     wv_guardian_name_required: "Parent/guardian's printed name is required.",
     wv_guardian_signature_required: 'Please draw the parent/guardian signature, or switch to "Logged on paper".',
     wv_minor_badge: 'Minor', wv_cosigned_by: 'Co-signed by parent/guardian:',
+    set_gear_fields_btn: 'Gear fields', set_gear_fields_header: 'Gear questions shown on the Add Guest form',
+    set_gear_fields_desc: 'Check which gear fields apply to this trip type. Unchecked fields won\'t appear when adding a guest.',
     set_required_waivers_btn: 'Required waivers',
     set_required_waivers_header: 'Waivers required for this trip type',
     set_required_waivers_desc: 'Guests booked on this trip type must sign each of these before their trip. Defaults to Liability if none are selected.',
@@ -3569,6 +3571,8 @@ const TRANSLATIONS = {
     wv_guardian_name_required: 'El nombre del padre/madre o tutor en letra de imprenta es obligatorio.',
     wv_guardian_signature_required: 'Por favor dibuja la firma del padre/madre o tutor, o cambia a "Registrado en papel".',
     wv_minor_badge: 'Menor', wv_cosigned_by: 'Co-firmado por padre/madre o tutor:',
+    set_gear_fields_btn: 'Campos de equipo', set_gear_fields_header: 'Preguntas de equipo en el formulario de Agregar Huésped',
+    set_gear_fields_desc: 'Marca qué campos de equipo aplican a este tipo de salida. Los campos sin marcar no aparecerán al agregar un huésped.',
     set_required_waivers_btn: 'Exenciones requeridas',
     set_required_waivers_header: 'Exenciones requeridas para este tipo de salida',
     set_required_waivers_desc: 'Los huéspedes reservados en este tipo de salida deben firmar cada una de estas antes de su salida. Por defecto es Responsabilidad si no seleccionas ninguna.',
@@ -10632,15 +10636,22 @@ async function seedInspectionChecklistForCategory(category) {
 
 // Starter trip type bundles per category — name, default price placeholder, gear field keys, tank info
 const CATEGORY_STARTER_TYPES = {
-  diving: [
-    { name: '1 Dive', needs_tank_count: true, num_tanks: 1, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','tank_size','computer','mask_type'] },
-    { name: '2 Dives', needs_tank_count: true, num_tanks: 2, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','tank_size','computer','mask_type'] },
-    { name: 'Night Dive', needs_tank_count: true, num_tanks: 1, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','torch','computer'] },
-    { name: 'Nitrox Dive', needs_tank_count: true, num_tanks: 2, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','nitrox','computer'] },
-    { name: 'Discover Scuba Diving', needs_tank_count: true, num_tanks: 1, gear: ['bcd_size','wetsuit_size','fins_size','weight_kg'] },
-    { name: 'Confined Water / Pool', needs_tank_count: false, gear: ['bcd_size','wetsuit_size','fins_size','weight_kg'] },
-    { name: 'Shore Dive', needs_tank_count: true, num_tanks: 1, requires_boat: false, gear: ['bcd_size','wetsuit_size','fins_size','regs','weight_kg'] },
-  ],
+  // Every diving trip type shares the same core gear set (a diver needs a mask, fins, BCD,
+  // wetsuit, regs, tank and computer regardless of dive type) so the Add Guest gear section
+  // is consistent no matter which trip type is picked — Night/Nitrox just add one extra
+  // field on top of that shared core instead of dropping fields the others have.
+  diving: (() => {
+    const CORE_DIVE_GEAR = ['bcd_size','wetsuit_size','fins_size','regs','weight_kg','tank_size','computer','mask_type'];
+    return [
+      { name: '1 Dive', needs_tank_count: true, num_tanks: 1, gear: CORE_DIVE_GEAR },
+      { name: '2 Dives', needs_tank_count: true, num_tanks: 2, gear: CORE_DIVE_GEAR },
+      { name: 'Night Dive', needs_tank_count: true, num_tanks: 1, gear: [...CORE_DIVE_GEAR, 'torch'] },
+      { name: 'Nitrox Dive', needs_tank_count: true, num_tanks: 2, gear: [...CORE_DIVE_GEAR, 'nitrox'] },
+      { name: 'Discover Scuba Diving', needs_tank_count: true, num_tanks: 1, gear: CORE_DIVE_GEAR },
+      { name: 'Confined Water / Pool', needs_tank_count: false, gear: CORE_DIVE_GEAR },
+      { name: 'Shore Dive', needs_tank_count: true, num_tanks: 1, requires_boat: false, gear: CORE_DIVE_GEAR },
+    ];
+  })(),
   charter_yacht: [
     { name: 'Half Day Charter', gear: [] },
     { name: 'Day Charter', gear: [] },
@@ -10865,6 +10876,7 @@ async function renderTripTypesList() {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <input class="trip-type-price-input" type="number" min="0" value="${tt.default_price || ''}" placeholder="0"
           onchange="updateTripTypePrice('${tt.id}', this.value, this)">
+        <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleGearFieldsPanel('${tt.id}')">${t('set_gear_fields_btn')}</button>
         <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRentalFees('${tt.id}')">${t('set_rental_fees_btn')}</button>
         <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRequiredWaivers('${tt.id}')">${t('set_required_waivers_btn')}</button>
         <button class="btn-icon danger" onclick="deactivateTripType('${tt.id}')">${t('fleet_remove')}</button>
@@ -10876,10 +10888,51 @@ async function renderTripTypesList() {
       ${t('set_multiday_checkbox_label')}
     </label>
     ${tt.is_multi_day ? `<p style="font-size:0.75rem;color:var(--muted);margin:4px 0 0;">${t('set_crew_day_rate_hint')}</p>` : ''}` : ''}
+    <div id="gear-fields-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     <div id="rental-fees-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     <div id="required-waivers-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     </div>
   `).join('');
+}
+
+// Lets an owner/manager fix or customize exactly which gear questions show on the Add
+// Guest form for this trip type — this is what's behind Fran's "Shore Dive is missing
+// Mask" report: trip types created at different times can end up with different gear
+// fields attached, and until now there was no way to add a missing one back in Settings.
+async function toggleGearFieldsPanel(tripTypeId) {
+  const panel = document.getElementById('gear-fields-' + tripTypeId);
+  if (!panel) return;
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);">${t('common_loading')}</p>`;
+
+  if (!gearFieldCatalog.length) await loadGearFieldCatalog();
+  const { data: linked } = await sb.from('trip_type_gear_fields').select('id, gear_field_id').eq('trip_type_id', tripTypeId);
+  const linkedByFieldId = {};
+  (linked || []).forEach(r => { linkedByFieldId[r.gear_field_id] = r.id; });
+
+  panel.innerHTML = `
+    <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">${t('set_gear_fields_header')}</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">${t('set_gear_fields_desc')}</p>
+      ${gearFieldCatalog.map(f => `
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;padding:5px 0;cursor:pointer;">
+          <input type="checkbox" ${linkedByFieldId[f.id] ? 'checked' : ''}
+            onchange="updateTripTypeGearField('${tripTypeId}', '${f.id}', this.checked, '${linkedByFieldId[f.id] || ''}', this)">
+          ${trGearFieldLabel(f)}
+        </label>
+      `).join('')}
+    </div>
+  `;
+}
+async function updateTripTypeGearField(tripTypeId, gearFieldId, checked, existingTtgfId, checkboxEl) {
+  if (checked) {
+    const { data } = await sb.from('trip_type_gear_fields').insert({ trip_type_id: tripTypeId, gear_field_id: gearFieldId }).select().single();
+    if (data && checkboxEl) checkboxEl.setAttribute('onchange', `updateTripTypeGearField('${tripTypeId}', '${gearFieldId}', this.checked, '${data.id}', this)`);
+  } else if (existingTtgfId) {
+    await sb.from('trip_type_gear_fields').delete().eq('id', existingTtgfId);
+    if (checkboxEl) checkboxEl.setAttribute('onchange', `updateTripTypeGearField('${tripTypeId}', '${gearFieldId}', this.checked, '', this)`);
+  }
 }
 
 function toggleRequiredWaivers(tripTypeId) {
