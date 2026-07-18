@@ -7118,9 +7118,11 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     await sb.from('trip_crew').insert(tripCrewCache.map(c => ({ trip_id: tripId, staff_id: c.staff_id, role: 'crew' })));
   }
 
-  // Crew-hire cost (day rate x number of days) folds into the primary group's total, multi-day trip types only
+  // Crew-hire cost (day rate x number of days) folds into the primary group's total.
+  // Applies to any trip with crew assigned and a day rate set — single-day trips just
+  // multiply by 1 day, multi-day trips multiply by the actual day count.
   const crewDays = isMultiDay ? tripDayCount(date, endDate) : 1;
-  const crewHireTotal = isMultiDay ? tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * crewDays, 0) : 0;
+  const crewHireTotal = tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * crewDays, 0);
   const primaryGroupId = tripGroups_cache[0]?.id;
   if (primaryGroupId) {
     await sb.from('trip_groups').update({ crew_hire_total: crewHireTotal }).eq('id', primaryGroupId);
@@ -7847,7 +7849,7 @@ async function renderTripCrewSection() {
 
   const assignedHtml = tripCrewCache.map(c => {
     const rate = parseFloat(c.day_rate) || 0;
-    const costNote = (isMultiDay && rate > 0) ? ` — $${rate.toFixed(2)}/day × ${days} = $${(rate*days).toFixed(2)}` : '';
+    const costNote = rate > 0 ? (days > 1 ? ` — $${rate.toFixed(2)}/day × ${days} = $${(rate*days).toFixed(2)}` : ` — $${rate.toFixed(2)}`) : '';
     return `
     <span class="crew-member-tag-v2">${c.full_name}${costNote}
       <button onclick="removeTripCrewFromCache('${c.staff_id}')">×</button>
@@ -7861,11 +7863,11 @@ async function renderTripCrewSection() {
 
   const optionsHtml = availableStaff.map(s => {
     const rate = parseFloat(s.day_rate) || 0;
-    const rateLabel = (isMultiDay && rate > 0) ? ` — $${rate.toFixed(2)}/day` : '';
+    const rateLabel = rate > 0 ? (days > 1 ? ` — $${rate.toFixed(2)}/day` : ` — $${rate.toFixed(2)}`) : '';
     return `<option value="${s.id}" data-name="${s.full_name.replace(/"/g,'&quot;')}" data-rate="${rate}">${s.full_name}${rateLabel}</option>`;
   }).join('');
 
-  const crewHireTotal = isMultiDay ? tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * days, 0) : 0;
+  const crewHireTotal = tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * days, 0);
 
   container.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${assignedHtml || `<span style="font-size:0.8rem;color:var(--muted)">${t('tt_no_crew_yet')}</span>`}</div>
