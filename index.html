@@ -5326,14 +5326,33 @@ async function checkDoubleBookings() {
   }
 }
 
+// A multi-day trip (has end_date) should show up on every day it spans, not just its
+// start date — so the range query below matches on overlap between [trip_date, end_date]
+// and [start, end], instead of just trip_date falling in range.
+function tripOccursOnDate(trip, dateStr) {
+  const end = trip.end_date || trip.trip_date;
+  return trip.trip_date <= dateStr && dateStr <= end;
+}
+
+// Formats a multi-day trip's span as "Jul 18 – Jul 20" (locale-aware) for display
+// wherever a booking's start/end dates need to be shown instead of just times.
+function tripDateRangeLabel(trip) {
+  const loc = currentLanguage === 'es' ? 'es-ES' : 'en-US';
+  const opts = { month: 'short', day: 'numeric' };
+  const startLabel = new Date(trip.trip_date + 'T12:00:00').toLocaleDateString(loc, opts);
+  const endLabel = new Date(trip.end_date + 'T12:00:00').toLocaleDateString(loc, opts);
+  return `${startLabel} – ${endLabel}`;
+}
+
 async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
+  const startStr = formatDate(start), endStr = formatDate(end);
   let query = sb
     .from('trips')
     .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(price_per_person, crew_hire_total, participants(id, rental_surcharge))')
     .eq('org_id', currentOrgId)
-    .gte('trip_date', formatDate(start))
-    .lte('trip_date', formatDate(end))
+    .lte('trip_date', endStr)
+    .or(`end_date.gte.${startStr},and(end_date.is.null,trip_date.gte.${startStr})`)
     .order('trip_time');
   if (currentLocationId) query = query.eq('location_id', currentLocationId);
   const { data } = await query;
@@ -5377,7 +5396,9 @@ function tripCard(trip, paid) {
       <div>
         <div class="trip-card-title">${trip.trip_name || trTypeName(trip.trip_type)?.replace(/_/g,' ') || t('cal_trip_fallback')}</div>
         <div class="trip-card-meta">
-          <span>${trip.trip_time ? trip.trip_time.slice(0,5) : '—'}${trip.arrival_time ? ' – ' + trip.arrival_time.slice(0,5) : ''}</span>
+          ${trip.end_date && trip.end_date !== trip.trip_date
+            ? `<span>${tripDateRangeLabel(trip)}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}</span>`
+            : `<span>${trip.trip_time ? trip.trip_time.slice(0,5) : '—'}${trip.arrival_time ? ' – ' + trip.arrival_time.slice(0,5) : ''}</span>`}
           <span>${trip.boats?.name || t('cal_no_boat')}</span>
           <span>${trTypeName(trip.trip_type)?.replace(/_/g,' ') || ''}</span>
         </div>
@@ -5421,11 +5442,11 @@ async function renderWeekView() {
 
   const dayCols = days.map((d, i) => {
     const isToday = isSameDay(d, today);
-    const dayT = weekTrips.filter(t => t.trip_date === formatDate(d)).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
+    const dayT = weekTrips.filter(t => tripOccursOnDate(t, formatDate(d))).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
 
     const chips = dayT.map(tr => `
       <div class="week-chip" onclick="event.stopPropagation();openTrip('${tr.id}')">
-        <div class="week-chip-time">${tr.trip_time?.slice(0,5)||''}${tr.arrival_time ? ' – ' + tr.arrival_time.slice(0,5) : ''}</div>
+        <div class="week-chip-time">${tr.end_date && tr.end_date !== tr.trip_date ? tripDateRangeLabel(tr) : (tr.trip_time?.slice(0,5)||'') + (tr.arrival_time ? ' – ' + tr.arrival_time.slice(0,5) : '')}</div>
         <div class="week-chip-title">${tr.trip_name || trTypeName(tr.trip_type)?.replace(/_/g,' ') || t('cal_trip_fallback')}</div>
         <div class="week-chip-meta">${tr.boats?.name || t('cal_no_boat')}${tr.max_guests ? ' · ' + tr.max_guests + (tr.boats?.capacity ? '/' + tr.boats.capacity : '') + ' ' + t('cal_guests_suffix') : ''}</div>
       </div>
@@ -5465,11 +5486,11 @@ async function renderMonthView() {
     const date = new Date(year, month, d);
     const dateStr = formatDate(date);
     const isToday = isSameDay(date, today);
-    const dayTrips = monthTrips.filter(tr => tr.trip_date === dateStr).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
+    const dayTrips = monthTrips.filter(tr => tripOccursOnDate(tr, dateStr)).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
     const shown = dayTrips.slice(0, 3);
     const chips = shown.map(tr => `
       <div class="month-mini-chip" onclick="event.stopPropagation();openTrip('${tr.id}')">
-        ${tr.trip_time?.slice(0,5)||''} ${tr.trip_name || trTypeName(tr.trip_type)?.replace(/_/g,' ') || t('cal_trip_fallback')}
+        ${tr.end_date && tr.end_date !== tr.trip_date ? '↔ ' : (tr.trip_time?.slice(0,5)||'') + ' '}${tr.trip_name || trTypeName(tr.trip_type)?.replace(/_/g,' ') || t('cal_trip_fallback')}
       </div>
     `).join('');
     html += `
