@@ -1392,6 +1392,10 @@ body { background: var(--navy); color: var(--text); }
         <label data-i18n="login_password_label">Password</label>
         <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--muted);margin-bottom:16px;cursor:pointer;">
+        <input type="checkbox" id="login-remember-me" checked style="width:16px;height:16px;">
+        <span data-i18n="login_remember_me">Remember me</span>
+      </label>
       <button class="btn-login" id="btn-login" data-i18n="login_signin_btn">Sign in</button>
       <div class="login-error" id="login-error"></div>
       <div class="login-forgot">
@@ -1906,7 +1910,7 @@ body { background: var(--navy); color: var(--text); }
           <div class="sf-row">
             <div class="sf-group">
               <label class="sf-label" data-i18n="crew_email_label">Email address</label>
-              <input class="sf-input" type="email" id="invite-email" placeholder="crew@example.com" autocomplete="off" data-lpignore="true" data-1p-ignore="true" name="invite-crew-email-noautofill">
+              <input class="sf-input" type="email" id="invite-email" placeholder="crew@example.com" autocomplete="off" data-lpignore="true" data-1p-ignore="true" name="invite-crew-email-noautofill" readonly onfocus="this.removeAttribute('readonly')">
             </div>
             <div class="sf-group">
               <label class="sf-label" data-i18n="crew_name_label">Full name</label>
@@ -2716,7 +2720,31 @@ body { background: var(--navy); color: var(--text); }
 const SUPABASE_URL = 'https://ggtbxjwstkuhnabwpgdz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tiYQ81YqYtscWmvb3-8o-w_lBPGtbUw';
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// "Remember me" support: the login checkbox sets a plain 'ss_remember_me' flag
+// (harmless, not sensitive) in localStorage before signing in. This custom storage
+// adapter reads that flag to decide where the actual session token goes —
+// localStorage (survives closing the browser) when remembered, sessionStorage
+// (cleared when the tab/browser closes) when not. Defaults to remembering if the
+// flag was never set, so behavior is unchanged for anyone who hasn't seen the
+// checkbox yet (e.g. mid-session before this update loads).
+const rememberMeStorage = {
+  getItem: (key) => {
+    const remember = localStorage.getItem('ss_remember_me') !== 'false';
+    return (remember ? localStorage : sessionStorage).getItem(key);
+  },
+  setItem: (key, value) => {
+    const remember = localStorage.getItem('ss_remember_me') !== 'false';
+    (remember ? localStorage : sessionStorage).setItem(key, value);
+  },
+  removeItem: (key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  }
+};
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { storage: rememberMeStorage, persistSession: true, autoRefreshToken: true }
+});
 
 // ─── LANGUAGE / TRANSLATIONS (English + Spanish) ───
 // Scope: app "furniture" — nav, headers, login/invite screens, buttons that appear
@@ -2732,7 +2760,7 @@ const TRANSLATIONS = {
     signed_in_as: 'Signed in as', sign_out: 'Sign out',
 
     login_title: 'Sign in to your account', login_tagline: 'Water operations platform',
-    login_email_label: 'Email', login_password_label: 'Password', login_signin_btn: 'Sign in',
+    login_email_label: 'Email', login_password_label: 'Password', login_signin_btn: 'Sign in', login_remember_me: 'Remember me',
     login_forgot_link: 'Forgot password?', login_new_operation: 'New operation?', login_request_access: 'Request access',
 
     forgot_title: 'Reset your password', forgot_back: '← Back to sign in', forgot_email_label: 'Email',
@@ -3128,7 +3156,7 @@ const TRANSLATIONS = {
     signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
 
     login_title: 'Inicia sesión en tu cuenta', login_tagline: 'Plataforma de operaciones marítimas',
-    login_email_label: 'Correo electrónico', login_password_label: 'Contraseña', login_signin_btn: 'Iniciar sesión',
+    login_email_label: 'Correo electrónico', login_password_label: 'Contraseña', login_signin_btn: 'Iniciar sesión', login_remember_me: 'Recordarme',
     login_forgot_link: '¿Olvidaste tu contraseña?', login_new_operation: '¿Nueva operación?', login_request_access: 'Solicitar acceso',
 
     forgot_title: 'Restablece tu contraseña', forgot_back: '← Volver a iniciar sesión', forgot_email_label: 'Correo electrónico',
@@ -4683,6 +4711,9 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Signing in...';
   errorEl.classList.remove('visible');
+
+  const rememberMe = document.getElementById('login-remember-me').checked;
+  localStorage.setItem('ss_remember_me', rememberMe ? 'true' : 'false');
 
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
