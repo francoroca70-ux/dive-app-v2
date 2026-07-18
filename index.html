@@ -1900,17 +1900,17 @@ body { background: var(--navy); color: var(--text); }
         <div id="crew-staff-view" class="cl-view">
 
         <!-- Invite form -->
-        <div class="inline-form" id="form-invite" style="display:none;margin-bottom:20px;">
+        <div class="inline-form" id="form-invite" style="display:none;margin-bottom:20px;" autocomplete="off">
           <div class="card-section-title" data-i18n="crew_invite_title">Invite a crew member</div>
           <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;" data-i18n="crew_invite_hint">They will receive an email with a link to set up their account.</p>
           <div class="sf-row">
             <div class="sf-group">
               <label class="sf-label" data-i18n="crew_email_label">Email address</label>
-              <input class="sf-input" type="email" id="invite-email" placeholder="crew@example.com">
+              <input class="sf-input" type="email" id="invite-email" placeholder="crew@example.com" autocomplete="off" data-lpignore="true" data-1p-ignore="true" name="invite-crew-email-noautofill">
             </div>
             <div class="sf-group">
               <label class="sf-label" data-i18n="crew_name_label">Full name</label>
-              <input class="sf-input" type="text" id="invite-name" placeholder="e.g. James Carter">
+              <input class="sf-input" type="text" id="invite-name" placeholder="e.g. James Carter" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
             </div>
           </div>
           <div class="sf-row">
