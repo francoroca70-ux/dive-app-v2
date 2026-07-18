@@ -3,7 +3,7 @@
 *Keep this file up to date. When a Claude conversation runs out of context, a fresh
 session should be able to read this file and pick up exactly where things left off.*
 
-Last updated: 2026-07-19
+Last updated: 2026-07-18
 
 ---
 
@@ -111,8 +111,37 @@ truth for business strategy, this file as the source of truth for engineering st
 
 ## Recently completed (most recent first)
 
+- Capacitor mobile app wrap: `android/` + `ios/` native projects, brand icons/splash
+  generated from the trident mark, GitHub Actions CI (`.github/workflows/mobile-build.yml`)
+  that builds an installable Android debug APK and an iOS Simulator build automatically
+  in the cloud — no local Android Studio/Mac needed. Full details in `MOBILE.md`.
+  Note: the sandbox this was built in has a permissions quirk where files can be
+  created/edited but not deleted/renamed (same as the recurring git-lock-file issue) —
+  a couple of harmless leftover template files exist as a result (documented in the
+  commit), don't be alarmed if `git status`/a fresh clone shows a stray
+  `com/getcapacitor/myapp/` Java file under `android/` — it's unused dead code, not a bug.
+- Fixed multi-day trips being undercounted/missing on Home stats + shop-switch now
+  jumps to Home automatically so the switch is obvious
+- Crew day-rate save failures now surface the real Supabase error instead of a generic
+  message — confirmed genuinely blocked (not a false alarm), likely an RLS policy gap
+  on the `staff` table for updating other members' rows — waiting on Fran to share the
+  current RLS policy screenshot before writing the fix
+- Fixed inconsistent gear fields across diving trip types (Shore Dive etc. were
+  missing Mask/Tank/Computer) + added a "Gear fields" self-serve editor in Settings →
+  Trip Types so this class of bug is fixable without a code change going forward
+  (`toggleGearFieldsPanel()`)
+- Deployed `send-staff-invite` Supabase Edge Function (was coded but never actually
+  deployed — that was the real root cause of invite emails silently failing, separate
+  from the Resend sandbox-sender issue below)
 - Copy-invite-link button + autocomplete/password-manager-popup suppression on the
-  invite form (this session)
+  invite form
+- Translated the Add Guest form and all equipment/gear dropdowns to Spanish
+- "Remember me" login option + blocked bookings dated/timed in the past
+- Lawyer consultation prep doc (`legal/`, EN + ES) covering entity structure,
+  liability/waivers, subscription billing compliance, data privacy, IP, insurance
+- Recommended Stripe Billing (not Paddle/Lemon Squeezy) for shop subscriptions —
+  reasoning in chat history; task #148 tracks the actual build, blocked on Fran
+  creating a Stripe account first
 - Translated all seed gear item names + size labels (55 items)
 - Editable/deactivatable Operation Categories in Settings
 - Fixed booking price bug: multi-day and private-boat trips weren't multiplying

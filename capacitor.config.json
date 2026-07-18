@@ -1,0 +1,16 @@
+{
+  "appId": "com.sevenseasops.app",
+  "appName": "Seven Seas",
+  "webDir": "www",
+  "backgroundColor": "#0a1628",
+  "android": {
+    "backgroundColor": "#0a1628"
+  },
+  "ios": {
+    "backgroundColor": "#0a1628",
+    "contentInset": "always"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

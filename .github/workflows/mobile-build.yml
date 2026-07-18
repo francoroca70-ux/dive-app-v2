@@ -1,0 +1,97 @@
+name: Mobile app builds (Android + iOS)
+
+# Builds the Capacitor-wrapped native apps in the cloud, so no local Android Studio
+# or Mac/Xcode is ever needed. Uses GitHub's own free build runners (macOS included)
+# with the GitHub account/repo Fran already has — no new signups for this step.
+#
+# Run it any time from the Actions tab ("Run workflow"), or it runs automatically
+# whenever android/, ios/, index.html, or the Capacitor config changes on main.
+#
+# What this produces right now:
+#   - Android: an installable debug .apk (sideload it on a phone to test)
+#   - iOS: an unsigned build for the iPhone Simulator (proves the app compiles;
+#     an actual installable/testable iPhone build needs an Apple Developer account
+#     and signing certificates, which isn't set up yet — see App-Store-Roadmap.md)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'ios/**'
+      - 'index.html'
+      - 'sw.js'
+      - 'manifest.json'
+      - 'assets/**'
+      - 'capacitor.config.json'
+      - 'package.json'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build www/ from the live web app
+        run: npm run build:www
+
+      - name: Sync Capacitor (Android)
+        run: npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seven-seas-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build www/ from the live web app
+        run: npm run build:www
+
+      - name: Sync Capacitor (iOS)
+        run: npx cap sync ios
+
+      - name: Install CocoaPods dependencies
+        working-directory: ios/App
+        run: pod install
+
+      - name: Build for iOS Simulator (unsigned — no Apple Developer account needed yet)
+        working-directory: ios/App
+        run: |
+          xcodebuild build \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
