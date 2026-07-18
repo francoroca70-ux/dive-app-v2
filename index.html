@@ -2924,6 +2924,7 @@ const TRANSLATIONS = {
     crew_roster_week: 'Week', crew_roster_month: 'Month', crew_filter_crew: 'Filter crew ▾', crew_select_all: 'Select all', crew_select_none: 'Select none',
     crew_no_access: 'You don\'t have access to this section.', crew_no_crew_yet: 'No crew yet. Invite your first staff member above.',
     crew_day_rate_label: 'Day rate', crew_banked_days_label: 'Banked days', crew_account_owner: 'Account owner',
+    crew_save_day_rate_title: 'Save day rate', crew_day_rate_save_failed: 'Could not save — try again.',
     crew_approve: 'Approve', crew_deny: 'Deny', crew_reason_prefix: 'Reason: ', crew_manager_note_prefix: 'Manager note: ',
     crew_no_pending_requests: 'No pending requests.', crew_no_recent_decisions: 'No recent decisions.', crew_unknown: 'Unknown', crew_to: ' to ',
     crew_fill_required: 'Please fill in crew member, dates, and reason.', crew_submitting: 'Submitting...',
@@ -3320,6 +3321,7 @@ const TRANSLATIONS = {
     crew_roster_week: 'Semana', crew_roster_month: 'Mes', crew_filter_crew: 'Filtrar tripulación ▾', crew_select_all: 'Seleccionar todo', crew_select_none: 'Deseleccionar todo',
     crew_no_access: 'No tienes acceso a esta sección.', crew_no_crew_yet: 'Aún no hay tripulación. Invita a tu primer miembro del personal arriba.',
     crew_day_rate_label: 'Tarifa por día', crew_banked_days_label: 'Días acumulados', crew_account_owner: 'Propietario de la cuenta',
+    crew_save_day_rate_title: 'Guardar tarifa por día', crew_day_rate_save_failed: 'No se pudo guardar — intenta de nuevo.',
     crew_approve: 'Aprobar', crew_deny: 'Rechazar', crew_reason_prefix: 'Motivo: ', crew_manager_note_prefix: 'Nota del gerente: ',
     crew_no_pending_requests: 'No hay solicitudes pendientes.', crew_no_recent_decisions: 'No hay decisiones recientes.', crew_unknown: 'Desconocido', crew_to: ' a ',
     crew_fill_required: 'Por favor completa el miembro de la tripulación, las fechas y el motivo.', crew_submitting: 'Enviando...',
@@ -5632,7 +5634,9 @@ async function openNewTrip() {
   document.getElementById('btn-save-trip').textContent = 'Save trip';
   document.getElementById('btn-delete-trip').style.display = 'none';
   document.getElementById('btn-print-manifest').style.display = 'none';
-  document.getElementById('trip-date').value = formatDate(calDate);
+  const todayLocalStr = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
+  document.getElementById('trip-date').min = todayLocalStr;
+  document.getElementById('trip-date').value = formatDate(calDate) < todayLocalStr ? todayLocalStr : formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
   document.getElementById('trip-arrival').value = '';
   document.getElementById('trip-end-date').value = '';
@@ -7033,6 +7037,16 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   if (isMultiDay && endDate && endDate < date) errors.push('End date must be on or after the start date');
   if (!primaryGroup.contact_name) errors.push('Contact name');
   if (!primaryGroup.contact_phone) errors.push('Contact phone');
+
+  // Block booking a trip in the past — only for new bookings, so editing/managing an
+  // existing trip that has since passed (adding payments, notes, etc.) still works.
+  if (!currentTripId && date) {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const nowTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    if (date < todayStr) errors.push('Date cannot be in the past');
+    else if (date === todayStr && time && time < nowTimeStr) errors.push('Departure time cannot be in the past');
+  }
 
   if (errors.length) {
     feedback.textContent = 'Missing: ' + errors.join(', ');
@@ -8734,9 +8748,11 @@ async function loadCrew() {
         </div>
       </div>
       ${showDayRate ? `
-      <div style="display:flex;align-items:center;gap:6px;margin-right:12px;">
+      <div style="display:flex;align-items:center;gap:4px;margin-right:12px;">
         <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">${t('crew_day_rate_label')}</span>
-        <input class="sf-input" type="number" min="0" style="width:70px;text-align:center;padding:6px 4px;margin-bottom:0;" value="${s.day_rate ?? ''}" placeholder="—" ${canEditDayRate ? '' : 'disabled'} onchange="updateStaffDayRate('${s.id}', this.value)" title="Set this to make ${(s.full_name||'this person').split(' ')[0]} hireable as paid crew on multi-day charter trips">
+        <input class="sf-input" type="number" min="0" id="day-rate-input-${s.id}" style="width:70px;text-align:center;padding:6px 4px;margin-bottom:0;" value="${s.day_rate ?? ''}" placeholder="—" ${canEditDayRate ? '' : 'disabled'} title="Set this to make ${(s.full_name||'this person').split(' ')[0]} hireable as paid crew on multi-day charter trips" onkeydown="if(event.key==='Enter'){event.preventDefault();updateStaffDayRate('${s.id}', this.value);}">
+        ${canEditDayRate ? `<button class="btn-icon" onclick="updateStaffDayRate('${s.id}', document.getElementById('day-rate-input-${s.id}').value)" title="${t('crew_save_day_rate_title')}">✓</button>` : ''}
+        <span id="day-rate-feedback-${s.id}" style="font-size:0.68rem;white-space:nowrap;"></span>
       </div>` : ''}
       <div style="display:flex;align-items:center;gap:6px;margin-right:12px;">
         <span style="font-size:0.72rem;color:var(--muted);white-space:nowrap;">${t('crew_banked_days_label')}</span>
@@ -8763,7 +8779,20 @@ function crewRoleLabel(role) {
 }
 async function updateStaffDayRate(staffId, value) {
   const dayRate = value === '' ? null : (parseFloat(value) || 0);
-  await sb.from('staff').update({ day_rate: dayRate }).eq('id', staffId);
+  const feedbackEl = document.getElementById(`day-rate-feedback-${staffId}`);
+  // .select() lets us tell a genuine save from a silently-blocked one (e.g. RLS) —
+  // without it, Supabase can report "no error" even when zero rows were actually updated.
+  const { data, error } = await sb.from('staff').update({ day_rate: dayRate }).eq('id', staffId).select();
+  if (feedbackEl) {
+    if (error || !data || !data.length) {
+      feedbackEl.textContent = t('crew_day_rate_save_failed');
+      feedbackEl.style.color = 'var(--error)';
+    } else {
+      feedbackEl.textContent = '✓ ' + t('set_saved');
+      feedbackEl.style.color = 'var(--blue)';
+      setTimeout(() => { if (feedbackEl) feedbackEl.textContent = ''; }, 2500);
+    }
+  }
 }
 async function updateBankedDays(staffId, newValue) {
   const value = parseFloat(newValue) || 0;
