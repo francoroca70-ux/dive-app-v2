@@ -4063,6 +4063,7 @@ function showPage(id) {
     n.classList.toggle('active', n.dataset.page === id);
   });
   document.getElementById('sidebar').classList.remove('open');
+  if (id === 'calendar') renderCalendar();
   if (id === 'checklists') initChecklists();
   if (id === 'fleet') loadFleet();
   if (id === 'gear') loadCompressors();
