@@ -35,7 +35,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: npm install
@@ -71,7 +71,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: npm install
@@ -82,9 +82,9 @@ jobs:
       - name: Sync Capacitor (iOS)
         run: npx cap sync ios
 
-      - name: Install CocoaPods dependencies
-        working-directory: ios/App
-        run: pod install
+      # This project uses Swift Package Manager (CapApp-SPM), not CocoaPods — there's no
+      # Podfile, so a `pod install` step here would just fail. Xcode resolves the Swift
+      # packages automatically as part of the build below.
 
       - name: Build for iOS Simulator (unsigned — no Apple Developer account needed yet)
         working-directory: ios/App
