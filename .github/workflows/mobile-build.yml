@@ -90,7 +90,7 @@ jobs:
         working-directory: ios/App
         run: |
           xcodebuild build \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
