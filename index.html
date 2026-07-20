@@ -2855,6 +2855,9 @@ const TRANSLATIONS = {
     gr_available_label: 'Available:', gr_add_btn: '+ Add', gr_repair_btn: 'Repair', gr_in_repair_label: 'In Repair:',
     gr_avail_btn: 'Avail', gr_available_btn: 'Available', gr_discard_btn: '✕ Discard',
     gr_no_categories_active: 'No gear categories active. Enable categories in Settings.',
+    gr_add_item_btn: '+ Add item', gr_add_item_prompt: 'Add a new item to this category — enter its name and unit.',
+    gr_add_item_name_placeholder: 'Item name', gr_add_item_unit_placeholder: 'Unit (e.g. units, kg, sets)',
+    gr_add_item_error: 'Error adding item.',
     gr_unit_units: 'units', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'bars', gr_unit_sets: 'sets',
 
     getting_started_title: 'Getting started',
@@ -3271,6 +3274,9 @@ const TRANSLATIONS = {
     gr_available_label: 'Disponible:', gr_add_btn: '+ Agregar', gr_repair_btn: 'Reparar', gr_in_repair_label: 'En Reparación:',
     gr_avail_btn: 'Disp.', gr_available_btn: 'Disponible', gr_discard_btn: '✕ Descartar',
     gr_no_categories_active: 'No hay categorías de equipo activas. Actívalas en Configuración.',
+    gr_add_item_btn: '+ Agregar artículo', gr_add_item_prompt: 'Agrega un artículo nuevo a esta categoría — ingresa su nombre y unidad.',
+    gr_add_item_name_placeholder: 'Nombre del artículo', gr_add_item_unit_placeholder: 'Unidad (ej. unidades, kg, juegos)',
+    gr_add_item_error: 'Error al agregar el artículo.',
     gr_unit_units: 'unidades', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'barras', gr_unit_sets: 'juegos',
 
     getting_started_title: 'Primeros pasos',
@@ -10246,10 +10252,29 @@ function renderGearInventory(categories, items, stockMap) {
       </div>`;
     }).join('');
     return `<div class="inline-form" style="margin-bottom:20px;">
-      ${collapsibleSectionTitleHtml(CATEGORY_LABELS[cat.key] || cat.label, catBodyId, catItems.length)}
+      <div class="card-section-title expandable-title" style="margin-top:16px;margin-bottom:8px;" onclick="toggleExpandSection('${catBodyId}')">
+        <span>${CATEGORY_LABELS[cat.key] || cat.label} <span class="expand-count">(${catItems.length})</span></span>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <button class="btn-icon" style="font-size:0.72rem;padding:4px 10px;" onclick="event.stopPropagation();addGearItemToCategory('${cat.id}')">${t('gr_add_item_btn')}</button>
+          <span id="${catBodyId}-arrow" class="expand-caret">▸</span>
+        </span>
+      </div>
       <div id="${catBodyId}" style="display:none;">${itemsHtml}</div>
     </div>`;
   }).join('');
+}
+
+async function addGearItemToCategory(categoryId) {
+  const result = await showTwoFieldModal(t('gr_add_item_prompt'), t('gr_add_item_name_placeholder'), t('gr_add_item_unit_placeholder'));
+  if (!result) return;
+  const name = result.field1.trim();
+  const unit = result.field2.trim() || 'units';
+  if (!name) return;
+  const { error } = await sb.from('gear_items').insert({
+    org_id: currentOrgId, category_id: categoryId, name, unit, track_sizes: false
+  });
+  if (error) { await showAlertModal(t('gr_add_item_error')); return; }
+  await loadGearInventory();
 }
 
 async function getOrCreateStockRow(itemId, size) {
@@ -10565,10 +10590,15 @@ const CATEGORY_STARTER_GEAR = {
 async function seedGearForCategory(category) {
   const items = CATEGORY_STARTER_GEAR[category] || [];
   if (!items.length) return;
-  const { data: cat, error: catError } = await sb.from('gear_categories').insert({
-    org_id: currentOrgId, key: category,
-    label: CATEGORY_LABELS[category] || category, active: true
-  }).select().single();
+  // Upsert + ignoreDuplicates guards against seeding the same category twice
+  // (e.g. two page loads or the Inventory backfill racing each other) — relies
+  // on a unique (org_id, key) constraint on gear_categories. When the category
+  // already exists this returns no row, so we skip re-seeding its items too —
+  // that's what previously produced duplicated categories/items in Inventory.
+  const { data: cat, error: catError } = await sb.from('gear_categories')
+    .upsert({ org_id: currentOrgId, key: category, label: CATEGORY_LABELS[category] || category, active: true },
+      { onConflict: 'org_id,key', ignoreDuplicates: true })
+    .select().single();
   if (catError || !cat) return;
   for (const item of items) {
     const { data: gearItem, error: itemError } = await sb.from('gear_items').insert({
