@@ -1848,7 +1848,6 @@ body { background: var(--navy); color: var(--text); }
 
           <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;">
             <div class="card-section-title" style="margin-bottom:0;" data-i18n="fleet_maintenance">Maintenance</div>
-            <button class="btn-save" id="btn-show-add-boat-maintenance" style="padding:6px 12px;font-size:0.82rem;" data-i18n="fleet_log_maintenance">+ Log maintenance</button>
           </div>
           <div class="inline-form" id="form-add-boat-maintenance" style="display:none;margin-bottom:16px;">
             <div class="sf-row">
@@ -9263,6 +9262,7 @@ async function loadFleet() {
       <div class="boat-actions">
         <span class="boat-badge ${b.active ? 'active' : 'inactive'}">${b.active ? t('fleet_active') : t('fleet_inactive')}</span>
         <button class="btn-icon" onclick="event.stopPropagation();toggleBoat('${b.id}', ${b.active})">${b.active ? t('fleet_deactivate') : t('fleet_activate')}</button>
+        <button class="btn-icon" onclick="event.stopPropagation();openBoatMaintenanceFromCard('${b.id}')">${t('fleet_log_maintenance')}</button>
         <button class="btn-icon danger" onclick="event.stopPropagation();deleteBoat('${b.id}')">${t('fleet_remove')}</button>
       </div>
     </div>
@@ -9594,13 +9594,14 @@ function renderEngineCard(e, logs, maintLogs) {
   const maintMoreId = `engine-maint-more-${e.id}`;
   return `
   <div class="card" id="engine-card-${e.id}">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
       <h2 style="margin:0;">${e.name}</h2>
-      <button class="btn-icon danger" onclick="deleteEngine('${e.id}')">${t('fleet_remove')}</button>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:6px;">
-      <p style="margin:0;">${t('fleet_total_hours')}: ${hoursVal}h</p>
-      <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">${t('fleet_service_completed')}</button>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <p style="margin:0;">${t('fleet_total_hours')}: ${hoursVal}h</p>
+        <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">${t('fleet_service_completed')}</button>
+        <button class="btn-icon" onclick="openEngineMaintenanceFromCard('${e.id}')">${t('fleet_log_maintenance')}</button>
+        <button class="btn-icon danger" onclick="deleteEngine('${e.id}')">${t('fleet_remove')}</button>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap;">
       <div class="cl-progress-bar" style="flex:1 1 50%;max-width:50%;min-width:120px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
@@ -9633,18 +9634,39 @@ async function deleteEngine(id) {
   await loadFleet();
 }
 
-document.getElementById('btn-show-add-boat-maintenance').addEventListener('click', () => {
+// Shared by two entry points now, so it's clear whether an entry is general
+// boat maintenance or belongs to one specific engine: the boat card's own
+// "+ Log maintenance" button (next to Activate/Deactivate) leaves the Engine
+// field on "not engine-specific", while each engine card's own button
+// pre-selects that engine.
+async function showBoatMaintenanceForm(preselectEngineId) {
+  document.getElementById('form-add-boat-engine').style.display = 'none';
+  document.getElementById('form-add-boat-hours').style.display = 'none';
   document.getElementById('form-add-boat-maintenance').style.display = 'block';
-  document.getElementById('btn-show-add-boat-maintenance').style.display = 'none';
   if (!document.getElementById('bdm-date').value) {
     document.getElementById('bdm-date').value = new Date().toISOString().split('T')[0];
   }
-  populateBoatDetailMaintenanceGearSelect();
-  populateBoatDetailMaintenanceEngineSelect();
-});
+  await populateBoatDetailMaintenanceGearSelect();
+  await populateBoatDetailMaintenanceEngineSelect();
+  document.getElementById('bdm-engine').value = preselectEngineId || '';
+  document.getElementById('form-add-boat-maintenance').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Opens the boat-level maintenance form from a boat card — selects that boat
+// (opening its detail section) first if it isn't already the one showing.
+async function openBoatMaintenanceFromCard(boatId) {
+  await selectFleetBoat(boatId);
+  await showBoatMaintenanceForm();
+}
+
+// Opens the maintenance form pre-scoped to one engine, from that engine's own
+// card — the boat detail section is already open at this point.
+async function openEngineMaintenanceFromCard(engineId) {
+  await showBoatMaintenanceForm(engineId);
+}
+
 document.getElementById('btn-cancel-boat-maintenance').addEventListener('click', () => {
   document.getElementById('form-add-boat-maintenance').style.display = 'none';
-  document.getElementById('btn-show-add-boat-maintenance').style.display = 'inline-block';
 });
 
 async function populateBoatDetailMaintenanceGearSelect() {
@@ -9732,7 +9754,6 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   document.getElementById('bdm-gear').value = '';
   document.getElementById('bdm-engine').value = '';
   document.getElementById('form-add-boat-maintenance').style.display = 'none';
-  document.getElementById('btn-show-add-boat-maintenance').style.display = 'inline-block';
   await loadBoatDetailEngines(boatId);
   await loadBoatDetailMaintenance(boatId);
   await loadFleet();
