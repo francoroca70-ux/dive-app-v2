@@ -1098,6 +1098,14 @@ body { background: var(--navy); color: var(--text); }
   .app-logo-wordmark { height: 13px; }
   .btn-signout { padding: 6px 8px; font-size: 0.7rem; }
   .lang-switcher { gap: 2px; }
+  /* Boat card meta (type, capacity, length, engines, hours, location) was
+     wrapping one item per line on narrow phones, sometimes even mid-phrase,
+     turning a compact card into a tall scroll of single words. A 2-column
+     grid keeps related facts side by side instead of stacked. */
+  .boat-card { padding: 14px 16px; gap: 8px; }
+  .boat-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; font-size: 0.75rem; }
+  .boat-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .boat-actions { flex-wrap: wrap; gap: 6px; row-gap: 8px; }
 }
 
 /* ─── HELP / FAQ ─── */
@@ -9471,40 +9479,77 @@ async function loadBoatDetailEngines(boatId) {
   }
 }
 
+// Small collapse/expand toggle shared by engine, maintenance, and compressor
+// "recent activity" lists — only the newest entry shows by default, with a
+// caret to reveal the rest, instead of every card growing as tall as its
+// longest history.
+function toggleExpandSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const arrow = document.getElementById(id + '-arrow');
+  const willShow = el.style.display === 'none' || !el.style.display;
+  el.style.display = willShow ? 'block' : 'none';
+  if (arrow) arrow.style.transform = willShow ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+function engineLogRowHtml(l) {
+  return `<div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;color:var(--muted);padding:4px 0;">
+    <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('fleet_serviced')}</strong>`:''}</span>
+    <span>${l.event_type==='service' ? '' : l.hours_run+'h'}</span>
+  </div>`;
+}
+
+function engineMaintRowHtml(m) {
+  return `<div style="font-size:0.8rem;padding:6px 0;border-bottom:1px solid var(--border);">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <strong>${m.title}</strong>
+      <span style="color:var(--muted);">${new Date(m.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+    </div>
+    <div style="color:var(--muted);margin-top:2px;">${m.description}${m.performed_by ? ' · ' + m.performed_by : ''}</div>
+  </div>`;
+}
+
+// Renders a collapsible section title: shows a caret and wires up the toggle
+// only when there's more than one item to hide — with 0 or 1 items there's
+// nothing to expand, so it's just a plain label.
+function collapsibleSectionTitleHtml(label, moreId, count) {
+  if (count <= 1) return `<div class="card-section-title" style="margin-top:16px;margin-bottom:8px;">${label}</div>`;
+  return `<div class="card-section-title" style="margin-top:16px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleExpandSection('${moreId}')">
+    <span>${label}</span>
+    <span id="${moreId}-arrow" style="display:inline-block;transition:transform 0.2s;">▾</span>
+  </div>`;
+}
+
 function renderEngineCard(e, logs, maintLogs) {
   maintLogs = maintLogs || [];
   const pct = Math.min(100, (e.current_hours / e.service_interval_hours) * 100);
   const remaining = Math.max(0, e.service_interval_hours - e.current_hours).toFixed(1);
   const warn = remaining <= 10;
+  const hoursVal = parseFloat(e.current_hours || 0).toFixed(1);
+  const logsMoreId = `engine-logs-more-${e.id}`;
+  const maintMoreId = `engine-maint-more-${e.id}`;
   return `
   <div class="card" id="engine-card-${e.id}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-      <div>
-        <h2>${e.name}</h2>
-        <p>${t('fleet_total_hours')}: ${parseFloat(e.current_hours || 0).toFixed(1)}h</p>
-      </div>
+      <h2 style="margin:0;">${e.name}</h2>
       <button class="btn-icon danger" onclick="deleteEngine('${e.id}')">${t('fleet_remove')}</button>
     </div>
-    <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
-    <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
-      ${parseFloat(e.current_hours || 0).toFixed(1)}h / ${e.service_interval_hours}h ${t('fleet_since_service')} — ${remaining}h ${t('fleet_remaining')}
-    </p>
-    <div class="settings-actions">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:6px;">
+      <p style="margin:0;">${t('fleet_total_hours')}: ${hoursVal}h</p>
       <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">${t('fleet_service_completed')}</button>
     </div>
-    <div class="card-section-title" style="margin-top:16px;">${t('fleet_recent_logs')}</div>
-    ${logs.length ? logs.map(l => `<div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);padding:4px 0;">
-      <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('fleet_serviced')}</strong>`:''}</span>
-      <span>${l.event_type==='service' ? '' : l.hours_run+'h'}</span>
-    </div>`).join('') : `<p style="font-size:0.8rem;color:var(--muted)">${t('fleet_no_logs')}</p>`}
-    <div class="card-section-title" style="margin-top:16px;">${t('fleet_maintenance')}</div>
-    ${maintLogs.length ? maintLogs.map(m => `<div style="font-size:0.8rem;padding:6px 0;border-bottom:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;">
-        <strong>${m.title}</strong>
-        <span style="color:var(--muted);">${new Date(m.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-      </div>
-      <div style="color:var(--muted);margin-top:2px;">${m.description}${m.performed_by ? ' · ' + m.performed_by : ''}</div>
-    </div>`).join('') : `<p style="font-size:0.8rem;color:var(--muted)">${t('fleet_no_maint_engine')}</p>`}
+    <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap;">
+      <div class="cl-progress-bar" style="flex:1 1 50%;max-width:50%;min-width:120px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
+      <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin:0;flex:1;min-width:160px;">
+        ${hoursVal}h / ${e.service_interval_hours}h ${t('fleet_since_service')} — ${remaining}h ${t('fleet_remaining')}
+      </p>
+    </div>
+    ${collapsibleSectionTitleHtml(t('fleet_recent_logs'), logsMoreId, logs.length)}
+    ${logs.length ? engineLogRowHtml(logs[0]) : `<p style="font-size:0.8rem;color:var(--muted)">${t('fleet_no_logs')}</p>`}
+    ${logs.length > 1 ? `<div id="${logsMoreId}" style="display:none;">${logs.slice(1).map(engineLogRowHtml).join('')}</div>` : ''}
+    ${collapsibleSectionTitleHtml(t('fleet_maintenance'), maintMoreId, maintLogs.length)}
+    ${maintLogs.length ? engineMaintRowHtml(maintLogs[0]) : `<p style="font-size:0.8rem;color:var(--muted)">${t('fleet_no_maint_engine')}</p>`}
+    ${maintLogs.length > 1 ? `<div id="${maintMoreId}" style="display:none;">${maintLogs.slice(1).map(engineMaintRowHtml).join('')}</div>` : ''}
   </div>`;
 }
 
@@ -10249,10 +10294,19 @@ async function loadCompressors() {
   }
 }
 
+function compressorLogRowHtml(l) {
+  return `<div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;color:var(--muted);padding:4px 0;">
+    <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('gear_filter_replaced')}</strong>`:''}</span>
+    <span>${l.event_type==='service' ? '' : (l.start_time && l.stop_time ? l.start_time+'-'+l.stop_time+' ('+l.hours_run+'h)' : l.hours_run+'h')}</span>
+  </div>`;
+}
+
 function renderCompressorCard(c, logs) {
   const pct = Math.min(100, (c.current_hours / c.filter_interval_hours) * 100);
   const remaining = Math.max(0, c.filter_interval_hours - c.current_hours).toFixed(1);
   const warn = remaining <= 10;
+  const hoursVal = parseFloat(c.current_hours || 0).toFixed(1);
+  const logsMoreId = `comp-logs-more-${c.id}`;
   return `
   <div class="card" id="compressor-card-${c.id}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
@@ -10263,11 +10317,13 @@ function renderCompressorCard(c, logs) {
       <button class="btn-icon danger" onclick="deleteCompressor('${c.id}')">${t('fleet_remove')}</button>
     </div>
     ${warn ? `<div class="warning-banner caution" style="margin-top:12px;">${t('gear_filter_due_soon')}${remaining}${t('gear_hours_remaining_plan')}</div>` : ''}
-    <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
-    <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin-bottom:16px;">
-      ${parseFloat(c.current_hours || 0).toFixed(1)}h / ${c.filter_interval_hours}${t('gear_hours_used')}${remaining}${t('gear_hours_remaining')}
-    </p>
-    <div class="card-section-title">${t('gear_log_a_fill')}</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap;">
+      <div class="cl-progress-bar" style="flex:1 1 50%;max-width:50%;min-width:120px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
+      <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin:0;flex:1;min-width:160px;">
+        ${hoursVal}h / ${c.filter_interval_hours}${t('gear_hours_used')}${remaining}${t('gear_hours_remaining')}
+      </p>
+    </div>
+    <div class="card-section-title" style="margin-top:16px;">${t('gear_log_a_fill')}</div>
     <div class="sf-row" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="sf-group">
         <label class="sf-label">${t('gear_who_filled')}</label>
@@ -10286,11 +10342,9 @@ function renderCompressorCard(c, logs) {
       <button class="btn-save" onclick="logCompressorFill('${c.id}')">${t('gear_log_fill')}</button>
       <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetCompressor('${c.id}')">${t('gear_filter_replaced_reset')}</button>
     </div>
-    <div class="card-section-title" style="margin-top:16px;">${t('gear_recent_activity')}</div>
-    ${logs.length ? logs.map(l => `<div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);padding:4px 0;">
-      <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('gear_filter_replaced')}</strong>`:''}</span>
-      <span>${l.event_type==='service' ? '' : (l.start_time && l.stop_time ? l.start_time+'-'+l.stop_time+' ('+l.hours_run+'h)' : l.hours_run+'h')}</span>
-    </div>`).join('') : `<p style="font-size:0.8rem;color:var(--muted)">${t('gear_no_activity_yet')}</p>`}
+    ${collapsibleSectionTitleHtml(t('gear_recent_activity'), logsMoreId, logs.length)}
+    ${logs.length ? compressorLogRowHtml(logs[0]) : `<p style="font-size:0.8rem;color:var(--muted)">${t('gear_no_activity_yet')}</p>`}
+    ${logs.length > 1 ? `<div id="${logsMoreId}" style="display:none;">${logs.slice(1).map(compressorLogRowHtml).join('')}</div>` : ''}
   </div>`;
 }
 
