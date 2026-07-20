@@ -696,7 +696,9 @@ body { background: var(--navy); color: var(--text); }
 }
 .cal-header > * { flex: 1; }
 .cal-header .cal-view-switcher { display: flex; justify-content: center; gap: 4px; flex: 1; }
-.cal-header > button:last-child { display: flex; justify-content: flex-end; flex: 1; }
+/* This used to inherit flex:1 from the rule above, stretching "+ New trip"
+   to a full third of the header's width — way wider than a button needs. */
+.cal-header > button:last-child { flex: 0 0 auto; }
 .cal-nav { display: flex; align-items: center; gap: 10px; }
 .cal-nav-btn {
   background: var(--white); border: 1px solid var(--border);
@@ -839,11 +841,17 @@ body { background: var(--navy); color: var(--text); }
 .month-day-header {
   font-size: 0.7rem; font-weight: 700; text-align: center;
   padding: 8px; color: var(--muted); text-transform: uppercase;
+  min-width: 0;
 }
 .month-day {
   background: var(--white); border: 1px solid var(--border);
   min-height: 80px; padding: 6px; cursor: pointer;
   transition: background 0.15s; border-radius: 4px;
+  /* Grid items default to min-width:auto, which lets a column with more/
+     longer content silently claim extra width from the ones with less —
+     a nearly-empty week can leave one weekday's column looking squeezed
+     next to its siblings. Forcing 0 makes all 7 columns split evenly. */
+  min-width: 0; overflow: hidden;
 }
 .month-day:hover { background: var(--foam); }
 .month-day.today { border-color: var(--blue); }
@@ -10374,24 +10382,22 @@ function renderCompressorCard(c, logs) {
   const pct = Math.min(100, (c.current_hours / c.filter_interval_hours) * 100);
   const remaining = Math.max(0, c.filter_interval_hours - c.current_hours).toFixed(1);
   const warn = remaining <= 10;
-  const hoursVal = parseFloat(c.current_hours || 0).toFixed(1);
   const logsMoreId = `comp-logs-more-${c.id}`;
   return `
   <div class="card" id="compressor-card-${c.id}">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-      <div>
-        <h2>${c.name}</h2>
-        <p>${c.locations?.name || t('gear_no_location')}${c.boats?.name ? ' · ' + c.boats.name : ' · ' + t('gear_shop_based')}</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+        <h2 style="margin:0;">${c.name}</h2>
+        <p style="margin:0;">${c.locations?.name || t('gear_no_location')}${c.boats?.name ? ' · ' + c.boats.name : ' · ' + t('gear_shop_based')}</p>
       </div>
-      <button class="btn-icon danger" onclick="deleteCompressor('${c.id}')">${t('fleet_remove')}</button>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="btn-save" onclick="logCompressorFill('${c.id}')">${t('gear_log_fill')}</button>
+        <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetCompressor('${c.id}')">${t('gear_filter_replaced_reset')}</button>
+        <button class="btn-icon danger" onclick="deleteCompressor('${c.id}')">${t('fleet_remove')}</button>
+      </div>
     </div>
     ${warn ? `<div class="warning-banner caution" style="margin-top:12px;">${t('gear_filter_due_soon')}${remaining}${t('gear_hours_remaining_plan')}</div>` : ''}
-    <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap;">
-      <div class="cl-progress-bar" style="flex:1 1 50%;max-width:50%;min-width:120px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
-      <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin:0;flex:1;min-width:160px;">
-        ${hoursVal}h / ${c.filter_interval_hours}${t('gear_hours_used')}${remaining}${t('gear_hours_remaining')}
-      </p>
-    </div>
+    <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
     <div class="card-section-title" style="margin-top:16px;">${t('gear_log_a_fill')}</div>
     <div class="sf-row" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="sf-group">
@@ -10406,10 +10412,6 @@ function renderCompressorCard(c, logs) {
         <label class="sf-label">${t('gear_stop_time')}</label>
         <input class="sf-input" type="time" id="comp-stop-${c.id}">
       </div>
-    </div>
-    <div class="settings-actions">
-      <button class="btn-save" onclick="logCompressorFill('${c.id}')">${t('gear_log_fill')}</button>
-      <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetCompressor('${c.id}')">${t('gear_filter_replaced_reset')}</button>
     </div>
     ${collapsibleSectionTitleHtml(t('gear_recent_activity'), logsMoreId, logs.length)}
     ${logs.length ? `<div id="${logsMoreId}" style="display:none;">${logs.map(compressorLogRowHtml).join('')}</div>` : `<p style="font-size:0.8rem;color:var(--muted)">${t('gear_no_activity_yet')}</p>`}
