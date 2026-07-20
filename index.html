@@ -1485,6 +1485,85 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<!-- ─── PUBLIC WAIVER SIGNING (no login — reached via ?waiver=TOKEN) ─── -->
+<div id="screen-sign-waivers" class="screen">
+  <div class="login-box" style="max-width:560px;">
+    <div class="lang-switcher" style="justify-content:center;margin-bottom:12px;">
+      <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+      <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+    </div>
+    <div class="login-logo-badge"><img src="assets/logo-full.png" alt="Seven Seas"></div>
+    <div class="login-card">
+      <p id="rw-loading" style="font-size:0.85rem;color:var(--muted);" data-i18n="rw_loading">Loading your booking...</p>
+
+      <div id="rw-invalid" style="display:none;">
+        <h2 data-i18n="rw_link_invalid_title">This link isn't valid</h2>
+        <p id="rw-invalid-reason" style="font-size:0.85rem;color:var(--muted);"></p>
+      </div>
+
+      <div id="rw-list-view" style="display:none;">
+        <h2 id="rw-trip-title" style="margin-bottom:2px;"></h2>
+        <p id="rw-trip-meta" style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;"></p>
+        <div id="rw-participant-list"></div>
+        <div id="rw-all-done" class="warning-banner" style="display:none;margin-top:16px;background:rgba(29,158,117,0.1);color:var(--success);border-color:rgba(29,158,117,0.3);">
+          <span data-i18n="rw_all_done">All waivers for this booking are signed — see you soon!</span>
+        </div>
+      </div>
+
+      <div id="rw-sign-view" style="display:none;">
+        <button class="btn-cancel" style="margin-bottom:12px;font-size:0.8rem;padding:6px 12px;" onclick="rwBackToList()">&larr; <span data-i18n="rw_back">Back</span></button>
+        <p id="rw-sign-guest-name" style="font-weight:600;color:var(--navy);margin-bottom:4px;"></p>
+        <p id="rw-sign-type-label" style="font-size:0.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;"></p>
+        <div id="rw-template-content" style="margin-top:10px;"></div>
+
+        <div class="card-section-title" style="margin-top:16px;" data-i18n="wv_participant_section">Participant</div>
+        <div class="sf-row">
+          <div class="sf-group">
+            <label class="sf-label" data-i18n="wv_printed_name">Printed name</label>
+            <input class="sf-input" type="text" autocomplete="off" id="rw-printed-name">
+          </div>
+          <div class="sf-group">
+            <label class="sf-label" data-i18n="wv_date">Date</label>
+            <input class="sf-input" type="date" id="rw-date">
+          </div>
+        </div>
+        <div id="rw-canvas-wrap" style="margin-top:14px;">
+          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
+            <canvas id="rw-signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
+          </div>
+          <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="rwClearCanvas()" data-i18n="wv_clear">Clear</button>
+        </div>
+
+        <div id="rw-guardian-section" style="display:none;margin-top:18px;padding-top:14px;border-top:1px dashed var(--border);">
+          <div class="card-section-title" data-i18n="wv_guardian_section">Parent / Guardian (guest is a minor)</div>
+          <div class="sf-row">
+            <div class="sf-group">
+              <label class="sf-label" data-i18n="wv_guardian_printed_name">Parent/guardian printed name</label>
+              <input class="sf-input" type="text" autocomplete="off" id="rw-guardian-name">
+            </div>
+            <div class="sf-group">
+              <label class="sf-label" data-i18n="wv_date">Date</label>
+              <input class="sf-input" type="date" id="rw-guardian-date">
+            </div>
+          </div>
+          <div id="rw-guardian-canvas-wrap" style="margin-top:6px;">
+            <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
+              <canvas id="rw-guardian-signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
+            </div>
+            <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="rwClearGuardianCanvas()" data-i18n="wv_clear">Clear</button>
+          </div>
+        </div>
+
+        <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;" data-i18n="wv_sign_legal_note">Enforceability of digital signatures varies by country and jurisdiction. Consult a local lawyer before relying on these documents legally.</div>
+        <div class="settings-actions" style="margin-top:14px;">
+          <button class="btn-save" id="rw-btn-confirm" data-i18n="wv_save_waiver">Save Waiver</button>
+          <span class="save-feedback" id="rw-save-feedback"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ─── APP SHELL ─── -->
 <div id="screen-app" class="screen">
 
@@ -2313,6 +2392,11 @@ body { background: var(--navy); color: var(--text); }
           <div class="card" id="card-pending-waivers">
             <h2 data-i18n="wv_pending_today">Pending Signatures — Today</h2>
             <div id="pending-waivers-list"></div>
+          </div>
+          <div class="card" id="card-remote-waiver-status">
+            <h2 data-i18n="wv_remote_status_title">Remote Signing — Today's Bookings</h2>
+            <p class="card-desc" data-i18n="wv_remote_status_desc">Everyone in a booking group shares one link — see who's signed before arriving and who's still missing something.</p>
+            <div id="remote-waiver-groups-list"></div>
           </div>
           <div class="card" id="card-waiver-log">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
@@ -3162,6 +3246,10 @@ const TRANSLATIONS = {
     wv_pending_today: 'Pending Signatures — Today', wv_waiver_log: 'Waiver Log', wv_daily: 'Daily', wv_weekly: 'Weekly',
     wv_search_guest_ph: 'Search by guest name...',
     wv_trip_fallback: 'Trip', wv_sign_waiver: 'Sign Waiver', wv_no_pending_guests: "No pending guests for today's trips.",
+    wv_remote_status_title: "Remote Signing — Today's Bookings",
+    wv_remote_status_desc: "Everyone in a booking group shares one link — see who's signed before arriving and who's still missing something.",
+    wv_copy_link: 'Copy link', wv_copy_link_manual: 'Copy this waiver signing link:',
+    wv_group_missing_prefix: 'Missing:', wv_group_all_signed: 'All guests signed',
     wv_unknown_guest: 'Unknown guest', wv_paper: 'Paper', wv_digital: 'Digital',
     wv_no_waivers_week: 'No waivers signed this week.', wv_no_waivers_date: 'No waivers signed on this date.',
     wv_no_waivers_found: 'No waivers found for',
@@ -3176,6 +3264,12 @@ const TRANSLATIONS = {
     wv_no_template_set_up: 'No waiver template is set up for this type yet.',
     wv_medical_questionnaire: 'Medical questionnaire', wv_tick_anything_applies: '— tick anything that applies',
     wv_please_draw_signature: 'Please draw a signature, or switch to "Logged on paper".',
+    rw_loading: 'Loading your booking...', rw_link_invalid_title: "This link isn't valid",
+    rw_link_expired: 'This signing link has expired. Contact the shop for a new one.',
+    rw_link_not_found: "This link isn't recognized. Contact the shop to check your booking.",
+    rw_signed: 'Signed', rw_back: 'Back',
+    rw_all_done: 'All waivers for this booking are signed — see you soon!',
+    rw_ask_shop_to_set_up: 'Contact the shop directly to get this sorted before your trip.',
     wv_saved_offline: 'Saved offline — this waiver will sync automatically once your connection is back.',
     wv_error_saving: 'Error saving waiver: ', wv_unknown_error: 'unknown error',
     wv_export_no_permission: 'Only owners, managers, front desk, and elevated captains can export waivers.',
@@ -3581,6 +3675,10 @@ const TRANSLATIONS = {
     wv_pending_today: 'Firmas Pendientes — Hoy', wv_waiver_log: 'Registro de Exenciones', wv_daily: 'Diario', wv_weekly: 'Semanal',
     wv_search_guest_ph: 'Buscar por nombre de huésped...',
     wv_trip_fallback: 'Salida', wv_sign_waiver: 'Firmar Exención', wv_no_pending_guests: 'No hay huéspedes pendientes para las salidas de hoy.',
+    wv_remote_status_title: 'Firma Remota — Reservas de Hoy',
+    wv_remote_status_desc: 'Todos en un grupo de reserva comparten un mismo link — mirá quién firmó antes de llegar y a quién le falta algo.',
+    wv_copy_link: 'Copiar link', wv_copy_link_manual: 'Copia este link de firma de exención:',
+    wv_group_missing_prefix: 'Falta:', wv_group_all_signed: 'Todos los huéspedes firmaron',
     wv_unknown_guest: 'Huésped desconocido', wv_paper: 'Papel', wv_digital: 'Digital',
     wv_no_waivers_week: 'No hay exenciones firmadas esta semana.', wv_no_waivers_date: 'No hay exenciones firmadas en esta fecha.',
     wv_no_waivers_found: 'No se encontraron exenciones para',
@@ -3595,6 +3693,12 @@ const TRANSLATIONS = {
     wv_no_template_set_up: 'Aún no hay una plantilla de exención configurada para este tipo.',
     wv_medical_questionnaire: 'Cuestionario médico', wv_tick_anything_applies: '— marca todo lo que aplique',
     wv_please_draw_signature: 'Por favor dibuja una firma, o cambia a "Registrado en papel".',
+    rw_loading: 'Cargando tu reserva...', rw_link_invalid_title: 'Este link no es válido',
+    rw_link_expired: 'Este link para firmar venció. Contactá al centro de buceo para que te envíen uno nuevo.',
+    rw_link_not_found: 'No se reconoce este link. Contactá al centro de buceo para verificar tu reserva.',
+    rw_signed: 'Firmado', rw_back: 'Volver',
+    rw_all_done: 'Todas las exenciones de esta reserva están firmadas — ¡nos vemos pronto!',
+    rw_ask_shop_to_set_up: 'Contactá directamente al centro de buceo para resolver esto antes de tu salida.',
     wv_saved_offline: 'Guardado sin conexión — esta exención se sincronizará automáticamente cuando vuelva la conexión.',
     wv_error_saving: 'Error al guardar la exención: ', wv_unknown_error: 'error desconocido',
     wv_export_no_permission: 'Solo propietarios, gerentes, recepción y capitanes con permisos elevados pueden exportar exenciones.',
@@ -3657,6 +3761,11 @@ function refreshDynamicTranslations() {
   }
   if (typeof buildWaiverTypeLabels === 'function') {
     waiverTypeLabels = buildWaiverTypeLabels();
+  }
+  // Public waiver signing page has no org context (guest isn't logged in), so
+  // its own re-render needs to run outside the currentOrgId-gated block below.
+  if (window.rwToken && window.rwData && document.getElementById('rw-list-view').style.display !== 'none') {
+    rwRenderList();
   }
   if (typeof currentOrgId !== 'undefined' && currentOrgId) {
     if (typeof renderCalendar === 'function') renderCalendar();
@@ -4092,6 +4201,252 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
   window.history.replaceState({}, '', window.location.pathname);
   pendingInvite = null;
   initAuth();
+});
+
+// ─── PUBLIC WAIVER SIGNING (no login) ───
+// Reached via ?waiver=TOKEN in the booking confirmation email. Everything
+// here talks to the waiver-remote-signing edge function only — never a
+// direct sb.from(...) table call — since there's no authenticated session
+// and no anon RLS policy exists (deliberately) for waivers/participants on
+// this path. One link covers the whole booking group, same as
+// Smartwaiver/WaiverForever's shared event/group-link model.
+window.rwToken = null;
+window.rwData = null;
+window.rwCurrentParticipant = null;
+window.rwCurrentTemplate = null;
+window.rwCurrentQuestions = [];
+window.rwResponses = {};
+window.rwBlocked = false;
+window.rwSigPad = null;
+window.rwGuardianSigPad = null;
+
+async function checkForWaiverToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('waiver');
+  if (!token) return false;
+  window.rwToken = token;
+  showScreen('sign-waivers');
+  await rwLoadStatus();
+  return true;
+}
+
+async function rwLoadStatus() {
+  document.getElementById('rw-loading').style.display = 'block';
+  document.getElementById('rw-invalid').style.display = 'none';
+  document.getElementById('rw-list-view').style.display = 'none';
+  document.getElementById('rw-sign-view').style.display = 'none';
+
+  const { data, error } = await sb.functions.invoke('waiver-remote-signing', { body: { action: 'status', token: window.rwToken } });
+  document.getElementById('rw-loading').style.display = 'none';
+
+  if (error || !data || !data.valid) {
+    document.getElementById('rw-invalid').style.display = 'block';
+    document.getElementById('rw-invalid-reason').textContent =
+      (data && data.reason === 'expired') ? t('rw_link_expired') : t('rw_link_not_found');
+    return;
+  }
+  window.rwData = data;
+  rwRenderList();
+}
+
+function rwRenderList() {
+  const d = window.rwData;
+  document.getElementById('rw-list-view').style.display = 'block';
+  const tripLabel = trTypeName(d.trip.tripType) || t('cal_trip_fallback');
+  const dateLabel = d.trip.tripDate
+    ? new Date(d.trip.tripDate + 'T12:00:00').toLocaleDateString(currentLanguage === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    : '';
+  document.getElementById('rw-trip-title').textContent = d.org.name || '';
+  document.getElementById('rw-trip-meta').textContent =
+    `${tripLabel}${dateLabel ? ' · ' + dateLabel : ''}${d.trip.tripTime ? ' · ' + d.trip.tripTime.slice(0, 5) : ''}${d.trip.boatName ? ' · ' + d.trip.boatName : ''}`;
+
+  let allSigned = true;
+  const listEl = document.getElementById('rw-participant-list');
+  listEl.innerHTML = d.participants.map(p => {
+    const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
+    return p.waivers.map(w => {
+      if (!w.signed) allSigned = false;
+      const label = waiverTypeLabels[w.type] || w.type;
+      return `<div class="participant-row">
+        <div>
+          <div class="p-name">${p.full_name}${p.is_minor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
+          <div style="font-size:0.78rem;color:var(--muted);">${label}</div>
+        </div>
+        ${w.signed
+          ? `<span style="color:var(--success);font-size:0.82rem;font-weight:600;">${t('rw_signed')}</span>`
+          : `<button class="btn-save" style="padding:6px 12px;font-size:0.82rem;" onclick="rwOpenSignForm('${p.id}','${nameEsc}',${p.is_minor},'${w.type}')">${t('wv_sign_waiver')}</button>`}
+      </div>`;
+    }).join('');
+  }).join('');
+
+  document.getElementById('rw-all-done').style.display = allSigned ? 'block' : 'none';
+}
+
+function rwOpenSignForm(participantId, fullName, isMinor, waiverType) {
+  window.rwCurrentParticipant = { id: participantId, full_name: fullName, is_minor: isMinor, waiver_type: waiverType };
+  document.getElementById('rw-list-view').style.display = 'none';
+  document.getElementById('rw-sign-view').style.display = 'block';
+  document.getElementById('rw-sign-guest-name').textContent = fullName;
+  document.getElementById('rw-sign-type-label').textContent = waiverTypeLabels[waiverType] || waiverType;
+  document.getElementById('rw-printed-name').value = fullName || '';
+  document.getElementById('rw-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('rw-guardian-name').value = '';
+  document.getElementById('rw-guardian-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('rw-guardian-section').style.display = isMinor ? 'block' : 'none';
+  const feedback = document.getElementById('rw-save-feedback');
+  feedback.textContent = '';
+  feedback.className = 'save-feedback';
+  setTimeout(() => {
+    window.rwSigPad = makeSignaturePad('rw-signature-canvas');
+    if (isMinor) window.rwGuardianSigPad = makeSignaturePad('rw-guardian-signature-canvas');
+  }, 50);
+  rwLoadTemplate(waiverType);
+}
+
+function rwBackToList() {
+  document.getElementById('rw-sign-view').style.display = 'none';
+  document.getElementById('rw-list-view').style.display = 'block';
+}
+
+async function rwLoadTemplate(type) {
+  const container = document.getElementById('rw-template-content');
+  container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('wv_loading_waiver')}</p>`;
+  const { data } = await sb.functions.invoke('waiver-remote-signing', { body: { action: 'template', token: window.rwToken, waiverType: type } });
+  window.rwCurrentTemplate = data?.template || null;
+  window.rwCurrentQuestions = data?.questions || [];
+  rwRenderTemplateContent(type, window.rwCurrentTemplate, window.rwCurrentQuestions);
+}
+
+function rwRenderTemplateContent(type, template, questions) {
+  const container = document.getElementById('rw-template-content');
+  const saveBtn = document.getElementById('rw-btn-confirm');
+  const blocked = type === 'medical' ? !questions.length : !(template && template.body_text);
+  window.rwBlocked = blocked;
+
+  if (blocked) {
+    container.innerHTML = `<div class="warning-banner caution" style="font-size:0.82rem;">${t('wv_no_template_set_up')} ${t('rw_ask_shop_to_set_up')}</div>`;
+    document.getElementById('rw-canvas-wrap').style.display = 'none';
+    document.getElementById('rw-guardian-canvas-wrap').style.display = 'none';
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = '0.5';
+    return;
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.style.opacity = '1';
+  document.getElementById('rw-canvas-wrap').style.display = 'block';
+  if (document.getElementById('rw-guardian-section').style.display !== 'none') {
+    document.getElementById('rw-guardian-canvas-wrap').style.display = 'block';
+  }
+
+  window.rwResponses = {};
+  if (type === 'medical') {
+    container.innerHTML = `
+      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : t('wv_medical_questionnaire')} ${t('wv_tick_anything_applies')}</p>
+      <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto;background:var(--foam);">
+        ${questions.map(q => `
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.85rem;padding:6px 0;cursor:pointer;">
+            <input type="checkbox" style="margin-top:2px;" onchange="window.rwResponses['${q.id}'] = this.checked">
+            <span>${q.question_text}</span>
+          </label>
+        `).join('')}
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
+      <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
+    `;
+  }
+}
+
+function rwClearCanvas() {
+  if (!window.rwSigPad) return;
+  window.rwSigPad.ctx.clearRect(0, 0, window.rwSigPad.canvas.width, window.rwSigPad.canvas.height);
+  window.rwSigPad.hasStroke = false;
+}
+function rwClearGuardianCanvas() {
+  if (!window.rwGuardianSigPad) return;
+  window.rwGuardianSigPad.ctx.clearRect(0, 0, window.rwGuardianSigPad.canvas.width, window.rwGuardianSigPad.canvas.height);
+  window.rwGuardianSigPad.hasStroke = false;
+}
+
+document.getElementById('rw-btn-confirm').addEventListener('click', async () => {
+  const feedback = document.getElementById('rw-save-feedback');
+  const sp = window.rwCurrentParticipant;
+  if (!sp) return;
+  if (window.rwBlocked) {
+    feedback.textContent = t('wv_no_template_set_up');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const printedName = document.getElementById('rw-printed-name').value.trim();
+  const signedDate = document.getElementById('rw-date').value;
+  if (!printedName) {
+    feedback.textContent = t('wv_printed_name_required');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!signedDate) {
+    feedback.textContent = t('wv_date_required');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!(window.rwSigPad && window.rwSigPad.hasStroke)) {
+    feedback.textContent = t('wv_please_draw_signature');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  let guardianName = null, guardianDate = null, guardianSignatureData = null;
+  if (sp.is_minor) {
+    guardianName = document.getElementById('rw-guardian-name').value.trim();
+    guardianDate = document.getElementById('rw-guardian-date').value;
+    if (!guardianName) {
+      feedback.textContent = t('wv_guardian_name_required');
+      feedback.className = 'save-feedback error visible';
+      return;
+    }
+    if (!guardianDate) {
+      feedback.textContent = t('wv_date_required');
+      feedback.className = 'save-feedback error visible';
+      return;
+    }
+    if (!(window.rwGuardianSigPad && window.rwGuardianSigPad.hasStroke)) {
+      feedback.textContent = t('wv_guardian_signature_required');
+      feedback.className = 'save-feedback error visible';
+      return;
+    }
+    guardianSignatureData = window.rwGuardianSigPad.canvas.toDataURL('image/png');
+  }
+
+  const isMedical = sp.waiver_type === 'medical';
+  const btn = document.getElementById('rw-btn-confirm');
+  btn.disabled = true;
+  const { data, error } = await sb.functions.invoke('waiver-remote-signing', {
+    body: {
+      action: 'sign',
+      token: window.rwToken,
+      participantId: sp.id,
+      waiverType: sp.waiver_type,
+      printedName,
+      signedDate,
+      signatureData: window.rwSigPad.canvas.toDataURL('image/png'),
+      guardianName, guardianDate, guardianSignatureData,
+      notes: null,
+      templateId: window.rwCurrentTemplate?.id || null,
+      bodySnapshot: isMedical ? null : (window.rwCurrentTemplate?.body_text || null),
+      responses: isMedical ? window.rwCurrentQuestions.map(q => ({ question: q.question_text, checked: !!window.rwResponses[q.id] })) : null
+    }
+  });
+  btn.disabled = false;
+  if (error || data?.error) {
+    feedback.textContent = t('wv_error_saving') + (data?.error || '');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  await rwLoadStatus();
+  rwBackToList();
 });
 
 // ─── SCREEN MANAGEMENT ───
@@ -6050,6 +6405,7 @@ async function sendBookingConfirmationIfNeeded(groupId) {
     if (!group || !group.contact_email || group.confirmation_sent_at) return;
 
     const { data: org } = await sb.from('organizations').select('name, email, currency').eq('id', currentOrgId).single();
+    const waiverLink = await getOrCreateWaiverSigningLink(groupId, group.trips?.trip_date);
 
     const { error } = await sb.functions.invoke('send-booking-confirmation', {
       body: {
@@ -6062,7 +6418,8 @@ async function sendBookingConfirmationIfNeeded(groupId) {
         pricePerPerson: group.price_per_person || null,
         currency: org?.currency || 'USD',
         orgName: org?.name || 'Your dive operator',
-        orgEmail: org?.email || null
+        orgEmail: org?.email || null,
+        waiverLink: waiverLink || null
       }
     });
     if (!error) {
@@ -6071,6 +6428,37 @@ async function sendBookingConfirmationIfNeeded(groupId) {
   } catch (e) {
     // Never block the booking save flow over an email hiccup.
     console.warn('Booking confirmation email failed:', e);
+  }
+}
+
+// ─── REMOTE WAIVER SIGNING LINK ───
+// One signing link per booking group (not per guest) — matches how
+// Smartwaiver/WaiverForever's shared event/group links work, and matches
+// Seven Seas' data model where a booking only has one contact_email today.
+function buildWaiverSigningUrl(token) {
+  return `${window.location.origin}${window.location.pathname}?waiver=${token}`;
+}
+async function getOrCreateWaiverSigningLink(groupId, tripDate) {
+  if (!groupId) return null;
+  try {
+    const { data: existing } = await sb.from('waiver_signing_links').select('token').eq('group_id', groupId).maybeSingle();
+    if (existing?.token) return buildWaiverSigningUrl(existing.token);
+
+    const token = crypto.randomUUID();
+    let expiresAt = null;
+    if (tripDate) {
+      const d = new Date(tripDate + 'T12:00:00');
+      d.setDate(d.getDate() + 3); // stays valid a few days after the trip in case of reschedules
+      expiresAt = d.toISOString();
+    }
+    const { data: created, error } = await sb.from('waiver_signing_links')
+      .insert({ org_id: currentOrgId, group_id: groupId, token, expires_at: expiresAt })
+      .select('token').single();
+    if (error || !created) return null;
+    return buildWaiverSigningUrl(created.token);
+  } catch (e) {
+    console.warn('Could not create waiver signing link:', e);
+    return null;
   }
 }
 
@@ -7271,13 +7659,46 @@ async function printManifest() {
   // deviated from the default — otherwise a column silently disappears from the manifest.
   const gearColumns = selectedTripTypeFields;
 
+  // Waiver status per guest — only relevant if waivers are enabled for this org.
+  // Pull every signed waiver across every group on this trip in one query so the
+  // manifest can show, guest by guest, exactly who's missing exactly what.
+  const showWaiverColumn = !!window.waiversEnabled;
+  const requiredWaiverTypes = (tripType?.required_waiver_types && tripType.required_waiver_types.length) ? tripType.required_waiver_types : ['liability'];
+  const signedTypesByParticipant = {};
+  if (showWaiverColumn) {
+    const allParticipantIds = tripGroups_cache.flatMap(g => (groupParticipants_cache[g.id] || []).map(p => p.id));
+    if (allParticipantIds.length) {
+      const { data: signedRows } = await sb.from('waivers').select('participant_id, waiver_type').in('participant_id', allParticipantIds);
+      (signedRows || []).forEach(s => {
+        if (!s.participant_id) return;
+        if (!signedTypesByParticipant[s.participant_id]) signedTypesByParticipant[s.participant_id] = new Set();
+        signedTypesByParticipant[s.participant_id].add(s.waiver_type);
+      });
+    }
+  }
+
   const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   const groupsHtml = tripGroups_cache.map((g, i) => {
     const participants = groupParticipants_cache[g.id] || [];
+    let missingCount = 0;
+    const missingList = [];
     const rows = participants.map(p => {
       const gear = p.gear || {};
       const certCell = showCertColumn ? `<td>${escapeHtml(certDisplayString(p) || '—')}</td>` : '';
+      let waiverCell = '';
+      if (showWaiverColumn) {
+        const signedTypes = signedTypesByParticipant[p.id] || new Set();
+        const missingTypes = requiredWaiverTypes.filter(t => !signedTypes.has(t));
+        if (missingTypes.length) {
+          missingCount++;
+          const missingLabel = missingTypes.map(t => escapeHtml(waiverTypeLabels[t] || t)).join(', ');
+          missingList.push(`${escapeHtml(p.full_name)} (${missingLabel})`);
+          waiverCell = `<td style="color:#c0392b;font-weight:600;">Missing: ${missingLabel}</td>`;
+        } else {
+          waiverCell = `<td style="color:#1d9e75;">Signed</td>`;
+        }
+      }
       return `<tr>
         <td>${escapeHtml(p.full_name)}${p.checked_in_at ? ' ✓' : ''}</td>
         ${certCell}
@@ -7286,16 +7707,23 @@ async function printManifest() {
           const show = (v && v !== 'Own gear' && v !== 'None') ? v : '—';
           return `<td>${escapeHtml(show)}</td>`;
         }).join('')}
+        ${waiverCell}
         <td>${escapeHtml(p.notes)}</td>
       </tr>`;
     }).join('');
+    const waiverSummary = showWaiverColumn
+      ? (missingCount
+          ? `<p class="manifest-group-notes" style="color:#c0392b;font-style:normal;font-weight:600;">⚠ Waivers missing — ${missingList.join(' · ')}</p>`
+          : `<p class="manifest-group-notes" style="color:#1d9e75;font-style:normal;">✓ All guests' waivers signed</p>`)
+      : '';
     return `
       <div class="manifest-group">
         <h3>${escapeHtml(g.contact_name) || 'Group ' + (i + 1)}${g.contact_phone ? ' · ' + escapeHtml(g.contact_phone) : ''}</h3>
         ${g.notes ? `<p class="manifest-group-notes">${escapeHtml(g.notes)}</p>` : ''}
+        ${waiverSummary}
         <table>
-          <thead><tr><th>Guest</th>${showCertColumn ? '<th>Certification</th>' : ''}${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}<th>Notes</th></tr></thead>
-          <tbody>${rows || `<tr><td colspan="${gearColumns.length + (showCertColumn ? 1 : 0) + 2}">No guests</td></tr>`}</tbody>
+          <thead><tr><th>Guest</th>${showCertColumn ? '<th>Certification</th>' : ''}${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}${showWaiverColumn ? '<th>Waivers</th>' : ''}<th>Notes</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="${gearColumns.length + (showCertColumn ? 1 : 0) + (showWaiverColumn ? 1 : 0) + 2}">No guests</td></tr>`}</tbody>
         </table>
       </div>
     `;
@@ -7413,7 +7841,85 @@ async function loadWaivers() {
     </div>`;
   }).join('') : `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
 
+  await renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaiversByTripTypeId, participants, signedTypesByParticipant);
   await renderWaiverLog();
+}
+
+// ─── REMOTE WAIVER SIGNING — STAFF-SIDE STATUS (Event-Manager-style view) ───
+// One row per booking group with guests today, showing who in that group has
+// signed and who hasn't — same idea as Smartwaiver's group/event manager view.
+// Reuses everything loadWaivers() already fetched instead of re-querying.
+async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaiversByTripTypeId, participants, signedTypesByParticipant) {
+  const listEl = document.getElementById('remote-waiver-groups-list');
+  if (!tripIds.length) {
+    listEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
+    return;
+  }
+
+  const { data: groups } = await sb.from('trip_groups').select('id, trip_id, contact_name').in('trip_id', tripIds);
+  const groupIds = (groups || []).map(g => g.id);
+  if (!groupIds.length) {
+    listEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
+    return;
+  }
+
+  const participantsByGroup = {};
+  participants.forEach(p => {
+    if (!p.group_id) return;
+    (participantsByGroup[p.group_id] = participantsByGroup[p.group_id] || []).push(p);
+  });
+
+  listEl.innerHTML = groups.map(g => {
+    const trip = tripById[g.trip_id];
+    const groupParticipants = participantsByGroup[g.id] || [];
+    const missing = [];
+    groupParticipants.forEach(p => {
+      const requiredTypes = (trip && requiredWaiversByTripTypeId[trip.trip_type_id]) || ['liability'];
+      const signedTypes = signedTypesByParticipant[p.id] || new Set();
+      const missingTypes = requiredTypes.filter(type => !signedTypes.has(type));
+      if (missingTypes.length) missing.push({ name: p.full_name, types: missingTypes.map(mt => waiverTypeLabels[mt] || mt).join(', ') });
+    });
+
+    const tripLabel = trip ? `${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
+    const statusHtml = missing.length
+      ? `<div style="font-size:0.8rem;color:var(--error);margin-top:4px;">${t('wv_group_missing_prefix')} ${missing.map(m => `${m.name} (${m.types})`).join(' · ')}</div>`
+      : `<div style="font-size:0.8rem;color:var(--success);margin-top:4px;">${t('wv_group_all_signed')}</div>`;
+
+    return `<div class="participant-row" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div>
+          <div class="p-name">${g.contact_name || t('wv_unknown_guest')}</div>
+          <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}</div>
+        </div>
+        <button class="btn-icon" style="font-size:0.78rem;" onclick="copyWaiverSigningLink('${g.id}', this)">${t('wv_copy_link')}</button>
+      </div>
+      ${statusHtml}
+    </div>`;
+  }).join('');
+}
+
+async function copyWaiverSigningLink(groupId, btnEl) {
+  const originalLabel = btnEl.textContent;
+  btnEl.textContent = '...';
+  let url;
+  try {
+    const { data: existing } = await sb.from('waiver_signing_links').select('token').eq('group_id', groupId).maybeSingle();
+    url = existing?.token ? buildWaiverSigningUrl(existing.token) : await getOrCreateWaiverSigningLink(groupId, null);
+  } catch (e) {
+    url = null;
+  }
+  if (!url) {
+    btnEl.textContent = originalLabel;
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    btnEl.textContent = t('crew_link_copied');
+  } catch (err) {
+    window.prompt(t('wv_copy_link_manual'), url);
+    btnEl.textContent = originalLabel;
+  }
+  setTimeout(() => { btnEl.textContent = originalLabel; }, 2000);
 }
 
 function waiverLogRowHtml(w) {
@@ -11324,7 +11830,10 @@ document.getElementById('confirm-modal-ok').addEventListener('click', () => {
 // ─── START ───
 (async () => {
   const hasInvite = await checkForInviteToken();
-  if (!hasInvite) await initAuth();
+  if (hasInvite) return;
+  const hasWaiverLink = await checkForWaiverToken();
+  if (hasWaiverLink) return;
+  await initAuth();
 })();
 
 // ─── PWA: register service worker (app shell caching for install + offline load) ───

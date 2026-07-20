@@ -36,7 +36,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const {
       to, guestName, tripType, tripDate, tripTime, boatName,
-      pricePerPerson, currency, orgName, orgEmail,
+      pricePerPerson, currency, orgName, orgEmail, waiverLink,
     } = body || {};
 
     if (!to) {
@@ -55,6 +55,22 @@ Deno.serve(async (req: Request) => {
       ? `<p><strong>Price per person:</strong> ${currency || "USD"} ${Number(pricePerPerson).toFixed(2)}</p>`
       : "";
 
+    // Waiver CTA -- only present once trip_groups has a signing link generated
+    // for this booking (see getOrCreateWaiverSigningLink in index.html). Lets
+    // every guest in the group sign before they arrive, same as Smartwaiver's
+    // event-link / WaiverForever's group-request flow.
+    const waiverSection = waiverLink
+      ? `
+        <div style="background:#fff8e6;border:1px solid #f0d78c;border-radius:8px;padding:16px;margin:16px 0;">
+          <p style="margin:0 0 12px;"><strong>One more thing</strong> — please sign your waiver(s) before you arrive so check-in is quick. If your booking has more than one guest, everyone can sign from the same link.</p>
+          <p style="margin:0;">
+            <a href="${waiverLink}" style="background:#1a6b8a;color:#ffffff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Sign waiver(s)</a>
+          </p>
+          <p style="color:#888;font-size:0.85em;margin:12px 0 0;">If the button doesn't work, copy and paste this link into your browser:<br>${waiverLink}</p>
+        </div>
+      `
+      : "";
+
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;">
         <h2 style="color:#1a6b8a;">Booking confirmed${orgName ? " — " + orgName : ""}</h2>
@@ -67,6 +83,7 @@ Deno.serve(async (req: Request) => {
           ${boatName ? `<p><strong>Boat:</strong> ${boatName}</p>` : ""}
           ${priceLine}
         </div>
+        ${waiverSection}
         <p>If anything needs to change, just reply to this email${orgEmail ? " or reach us at " + orgEmail : ""}.</p>
         <p style="color:#888;font-size:0.85em;margin-top:24px;">See you soon!</p>
       </div>
