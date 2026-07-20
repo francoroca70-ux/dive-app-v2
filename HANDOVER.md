@@ -3,7 +3,7 @@
 *Keep this file up to date. When a Claude conversation runs out of context, a fresh
 session should be able to read this file and pick up exactly where things left off.*
 
-Last updated: 2026-07-18
+Last updated: 2026-07-20
 
 ---
 
@@ -109,8 +109,69 @@ business context, income projections, and schedule live in the Claude.ai project
 custom instructions — not duplicated here to avoid drift; treat that as the source of
 truth for business strategy, this file as the source of truth for engineering state.
 
+## App launch checklist — Google Play / Apple App Store
+
+*This is the durable version of the launch punch list — the in-chat task widget
+resets each session and only shows that session's work, so treat this section as
+the real source of truth. Full detail/reasoning for each item lives in
+`App-Store-Roadmap.md`.*
+
+**Done:**
+- [x] PWA foundation — manifest, service worker, full icon set generated from the
+  trident mark (Phase 0)
+- [x] Capacitor wrap — `android/` and `ios/` native projects generated (Phase 2)
+- [x] CI pipeline green — GitHub Actions builds an installable Android debug
+  `.apk` and an iOS Simulator build automatically on every push (`MOBILE.md`)
+- [x] Researched privacy policy generators (Termly, iubenda, TermsFeed,
+  FreePrivacyPolicy.com) — see chat history 2026-07-20
+
+**Not done yet:**
+- [ ] Register Google Play Developer account ($25 one-time, ~2 business days
+  identity verification) — Fran's action, needs a payment method
+- [ ] Register Apple Developer Program ($99/yr, individual enrollment is
+  fastest) — Fran's action, needs a payment method
+- [ ] Start Google Play's mandatory 14-day closed test with 12 testers — the
+  single biggest fixed delay in the whole launch, start the moment the Play
+  account exists using the Android debug APK CI already produces
+- [ ] Set up a cloud Mac build service (Capgo Build / Capawesome Cloud /
+  Codemagic) once the Apple account + certificates exist, to get a real signed
+  iOS build (CI only produces a Simulator build today, not installable on a
+  real iPhone)
+- [ ] Finish and publish a real, hosted privacy policy page — pick a generator
+  (or a lawyer-drafted one) and get it live at a real URL; both stores reject
+  submissions without one
+- [ ] Terms of Service page — blocked on the lawyer meeting (see Task #118 below)
+- [ ] Store listing assets: screenshots per device size, short + long
+  description, age rating questionnaire, category (Business/Productivity)
+- [ ] Permanent demo/sample org (sample trips, guests, waivers) for the Apple
+  reviewer to click through without real customer data
+- [ ] Decide/confirm in-app purchase stance — keeping all billing external
+  (Stripe/website, not inside the app) avoids Apple/Google's cut; this is the
+  current assumption, just needs confirming before submission
+- [ ] Submit both apps for review (Phase 4) — blocked on everything above
+- [ ] Optional, not launch-blocking: wire push notifications + camera access
+  through Capacitor plugins
+
 ## Recently completed (most recent first)
 
+- Inventory (Gear & Equipment): fixed gear categories silently missing despite
+  being active in Settings (backfill seeding gap), fixed a race condition that
+  had duplicated Diving/Charter & Yacht/Surf into 2-3 copies each (added a
+  unique `(org_id, key)` constraint + idempotent upsert so it can't recur — SQL
+  migration `outputs/fix-gear-category-duplicates.sql` shared with Fran to run),
+  made category sections and individual gear items collapsible, added a
+  "+ Add item" button per category, and fixed the Settings → Operation
+  Categories screen so clicking one "+ category" chip no longer looks like it's
+  bundling the other not-yet-added categories into one prompt
+- Fleet/Gear card layout pass: boat cards optimized for mobile (2-col meta grid,
+  ellipsis overflow), engine/compressor cards reorganized (buttons grouped,
+  location inline, redundant remaining-hours text removed), recent
+  logs/maintenance made expand-on-click instead of always-on-display, Fleet's
+  boat search/dropdown/select-all put on one line with the duplicate boat-title
+  section removed, "Log Maintenance" split into boat-level vs per-engine actions
+- Calendar: fixed "+ New trip" button stretching full-width, fixed Tuesday
+  rendering visibly narrower than other day columns in month view (CSS Grid
+  `1fr` track auto-sizing gotcha — needed explicit `min-width:0`)
 - Capacitor mobile app wrap: `android/` + `ios/` native projects, brand icons/splash
   generated from the trident mark, GitHub Actions CI (`.github/workflows/mobile-build.yml`)
   that builds an installable Android debug APK and an iOS Simulator build automatically
@@ -159,3 +220,8 @@ truth for business strategy, this file as the source of truth for engineering st
   Resend fix above once done.
 - A round of end-to-end tests hasn't been run yet: crew invite flow, multi-day +
   crew-hire booking, offline mode, EN/ES toggle across all pages.
+- **If Fran launches with a free-tier privacy policy generator** (e.g. Termly's
+  free plan — GDPR-only coverage, no edits after creation, watermarked, quarterly
+  scans only), remember this is a placeholder: upgrade to a paid plan or a
+  lawyer-drafted policy once the business has real revenue/legal budget. Add this
+  as a recurring reminder, not a one-time task.
