@@ -72,22 +72,4 @@ This isn't legal advice — it's a working list of what to bring up with your la
 
 Seven Seas may eventually let dive shops submit raw video/photo footage of a dive site, which gets processed into a downloadable 3D model available to other shops/users. When that's closer to being built, worth revisiting:
 1. What license Seven Seas needs from a contributing shop to host, process, and redistribute their footage/model to other users.
-2. Whether shipwrecks carry special legal protections in some jurisdictions (war graves, protected archaeological/heritage sites) that would affect filming or publicly displaying a 3D reconstruction of them.
-3. Any additional cross-border data/hosting considerations for large media files, beyond what applies to the text/photo data Seven Seas handles today.
-
-## Documents to Come Out of This With
-
-The checklist of paperwork this consultation should produce or greenlight — roughly in the order they'd need to exist before shops start paying.
-
-1. **Terms of Service** — the legal foundation — acceptable use, subscription/billing terms, limitation of liability, termination for non-payment, dispute resolution/governing law
-2. **Privacy Policy** — what data is collected, why, who it's shared with (sub-processors), how long it's kept, and how someone can request their data
-3. **Waiver/Liability Disclaimer language** — specific wording clarifying Seven Seas is a record-keeping tool, not a certifying or safety authority — likely folds into the ToS but worth drafting deliberately
-4. **Subscription & Billing Terms** — auto-renewal disclosure, trial-to-paid conversion, refund/cancellation policy, grace period before access is cut — may be a section of the ToS or standalone
-5. **Cookie Policy** — for the landing/marketing site
-6. **Data Processing Agreement (DPA) template** — to have ready if/when a shop customer asks for one
-7. **Trademark filing** — "Seven Seas" name + logo — already on my task list, scope (Argentina-only vs. international) to be confirmed here
-8. **DNDA software copyright registration** — already on my task list — confirm this covers what we think it covers
-
----
-
-*Not legal advice — a prep list to make the most of paid time with a lawyer. Built from the current state of the Seven Seas app as of July 2026.*
+2. Whether shipwrecks carry

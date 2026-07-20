@@ -158,13 +158,27 @@ the real source of truth. Full detail/reasoning for each item lives in
 reach the shop, same as Smartwaiver/WaiverForever's link/QR-based flow, instead
 of only signing in person on a staff-held tablet like today.*
 
+**How Smartwaiver/WaiverForever actually do this (confirmed 2026-07-20):**
+Neither sends a separate private link per person by default. Both use one
+shared group/event link tied to the booking — each participant opens the same
+link and fills in their own name/signature (a parent can complete several
+family members' waivers in one sitting, entering shared info once). A staff
+"Event Manager" view shows who in the group has/hasn't signed yet and can send
+a targeted reminder to just the people still missing. This matches Seven Seas'
+current data model (one `contact_email` per booking group, not one per
+participant), so it's the right shape for v1 — no booking-flow change needed
+first.
+
 **Not built yet:**
 - [ ] Secure public-facing signing page — reachable without any Seven Seas
   login, unlike every other page in the app today
-- [ ] Per-booking/per-participant signing token — cryptographically random,
-  not guessable, ideally expiring after the trip date or after use
+- [ ] One signing token per booking group (not per participant) — lands on a
+  page listing everyone in that booking still needing a signature, each
+  completed individually on that shared page
+- [ ] Token is cryptographically random, not guessable, ideally expiring after
+  the trip date or after all participants have signed
 - [ ] Extend the `send-booking-confirmation` edge function to generate and
-  include the signing link(s) in the confirmation email (currently that email
+  include the signing link in the confirmation email (currently that email
   has zero waiver content — checked 2026-07-20)
 - [ ] Public signing page needs to reuse the existing waiver template/medical
   questionnaire/guardian-minor logic, just authenticated by token instead of
@@ -172,16 +186,23 @@ of only signing in person on a staff-held tablet like today.*
 - [ ] A Supabase RLS policy (or edge function using the service role) that
   safely lets a token-holder insert into `waivers` without a real staff login
 - [ ] Staff-side status per booking: not sent / sent, awaiting / signed
-  remotely / signed in person — so staff know before the guest walks in
+  remotely / signed in person — per participant, so staff can see at a glance
+  who's still missing (the "Event Manager" view, Smartwaiver-style)
+- [ ] Targeted reminder — resend the link, or nudge just the specific
+  participants who haven't signed yet, not the whole group again
 - [ ] Keep in-person signing at check-in working as a fallback for anyone who
   didn't complete it remotely — don't remove the existing tablet flow
-- [ ] QR code per trip/booking as a second way into the same public signing
+- [ ] QR code per trip/booking as a second way into the same shared signing
   page (Smartwaiver/WaiverForever pattern) — useful in person as backup if the
   email didn't arrive or was missed
 - [ ] Capture timestamp + IP address on remote signatures for a stronger
   audit trail, matching what established waiver tools already do
 - [ ] Confirm existing PDF export covers remotely-signed waivers the same way
   it covers in-person ones
+- [ ] Future fast-follow, not v1: WaiverForever also supports collecting
+  individual participant emails and sending each their own link — worth
+  revisiting once/if the booking flow captures a per-participant email,
+  rather than only the one group contact email it has today
 - [ ] Bilingual EN/ES on the public signing page (standing rule — same as
   everywhere else in the app)
 - [ ] Optional, nice-to-have: reminder email if still unsigned close to the
@@ -209,54 +230,4 @@ of only signing in person on a staff-held tablet like today.*
   `1fr` track auto-sizing gotcha — needed explicit `min-width:0`)
 - Capacitor mobile app wrap: `android/` + `ios/` native projects, brand icons/splash
   generated from the trident mark, GitHub Actions CI (`.github/workflows/mobile-build.yml`)
-  that builds an installable Android debug APK and an iOS Simulator build automatically
-  in the cloud — no local Android Studio/Mac needed. Full details in `MOBILE.md`.
-  Note: the sandbox this was built in has a permissions quirk where files can be
-  created/edited but not deleted/renamed (same as the recurring git-lock-file issue) —
-  a couple of harmless leftover template files exist as a result (documented in the
-  commit), don't be alarmed if `git status`/a fresh clone shows a stray
-  `com/getcapacitor/myapp/` Java file under `android/` — it's unused dead code, not a bug.
-- Fixed multi-day trips being undercounted/missing on Home stats + shop-switch now
-  jumps to Home automatically so the switch is obvious
-- Crew day-rate save failures now surface the real Supabase error instead of a generic
-  message — confirmed genuinely blocked (not a false alarm), likely an RLS policy gap
-  on the `staff` table for updating other members' rows — waiting on Fran to share the
-  current RLS policy screenshot before writing the fix
-- Fixed inconsistent gear fields across diving trip types (Shore Dive etc. were
-  missing Mask/Tank/Computer) + added a "Gear fields" self-serve editor in Settings →
-  Trip Types so this class of bug is fixable without a code change going forward
-  (`toggleGearFieldsPanel()`)
-- Deployed `send-staff-invite` Supabase Edge Function (was coded but never actually
-  deployed — that was the real root cause of invite emails silently failing, separate
-  from the Resend sandbox-sender issue below)
-- Copy-invite-link button + autocomplete/password-manager-popup suppression on the
-  invite form
-- Translated the Add Guest form and all equipment/gear dropdowns to Spanish
-- "Remember me" login option + blocked bookings dated/timed in the past
-- Lawyer consultation prep doc (`legal/`, EN + ES) covering entity structure,
-  liability/waivers, subscription billing compliance, data privacy, IP, insurance
-- Recommended Stripe Billing (not Paddle/Lemon Squeezy) for shop subscriptions —
-  reasoning in chat history; task #148 tracks the actual build, blocked on Fran
-  creating a Stripe account first
-- Translated all seed gear item names + size labels (55 items)
-- Editable/deactivatable Operation Categories in Settings
-- Fixed booking price bug: multi-day and private-boat trips weren't multiplying
-  price by day count; introduced `currentTripPricingQty()` / `currentTripPriceLabel()`
-  shared helpers used consistently across booking modal, calendar, guest tabs
-- Built `landing.html`: real logo, bilingual EN/ES, functional CTAs, no emoji,
-  About/FAQ/Contact sections, favicon
-- Mobile nav fixes (sign-out button visibility), branded wordmark logo in nav
-
-## Open items worth knowing about
-
-- Task #118 (lawyer meeting — ToS/Privacy/waiver e-signature/business entity) is
-  blocking real Privacy/Terms page content and full waiver-legal testing.
-- Task #146 (Seven Seas Google Workspace account) is blocked on Fran; unblocks the
-  Resend fix above once done.
-- A round of end-to-end tests hasn't been run yet: crew invite flow, multi-day +
-  crew-hire booking, offline mode, EN/ES toggle across all pages.
-- **If Fran launches with a free-tier privacy policy generator** (e.g. Termly's
-  free plan — GDPR-only coverage, no edits after creation, watermarked, quarterly
-  scans only), remember this is a placeholder: upgrade to a paid plan or a
-  lawyer-drafted policy once the business has real revenue/legal budget. Add this
-  as a recurring reminder, not a one-time task.
+  that builds an installable Android debug APK and an iOS Simulator build automati
