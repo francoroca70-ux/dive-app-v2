@@ -72,4 +72,22 @@ Esto no es asesoramiento legal — es una lista de trabajo de lo que hay que pla
 
 Seven Seas podría eventualmente dejar que los centros de buceo suban video/fotos crudas de un sitio de buceo, que se procesan en un modelo 3D descargable disponible para otros centros/usuarios. Cuando eso esté más cerca de construirse, vale la pena repasar:
 1. Qué licencia necesita Seven Seas de parte de un centro que contribuye para poder alojar, procesar y redistribuir su video/modelo a otros usuarios.
-2. Si los naufragios tienen protecciones legales especiales en algunas jurisdiccion
+2. Si los naufragios tienen protecciones legales especiales en algunas jurisdicciones (tumbas de guerra, sitios arqueológicos/patrimoniales protegidos) que afecten filmarlos o mostrar públicamente una reconstrucción 3D de ellos.
+3. Cualquier consideración adicional de datos transfronterizos/alojamiento para archivos multimedia grandes, más allá de lo que ya aplica a los datos de texto/fotos que maneja Seven Seas hoy.
+
+## Documentos que Deberían Salir de Esta Consulta
+
+La lista de papeles que esta consulta debería producir o aprobar — aproximadamente en el orden en que necesitarían existir antes de que los centros de buceo empiecen a pagar.
+
+1. **Términos de Servicio** — la base legal — uso aceptable, términos de suscripción/facturación, limitación de responsabilidad, terminación por falta de pago, resolución de disputas/ley aplicable
+2. **Política de Privacidad** — qué datos se recolectan, para qué, con quién se comparten (subencargados), cuánto tiempo se conservan, y cómo alguien puede solicitar sus datos
+3. **Lenguaje de descargo de responsabilidad de exenciones** — texto específico que aclare que Seven Seas es una herramienta de registro, no una autoridad certificadora o de seguridad — probablemente se integra a los Términos de Servicio pero vale la pena redactarlo de forma deliberada
+4. **Términos de Suscripción y Facturación** — aviso de renovación automática, conversión de prueba gratuita a pago, política de reembolso/cancelación, período de gracia antes de cortar el acceso — puede ser una sección de los Términos de Servicio o un documento aparte
+5. **Política de Cookies** — para la página de aterrizaje/marketing
+6. **Plantilla de Acuerdo de Tratamiento de Datos (DPA)** — para tener lista si/cuando un cliente centro de buceo la pida
+7. **Registro de marca** — nombre y logo "Seven Seas" — ya en mi lista de tareas, confirmar acá el alcance (solo Argentina vs. internacional)
+8. **Registro de copyright de software en DNDA** — ya en mi lista de tareas — confirmar que cubre lo que pensamos que cubre
+
+---
+
+*No es asesoramiento legal — es una lista de preparación para aprovechar al máximo el tiempo pago con un abogado. Armada a partir del estado actual de la app Seven Seas a julio de 2026.*

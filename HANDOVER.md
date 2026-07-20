@@ -227,4 +227,36 @@ of only signing in person on a staff-held tablet like today.*
   Trip Types so this class of bug is fixable without a code change going forward
   (`toggleGearFieldsPanel()`)
 - Deployed `send-staff-invite` Supabase Edge Function (was coded but never actually
-  deployed — that was the real root
+  deployed — that was the real root cause of invite emails silently failing, separate
+  from the Resend sandbox-sender issue below)
+- Copy-invite-link button + autocomplete/password-manager-popup suppression on the
+  invite form
+- Translated the Add Guest form and all equipment/gear dropdowns to Spanish
+- "Remember me" login option + blocked bookings dated/timed in the past
+- Lawyer consultation prep doc (`legal/`, EN + ES) covering entity structure,
+  liability/waivers, subscription billing compliance, data privacy, IP, insurance
+- Recommended Stripe Billing (not Paddle/Lemon Squeezy) for shop subscriptions —
+  reasoning in chat history; task #148 tracks the actual build, blocked on Fran
+  creating a Stripe account first
+- Translated all seed gear item names + size labels (55 items)
+- Editable/deactivatable Operation Categories in Settings
+- Fixed booking price bug: multi-day and private-boat trips weren't multiplying
+  price by day count; introduced `currentTripPricingQty()` / `currentTripPriceLabel()`
+  shared helpers used consistently across booking modal, calendar, guest tabs
+- Built `landing.html`: real logo, bilingual EN/ES, functional CTAs, no emoji,
+  About/FAQ/Contact sections, favicon
+- Mobile nav fixes (sign-out button visibility), branded wordmark logo in nav
+
+## Open items worth knowing about
+
+- Task #118 (lawyer meeting — ToS/Privacy/waiver e-signature/business entity) is
+  blocking real Privacy/Terms page content and full waiver-legal testing.
+- Task #146 (Seven Seas Google Workspace account) is blocked on Fran; unblocks the
+  Resend fix above once done.
+- A round of end-to-end tests hasn't been run yet: crew invite flow, multi-day +
+  crew-hire booking, offline mode, EN/ES toggle across all pages.
+- **If Fran launches with a free-tier privacy policy generator** (e.g. Termly's
+  free plan — GDPR-only coverage, no edits after creation, watermarked, quarterly
+  scans only), remember this is a placeholder: upgrade to a paid plan or a
+  lawyer-drafted policy once the business has real revenue/legal budget. Add this
+  as a recurring reminder, not a one-time task.
