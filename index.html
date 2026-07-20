@@ -1727,14 +1727,16 @@ body { background: var(--navy); color: var(--text); }
 
         <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;" data-i18n="fleet_manage_hint">Click a boat, or choose one below, to manage its engines and maintenance history.</p>
 
-        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;">
-          <div class="sf-group" style="max-width:320px;margin-bottom:0;position:relative;">
-            <label class="sf-label" data-i18n="fleet_manage_boat">Manage boat</label>
-            <span style="position:absolute;left:10px;top:38px;font-size:0.85rem;color:var(--muted);pointer-events:none;">🔍</span>
-            <input class="sf-input" type="text" id="fleet-boat-search" style="padding-left:28px;margin-bottom:6px;" placeholder="Search boats..." data-i18n-placeholder="fleet_search_boat_placeholder">
-            <select class="sf-input" id="fleet-manage-boat-select"><option value="" data-i18n="fleet_choose_boat">— Choose a boat —</option></select>
+        <div class="sf-group" style="margin-bottom:20px;">
+          <label class="sf-label" data-i18n="fleet_manage_boat">Manage boat</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <div style="position:relative;flex:1 1 200px;max-width:240px;">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.85rem;color:var(--muted);pointer-events:none;">🔍</span>
+              <input class="sf-input" type="text" id="fleet-boat-search" style="padding-left:28px;margin-bottom:0;" placeholder="Search boats..." data-i18n-placeholder="fleet_search_boat_placeholder">
+            </div>
+            <select class="sf-input" id="fleet-manage-boat-select" style="flex:1 1 200px;max-width:260px;margin-bottom:0;"><option value="" data-i18n="fleet_choose_boat">— Choose a boat —</option></select>
+            <button class="btn-cancel" id="btn-fleet-select-all" style="padding:9px 16px;white-space:nowrap;" data-i18n="fleet_select_all">Select all</button>
           </div>
-          <button class="btn-cancel" id="btn-fleet-select-all" style="padding:9px 16px;" data-i18n="fleet_select_all">Select all</button>
         </div>
 
         <div id="fleet-boats-view" class="cl-view">
@@ -1806,10 +1808,7 @@ body { background: var(--navy); color: var(--text); }
         <div id="fleet-list"></div>
         </div>
 
-        <div id="fleet-boat-detail-section" style="display:none;margin-top:28px;border-top:1px solid var(--border);padding-top:24px;">
-          <h2 id="boat-detail-title" style="margin-bottom:2px;">Boat</h2>
-          <p id="boat-detail-summary" style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;"></p>
-
+        <div id="fleet-boat-detail-section" style="display:none;margin-top:8px;">
           <div class="inline-form" id="form-add-boat-engine" style="display:none;margin-bottom:20px;">
             <div class="card-section-title" data-i18n="fleet_add_engine_title">Add engine</div>
             <div class="sf-row">
@@ -9399,16 +9398,9 @@ async function selectFleetBoat(boatId) {
   window.fleetShowAllBoats = false;
   const selectAllBtn = document.getElementById('btn-fleet-select-all');
   if (selectAllBtn) selectAllBtn.textContent = t('fleet_select_all');
-  const { data: boat } = await sb.from('boats').select('*, locations(name)').eq('id', boatId).single();
-  if (!boat) return;
-  document.getElementById('boat-detail-title').textContent = boat.name;
-  const typeLabel = boatTypeLabel(boat.type);
-  document.getElementById('boat-detail-summary').textContent = [
-    typeLabel,
-    boat.capacity ? boat.capacity + ' ' + t('cal_guests_suffix') : null,
-    boat.length_ft ? boat.length_ft + ' ft' : null,
-    boat.locations?.name || null
-  ].filter(Boolean).join(' · ');
+  // The boat card above (now always showing the selected boat) already
+  // covers name/type/capacity/length/location — no need to fetch and
+  // duplicate that in a second plain-text header here.
 
   document.getElementById('form-add-boat-engine').style.display = 'none';
   document.getElementById('form-add-boat-hours').style.display = 'none';
