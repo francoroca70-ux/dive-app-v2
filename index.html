@@ -10159,8 +10159,23 @@ async function loadGearInventory() {
     return;
   }
   noLocEl.style.display = 'none';
-  const { data: categories } = await sb.from('gear_categories').select('*').eq('org_id', currentOrgId).eq('active', true).order('label');
-  if (!categories || !categories.length) {
+  let { data: categories } = await sb.from('gear_categories').select('*').eq('org_id', currentOrgId).eq('active', true).order('label');
+  categories = categories || [];
+
+  // Backfill: a category can be turned on in Settings → Operation Categories
+  // without its starter gear ever having been seeded here (e.g. categories
+  // chosen before this seeding step existed). Catch those up silently instead
+  // of leaving them permanently invisible in Inventory.
+  const activeOpCats = await loadActiveCategories();
+  const existingKeys = categories.map(c => c.key);
+  const missingKeys = activeOpCats.filter(k => !existingKeys.includes(k) && CATEGORY_STARTER_GEAR[k]);
+  if (missingKeys.length) {
+    for (const key of missingKeys) await seedGearForCategory(key);
+    const { data: refreshed } = await sb.from('gear_categories').select('*').eq('org_id', currentOrgId).eq('active', true).order('label');
+    categories = refreshed || categories;
+  }
+
+  if (!categories.length) {
     catEl.innerHTML = `<p style="color:var(--muted);">${t('gr_no_categories_active')}</p>`;
     return;
   }
@@ -10177,8 +10192,11 @@ function renderGearInventory(categories, items, stockMap) {
   el.innerHTML = categories.map(cat => {
     const catItems = items.filter(i => i.category_id === cat.id);
     if (!catItems.length) return '';
+    const catBodyId = `inv-cat-body-${cat.id}`;
     const itemsHtml = catItems.map(item => {
       const sizes = item.track_sizes ? item.gear_item_sizes.slice().sort((a,b) => a.sort_order - b.sort_order).map(s => s.size_label) : ['total'];
+      const totalAvailable = sizes.reduce((sum, sz) => sum + ((stockMap[item.id + '|' + sz] || {}).available_count || 0), 0);
+      const itemBodyId = `inv-item-body-${item.id}`;
       let stockHtml = '';
       if (item.track_sizes) {
         stockHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">' +
@@ -10214,16 +10232,22 @@ function renderGearInventory(categories, items, stockMap) {
         </div>`;
       }
       return `<div class="gear-item-row">
-        <div class="gear-item-header">
-          <span class="gear-item-name">${trGearItemName(item.name)}</span>
-          <span class="gear-item-unit">${trGearUnit(item.unit)}</span>
+        <div class="gear-item-header expandable-title" onclick="toggleExpandSection('${itemBodyId}')">
+          <span>
+            <span class="gear-item-name">${trGearItemName(item.name)}</span>
+            <span class="gear-item-unit">${trGearUnit(item.unit)}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:8px;">
+            <span class="expand-count">${t('gr_available_label')} ${totalAvailable}</span>
+            <span id="${itemBodyId}-arrow" class="expand-caret">▸</span>
+          </span>
         </div>
-        ${stockHtml}
+        <div id="${itemBodyId}" style="display:none;">${stockHtml}</div>
       </div>`;
     }).join('');
     return `<div class="inline-form" style="margin-bottom:20px;">
-      <div class="card-section-title">${CATEGORY_LABELS[cat.key] || cat.label}</div>
-      ${itemsHtml}
+      ${collapsibleSectionTitleHtml(CATEGORY_LABELS[cat.key] || cat.label, catBodyId, catItems.length)}
+      <div id="${catBodyId}" style="display:none;">${itemsHtml}</div>
     </div>`;
   }).join('');
 }
