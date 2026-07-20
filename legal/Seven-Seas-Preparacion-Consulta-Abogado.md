@@ -25,6 +25,8 @@ Esto no es asesoramiento legal — es una lista de trabajo de lo que hay que pla
 4. Si un centro de buceo se salta un paso obligatorio del checklist, o un miembro de la tripulación usa mal la app, y algo sale mal — ¿eso traslada toda la responsabilidad al centro de buceo, o hay algún escenario donde Seven Seas sigue expuesta?
 5. Se recolectan datos de menores (fecha de nacimiento, firma del tutor) para las exenciones — ¿eso genera algún requisito adicional de consentimiento o responsabilidad más allá de lo que ya está construido?
 6. ¿Cuál es el lenguaje correcto de "tal cual, sin garantía" para una herramienta donde un error, una demora de sincronización o una caída del servicio podría en teoría afectar un flujo de trabajo real de seguridad crítica (por ejemplo, el modo offline sincronizando una exención después de que la inmersión ya ocurrió)?
+7. Las herramientas de exenciones ya establecidas (Smartwaiver, WaiverForever) manejan la responsabilidad civil así: (a) proveen la herramienta de firma electrónica/registro sin garantizar que una exención en particular sea válida en una jurisdicción dada, y (b) ponen la responsabilidad por el contenido legal real de la exención y el cumplimiento de la ley local en cabeza del operador (el centro de buceo), no del proveedor del software. ¿Se pueden estructurar los Términos de Servicio de Seven Seas de la misma manera, y es realmente el modelo correcto dado que el producto también toca el registro de seguridad de buceo específicamente, no solo exenciones de responsabilidad genéricas?
+8. Estamos planeando permitir que los huéspedes firmen las exenciones de forma remota mediante un link en el email de confirmación de la reserva, antes de siquiera llegar al centro de buceo — no solo en persona con un miembro del staff presente como testigo. ¿Sacar ese testigo presencial del staff cambia el peso probatorio o la validez de la firma, en Argentina o en otros países?
 
 ## 3. Cobro de Suscripciones, Renovación Automática y Cumplimiento en Pagos
 
@@ -64,19 +66,10 @@ Esto no es asesoramiento legal — es una lista de trabajo de lo que hay que pla
 1. Dado que el producto toca el registro real de seguridad de buceo, ¿debería tener un seguro de responsabilidad profesional / errores y omisiones, y por separado un seguro de responsabilidad cibernética, antes de que esto esté completamente en vivo para clientes pagos?
 2. ¿Existe una configuración de seguro mínima viable apropiada para un fundador solo en etapa pre-ingresos/ingresos iniciales, con un punto claro (facturación, cantidad de clientes o alcance geográfico) a partir del cual conviene ampliar la cobertura?
 
-## Documentos que Deberían Salir de Esta Consulta
+## 7. Marcado para Más Adelante — Mapas 3D de Sitios de Buceo (no es parte de esta consulta)
 
-La lista de papeles que esta consulta debería producir o aprobar — aproximadamente en el orden en que necesitarían existir antes de que los centros de buceo empiecen a pagar.
+*No hace falta para esta reunión — lo marco ahora para tenerlo en el radar de cara a una consulta de seguimiento una vez que esta función esté más cerca de construirse, no antes.*
 
-1. **Términos de Servicio** — la base legal — uso aceptable, términos de suscripción/facturación, limitación de responsabilidad, terminación por falta de pago, resolución de disputas/ley aplicable
-2. **Política de Privacidad** — qué datos se recolectan, para qué, con quién se comparten (subencargados), cuánto tiempo se conservan, y cómo alguien puede solicitar sus datos
-3. **Lenguaje de descargo de responsabilidad de exenciones** — texto específico que aclare que Seven Seas es una herramienta de registro, no una autoridad certificadora o de seguridad — probablemente se integra a los Términos de Servicio pero vale la pena redactarlo de forma deliberada
-4. **Términos de Suscripción y Facturación** — aviso de renovación automática, conversión de prueba gratuita a pago, política de reembolso/cancelación, período de gracia antes de cortar el acceso — puede ser una sección de los Términos de Servicio o un documento aparte
-5. **Política de Cookies** — para la página de aterrizaje/marketing
-6. **Plantilla de Acuerdo de Tratamiento de Datos (DPA)** — para tener lista si/cuando un cliente centro de buceo la pida
-7. **Registro de marca** — nombre y logo "Seven Seas" — ya en mi lista de tareas, confirmar acá el alcance (solo Argentina vs. internacional)
-8. **Registro de copyright de software en DNDA** — ya en mi lista de tareas — confirmar que cubre lo que pensamos que cubre
-
----
-
-*No es asesoramiento legal — es una lista de preparación para aprovechar al máximo el tiempo pago con un abogado. Armada a partir del estado actual de la app Seven Seas a julio de 2026.*
+Seven Seas podría eventualmente dejar que los centros de buceo suban video/fotos crudas de un sitio de buceo, que se procesan en un modelo 3D descargable disponible para otros centros/usuarios. Cuando eso esté más cerca de construirse, vale la pena repasar:
+1. Qué licencia necesita Seven Seas de parte de un centro que contribuye para poder alojar, procesar y redistribuir su video/modelo a otros usuarios.
+2. Si los naufragios tienen protecciones legales especiales en algunas jurisdiccion

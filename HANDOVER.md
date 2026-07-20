@@ -152,6 +152,41 @@ the real source of truth. Full detail/reasoning for each item lives in
 - [ ] Optional, not launch-blocking: wire push notifications + camera access
   through Capacitor plugins
 
+## Waiver flow overhaul — remote signing (inspired by Smartwaiver / WaiverForever)
+
+*From the 2026-07-20 brainstorm session. Goal: a guest can sign before they ever
+reach the shop, same as Smartwaiver/WaiverForever's link/QR-based flow, instead
+of only signing in person on a staff-held tablet like today.*
+
+**Not built yet:**
+- [ ] Secure public-facing signing page — reachable without any Seven Seas
+  login, unlike every other page in the app today
+- [ ] Per-booking/per-participant signing token — cryptographically random,
+  not guessable, ideally expiring after the trip date or after use
+- [ ] Extend the `send-booking-confirmation` edge function to generate and
+  include the signing link(s) in the confirmation email (currently that email
+  has zero waiver content — checked 2026-07-20)
+- [ ] Public signing page needs to reuse the existing waiver template/medical
+  questionnaire/guardian-minor logic, just authenticated by token instead of
+  `sb.auth.getUser()` like the in-app flow
+- [ ] A Supabase RLS policy (or edge function using the service role) that
+  safely lets a token-holder insert into `waivers` without a real staff login
+- [ ] Staff-side status per booking: not sent / sent, awaiting / signed
+  remotely / signed in person — so staff know before the guest walks in
+- [ ] Keep in-person signing at check-in working as a fallback for anyone who
+  didn't complete it remotely — don't remove the existing tablet flow
+- [ ] QR code per trip/booking as a second way into the same public signing
+  page (Smartwaiver/WaiverForever pattern) — useful in person as backup if the
+  email didn't arrive or was missed
+- [ ] Capture timestamp + IP address on remote signatures for a stronger
+  audit trail, matching what established waiver tools already do
+- [ ] Confirm existing PDF export covers remotely-signed waivers the same way
+  it covers in-person ones
+- [ ] Bilingual EN/ES on the public signing page (standing rule — same as
+  everywhere else in the app)
+- [ ] Optional, nice-to-have: reminder email if still unsigned close to the
+  trip date
+
 ## Recently completed (most recent first)
 
 - Inventory (Gear & Equipment): fixed gear categories silently missing despite
@@ -192,36 +227,4 @@ the real source of truth. Full detail/reasoning for each item lives in
   Trip Types so this class of bug is fixable without a code change going forward
   (`toggleGearFieldsPanel()`)
 - Deployed `send-staff-invite` Supabase Edge Function (was coded but never actually
-  deployed — that was the real root cause of invite emails silently failing, separate
-  from the Resend sandbox-sender issue below)
-- Copy-invite-link button + autocomplete/password-manager-popup suppression on the
-  invite form
-- Translated the Add Guest form and all equipment/gear dropdowns to Spanish
-- "Remember me" login option + blocked bookings dated/timed in the past
-- Lawyer consultation prep doc (`legal/`, EN + ES) covering entity structure,
-  liability/waivers, subscription billing compliance, data privacy, IP, insurance
-- Recommended Stripe Billing (not Paddle/Lemon Squeezy) for shop subscriptions —
-  reasoning in chat history; task #148 tracks the actual build, blocked on Fran
-  creating a Stripe account first
-- Translated all seed gear item names + size labels (55 items)
-- Editable/deactivatable Operation Categories in Settings
-- Fixed booking price bug: multi-day and private-boat trips weren't multiplying
-  price by day count; introduced `currentTripPricingQty()` / `currentTripPriceLabel()`
-  shared helpers used consistently across booking modal, calendar, guest tabs
-- Built `landing.html`: real logo, bilingual EN/ES, functional CTAs, no emoji,
-  About/FAQ/Contact sections, favicon
-- Mobile nav fixes (sign-out button visibility), branded wordmark logo in nav
-
-## Open items worth knowing about
-
-- Task #118 (lawyer meeting — ToS/Privacy/waiver e-signature/business entity) is
-  blocking real Privacy/Terms page content and full waiver-legal testing.
-- Task #146 (Seven Seas Google Workspace account) is blocked on Fran; unblocks the
-  Resend fix above once done.
-- A round of end-to-end tests hasn't been run yet: crew invite flow, multi-day +
-  crew-hire booking, offline mode, EN/ES toggle across all pages.
-- **If Fran launches with a free-tier privacy policy generator** (e.g. Termly's
-  free plan — GDPR-only coverage, no edits after creation, watermarked, quarterly
-  scans only), remember this is a placeholder: upgrade to a paid plan or a
-  lawyer-drafted policy once the business has real revenue/legal budget. Add this
-  as a recurring reminder, not a one-time task.
+  deployed — that was the real root

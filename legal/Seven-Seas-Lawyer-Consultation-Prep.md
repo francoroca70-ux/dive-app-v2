@@ -25,6 +25,8 @@ This isn't legal advice — it's a working list of what to bring up with your la
 4. If a shop skips a required checklist step, or a crew member misuses the app, and something goes wrong — does that shift liability entirely to the shop, or is there a scenario where Seven Seas is still exposed?
 5. Minors' data (date of birth, guardian signature) is collected for waiver purposes — does that trigger any extra consent or liability requirements beyond what's already built?
 6. What's the right "as-is, no warranty" language for a tool where a bug, sync delay, or downtime could theoretically affect a real safety-critical workflow (e.g. offline mode syncing a waiver after the dive already happened)?
+7. Established waiver tools (Smartwaiver, WaiverForever) handle liability by (a) providing the e-signature/record-keeping tool without guaranteeing any specific waiver's enforceability in a given jurisdiction, and (b) putting responsibility for the waiver's actual legal content and local-law compliance on the operator (the dive shop), not the software provider. Can Seven Seas' Terms of Service be structured the same way, and is that actually the right model given the product also touches dive-safety record-keeping specifically, not just generic liability waivers?
+8. We're planning to let guests sign waivers remotely via a link in the booking confirmation email, before they ever arrive at the shop — not only in person with a staff member present as a witness. Does removing that in-person staff witness change the evidentiary weight or enforceability of the signature, in Argentina or elsewhere?
 
 ## 3. Subscription Billing, Auto-Renewal & Payment Compliance
 
@@ -64,19 +66,10 @@ This isn't legal advice — it's a working list of what to bring up with your la
 1. Given the product touches real dive-safety record-keeping, should I be carrying professional liability / errors & omissions insurance, and separately cyber liability insurance, before this is fully live to paying customers?
 2. Is there a minimum-viable insurance setup appropriate for a pre-revenue/early-revenue solo founder, with a clear point (revenue, customer count, or geography) at which it's worth upgrading coverage?
 
-## Documents to Come Out of This With
+## 7. Flagged for Later — 3D Dive Site Maps (not part of this consultation)
 
-The checklist of paperwork this consultation should produce or greenlight — roughly in the order they'd need to exist before shops start paying.
+*Not needed for this meeting — flagging now so it's on the radar for a follow-up consultation once this feature is actually built, not before.*
 
-1. **Terms of Service** — the legal foundation — acceptable use, subscription/billing terms, limitation of liability, termination for non-payment, dispute resolution/governing law
-2. **Privacy Policy** — what data is collected, why, who it's shared with (sub-processors), how long it's kept, and how someone can request their data
-3. **Waiver/Liability Disclaimer language** — specific wording clarifying Seven Seas is a record-keeping tool, not a certifying or safety authority — likely folds into the ToS but worth drafting deliberately
-4. **Subscription & Billing Terms** — auto-renewal disclosure, trial-to-paid conversion, refund/cancellation policy, grace period before access is cut — may be a section of the ToS or standalone
-5. **Cookie Policy** — for the landing/marketing site
-6. **Data Processing Agreement (DPA) template** — to have ready if/when a shop customer asks for one
-7. **Trademark filing** — "Seven Seas" name + logo — already on my task list, scope (Argentina-only vs. international) to be confirmed here
-8. **DNDA software copyright registration** — already on my task list — confirm this covers what we think it covers
-
----
-
-*Not legal advice — a prep list to make the most of paid time with a lawyer. Built from the current state of the Seven Seas app as of July 2026.*
+Seven Seas may eventually let dive shops submit raw video/photo footage of a dive site, which gets processed into a downloadable 3D model available to other shops/users. When that's closer to being built, worth revisiting:
+1. What license Seven Seas needs from a contributing shop to host, process, and redistribute their footage/model to other users.
+2. Whether shipwrecks carry
