@@ -10992,6 +10992,11 @@ async function renderActiveCategories() {
 
 function confirmAddCategory(category) {
   const zone = document.getElementById('category-confirm-zone');
+  const picker = document.getElementById('add-category-picker');
+  // Hide the other "+ category" chips while this one's confirmation is open —
+  // otherwise it reads as one combined prompt for all of them, when clicking
+  // "Add category" only ever adds the single category just clicked.
+  picker.querySelectorAll('.category-chip').forEach(chip => chip.style.display = 'none');
   const starterCount = (CATEGORY_STARTER_TYPES[category] || []).length;
   const msg = t(starterCount !== 1 ? 'set_adding_category_confirm_plural' : 'set_adding_category_confirm_singular').replace('{cat}', CATEGORY_LABELS[category]).replace('{n}', starterCount);
   zone.innerHTML = `
@@ -10999,9 +11004,14 @@ function confirmAddCategory(category) {
       ${msg}
       <div class="confirm-banner-actions">
         <button class="btn-confirm-yes" onclick="doAddCategory('${category}')">${t('set_add_category_btn')}</button>
-        <button class="btn-confirm-no" onclick="document.getElementById('category-confirm-zone').innerHTML=''">${t('tt_cancel')}</button>
+        <button class="btn-confirm-no" onclick="cancelAddCategory()">${t('tt_cancel')}</button>
       </div>
     </div>`;
+}
+
+function cancelAddCategory() {
+  document.getElementById('category-confirm-zone').innerHTML = '';
+  document.querySelectorAll('#add-category-picker .category-chip').forEach(chip => chip.style.display = '');
 }
 
 async function doAddCategory(category) {
