@@ -99,7 +99,12 @@ function logs directly, so this check has to come from Fran's own Supabase dashb
 3. Confirm `RESEND_API_KEY` is set too (should already be, since booking confirmations
    were built earlier — but worth double-checking in the same dashboard screen).
 
-That one secret change fixes both invite emails and booking-confirmation emails at once.
+That one secret change fixes invite emails, booking-confirmation emails, and the new
+per-guest waiver reminder emails (`send-waiver-reminder`, added 2026-07-20) all at once.
+Fran confirmed 2026-07-20 the Workspace domain setup is next on his list ("tomorrow, no
+problem") — not started yet as of this writing, so none of these three email flows will
+actually deliver to real recipients until it's done. Not blocking further building —
+Fran wants to keep going and wire the domain up when he gets to it.
 
 ## Business context (see also: Claude.ai project knowledge, "DIve app" project)
 
@@ -196,22 +201,47 @@ anon, given the medical/health data involved.
 - In-person signing at check-in is untouched — remote signing is additive,
   not a replacement
 
+**Added 2026-07-20 (same day, follow-up round): per-guest reminder + QR code**
+- Each missing guest in the "Remote Signing" card now gets its own "Remind"
+  button (not just a group-level Copy Link) — since Seven Seas still only has
+  one `contact_email` per booking group, this emails the group's contact but
+  names the specific guest who's still missing a waiver, so staff can nudge
+  one person without re-sending the whole group's confirmation
+- New edge function `supabase/functions/send-waiver-reminder/index.ts` —
+  same Resend pattern as `send-booking-confirmation`, sends the targeted
+  reminder email. Blocked on the same Resend/domain fix above until real
+  delivery works.
+- "Show QR" button next to Copy Link opens a modal with a scannable QR code
+  for the same shared group link (`modal-waiver-qr` in index.html) — a second,
+  no-typing way in for check-in desks/boat printouts. Rendered client-side via
+  the `qrcode` CDN library (`cdn.jsdelivr.net/npm/qrcode@1.5.3`), no new table
+  or edge function needed.
+- Explicit decision from Fran (2026-07-20): individual per-participant links
+  are NOT wanted — the shared group-link model stays as-is.
+
 **Still needs the SQL migration run before it works —** see
 `outputs/remote-waiver-signing-migration.sql` shared in chat 2026-07-20; run
-it in Supabase → SQL Editor before this can go live.
+it in Supabase → SQL Editor before this can go live. Also needs the new
+`send-waiver-reminder` edge function deployed via the Supabase dashboard
+(same manual-paste process as the other two functions) before the Remind
+button will work.
 
 **Known limitations / fast-follows, not blocking:**
-- No targeted "remind just this one guest" button yet — Copy Link resends the
-  same group link manually; a proper reminder email is a fast-follow
-- No QR code yet (second way into the same link, useful in person as backup)
 - Individual per-participant links (WaiverForever also supports this) would
-  need the booking flow to capture an email per guest first — not today's data
-  model
+  need the booking flow to capture an email per guest first — explicitly
+  decided against this for now (see above), not today's data model anyway
 - PDF export wasn't specifically re-tested against remotely-signed waivers,
   though it reads from the same `waivers` table so should already work
+- QR code and reminder email are both still blocked on real Resend/domain
+  delivery for the reminder path specifically; the QR path doesn't need email
+  at all and works today
 
 ## Recently completed (most recent first)
 
+- Per-guest waiver "Remind" button + QR code as a second way into the shared
+  group signing link (see "Waiver flow overhaul" section above) — new
+  `send-waiver-reminder` edge function (not yet deployed), no new table for
+  the QR code (client-side render only)
 - Remote waiver signing built end-to-end (see the section above for full
   detail): new `waiver_signing_links` table + audit columns on `waivers`, new
   `waiver-remote-signing` edge function, public no-login signing page in

@@ -18,6 +18,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1343,6 +1344,20 @@ body { background: var(--navy); color: var(--text); }
         </div>
       </div>
       <div id="gear-detail-maintenance-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-waiver-qr" style="display:none;z-index:300;">
+  <div class="modal-box" style="max-width:340px;text-align:center;">
+    <div class="modal-header">
+      <h2 data-i18n="wv_qr_title">Waiver signing QR code</h2>
+      <button class="modal-close" id="modal-waiver-qr-close">&times;</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <p id="wv-qr-guest-name" style="font-size:0.85rem;color:var(--muted);"></p>
+      <canvas id="wv-qr-canvas"></canvas>
+      <p style="font-size:0.8rem;color:var(--muted);" data-i18n="wv_qr_caption">Scan with a phone camera to open the signing link — no app or login needed.</p>
     </div>
   </div>
 </div>
@@ -3250,6 +3265,8 @@ const TRANSLATIONS = {
     wv_remote_status_desc: "Everyone in a booking group shares one link — see who's signed before arriving and who's still missing something.",
     wv_copy_link: 'Copy link', wv_copy_link_manual: 'Copy this waiver signing link:',
     wv_group_missing_prefix: 'Missing:', wv_group_all_signed: 'All guests signed',
+    wv_show_qr: 'Show QR', wv_qr_title: 'Waiver signing QR code', wv_qr_caption: 'Scan with a phone camera to open the signing link — no app or login needed.',
+    wv_remind_btn: 'Remind', wv_remind_sent: 'Sent', wv_remind_failed: 'Failed — try again', wv_remind_no_email: 'No contact email on file',
     wv_unknown_guest: 'Unknown guest', wv_paper: 'Paper', wv_digital: 'Digital',
     wv_no_waivers_week: 'No waivers signed this week.', wv_no_waivers_date: 'No waivers signed on this date.',
     wv_no_waivers_found: 'No waivers found for',
@@ -3679,6 +3696,8 @@ const TRANSLATIONS = {
     wv_remote_status_desc: 'Todos en un grupo de reserva comparten un mismo link — mirá quién firmó antes de llegar y a quién le falta algo.',
     wv_copy_link: 'Copiar link', wv_copy_link_manual: 'Copia este link de firma de exención:',
     wv_group_missing_prefix: 'Falta:', wv_group_all_signed: 'Todos los huéspedes firmaron',
+    wv_show_qr: 'Mostrar QR', wv_qr_title: 'Código QR para firmar la exención', wv_qr_caption: 'Escaneá con la cámara del celular para abrir el link de firma — no hace falta app ni iniciar sesión.',
+    wv_remind_btn: 'Recordar', wv_remind_sent: 'Enviado', wv_remind_failed: 'Falló — intentá de nuevo', wv_remind_no_email: 'No hay email de contacto registrado',
     wv_unknown_guest: 'Huésped desconocido', wv_paper: 'Papel', wv_digital: 'Digital',
     wv_no_waivers_week: 'No hay exenciones firmadas esta semana.', wv_no_waivers_date: 'No hay exenciones firmadas en esta fecha.',
     wv_no_waivers_found: 'No se encontraron exenciones para',
@@ -7869,6 +7888,8 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
     (participantsByGroup[p.group_id] = participantsByGroup[p.group_id] || []).push(p);
   });
 
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
   listEl.innerHTML = groups.map(g => {
     const trip = tripById[g.trip_id];
     const groupParticipants = participantsByGroup[g.id] || [];
@@ -7877,12 +7898,19 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
       const requiredTypes = (trip && requiredWaiversByTripTypeId[trip.trip_type_id]) || ['liability'];
       const signedTypes = signedTypesByParticipant[p.id] || new Set();
       const missingTypes = requiredTypes.filter(type => !signedTypes.has(type));
-      if (missingTypes.length) missing.push({ name: p.full_name, types: missingTypes.map(mt => waiverTypeLabels[mt] || mt).join(', ') });
+      if (missingTypes.length) missing.push({ id: p.id, name: p.full_name, types: missingTypes.map(mt => waiverTypeLabels[mt] || mt).join(', ') });
     });
 
     const tripLabel = trip ? `${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
     const statusHtml = missing.length
-      ? `<div style="font-size:0.8rem;color:var(--error);margin-top:4px;">${t('wv_group_missing_prefix')} ${missing.map(m => `${m.name} (${m.types})`).join(' · ')}</div>`
+      ? `<div style="margin-top:4px;">
+          <div style="font-size:0.8rem;color:var(--error);">${t('wv_group_missing_prefix')}</div>
+          ${missing.map(m => `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:0.8rem;color:var(--error);padding:2px 0;">
+              <span>${escapeHtml(m.name)} (${escapeHtml(m.types)})</span>
+              <button class="btn-icon" style="font-size:0.72rem;padding:2px 8px;flex-shrink:0;" onclick="remindWaiverGuest('${g.id}','${m.id}', this)">${t('wv_remind_btn')}</button>
+            </div>`).join('')}
+        </div>`
       : `<div style="font-size:0.8rem;color:var(--success);margin-top:4px;">${t('wv_group_all_signed')}</div>`;
 
     return `<div class="participant-row" style="flex-direction:column;align-items:stretch;">
@@ -7891,7 +7919,10 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
           <div class="p-name">${g.contact_name || t('wv_unknown_guest')}</div>
           <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}</div>
         </div>
-        <button class="btn-icon" style="font-size:0.78rem;" onclick="copyWaiverSigningLink('${g.id}', this)">${t('wv_copy_link')}</button>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn-icon" style="font-size:0.78rem;" onclick="showWaiverQrCode('${g.id}', this)">${t('wv_show_qr')}</button>
+          <button class="btn-icon" style="font-size:0.78rem;" onclick="copyWaiverSigningLink('${g.id}', this)">${t('wv_copy_link')}</button>
+        </div>
       </div>
       ${statusHtml}
     </div>`;
@@ -7920,6 +7951,73 @@ async function copyWaiverSigningLink(groupId, btnEl) {
     btnEl.textContent = originalLabel;
   }
   setTimeout(() => { btnEl.textContent = originalLabel; }, 2000);
+}
+
+// Second way into the same shared group link — handy printed at check-in or
+// on a boat/dock where copy-pasting a URL isn't practical. Renders client-side
+// via the qrcode CDN library (loaded alongside supabase-js in <head>), so no
+// new edge function or table is needed.
+async function showWaiverQrCode(groupId, btnEl) {
+  const originalLabel = btnEl.textContent;
+  btnEl.textContent = '...';
+  let url;
+  try {
+    const { data: existing } = await sb.from('waiver_signing_links').select('token').eq('group_id', groupId).maybeSingle();
+    url = existing?.token ? buildWaiverSigningUrl(existing.token) : await getOrCreateWaiverSigningLink(groupId, null);
+  } catch (e) {
+    url = null;
+  }
+  btnEl.textContent = originalLabel;
+  if (!url) return;
+
+  document.getElementById('wv-qr-guest-name').textContent = url;
+  const canvas = document.getElementById('wv-qr-canvas');
+  try {
+    await QRCode.toCanvas(canvas, url, { width: 220, margin: 1 });
+  } catch (e) {
+    console.warn('QR code render failed:', e);
+    return;
+  }
+  document.getElementById('modal-waiver-qr').style.display = 'flex';
+}
+document.getElementById('modal-waiver-qr-close').addEventListener('click', () => {
+  document.getElementById('modal-waiver-qr').style.display = 'none';
+});
+
+// One-tap nudge for a single guest still missing a waiver. Seven Seas only
+// has one contact_email per booking group (not per guest, matching the
+// Smartwaiver/WaiverForever shared-link model), so this still emails the
+// group's contact — it just calls out the specific guest's name so staff
+// don't have to re-send the whole group's confirmation to chase one person.
+async function remindWaiverGuest(groupId, participantId, btnEl) {
+  const originalLabel = btnEl.textContent;
+  btnEl.textContent = '...';
+  btnEl.disabled = true;
+  try {
+    const { data: group } = await sb.from('trip_groups').select('contact_name, contact_email').eq('id', groupId).single();
+    if (!group || !group.contact_email) {
+      btnEl.textContent = t('wv_remind_no_email');
+      setTimeout(() => { btnEl.textContent = originalLabel; btnEl.disabled = false; }, 2500);
+      return;
+    }
+    const { data: participant } = await sb.from('participants').select('full_name').eq('id', participantId).single();
+    const { data: org } = await sb.from('organizations').select('name').eq('id', currentOrgId).single();
+    const waiverLink = await getOrCreateWaiverSigningLink(groupId, null);
+    const { error } = await sb.functions.invoke('send-waiver-reminder', {
+      body: {
+        to: group.contact_email,
+        guestName: participant?.full_name || 'Guest',
+        groupContactName: group.contact_name || '',
+        orgName: org?.name || 'Your dive operator',
+        waiverLink: waiverLink || null
+      }
+    });
+    btnEl.textContent = error ? t('wv_remind_failed') : t('wv_remind_sent');
+  } catch (e) {
+    console.warn('Waiver reminder failed:', e);
+    btnEl.textContent = t('wv_remind_failed');
+  }
+  setTimeout(() => { btnEl.textContent = originalLabel; btnEl.disabled = false; }, 2500);
 }
 
 function waiverLogRowHtml(w) {
