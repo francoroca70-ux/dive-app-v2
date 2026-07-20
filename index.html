@@ -1730,11 +1730,8 @@ body { background: var(--navy); color: var(--text); }
         <div class="sf-group" style="margin-bottom:20px;">
           <label class="sf-label" data-i18n="fleet_manage_boat">Manage boat</label>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <div style="position:relative;flex:1 1 200px;max-width:240px;">
-              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.85rem;color:var(--muted);pointer-events:none;">🔍</span>
-              <input class="sf-input" type="text" id="fleet-boat-search" style="padding-left:28px;margin-bottom:0;" placeholder="Search boats..." data-i18n-placeholder="fleet_search_boat_placeholder">
-            </div>
             <select class="sf-input" id="fleet-manage-boat-select" style="flex:1 1 200px;max-width:260px;margin-bottom:0;"><option value="" data-i18n="fleet_choose_boat">— Choose a boat —</option></select>
+            <input class="sf-input" type="text" id="fleet-boat-search" style="flex:1 1 200px;max-width:240px;margin-bottom:0;" placeholder="Search boats..." data-i18n-placeholder="fleet_search_boat_placeholder">
             <button class="btn-cancel" id="btn-fleet-select-all" style="padding:9px 16px;white-space:nowrap;" data-i18n="fleet_select_all">Select all</button>
           </div>
         </div>
@@ -9587,20 +9584,17 @@ function renderEngineCard(e, logs, maintLogs) {
   return `
   <div class="card" id="engine-card-${e.id}">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-      <h2 style="margin:0;">${e.name}</h2>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+        <h2 style="margin:0;">${e.name}</h2>
         <p style="margin:0;">${t('fleet_total_hours')}: ${hoursVal}h</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <button class="btn-cancel" style="color:var(--error);border-color:rgba(229,62,62,0.3);" onclick="resetEngine('${e.id}')">${t('fleet_service_completed')}</button>
         <button class="btn-icon" onclick="openEngineMaintenanceFromCard('${e.id}')">${t('fleet_log_maintenance')}</button>
         <button class="btn-icon danger" onclick="deleteEngine('${e.id}')">${t('fleet_remove')}</button>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap;">
-      <div class="cl-progress-bar" style="flex:1 1 50%;max-width:50%;min-width:120px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
-      <p style="font-size:0.8rem;color:${warn?'var(--error)':'var(--muted)'};margin:0;flex:1;min-width:160px;">
-        ${hoursVal}h / ${e.service_interval_hours}h ${t('fleet_since_service')} — ${remaining}h ${t('fleet_remaining')}
-      </p>
-    </div>
+    <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
     ${collapsibleSectionTitleHtml(t('fleet_recent_logs'), logsMoreId, logs.length)}
     ${logs.length ? `<div id="${logsMoreId}" style="display:none;">${logs.map(engineLogRowHtml).join('')}</div>` : `<p style="font-size:0.8rem;color:var(--muted)">${t('fleet_no_logs')}</p>`}
     ${collapsibleSectionTitleHtml(t('fleet_maintenance'), maintMoreId, maintLogs.length)}
