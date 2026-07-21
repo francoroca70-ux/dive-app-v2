@@ -143,21 +143,36 @@ the real source of truth. Full detail/reasoning for each item lives in
   sevenseasops.com Workspace email is live (see below) — swap it in once that
   exists.
 
+**Done (2026-07-21):**
+- [x] Bought `sevenseasops.com`, set up Google Workspace (Business Starter,
+  monthly billing, not annual) — one paid mailbox `franco@sevenseasops.com`,
+  plus free aliases `contact@sevenseasops.com` and `bookings@sevenseasops.com`
+  on that same mailbox (no extra seats needed). `bookings@` matches the
+  address already referenced as `RESEND_FROM_EMAIL` in the edge functions.
+  Updated `landing.html` and `privacy.html` — every `francoroca70@gmail.com`
+  reference swapped to `contact@sevenseasops.com` (mailto links, footer,
+  privacy policy contact section).
+
+**Still to do on this:**
+- [ ] Verify `sevenseasops.com` in Resend, then set `RESEND_FROM_EMAIL` to
+  `bookings@sevenseasops.com` as a Supabase Edge Function secret — this is the
+  fix for the staff-invite/booking-confirmation/waiver-reminder email delivery
+  issue described earlier in this file. Fran's action (Resend dashboard +
+  Supabase dashboard, not something Claude can do remotely).
+- [ ] Update each org's contact email in Settings (currently whatever each demo
+  org has saved) to use `contact@sevenseasops.com` where it makes sense.
+
 **In progress (started 2026-07-21):**
-- [ ] Buy `sevenseasops.com` + set up Google Workspace — one paid mailbox,
-  plus free aliases (`contact@`, `bookings@`) pointing to it rather than
-  paying for multiple seats. `bookings@` matches the address already
-  referenced as `RESEND_FROM_EMAIL` in the edge functions; once verified in
-  Resend this also fixes the staff-invite/booking-confirmation/waiver-reminder
-  email delivery issue described above. Fran's action.
 - [ ] Register Google Play Developer account ($25 one-time, ~2 business days
   identity verification) — Fran started this today.
 - [ ] Recruit 12+ testers for the closed test — Fran starting to reach out
   today so the 14-day clock can start the moment the Play account clears.
   Reminder for next session: the 14 days are literal consecutive calendar
-  days, not variable — invite more than 12 if possible since some people drop
-  off, and the count needs to stay at ≥12 opted-in (invited-but-not-installed
-  doesn't count) for the full 14 days.
+  days, not variable, and testers need to actually open/use the app somewhat
+  regularly (not just install it once) — Google flags testers as invalid if
+  they "did not actively test the app daily." Invite more than 12 if possible
+  since some people drop off, and the count needs to stay at ≥12 actively
+  opted-in for the full 14 days.
 
 **Not done yet:**
 - [ ] Register Apple Developer Program ($99/yr, individual enrollment is
