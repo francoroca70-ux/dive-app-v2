@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Seven Seas — Privacy Policy</title>
+<link href="assets/icons/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="assets/icons/favicon-16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="assets/icons/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:    #0a1628;
+  --blue:    #1a6b8a;
+  --teal:    #4fc3f7;
+  --teal2:   #29b6f6;
+  --foam:    #f0f8ff;
+  --text:    #1a2a3a;
+  --muted:   #5a7a8a;
+  --white:   #ffffff;
+  --border:  #e2e8ee;
+  --radius:  10px;
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; color: var(--text); background: var(--white); line-height: 1.65; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 5%; height: 64px;
+  background: rgba(10,22,40,0.96);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.nav-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.nav-logo-badge {
+  width: 26px; height: 26px; border-radius: 6px; background: var(--white);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 3px;
+}
+.nav-logo-badge img { width: 100%; height: 100%; object-fit: contain; }
+.nav-logo-wordmark { height: 13px; width: auto; display: block; }
+.lang-switcher { display: flex; gap: 6px; }
+.lang-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.7);
+  padding: 5px 10px; border-radius: 5px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600;
+}
+.lang-btn.active { background: var(--teal); color: var(--navy); border-color: var(--teal); }
+.lang-btn:hover:not(.active) { color: var(--white); }
+
+main { max-width: 720px; margin: 0 auto; padding: 56px 24px 80px; }
+h1 { font-size: 1.9rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.effective-date { color: var(--muted); font-size: 0.9rem; margin-bottom: 36px; }
+h2 { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin: 32px 0 10px; }
+p, li { font-size: 0.95rem; color: var(--text); margin-bottom: 10px; }
+ul { padding-left: 20px; margin-bottom: 10px; }
+a { color: var(--blue); }
+.placeholder-note {
+  background: var(--foam); border: 1px solid var(--border); border-left: 4px solid var(--teal2);
+  border-radius: var(--radius); padding: 14px 18px; margin-bottom: 36px; font-size: 0.88rem; color: var(--muted);
+}
+footer {
+  text-align: center; padding: 24px; font-size: 0.8rem; color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+main [data-lang-block] { display: none; }
+main [data-lang-block].active { display: block; }
+footer [data-lang-block] { display: none; }
+footer [data-lang-block].active { display: inline; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="landing.html">
+    <div class="nav-logo-badge"><img alt="Seven Seas" src="assets/icons/icon-192.png"/></div>
+    <img alt="Seven Seas" class="nav-logo-wordmark" src="assets/logo-wordmark-white.png"/>
+  </a>
+  <span class="lang-switcher">
+    <button class="lang-btn" data-lang="en" onclick="setPrivacyLang('en')">EN</button>
+    <button class="lang-btn" data-lang="es" onclick="setPrivacyLang('es')">ES</button>
+  </span>
+</nav>
+
+<main>
+
+<div data-lang-block="en" class="active">
+  <h1>Privacy Policy</h1>
+  <p class="effective-date">Effective date: July 21, 2026</p>
+
+  <div class="placeholder-note">This policy is being reviewed by a lawyer as Seven Seas grows. It accurately describes what data is collected today and how it's used, but it isn't a substitute for professional legal advice on every jurisdiction Seven Seas may operate in. Questions? Contact us below.</div>
+
+  <h2>1. Who we are</h2>
+  <p>Seven Seas ("Seven Seas", "we", "us") provides operations software for dive shops, charter operators, surf schools, and liveaboards. This policy explains what information we collect through the Seven Seas app and website, why we collect it, and how it's handled.</p>
+
+  <h2>2. Information we collect</h2>
+  <p>Seven Seas is used by dive shops and charter operators ("shops") to manage their own operations. Most information in the app is entered by shop staff, not collected directly from the public.</p>
+  <ul>
+    <li><strong>Account information:</strong> name, email address, and role for each staff member a shop invites.</li>
+    <li><strong>Organization information:</strong> shop name, contact details, and operational settings.</li>
+    <li><strong>Guest and participant information:</strong> full name, date of birth, and contact details (phone/email) entered by shop staff for bookings, trips, and waivers.</li>
+    <li><strong>Waiver and medical questionnaire data:</strong> signatures, printed names, signed dates, and medical screening answers where a shop's waiver requires them, plus guardian information for participants under 18.</li>
+    <li><strong>Remote waiver signing metadata:</strong> when a guest signs a waiver themselves via a link (not on a staff device), we record the IP address and browser/device information as part of the signature's audit trail, the same way a paper waiver's signing context would be recorded.</li>
+    <li><strong>Operational data:</strong> trip schedules, crew rosters, gear/equipment inventory, and task records a shop creates to run its business.</li>
+    <li><strong>Technical data:</strong> basic authentication tokens and a saved language preference (English/Spanish), stored on your device.</li>
+  </ul>
+  <p>We do not use advertising trackers, and we do not sell personal information to third parties.</p>
+
+  <h2>3. How we use this information</h2>
+  <ul>
+    <li>To operate the core functionality shops use: bookings, trip manifests, waivers, crew scheduling, and equipment tracking.</li>
+    <li>To send transactional emails on a shop's behalf, such as booking confirmations and waiver reminders.</li>
+    <li>To maintain a signed waiver's evidentiary record for the shop's own liability protection.</li>
+    <li>To provide customer support when a shop or user contacts us.</li>
+  </ul>
+
+  <h2>4. Who we share information with</h2>
+  <p>We use trusted service providers to run Seven Seas, who only process data on our behalf:</p>
+  <ul>
+    <li><strong>Supabase</strong> — hosts our database, authentication, and file storage.</li>
+    <li><strong>Resend</strong> — sends transactional emails (booking confirmations, waiver links, reminders).</li>
+    <li><strong>Render</strong> — hosts the Seven Seas web application.</li>
+  </ul>
+  <p>We do not sell, rent, or share personal information with advertisers or data brokers. A shop's guest and waiver data belongs to that shop; we act as their data processor, not as an independent owner of that data.</p>
+
+  <h2>5. Data retention</h2>
+  <p>Waiver and booking records are generally retained for as long as a shop's account is active, since dive operators often need this data for liability and insurance purposes well after a trip. A shop can request deletion of specific records or its full account by contacting us.</p>
+
+  <h2>6. Information about minors</h2>
+  <p>Some waivers include information about participants under 18, provided by a parent/guardian or by shop staff on the guardian's behalf as part of arranging a booking — never collected directly from a child. This data is treated with the same protections as all other waiver data.</p>
+
+  <h2>7. Your rights</h2>
+  <p>Depending on where you're located, you may have rights to access, correct, or delete your personal information. Shop staff and guests can contact the shop they booked with, or reach us directly using the contact details below, to make a request.</p>
+
+  <h2>8. Data security</h2>
+  <p>We use industry-standard safeguards, including encrypted connections (HTTPS) and access controls that limit each shop's staff to their own organization's data.</p>
+
+  <h2>9. Cookies and local storage</h2>
+  <p>Seven Seas uses local device storage to keep you signed in and to remember your language preference. We do not use advertising or cross-site tracking cookies.</p>
+
+  <h2>10. International data</h2>
+  <p>Seven Seas is used by operators in multiple countries. Data may be processed in a different country than where you're located, using the service providers listed in Section 4.</p>
+
+  <h2>11. Changes to this policy</h2>
+  <p>We'll update the effective date above if this policy changes, and post the updated version at this same URL.</p>
+
+  <h2>12. Contact us</h2>
+  <p>Questions about this policy or a request regarding your data: <a href="mailto:francoroca70@gmail.com">francoroca70@gmail.com</a></p>
+</div>
+
+<div data-lang-block="es">
+  <h1>Política de Privacidad</h1>
+  <p class="effective-date">Fecha de vigencia: 21 de julio de 2026</p>
+
+  <div class="placeholder-note">Esta política está siendo revisada por un abogado a medida que Seven Seas crece. Describe con precisión qué datos se recopilan hoy y cómo se usan, pero no reemplaza el asesoramiento legal profesional para cada jurisdicción en la que Seven Seas pueda operar. ¿Preguntas? Contactanos abajo.</div>
+
+  <h2>1. Quiénes somos</h2>
+  <p>Seven Seas ("Seven Seas", "nosotros") ofrece software de operaciones para centros de buceo, operadores de charters, escuelas de surf y liveaboards. Esta política explica qué información recopilamos a través de la app y el sitio web de Seven Seas, por qué la recopilamos y cómo se maneja.</p>
+
+  <h2>2. Información que recopilamos</h2>
+  <p>Seven Seas es utilizado por centros de buceo y operadores de charters ("comercios") para gestionar sus propias operaciones. La mayoría de la información en la app es ingresada por el personal del comercio, no recopilada directamente del público.</p>
+  <ul>
+    <li><strong>Información de cuenta:</strong> nombre, correo electrónico y rol de cada miembro del personal que un comercio invita.</li>
+    <li><strong>Información de la organización:</strong> nombre del comercio, datos de contacto y configuraciones operativas.</li>
+    <li><strong>Información de huéspedes y participantes:</strong> nombre completo, fecha de nacimiento y datos de contacto (teléfono/email) ingresados por el personal para reservas, salidas y exenciones.</li>
+    <li><strong>Datos de exenciones y cuestionarios médicos:</strong> firmas, nombres impresos, fechas de firma y respuestas de control médico cuando la exención de un comercio lo requiere, además de datos del tutor para participantes menores de 18 años.</li>
+    <li><strong>Metadatos de firma remota de exenciones:</strong> cuando un huésped firma una exención por su cuenta mediante un link (no en un dispositivo del personal), registramos la dirección IP y la información del navegador/dispositivo como parte del registro de auditoría de la firma, de la misma manera que se registraría el contexto de una firma en papel.</li>
+    <li><strong>Datos operativos:</strong> horarios de salidas, dotación de tripulación, inventario de equipos y tareas que un comercio crea para gestionar su negocio.</li>
+    <li><strong>Datos técnicos:</strong> tokens básicos de autenticación y una preferencia de idioma guardada (inglés/español), almacenados en tu dispositivo.</li>
+  </ul>
+  <p>No usamos rastreadores publicitarios y no vendemos información personal a terceros.</p>
+
+  <h2>3. Cómo usamos esta información</h2>
+  <ul>
+    <li>Para operar la funcionalidad principal que usan los comercios: reservas, manifiestos de salida, exenciones, horarios de tripulación y control de equipos.</li>
+    <li>Para enviar correos transaccionales en nombre de un comercio, como confirmaciones de reserva y recordatorios de exención.</li>
+    <li>Para mantener el registro probatorio de una exención firmada, para la propia protección de responsabilidad civil del comercio.</li>
+    <li>Para brindar soporte cuando un comercio o usuario nos contacta.</li>
+  </ul>
+
+  <h2>4. Con quién compartimos información</h2>
+  <p>Usamos proveedores de servicios de confianza para operar Seven Seas, que solo procesan datos en nuestro nombre:</p>
+  <ul>
+    <li><strong>Supabase</strong> — aloja nuestra base de datos, autenticación y almacenamiento de archivos.</li>
+    <li><strong>Resend</strong> — envía correos transaccionales (confirmaciones de reserva, links de exención, recordatorios).</li>
+    <li><strong>Render</strong> — aloja la aplicación web de Seven Seas.</li>
+  </ul>
+  <p>No vendemos, alquilamos ni compartimos información personal con anunciantes o corredores de datos. Los datos de huéspedes y exenciones de un comercio le pertenecen a ese comercio; actuamos como su procesador de datos, no como dueños independientes de esos datos.</p>
+
+  <h2>5. Retención de datos</h2>
+  <p>Los registros de exenciones y reservas generalmente se conservan mientras la cuenta de un comercio esté activa, ya que los operadores de buceo suelen necesitar estos datos por motivos de responsabilidad civil y seguros mucho después de una salida. Un comercio puede solicitar la eliminación de registros específicos o de toda su cuenta contactándonos.</p>
+
+  <h2>6. Información sobre menores</h2>
+  <p>Algunas exenciones incluyen información de participantes menores de 18 años, provista por un padre/tutor o por el personal del comercio en nombre del tutor como parte de organizar una reserva — nunca recopilada directamente de un menor. Estos datos reciben las mismas protecciones que el resto de los datos de exenciones.</p>
+
+  <h2>7. Tus derechos</h2>
+  <p>Según dónde te encuentres, podés tener derechos para acceder, corregir o eliminar tu información personal. El personal del comercio y los huéspedes pueden contactar al comercio con el que reservaron, o contactarnos directamente con los datos abajo, para hacer una solicitud.</p>
+
+  <h2>8. Seguridad de los datos</h2>
+  <p>Usamos medidas de seguridad estándar de la industria, incluyendo conexiones encriptadas (HTTPS) y controles de acceso que limitan al personal de cada comercio a los datos de su propia organización.</p>
+
+  <h2>9. Cookies y almacenamiento local</h2>
+  <p>Seven Seas usa almacenamiento local del dispositivo para mantener tu sesión iniciada y recordar tu preferencia de idioma. No usamos cookies de publicidad ni de rastreo entre sitios.</p>
+
+  <h2>10. Datos internacionales</h2>
+  <p>Seven Seas es utilizado por operadores en varios países. Los datos pueden procesarse en un país distinto al tuyo, usando los proveedores de servicios listados en la Sección 4.</p>
+
+  <h2>11. Cambios a esta política</h2>
+  <p>Actualizaremos la fecha de vigencia de arriba si esta política cambia, y publicaremos la versión actualizada en esta misma URL.</p>
+
+  <h2>12. Contacto</h2>
+  <p>Preguntas sobre esta política o una solicitud sobre tus datos: <a href="mailto:francoroca70@gmail.com">francoroca70@gmail.com</a></p>
+</div>
+
+</main>
+
+<footer>© 2026 Seven Seas. <span data-lang-block="en" class="active">All rights reserved.</span><span data-lang-block="es">Todos los derechos reservados.</span></footer>
+
+<script>
+function setPrivacyLang(lang) {
+  document.querySelectorAll('[data-lang-block]').forEach(el => {
+    el.classList.toggle('active', el.dataset.langBlock === lang);
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  localStorage.setItem('sevenSeasPrivacyLang', lang);
+}
+(function () {
+  const saved = localStorage.getItem('sevenSeasPrivacyLang');
+  const browserLang = (navigator.language || 'en').slice(0, 2);
+  setPrivacyLang(saved || (browserLang === 'es' ? 'es' : 'en'));
+})();
+</script>
+
+</body>
+</html>

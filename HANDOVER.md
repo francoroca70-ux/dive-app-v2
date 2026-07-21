@@ -129,22 +129,44 @@ the real source of truth. Full detail/reasoning for each item lives in
   `.apk` and an iOS Simulator build automatically on every push (`MOBILE.md`)
 - [x] Researched privacy policy generators (Termly, iubenda, TermsFeed,
   FreePrivacyPolicy.com) — see chat history 2026-07-20
+- [x] Privacy policy page written and hosted — `privacy.html`, bilingual EN/ES
+  (same toggle pattern as `landing.html`), linked from the landing page footer.
+  Content accurately describes Seven Seas' real data practices (Supabase,
+  Resend, Render, waiver/medical data, minors' data via guardian, no ad
+  trackers, no data sales). Explicitly flagged in-page as a placeholder Fran
+  will swap for the lawyer-reviewed version once that's ready — confirmed with
+  Fran 2026-07-21 this is fine for Google Play's review specifically (Google
+  checks the URL works and the content matches actual practices, not who
+  drafted it or what tier of generator was used). **Still needs Fran to push
+  to GitHub before it's actually live** — built 2026-07-21, not yet deployed.
+  Contact email in the page is still the personal Gmail until the
+  sevenseasops.com Workspace email is live (see below) — swap it in once that
+  exists.
+
+**In progress (started 2026-07-21):**
+- [ ] Buy `sevenseasops.com` + set up Google Workspace — one paid mailbox,
+  plus free aliases (`contact@`, `bookings@`) pointing to it rather than
+  paying for multiple seats. `bookings@` matches the address already
+  referenced as `RESEND_FROM_EMAIL` in the edge functions; once verified in
+  Resend this also fixes the staff-invite/booking-confirmation/waiver-reminder
+  email delivery issue described above. Fran's action.
+- [ ] Register Google Play Developer account ($25 one-time, ~2 business days
+  identity verification) — Fran started this today.
+- [ ] Recruit 12+ testers for the closed test — Fran starting to reach out
+  today so the 14-day clock can start the moment the Play account clears.
+  Reminder for next session: the 14 days are literal consecutive calendar
+  days, not variable — invite more than 12 if possible since some people drop
+  off, and the count needs to stay at ≥12 opted-in (invited-but-not-installed
+  doesn't count) for the full 14 days.
 
 **Not done yet:**
-- [ ] Register Google Play Developer account ($25 one-time, ~2 business days
-  identity verification) — Fran's action, needs a payment method
 - [ ] Register Apple Developer Program ($99/yr, individual enrollment is
-  fastest) — Fran's action, needs a payment method
-- [ ] Start Google Play's mandatory 14-day closed test with 12 testers — the
-  single biggest fixed delay in the whole launch, start the moment the Play
-  account exists using the Android debug APK CI already produces
+  fastest) — Fran's action, waiting on his card to work again (a few days out
+  as of 2026-07-21)
 - [ ] Set up a cloud Mac build service (Capgo Build / Capawesome Cloud /
   Codemagic) once the Apple account + certificates exist, to get a real signed
   iOS build (CI only produces a Simulator build today, not installable on a
   real iPhone)
-- [ ] Finish and publish a real, hosted privacy policy page — pick a generator
-  (or a lawyer-drafted one) and get it live at a real URL; both stores reject
-  submissions without one
 - [ ] Terms of Service page — blocked on the lawyer meeting (see Task #118 below)
 - [ ] Store listing assets: screenshots per device size, short + long
   description, age rating questionnaire, category (Business/Productivity)
@@ -318,8 +340,27 @@ button will work.
   Resend fix above once done.
 - A round of end-to-end tests hasn't been run yet: crew invite flow, multi-day +
   crew-hire booking, offline mode, EN/ES toggle across all pages.
-- **If Fran launches with a free-tier privacy policy generator** (e.g. Termly's
-  free plan — GDPR-only coverage, no edits after creation, watermarked, quarterly
-  scans only), remember this is a placeholder: upgrade to a paid plan or a
-  lawyer-drafted policy once the business has real revenue/legal budget. Add this
+- **Test the remote waiver signing feature end-to-end before Friday (2026-07-24)** —
+  needs the SQL migration run + both edge functions (`waiver-remote-signing`,
+  `send-waiver-reminder`) deployed first (see "Waiver flow overhaul" section
+  above). Test: the `?waiver=TOKEN` public link opens and lists participants,
+  signing a waiver actually saves to `waivers` with `signed_via: 'remote'`,
+  the staff Waivers page shows correct signed/missing status per group, the
+  Show QR button renders a scannable code, and the Remind button (email
+  delivery won't actually arrive until the Resend/domain fix is done — but the
+  button should still hit the edge function without erroring).
+- **Privacy policy is Claude-drafted, not a third-party generator or lawyer-reviewed**
+  (decided 2026-07-21 — built directly as `privacy.html` instead of using
+  Termly/FreePrivacyPolicy.com). Accurate for what Seven Seas actually collects
+  today, fine for Google Play's review requirements, but remember this is a
+  placeholder: swap in the lawyer-reviewed version once that's ready. Add this
   as a recurring reminder, not a one-time task.
+- **Two bugs mentioned by Fran 2026-07-21 that aren't in this file yet:**
+  "Fix calendar showing wrong shop's trips after switching" (no repro details
+  captured yet — need to ask Fran what he's seeing, this may or may not be the
+  same issue as the already-fixed "shop-switch jumps to Home" / "multi-day
+  trips undercounted" bugs) and the crew day-rate RLS save failure (already
+  described in the "Recently completed" list below despite not actually being
+  fixed — still waiting on Fran's Supabase RLS policy screenshot). Neither
+  should be considered resolved just because they dropped off the in-chat task
+  widget.
