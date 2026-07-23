@@ -35,6 +35,12 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    # GitHub Actions doesn't allow the `secrets` context inside a step's `if:`
+    # condition directly (that caused runs #16/#17 to fail with "Invalid workflow
+    # file" / 0 jobs run) -- the standard workaround is to copy the secret into a
+    # job-level env var first, then check that env var in `if:` instead.
+    env:
+      RELEASE_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -75,10 +81,10 @@ jobs:
       # until Fran adds them.
       - name: Decode release keystore
         id: keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.RELEASE_KEYSTORE_B64 != '' }}
         working-directory: android/app
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release-upload-key.jks
+          echo "$RELEASE_KEYSTORE_B64" | base64 -d > release-upload-key.jks
           echo "has_keystore=true" >> "$GITHUB_OUTPUT"
 
       - name: Build signed release AAB

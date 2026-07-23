@@ -7,6 +7,48 @@ Last updated: 2026-07-20
 
 ---
 
+## Session opener — roadmap visualization
+
+**Standing instruction, added 2026-07-23 at Fran's request: at the start of every
+new session, before doing anything else, render a visual roadmap** (via the
+`mcp__visualize__show_widget` tool, a compact milestone-card layout — see the
+`seven_seas_launch_roadmap` widget built 2026-07-23 for the exact style/format
+to reuse) covering the 9 milestones below, each with its done/in-progress/not-
+started status. Two milestones (Android release readiness, Billing system)
+get their sub-steps shown as a small checklist inside the card, the same way
+the in-chat task list groups related tasks — this is what Fran asked for:
+"small bundles of things... with sub-sections within this milestone."
+
+Keep the milestone list below in sync with the task list (`TaskList`/task IDs)
+each time status changes, so the next session's roadmap render is accurate
+without needing to re-derive it from scratch.
+
+**Milestones (update status here as things complete):**
+1. Legal & policy pages — Done (privacy.html, terms.html, refund.html)
+2. Domain & business setup — Done (Workspace, sevenseasops.com, Play Developer account)
+3. Self-serve shop signup — Done
+4. Core app stabilization — In progress (crew invites #32, waiver/calendar/checklist/report testing+polish — gates billing work)
+5. Android release readiness — In progress:
+   - Signed AAB pipeline — Done (pending a CI fix push, see Recently completed)
+   - Add GitHub secrets (#35) — Pending
+   - Screenshots (#36) — Pending
+   - Store description (#37) — Pending
+   - Content rating questionnaire (#38) — Pending
+   - Data Safety form (#39) — Pending
+   - 14-day/12-tester closed test (#23) — In progress
+6. iOS release readiness — Not started (#22 Apple Developer account, #24 cloud Mac build, #28 demo org, #29 IAP stance)
+7. Submit both apps for review (#30) — Not started, blocked on 5 & 6
+8. Billing system — Paddle, deferred (#34) — Not started, 6 phases:
+   1. Paddle account + identity/domain verification (Refund Policy done, rest pending)
+   2. Create 3 Paddle products (Starter/Growth/Pro)
+   3. Trial-expiry tracking (`trial_ends_at`)
+   4. Checkout wired to lapsed-trial prompt (Option B — no card at signup)
+   5. `paddle-webhook` edge function + subscription columns
+   6. In-app gating + Paddle's hosted customer portal link
+9. Optional polish — Not started (#31 push notifications/camera, #41 payout bank account w/ accountant)
+
+---
+
 ## What this is
 
 Seven Seas — a single-file web app for dive shops, charter boats, and yacht operators
