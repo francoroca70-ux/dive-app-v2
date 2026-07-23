@@ -16,10 +16,32 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Release signing reads from environment variables rather than a committed
+    // file, so the real keystore/passwords never touch git. CI decodes the
+    // keystore from a GitHub Actions secret into RELEASE_STORE_FILE at build
+    // time (see .github/workflows/mobile-build.yml) -- locally, these would
+    // just need to be exported in your shell before running ./gradlew.
+    signingConfigs {
+        release {
+            def storeFilePath = System.getenv("RELEASE_STORE_FILE")
+            if (storeFilePath) {
+                storeFile file(storeFilePath)
+                storePassword System.getenv("RELEASE_STORE_PASSWORD")
+                keyAlias System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Only apply real signing when the env vars are actually present (CI
+            // release job) -- keeps `assembleDebug`/local builds without the
+            // secrets from failing.
+            if (System.getenv("RELEASE_STORE_FILE")) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

@@ -28,7 +28,7 @@ A full native rewrite (Swift/Kotlin or React Native/Flutter) would mean maintain
 - Add a **web app manifest** (name, icons, theme color, start URL) and a **service worker** for offline caching — this makes the PWA installable and is also a prerequisite for the Capacitor wrap.
 - Generate app icons at all required sizes (iOS needs a full set from 20px to 1024px; Android needs adaptive icons). Claude can generate these from your existing trident logo.
 - Review offline behavior — you've already built a real offline queue system for checklists/waivers/tasks, which is a big head start most apps don't have going in.
-- Decide on push notifications now if you want them (task list assignments, day-off approvals) — this needs to be wired in at the Capacitor stage, not bolted on later.
+- Decide on push notifications now if you want them (task list assignments, day-off approvals) — this needs to be wired in at the Capacitor stage, not bolted on later. confirm, build it when is requierd. 
 
 **No waiting time here — this is just build work.**
 

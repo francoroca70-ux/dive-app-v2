@@ -8,7 +8,12 @@ name: Mobile app builds (Android + iOS)
 # whenever android/, ios/, index.html, or the Capacitor config changes on main.
 #
 # What this produces right now:
-#   - Android: an installable debug .apk (sideload it on a phone to test)
+#   - Android: an installable debug .apk (sideload it on a phone to test), plus
+#     a signed release .aab ready to upload to Play Console -- ONLY once the
+#     four ANDROID_KEYSTORE_BASE64 / RELEASE_STORE_PASSWORD / RELEASE_KEY_ALIAS /
+#     RELEASE_KEY_PASSWORD secrets are added under Settings -> Secrets and
+#     variables -> Actions. Until those exist, the release-signing step is
+#     skipped automatically and only the debug APK is produced (nothing breaks).
 #   - iOS: an unsigned build for the iPhone Simulator (proves the app compiles;
 #     an actual installable/testable iPhone build needs an Apple Developer account
 #     and signing certificates, which isn't set up yet — see App-Store-Roadmap.md)
@@ -63,6 +68,35 @@ jobs:
         with:
           name: seven-seas-android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      # Play Console requires a signed .aab, not a debug .apk, for every track
+      # including closed testing. This step only runs once the four secrets
+      # below exist in the repo -- so it's a no-op (and doesn't fail the build)
+      # until Fran adds them.
+      - name: Decode release keystore
+        id: keystore
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        working-directory: android/app
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release-upload-key.jks
+          echo "has_keystore=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build signed release AAB
+        if: steps.keystore.outputs.has_keystore == 'true'
+        working-directory: android
+        env:
+          RELEASE_STORE_FILE: app/release-upload-key.jks
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          ./gradlew bundleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        if: steps.keystore.outputs.has_keystore == 'true'
+        with:
+          name: seven-seas-android-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
 
   build-ios:
     runs-on: macos-latest

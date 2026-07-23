@@ -195,6 +195,33 @@ the real source of truth. Full detail/reasoning for each item lives in
   since some people drop off, and the count needs to stay at ≥12 actively
   opted-in for the full 14 days.
 
+**Done (2026-07-23) — Android release signing:**
+- [x] Important finding: Play Console requires a signed **.aab** (Android App
+  Bundle) for every track, including closed testing — the debug `.apk` the CI
+  pipeline was producing cannot be uploaded at all, to any track. This wasn't
+  previously flagged as a blocker and needed fixing before Fran can even start
+  the 12-tester closed test, not just before final production submission.
+- [x] Generated an upload keystore (`sevenseas-upload` alias, RSA 2048, valid
+  10,000 days) and gave Fran the keystore file + passwords directly in chat
+  (not committed to git, obviously). Added a `signingConfigs.release` block to
+  `android/app/build.gradle` that reads from environment variables
+  (`RELEASE_STORE_FILE`/`RELEASE_STORE_PASSWORD`/`RELEASE_KEY_ALIAS`/
+  `RELEASE_KEY_PASSWORD`) so the real secrets never touch the repo, and it's a
+  no-op (doesn't break `assembleDebug`) when those env vars aren't set.
+- [x] Updated `.github/workflows/mobile-build.yml`: still builds the debug APK
+  as before, and additionally builds a signed release `.aab` via
+  `bundleRelease` — but only when four GitHub Actions secrets exist
+  (`ANDROID_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`,
+  `RELEASE_KEY_PASSWORD`). Skips cleanly (no failure) until Fran adds them.
+- [ ] **Fran still needs to**: add those four secrets in GitHub repo Settings
+  → Secrets and variables → Actions (values were shared directly in chat,
+  same-session — not repeating sensitive values in this file), then re-run
+  the workflow to get the actual `.aab` artifact to upload to Play Console.
+  Consider opting into Google Play App Signing on first upload (Google's
+  recommended default — lets Google manage the real signing key with a
+  recovery path if the upload key is ever lost, instead of a single
+  self-managed key with no recovery if lost).
+
 **Not done yet:**
 - [ ] Register Apple Developer Program ($99/yr, individual enrollment is
   fastest) — Fran's action, waiting on his card to work again (a few days out
@@ -204,7 +231,10 @@ the real source of truth. Full detail/reasoning for each item lives in
   iOS build (CI only produces a Simulator build today, not installable on a
   real iPhone)
 - [ ] Store listing assets: screenshots per device size, short + long
-  description, age rating questionnaire, category (Business/Productivity)
+  description, age rating questionnaire, category (Business/Productivity),
+  Data Safety form. **Confirmed 2026-07-23 this is required before closed
+  testing can start, not just before production** — same urgency as the
+  signed AAB above.
 - [ ] Permanent demo/sample org (sample trips, guests, waivers) for the Apple
   reviewer to click through without real customer data
 - [ ] Decide/confirm in-app purchase stance — keeping all billing external
@@ -295,6 +325,53 @@ button will work.
 
 ## Recently completed (most recent first)
 
+- **Billing direction updated (2026-07-23): Paddle, not Stripe** — supersedes
+  the earlier "Recommended Stripe Billing" note further down this list. Fran's
+  priority is avoiding tax registration across every country a customer might
+  be in, which is exactly what a Merchant of Record (Paddle or Lemon Squeezy)
+  is for and Stripe's plain billing product is not (Stripe alone leaves Fran
+  as the merchant of record, responsible for his own tax filings per country).
+  Went with Paddle over Lemon Squeezy given Lemon Squeezy's uncertain
+  long-term future as a standalone product since Stripe acquired it in 2024.
+  Confirmed for Fran: neither platform requires a registered business entity
+  for an individual/sole-trader account, and MoR only concerns who's the
+  legal seller of the *subscription transaction* — Paddle/Lemon Squeezy have
+  zero ownership or control over the Seven Seas codebase, company, or app
+  itself. The real (normal, not unique-to-MoR) risk is standard payment-
+  processor risk: they can hold/freeze payouts over fraud or chargeback
+  concerns, or terminate the merchant account for policy violations — which
+  would mean migrating to a different billing provider, not losing the app.
+  **Trial-model decision: Option B** — keep today's "no card required" 14-day
+  trial exactly as marketed (Fran wants to build trust before asking for
+  payment details), and only bring Paddle's checkout in when a trial ends,
+  rather than collecting a card at signup (the more common/simpler SaaS
+  pattern, rejected here on purpose). This does add a bit more surface area
+  than Option A (need trial-expiry tracking + an in-app "add payment" prompt,
+  decoupled from the landing-page signup flow) — noted as a real tradeoff,
+  not hidden. **Explicitly deferred, not being built yet** — Fran wants
+  calendar, waivers, checklists, and reports tested/debugged/polished first.
+  Full phase plan for when it's picked back up:
+  1. Fran creates Paddle account, completes identity verification (individual/
+     sole-trader — no business entity needed) and domain verification for
+     `sevenseasops.com` (DNS TXT record, ~10 day window to complete it).
+     Website must have ToS/Privacy/**Refund Policy** (not built yet — small
+     addition needed, same pattern as `terms.html`/`privacy.html`) and clear
+     contact info (already have all but Refund Policy).
+  2. Create 3 Paddle products/prices matching Starter/Growth/Pro ($49/$89/$149).
+  3. Trial-expiry tracking: `trial_ends_at` column on `organizations`, set at
+     signup/org-creation time (14 days out), in-app check + banner when it lapses.
+  4. Paddle.js checkout wired into that lapsed-trial prompt (not the landing
+     page — landing page keeps its current no-card mailto flow for now).
+  5. New `paddle-webhook` edge function (subscription created/renewed/
+     canceled/payment-failed events) + new `organizations` columns
+     (`paddle_customer_id`, `subscription_status`, `plan_tier`).
+  6. In-app subscription-status gating + a "Manage billing" link in Settings
+     pointing to Paddle's own hosted customer portal (don't build a custom one).
+  - Payout bank account: recommended Fran use a account separate from his
+    day-to-day personal spending (doesn't have to be a formal registered
+    business account yet) for clean bookkeeping and an easier transition once
+    an entity exists — general practical guidance, not formal financial advice,
+    worth confirming with the lawyer/accountant alongside the entity decision.
 - Self-serve signup flow built (2026-07-23) — new `screen-signup` (name,
   email, password, confirm password), wired to the previously-dead "Request
   access" link on the login screen (it had zero click handler before this).
