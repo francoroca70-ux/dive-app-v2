@@ -1448,6 +1448,42 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<!-- ─── SIGN UP SCREEN (new operation, no invite) ─── -->
+<div id="screen-signup" class="screen">
+  <div class="login-box">
+    <div class="lang-switcher" style="justify-content:center;margin-bottom:12px;">
+      <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+      <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+    </div>
+    <div class="login-logo-badge"><img src="assets/logo-full.png" alt="Seven Seas"></div>
+    <div class="login-tagline" data-i18n="login_tagline">Water operations platform</div>
+    <div class="login-card">
+      <button class="back-link" id="btn-back-signup-to-login" data-i18n="signup_back">← Back to sign in</button>
+      <h2 data-i18n="signup_title">Create your shop's account</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;" data-i18n="signup_subtitle">Start your 14-day free trial — no card required. You'll set up your shop's details next.</p>
+      <div class="form-group">
+        <label data-i18n="signup_name_label">Your full name</label>
+        <input type="text" id="signup-name" placeholder="Jane Smith" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label data-i18n="login_email_label">Email</label>
+        <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label data-i18n="login_password_label">Password</label>
+        <input type="password" id="signup-password" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label data-i18n="signup_confirm_password_label">Confirm password</label>
+        <input type="password" id="signup-password-confirm" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <button class="btn-login" id="btn-signup" data-i18n="signup_create_btn">Create account</button>
+      <div class="login-error" id="signup-error"></div>
+      <div class="success-msg" id="signup-success" data-i18n="signup_check_email">Account created — check your email to confirm, then sign in.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ─── FORGOT PASSWORD SCREEN ─── -->
 <div id="screen-forgot" class="screen">
   <div class="login-box">
@@ -2886,6 +2922,14 @@ const TRANSLATIONS = {
     login_email_label: 'Email', login_password_label: 'Password', login_signin_btn: 'Sign in', login_remember_me: 'Remember me',
     login_forgot_link: 'Forgot password?', login_new_operation: 'New operation?', login_request_access: 'Request access',
 
+    signup_back: '← Back to sign in', signup_title: "Create your shop's account",
+    signup_subtitle: "Start your 14-day free trial — no card required. You'll set up your shop's details next.",
+    signup_name_label: 'Your full name', signup_confirm_password_label: 'Confirm password',
+    signup_create_btn: 'Create account', signup_creating: 'Creating account...',
+    signup_check_email: 'Account created — check your email to confirm, then sign in.',
+    signup_err_required: 'Fill in every field.', signup_err_password_length: 'Password must be at least 6 characters.',
+    signup_err_password_match: "Passwords don't match.",
+
     forgot_title: 'Reset your password', forgot_back: '← Back to sign in', forgot_email_label: 'Email',
     forgot_send_btn: 'Send reset link', forgot_success: 'Reset link sent — check your inbox.',
 
@@ -3316,6 +3360,14 @@ const TRANSLATIONS = {
     login_title: 'Inicia sesión en tu cuenta', login_tagline: 'Plataforma de operaciones marítimas',
     login_email_label: 'Correo electrónico', login_password_label: 'Contraseña', login_signin_btn: 'Iniciar sesión', login_remember_me: 'Recordarme',
     login_forgot_link: '¿Olvidaste tu contraseña?', login_new_operation: '¿Nueva operación?', login_request_access: 'Solicitar acceso',
+
+    signup_back: '← Volver a iniciar sesión', signup_title: 'Creá la cuenta de tu comercio',
+    signup_subtitle: 'Empezá tu prueba gratis de 14 días — sin tarjeta. Después vas a configurar los datos de tu comercio.',
+    signup_name_label: 'Tu nombre completo', signup_confirm_password_label: 'Confirmar contraseña',
+    signup_create_btn: 'Crear cuenta', signup_creating: 'Creando cuenta...',
+    signup_check_email: 'Cuenta creada — revisá tu correo para confirmar, y después iniciá sesión.',
+    signup_err_required: 'Completá todos los campos.', signup_err_password_length: 'La contraseña debe tener al menos 6 caracteres.',
+    signup_err_password_match: 'Las contraseñas no coinciden.',
 
     forgot_title: 'Restablece tu contraseña', forgot_back: '← Volver a iniciar sesión', forgot_email_label: 'Correo electrónico',
     forgot_send_btn: 'Enviar enlace', forgot_success: 'Enlace enviado — revisa tu correo.',
@@ -5214,6 +5266,91 @@ document.getElementById('btn-back-login').addEventListener('click', () => {
   showScreen('login');
 });
 
+// ─── SIGN UP (new operation, no invite) ───
+// Only creates the login itself. Once signed in, a user with no matching
+// `staff` row automatically sees the existing "Set up your operation" banner
+// on Home -> Settings, which already has the full create-org form (name,
+// country, currency, categories) and seeds trip types/gear/checklists for
+// whichever categories they pick. So this handler's only job is step one:
+// get them a real Supabase Auth account, then route in exactly like a normal
+// login.
+document.getElementById('link-signup').addEventListener('click', e => {
+  e.preventDefault();
+  showScreen('signup');
+});
+
+document.getElementById('btn-back-signup-to-login').addEventListener('click', () => {
+  showScreen('login');
+});
+
+document.getElementById('btn-signup').addEventListener('click', async () => {
+  const fullName = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const passwordConfirm = document.getElementById('signup-password-confirm').value;
+  const btn = document.getElementById('btn-signup');
+  const errorEl = document.getElementById('signup-error');
+  const successEl = document.getElementById('signup-success');
+
+  errorEl.classList.remove('visible');
+  successEl.classList.remove('visible');
+
+  if (!fullName || !email || !password || !passwordConfirm) {
+    errorEl.textContent = t('signup_err_required') || 'Fill in every field.';
+    errorEl.classList.add('visible');
+    return;
+  }
+  if (password.length < 6) {
+    errorEl.textContent = t('signup_err_password_length') || 'Password must be at least 6 characters.';
+    errorEl.classList.add('visible');
+    return;
+  }
+  if (password !== passwordConfirm) {
+    errorEl.textContent = t('signup_err_password_match') || 'Passwords don\'t match.';
+    errorEl.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = t('signup_creating') || 'Creating account...';
+
+  const { data, error } = await sb.auth.signUp({ email, password });
+
+  if (error) {
+    errorEl.textContent = error.message;
+    errorEl.classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = t('signup_create_btn');
+    return;
+  }
+
+  // Carry the name over so it's pre-filled once they reach the create-org
+  // form in Settings, instead of asking them to type it twice.
+  localStorage.setItem('ss_pending_owner_name', fullName);
+
+  if (data.session) {
+    // Email confirmation is off (or was auto-confirmed) -- go straight in,
+    // same as a normal login.
+    initHome(data.user);
+    await loadSettings(data.user);
+    const ownerNameInput = document.getElementById('owner-full-name');
+    if (ownerNameInput && !ownerNameInput.value) ownerNameInput.value = fullName;
+    loadFleet();
+    loadCrew();
+    renderCalendar();
+    showScreen('app');
+  } else {
+    // This Supabase project requires email confirmation -- can't log them in
+    // until they click the link Supabase just emailed them.
+    btn.style.display = 'none';
+    successEl.classList.add('visible');
+  }
+});
+
+document.getElementById('signup-password-confirm').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-signup').click();
+});
+
 document.getElementById('btn-reset').addEventListener('click', async () => {
   const email = document.getElementById('forgot-email').value.trim();
   const btn = document.getElementById('btn-reset');
@@ -5322,6 +5459,16 @@ async function loadSettings(user) {
     }
     await renderActiveCategories();
     await renderTripTypesList();
+  } else {
+    // No staff row yet -- brand new signup (possibly via the email-confirm
+    // path, so this may run on a later login, not just right after signup).
+    // Pre-fill the name they already typed once, so they don't retype it.
+    const pendingName = localStorage.getItem('ss_pending_owner_name');
+    if (pendingName) {
+      const ownerNameInput = document.getElementById('owner-full-name');
+      if (ownerNameInput && !ownerNameInput.value) ownerNameInput.value = pendingName;
+      localStorage.removeItem('ss_pending_owner_name');
+    }
   }
 }
 

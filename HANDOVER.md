@@ -295,6 +295,35 @@ button will work.
 
 ## Recently completed (most recent first)
 
+- Self-serve signup flow built (2026-07-23) — new `screen-signup` (name,
+  email, password, confirm password), wired to the previously-dead "Request
+  access" link on the login screen (it had zero click handler before this).
+  On submit: `sb.auth.signUp()`, then routes into the app exactly like a
+  normal login. Handles both cases: if the Supabase project auto-confirms
+  (session returned immediately) it goes straight into the app; if email
+  confirmation is required (no session yet) it shows a "check your email"
+  message instead of erroring. **Deliberately did not rebuild org creation**
+  — a user with no matching `staff` row already sees the existing "Set up
+  your operation" banner on Home -> Settings, which already has the full
+  create-org form (name, country, currency, contact email, categories) and
+  already seeds trip types/gear/inspection checklists per category. This was
+  pre-existing, working code; the only genuine gap was step one (no way to
+  create the login itself). Owner's full name is carried from the signup
+  screen into the Settings form via `localStorage` (`ss_pending_owner_name`)
+  so they don't have to type it twice, whichever path (instant login vs
+  email-confirm-then-login) they take.
+- **Crew invite emails — Fran flagged this must work perfectly before**
+  **launch.** Root cause is still the known Resend/domain issue (see "Current
+  known issue: staff invite emails" above) — `sevenseasops.com` hasn't been
+  verified in Resend yet and `RESEND_FROM_EMAIL` hasn't been set as a Supabase
+  secret. Fran will send a screenshot of exactly what a friend saw after
+  clicking a shared invite link (copy-link workaround), to rule in/out
+  whether it's this same issue or something separate (e.g. a PWA "Add to
+  Home Screen" prompt being mistaken for a Play Store prompt — no Android
+  App Links / `assetlinks.json` are configured in this project, so a Play
+  Store redirect shouldn't be technically possible from a plain web link
+  today, which points toward the Resend issue as the more likely explanation
+  pending that screenshot).
 - Per-guest waiver "Remind" button + QR code as a second way into the shared
   group signing link (see "Waiver flow overhaul" section above) — new
   `send-waiver-reminder` edge function (not yet deployed), no new table for
