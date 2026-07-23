@@ -84,7 +84,10 @@ jobs:
         if: ${{ env.RELEASE_KEYSTORE_B64 != '' }}
         working-directory: android/app
         run: |
-          echo "$RELEASE_KEYSTORE_B64" | base64 -d > release-upload-key.jks
+          echo "Encoded secret length: ${#RELEASE_KEYSTORE_B64} chars (expect ~3816 -- if this is way off, the GitHub secret paste was incomplete)"
+          echo "$RELEASE_KEYSTORE_B64" | base64 -d --ignore-garbage > release-upload-key.jks
+          echo "Decoded keystore file size:"
+          ls -l release-upload-key.jks
           echo "has_keystore=true" >> "$GITHUB_OUTPUT"
 
       - name: Build signed release AAB
