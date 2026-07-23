@@ -155,8 +155,25 @@ the real source of truth. Full detail/reasoning for each item lives in
   governing law (placeholder: Argentina, explicitly flagged as provisional
   pending the entity decision), and change notice. Linked from
   `landing.html` footer (replaced "coming soon"). Same placeholder-pending-
-  lawyer-review note as the privacy policy. Not yet pushed as of writing —
-  needs `git push` from Fran's terminal.
+  lawyer-review note as the privacy policy. Pushed and live.
+- [x] Refund Policy page written and hosted — `refund.html`, same bilingual
+  EN/ES chrome as `privacy.html`/`terms.html`. Built 2026-07-23 for the same
+  reason as the other two (Paddle's website requirements include one, and
+  it's needed regardless since billing questions will come up). Honestly
+  describes today's reality: no automated checkout yet, refunds/cancellations
+  handled case-by-case by emailing `contact@sevenseasops.com`, with a note
+  that formal provider-specific refund terms will replace this once Paddle
+  checkout launches. Linked from `landing.html` footer and referenced from
+  `terms.html` section 7 (Subscription and billing). Not yet pushed — needs
+  `git push` from Fran's terminal.
+
+**Done (2026-07-23) — Android release signing, confirmed live:**
+- [x] Signed AAB pipeline built and pushed (commit `4dd765d`) — keystore
+  generated, `android/app/build.gradle` and `.github/workflows/mobile-build.yml`
+  updated. Still waiting on Fran to add the 4 GitHub Actions secrets
+  (`ANDROID_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`,
+  `RELEASE_KEY_PASSWORD` — see task #35) before the release-AAB build step
+  actually runs and produces an artifact.
 
 **Done (2026-07-21):**
 - [x] Bought `sevenseasops.com`, set up Google Workspace (Business Starter,

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Seven Seas — Refund Policy</title>
+<link href="assets/icons/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="assets/icons/favicon-16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="assets/icons/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:    #0a1628;
+  --blue:    #1a6b8a;
+  --teal:    #4fc3f7;
+  --teal2:   #29b6f6;
+  --foam:    #f0f8ff;
+  --text:    #1a2a3a;
+  --muted:   #5a7a8a;
+  --white:   #ffffff;
+  --border:  #e2e8ee;
+  --radius:  10px;
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; color: var(--text); background: var(--white); line-height: 1.65; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 5%; height: 64px;
+  background: rgba(10,22,40,0.96);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.nav-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.nav-logo-badge {
+  width: 26px; height: 26px; border-radius: 6px; background: var(--white);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 3px;
+}
+.nav-logo-badge img { width: 100%; height: 100%; object-fit: contain; }
+.nav-logo-wordmark { height: 13px; width: auto; display: block; }
+.lang-switcher { display: flex; gap: 6px; }
+.lang-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.7);
+  padding: 5px 10px; border-radius: 5px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600;
+}
+.lang-btn.active { background: var(--teal); color: var(--navy); border-color: var(--teal); }
+.lang-btn:hover:not(.active) { color: var(--white); }
+
+main { max-width: 720px; margin: 0 auto; padding: 56px 24px 80px; }
+h1 { font-size: 1.9rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.effective-date { color: var(--muted); font-size: 0.9rem; margin-bottom: 36px; }
+h2 { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin: 32px 0 10px; }
+p, li { font-size: 0.95rem; color: var(--text); margin-bottom: 10px; }
+ul { padding-left: 20px; margin-bottom: 10px; }
+a { color: var(--blue); }
+.placeholder-note {
+  background: var(--foam); border: 1px solid var(--border); border-left: 4px solid var(--teal2);
+  border-radius: var(--radius); padding: 14px 18px; margin-bottom: 36px; font-size: 0.88rem; color: var(--muted);
+}
+footer {
+  text-align: center; padding: 24px; font-size: 0.8rem; color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+main [data-lang-block] { display: none; }
+main [data-lang-block].active { display: block; }
+footer [data-lang-block] { display: none; }
+footer [data-lang-block].active { display: inline; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="landing.html">
+    <div class="nav-logo-badge"><img alt="Seven Seas" src="assets/icons/icon-192.png"/></div>
+    <img alt="Seven Seas" class="nav-logo-wordmark" src="assets/logo-wordmark-white.png"/>
+  </a>
+  <span class="lang-switcher">
+    <button class="lang-btn" data-lang="en" onclick="setRefundLang('en')">EN</button>
+    <button class="lang-btn" data-lang="es" onclick="setRefundLang('es')">ES</button>
+  </span>
+</nav>
+
+<main>
+
+<div data-lang-block="en" class="active">
+  <h1>Refund Policy</h1>
+  <p class="effective-date">Effective date: July 23, 2026</p>
+
+  <div class="placeholder-note">This policy is being reviewed by a lawyer as Seven Seas grows. It accurately describes today's early-access, email-based billing — automated in-app checkout (with its own checkout-provider refund flow) hasn't launched yet. This page will be updated the moment that changes. Questions? Contact us below.</div>
+
+  <h2>1. Where we are today</h2>
+  <p>Seven Seas is in early access. Trials are free for 14 days with no card required, and paid subscriptions are currently arranged directly by email rather than an automated in-app checkout. This policy describes how refunds and cancellations work under that arrangement today.</p>
+
+  <h2>2. Free trial</h2>
+  <p>The 14-day trial is free. You won't be charged anything during the trial, and there's nothing to refund if you decide not to continue — just let us know, or simply stop using the account.</p>
+
+  <h2>3. Cancelling a subscription</h2>
+  <p>You can cancel at any time by contacting us. Cancelling stops future billing; it doesn't retroactively refund time already paid for and used, in the same way most monthly software subscriptions work.</p>
+
+  <h2>4. Refund requests</h2>
+  <p>Because billing today is arranged directly with us rather than through an automated checkout, refund requests are handled case by case. If something was charged in error, charged twice, or a shop needs to cancel shortly after paying, contact us and we'll sort it out directly — we're a small operation and would rather make it right than hide behind a rigid rule.</p>
+
+  <h2>5. Billing errors</h2>
+  <p>If you spot a charge that looks wrong, let us know as soon as you can so we can look into it and correct it.</p>
+
+  <h2>6. Once automated billing launches</h2>
+  <p>When Seven Seas moves to automated in-app subscription checkout, that checkout provider will handle payment processing, and this page will be updated with the formal refund terms and any provider-specific process that come with it. Nothing here should be read as a guarantee that today's manual process continues indefinitely.</p>
+
+  <h2>7. Changes to this policy</h2>
+  <p>We'll update the effective date above if this policy changes, and post the updated version at this same URL.</p>
+
+  <h2>8. Contact us</h2>
+  <p>Billing questions, refund requests, or anything that looks wrong on a charge: <a href="mailto:contact@sevenseasops.com">contact@sevenseasops.com</a></p>
+</div>
+
+<div data-lang-block="es">
+  <h1>Política de Reembolsos</h1>
+  <p class="effective-date">Fecha de vigencia: 23 de julio de 2026</p>
+
+  <div class="placeholder-note">Esta política está siendo revisada por un abogado a medida que Seven Seas crece. Describe con precisión la facturación actual de acceso temprano, coordinada por correo electrónico — el checkout automatizado dentro de la app (con su propio proceso de reembolso del proveedor de pagos) todavía no está lanzado. Esta página se actualizará en cuanto eso cambie. ¿Preguntas? Contactanos abajo.</div>
+
+  <h2>1. Dónde estamos hoy</h2>
+  <p>Seven Seas está en acceso temprano. Las pruebas son gratis durante 14 días y no requieren tarjeta, y las suscripciones pagas hoy se coordinan directamente por correo electrónico en lugar de un checkout automatizado dentro de la app. Esta política describe cómo funcionan los reembolsos y las cancelaciones bajo ese esquema actual.</p>
+
+  <h2>2. Prueba gratuita</h2>
+  <p>La prueba de 14 días es gratis. No se te cobra nada durante la prueba, y no hay nada que reembolsar si decidís no continuar — solo avisanos, o simplemente dejá de usar la cuenta.</p>
+
+  <h2>3. Cancelar una suscripción</h2>
+  <p>Podés cancelar en cualquier momento contactándonos. Cancelar detiene la facturación futura; no reembolsa de forma retroactiva el tiempo ya pagado y usado, de la misma manera que funcionan la mayoría de las suscripciones mensuales de software.</p>
+
+  <h2>4. Solicitudes de reembolso</h2>
+  <p>Como la facturación hoy se coordina directamente con nosotros y no mediante un checkout automatizado, las solicitudes de reembolso se resuelven caso por caso. Si algo se cobró por error, se cobró dos veces, o un comercio necesita cancelar poco después de pagar, contactanos y lo resolvemos directamente — somos una operación chica y preferimos solucionarlo bien antes que escondernos detrás de una regla rígida.</p>
+
+  <h2>5. Errores de facturación</h2>
+  <p>Si ves un cobro que parece incorrecto, avisanos apenas puedas para que podamos revisarlo y corregirlo.</p>
+
+  <h2>6. Cuando se lance la facturación automatizada</h2>
+  <p>Cuando Seven Seas pase a un checkout de suscripción automatizado dentro de la app, ese proveedor de checkout se encargará del procesamiento de pagos, y esta página se actualizará con los términos formales de reembolso y cualquier proceso específico del proveedor que eso traiga. Nada acá debe leerse como una garantía de que el proceso manual actual continúa indefinidamente.</p>
+
+  <h2>7. Cambios a esta política</h2>
+  <p>Actualizaremos la fecha de vigencia de arriba si esta política cambia, y publicaremos la versión actualizada en esta misma URL.</p>
+
+  <h2>8. Contacto</h2>
+  <p>Preguntas de facturación, solicitudes de reembolso, o cualquier cobro que se vea raro: <a href="mailto:contact@sevenseasops.com">contact@sevenseasops.com</a></p>
+</div>
+
+</main>
+
+<footer>© 2026 Seven Seas. <span data-lang-block="en" class="active">All rights reserved.</span><span data-lang-block="es">Todos los derechos reservados.</span></footer>
+
+<script>
+function setRefundLang(lang) {
+  document.querySelectorAll('[data-lang-block]').forEach(el => {
+    el.classList.toggle('active', el.dataset.langBlock === lang);
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  localStorage.setItem('sevenSeasRefundLang', lang);
+}
+(function () {
+  const saved = localStorage.getItem('sevenSeasRefundLang');
+  const browserLang = (navigator.language || 'en').slice(0, 2);
+  setRefundLang(saved || (browserLang === 'es' ? 'es' : 'en'));
+})();
+</script>
+
+</body>
+</html>
