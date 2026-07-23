@@ -25,3 +25,10 @@ ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
 # OS cruft
 .DS_Store
 Thumbs.db
+
+# Real signing keys must never be committed -- CI decodes the real one from a
+# GitHub secret at build time (see .github/workflows/mobile-build.yml) and it
+# never touches disk in this repo directory outside of a CI runner.
+*.jks
+*.keystore
+release-upload-key.jks
