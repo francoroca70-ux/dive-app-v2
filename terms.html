@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Seven Seas — Terms of Service</title>
+<link href="assets/icons/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="assets/icons/favicon-16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="assets/icons/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:    #0a1628;
+  --blue:    #1a6b8a;
+  --teal:    #4fc3f7;
+  --teal2:   #29b6f6;
+  --foam:    #f0f8ff;
+  --text:    #1a2a3a;
+  --muted:   #5a7a8a;
+  --white:   #ffffff;
+  --border:  #e2e8ee;
+  --radius:  10px;
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; color: var(--text); background: var(--white); line-height: 1.65; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 5%; height: 64px;
+  background: rgba(10,22,40,0.96);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.nav-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.nav-logo-badge {
+  width: 26px; height: 26px; border-radius: 6px; background: var(--white);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 3px;
+}
+.nav-logo-badge img { width: 100%; height: 100%; object-fit: contain; }
+.nav-logo-wordmark { height: 13px; width: auto; display: block; }
+.lang-switcher { display: flex; gap: 6px; }
+.lang-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.7);
+  padding: 5px 10px; border-radius: 5px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600;
+}
+.lang-btn.active { background: var(--teal); color: var(--navy); border-color: var(--teal); }
+.lang-btn:hover:not(.active) { color: var(--white); }
+
+main { max-width: 720px; margin: 0 auto; padding: 56px 24px 80px; }
+h1 { font-size: 1.9rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.effective-date { color: var(--muted); font-size: 0.9rem; margin-bottom: 36px; }
+h2 { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin: 32px 0 10px; }
+p, li { font-size: 0.95rem; color: var(--text); margin-bottom: 10px; }
+ul { padding-left: 20px; margin-bottom: 10px; }
+a { color: var(--blue); }
+.placeholder-note {
+  background: var(--foam); border: 1px solid var(--border); border-left: 4px solid var(--teal2);
+  border-radius: var(--radius); padding: 14px 18px; margin-bottom: 36px; font-size: 0.88rem; color: var(--muted);
+}
+footer {
+  text-align: center; padding: 24px; font-size: 0.8rem; color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+main [data-lang-block] { display: none; }
+main [data-lang-block].active { display: block; }
+footer [data-lang-block] { display: none; }
+footer [data-lang-block].active { display: inline; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="landing.html">
+    <div class="nav-logo-badge"><img alt="Seven Seas" src="assets/icons/icon-192.png"/></div>
+    <img alt="Seven Seas" class="nav-logo-wordmark" src="assets/logo-wordmark-white.png"/>
+  </a>
+  <span class="lang-switcher">
+    <button class="lang-btn" data-lang="en" onclick="setTermsLang('en')">EN</button>
+    <button class="lang-btn" data-lang="es" onclick="setTermsLang('es')">ES</button>
+  </span>
+</nav>
+
+<main>
+
+<div data-lang-block="en" class="active">
+  <h1>Terms of Service</h1>
+  <p class="effective-date">Effective date: July 23, 2026</p>
+
+  <div class="placeholder-note">These terms are being reviewed by a lawyer as Seven Seas grows, particularly the liability and governing-law sections. They accurately describe how the service works today, but aren't a substitute for professional legal advice. Questions? Contact us below.</div>
+
+  <h2>1. Acceptance of these terms</h2>
+  <p>By creating an account or using Seven Seas, you agree to these Terms of Service on behalf of yourself and, if applicable, the dive shop, charter operation, surf school, or liveaboard ("shop") you represent. If you don't agree, don't use the service.</p>
+
+  <h2>2. What Seven Seas is</h2>
+  <p>Seven Seas is operations software for water sports operators: bookings and manifests, checklists, gear and equipment tracking, crew scheduling, digital waivers, and cash-up tools. Seven Seas is a software tool, not a dive safety authority, certifying agency, or legal advisor — shops remain fully responsible for their own operational, safety, and legal decisions.</p>
+
+  <h2>3. Accounts</h2>
+  <p>You're responsible for the accuracy of information your shop enters, for keeping staff login credentials secure, and for any activity under your account. Seven Seas is intended for legitimate business use by water sports operators, not personal or unrelated use.</p>
+
+  <h2>4. Your data</h2>
+  <p>Guest, waiver, gear, and booking data your shop enters belongs to your shop. Seven Seas acts as a data processor for that information, as described in our <a href="privacy.html">Privacy Policy</a>, not as its owner. You're responsible for having a lawful basis to collect and store the information you put into Seven Seas about your guests and staff.</p>
+
+  <h2>5. Waivers — important limitation</h2>
+  <p>Seven Seas provides tools to collect, store, and export digital or paper-backed liability waivers and medical questionnaires. <strong>Seven Seas does not draft, review, or guarantee the legal sufficiency or enforceability of any waiver, template, or questionnaire in any jurisdiction.</strong> It's your responsibility, as the shop, to use waiver wording that's appropriate and enforceable for your activity and location, and to have it reviewed by your own legal counsel. Seven Seas is not a party to the waiver signed between your shop and your guest, and assumes no liability arising from a waiver's content or a guest's participation in your activities.</p>
+
+  <h2>6. Acceptable use</h2>
+  <ul>
+    <li>No reverse engineering, scraping, or reselling access to the service without our written permission.</li>
+    <li>No use of the service for anything illegal, or that infringes on others' rights.</li>
+    <li>No attempting to access another shop's data or accounts.</li>
+  </ul>
+
+  <h2>7. Subscription and billing</h2>
+  <p>During this early access period, trials and billing are arranged directly by email rather than automated in-app checkout. Pricing shown on our website is per-boat, not per-user. We'll update this section with formal automated-billing terms once that launches; nothing here should be read as a guarantee of current pricing indefinitely.</p>
+
+  <h2>8. Termination</h2>
+  <p>You can stop using Seven Seas and request deletion of your shop's account at any time by contacting us. We may suspend or terminate accounts that violate these terms, misuse the service, or fail to pay for an active subscription.</p>
+
+  <h2>9. No warranty</h2>
+  <p>Seven Seas is provided "as is." We don't guarantee the service will be uninterrupted, error-free, or fit for a particular purpose, though we work to keep it reliable. Offline features cache data locally and sync when reconnected, but we're not responsible for data entered while offline that's lost before it syncs due to device issues outside our control.</p>
+
+  <h2>10. Limitation of liability</h2>
+  <p>To the maximum extent permitted by law, Seven Seas' total liability for any claim relating to the service is limited to the amount your shop paid us in the 12 months before the claim. We're not liable for indirect, incidental, or consequential damages, including lost bookings, lost data, or business interruption. Nothing here limits liability that can't legally be limited.</p>
+
+  <h2>11. Indemnification</h2>
+  <p>Your shop agrees to indemnify Seven Seas against claims arising from your use of the service, your interactions with your own guests or staff, or your violation of these terms — including claims related to waivers, injuries, or disputes between your shop and your customers.</p>
+
+  <h2>12. Governing law</h2>
+  <p>These terms are currently governed by the laws of Argentina, where Seven Seas is presently based, pending a formal business entity decision still in progress with legal counsel. This section is expected to change once that decision is finalized and will be updated here when it does.</p>
+
+  <h2>13. Changes to these terms</h2>
+  <p>We'll update the effective date above if these terms change, and post the updated version at this same URL. Continued use after a change means you accept the updated terms.</p>
+
+  <h2>14. Contact us</h2>
+  <p>Questions about these terms: <a href="mailto:contact@sevenseasops.com">contact@sevenseasops.com</a></p>
+</div>
+
+<div data-lang-block="es">
+  <h1>Términos de Servicio</h1>
+  <p class="effective-date">Fecha de vigencia: 23 de julio de 2026</p>
+
+  <div class="placeholder-note">Estos términos están siendo revisados por un abogado a medida que Seven Seas crece, en particular las secciones de responsabilidad civil y ley aplicable. Describen con precisión cómo funciona el servicio hoy, pero no reemplazan el asesoramiento legal profesional. ¿Preguntas? Contactanos abajo.</div>
+
+  <h2>1. Aceptación de estos términos</h2>
+  <p>Al crear una cuenta o usar Seven Seas, aceptás estos Términos de Servicio en tu nombre y, si corresponde, en nombre del centro de buceo, operación de charter, escuela de surf o liveaboard ("comercio") que representás. Si no estás de acuerdo, no uses el servicio.</p>
+
+  <h2>2. Qué es Seven Seas</h2>
+  <p>Seven Seas es software de operaciones para operadores de deportes acuáticos: reservas y manifiestos, checklists, seguimiento de equipo, horarios de tripulación, exenciones digitales y herramientas de cierre de caja. Seven Seas es una herramienta de software, no una autoridad de seguridad de buceo, entidad certificadora ni asesor legal — los comercios siguen siendo plenamente responsables de sus propias decisiones operativas, de seguridad y legales.</p>
+
+  <h2>3. Cuentas</h2>
+  <p>Sos responsable de la exactitud de la información que tu comercio ingresa, de mantener seguras las credenciales de acceso del personal, y de cualquier actividad bajo tu cuenta. Seven Seas está pensado para uso comercial legítimo por parte de operadores de deportes acuáticos, no para uso personal o no relacionado.</p>
+
+  <h2>4. Tus datos</h2>
+  <p>Los datos de huéspedes, exenciones, equipo y reservas que tu comercio ingresa le pertenecen a tu comercio. Seven Seas actúa como procesador de esos datos, como se describe en nuestra <a href="privacy.html">Política de Privacidad</a>, no como su dueño. Sos responsable de tener una base legal para recopilar y almacenar la información que cargás en Seven Seas sobre tus huéspedes y personal.</p>
+
+  <h2>5. Exenciones — limitación importante</h2>
+  <p>Seven Seas provee herramientas para recopilar, almacenar y exportar exenciones de responsabilidad digitales o respaldadas en papel, y cuestionarios médicos. <strong>Seven Seas no redacta, revisa ni garantiza la suficiencia legal ni la exigibilidad de ninguna exención, plantilla o cuestionario en ninguna jurisdicción.</strong> Es tu responsabilidad, como comercio, usar una redacción de exención apropiada y exigible para tu actividad y ubicación, y hacerla revisar por tu propio asesor legal. Seven Seas no es parte de la exención firmada entre tu comercio y tu huésped, y no asume responsabilidad derivada del contenido de una exención ni de la participación de un huésped en tus actividades.</p>
+
+  <h2>6. Uso aceptable</h2>
+  <ul>
+    <li>No hacer ingeniería inversa, scraping, ni revender el acceso al servicio sin nuestro permiso por escrito.</li>
+    <li>No usar el servicio para nada ilegal, ni que infrinja los derechos de terceros.</li>
+    <li>No intentar acceder a los datos o cuentas de otro comercio.</li>
+  </ul>
+
+  <h2>7. Suscripción y facturación</h2>
+  <p>Durante este período de acceso temprano, las pruebas y la facturación se coordinan directamente por correo electrónico en lugar de un checkout automatizado dentro de la app. Los precios que se muestran en nuestro sitio son por bote, no por usuario. Actualizaremos esta sección con términos formales de facturación automatizada una vez que eso se lance; nada acá debe leerse como una garantía de que los precios actuales se mantendrán indefinidamente.</p>
+
+  <h2>8. Terminación</h2>
+  <p>Podés dejar de usar Seven Seas y solicitar la eliminación de la cuenta de tu comercio en cualquier momento contactándonos. Podemos suspender o terminar cuentas que violen estos términos, hagan mal uso del servicio, o no paguen una suscripción activa.</p>
+
+  <h2>9. Sin garantía</h2>
+  <p>Seven Seas se provee "tal cual". No garantizamos que el servicio sea ininterrumpido, libre de errores, o apto para un propósito particular, aunque trabajamos para mantenerlo confiable. Las funciones sin conexión guardan datos localmente y sincronizan al reconectarse, pero no somos responsables por datos ingresados sin conexión que se pierdan antes de sincronizar debido a problemas del dispositivo fuera de nuestro control.</p>
+
+  <h2>10. Limitación de responsabilidad</h2>
+  <p>En la máxima medida permitida por la ley, la responsabilidad total de Seven Seas por cualquier reclamo relacionado con el servicio se limita al monto que tu comercio nos pagó en los 12 meses previos al reclamo. No somos responsables por daños indirectos, incidentales o consecuentes, incluyendo reservas perdidas, pérdida de datos, o interrupción del negocio. Nada acá limita responsabilidad que legalmente no pueda limitarse.</p>
+
+  <h2>11. Indemnización</h2>
+  <p>Tu comercio acepta indemnizar a Seven Seas ante reclamos que surjan de tu uso del servicio, tus interacciones con tus propios huéspedes o personal, o tu violación de estos términos — incluyendo reclamos relacionados con exenciones, lesiones, o disputas entre tu comercio y tus clientes.</p>
+
+  <h2>12. Ley aplicable</h2>
+  <p>Estos términos se rigen actualmente por las leyes de Argentina, donde Seven Seas está radicado actualmente, en espera de una decisión formal sobre la entidad comercial que todavía está en proceso con asesoría legal. Se espera que esta sección cambie una vez que esa decisión se finalice, y se actualizará acá cuando eso ocurra.</p>
+
+  <h2>13. Cambios a estos términos</h2>
+  <p>Actualizaremos la fecha de vigencia de arriba si estos términos cambian, y publicaremos la versión actualizada en esta misma URL. El uso continuado después de un cambio implica que aceptás los términos actualizados.</p>
+
+  <h2>14. Contacto</h2>
+  <p>Preguntas sobre estos términos: <a href="mailto:contact@sevenseasops.com">contact@sevenseasops.com</a></p>
+</div>
+
+</main>
+
+<footer>© 2026 Seven Seas. <span data-lang-block="en" class="active">All rights reserved.</span><span data-lang-block="es">Todos los derechos reservados.</span></footer>
+
+<script>
+function setTermsLang(lang) {
+  document.querySelectorAll('[data-lang-block]').forEach(el => {
+    el.classList.toggle('active', el.dataset.langBlock === lang);
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  localStorage.setItem('sevenSeasTermsLang', lang);
+}
+(function () {
+  const saved = localStorage.getItem('sevenSeasTermsLang');
+  const browserLang = (navigator.language || 'en').slice(0, 2);
+  setTermsLang(saved || (browserLang === 'es' ? 'es' : 'en'));
+})();
+</script>
+
+</body>
+</html>

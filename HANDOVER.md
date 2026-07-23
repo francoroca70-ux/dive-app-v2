@@ -137,11 +137,26 @@ the real source of truth. Full detail/reasoning for each item lives in
   will swap for the lawyer-reviewed version once that's ready — confirmed with
   Fran 2026-07-21 this is fine for Google Play's review specifically (Google
   checks the URL works and the content matches actual practices, not who
-  drafted it or what tier of generator was used). **Still needs Fran to push
-  to GitHub before it's actually live** — built 2026-07-21, not yet deployed.
-  Contact email in the page is still the personal Gmail until the
-  sevenseasops.com Workspace email is live (see below) — swap it in once that
-  exists.
+  drafted it or what tier of generator was used). Pushed and confirmed live at
+  `https://dive-app-v2.onrender.com/privacy.html` 2026-07-21. Contact email
+  updated to `contact@sevenseasops.com` once Workspace was set up (see below).
+- [x] Terms of Service page written and hosted — `terms.html`, same
+  bilingual EN/ES chrome as `privacy.html` and `landing.html`. Built
+  2026-07-23 directly (not via an external generator — same reasoning as
+  privacy: Claude can describe Seven Seas' actual setup more accurately than a
+  generic template). Covers acceptance, service description, accounts, data
+  ownership (mirrors Privacy Policy — shop owns its data, Seven Seas is
+  processor), a waiver-specific liability disclaimer (Seven Seas doesn't
+  draft/guarantee waiver enforceability, shop is responsible + indemnifies
+  Seven Seas — this is the Smartwaiver/WaiverForever-inspired liability
+  structuring approach flagged for the lawyer meeting), acceptable use,
+  billing (honestly describes today's email-based trial signup, not
+  automated checkout), termination, no-warranty, limitation of liability,
+  governing law (placeholder: Argentina, explicitly flagged as provisional
+  pending the entity decision), and change notice. Linked from
+  `landing.html` footer (replaced "coming soon"). Same placeholder-pending-
+  lawyer-review note as the privacy policy. Not yet pushed as of writing —
+  needs `git push` from Fran's terminal.
 
 **Done (2026-07-21):**
 - [x] Bought `sevenseasops.com`, set up Google Workspace (Business Starter,
@@ -162,9 +177,15 @@ the real source of truth. Full detail/reasoning for each item lives in
 - [ ] Update each org's contact email in Settings (currently whatever each demo
   org has saved) to use `contact@sevenseasops.com` where it makes sense.
 
+**Done (2026-07-21):**
+- [x] Registered Google Play Developer account ($25 one-time, Personal account
+  type — chosen over Organization since Fran has no registered legal entity
+  yet and Organization needs a D-U-N-S number, ~30 days). Developer name set
+  to "Seven Seas" (not personal name), developer email
+  `contact@sevenseasops.com`. Now waiting on Google's identity verification
+  (~2 business days) before the closed test track can actually be created.
+
 **In progress (started 2026-07-21):**
-- [ ] Register Google Play Developer account ($25 one-time, ~2 business days
-  identity verification) — Fran started this today.
 - [ ] Recruit 12+ testers for the closed test — Fran starting to reach out
   today so the 14-day clock can start the moment the Play account clears.
   Reminder for next session: the 14 days are literal consecutive calendar
@@ -182,7 +203,6 @@ the real source of truth. Full detail/reasoning for each item lives in
   Codemagic) once the Apple account + certificates exist, to get a real signed
   iOS build (CI only produces a Simulator build today, not installable on a
   real iPhone)
-- [ ] Terms of Service page — blocked on the lawyer meeting (see Task #118 below)
 - [ ] Store listing assets: screenshots per device size, short + long
   description, age rating questionnaire, category (Business/Productivity)
 - [ ] Permanent demo/sample org (sample trips, guests, waivers) for the Apple
