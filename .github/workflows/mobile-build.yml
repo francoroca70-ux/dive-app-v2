@@ -94,7 +94,11 @@ jobs:
         if: steps.keystore.outputs.has_keystore == 'true'
         working-directory: android
         env:
-          RELEASE_STORE_FILE: app/release-upload-key.jks
+          # Relative to android/app/build.gradle's own project dir (android/app/),
+          # not to this step's working-directory (android/) -- the keystore was
+          # decoded to android/app/release-upload-key.jks, so from build.gradle's
+          # point of view that's just "release-upload-key.jks", no "app/" prefix.
+          RELEASE_STORE_FILE: release-upload-key.jks
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
