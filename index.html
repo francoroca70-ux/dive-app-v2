@@ -1132,6 +1132,15 @@ body { background: var(--navy); color: var(--text); }
      of ragged. The !important is needed because a couple of these rows set
      grid-template-columns inline (e.g. the compressor fill-log row). */
   .sf-row { grid-template-columns: 1fr !important; }
+  /* Native <input type="date"/"time"> on Android WebView still render their
+     internal value segments + calendar icon a few px wider than the box
+     they're told to fit in, even at width:100% with border-box sizing --
+     a long-standing Chromium quirk, worse with longer Spanish date text
+     ("28 jul 2026"). Two safety nets: trim the input's own right padding so
+     there's more room for the icon, and clip anything that still pokes out
+     at the light-blue card/form boundary so it never bleeds past the edge. */
+  .sf-input[type="date"], .sf-input[type="time"] { padding-right: 8px; }
+  .inline-form, .group-card, .card { overflow: hidden; }
 }
 
 /* ─── HELP / FAQ ─── */
