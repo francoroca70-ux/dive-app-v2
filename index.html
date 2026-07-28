@@ -554,7 +554,7 @@ body { background: var(--navy); color: var(--text); }
   font-size: 0.83rem; color: var(--blue); margin-bottom: 20px;
 }
 .settings-form { margin-top: 16px; }
-.sf-group { margin-bottom: 16px; }
+.sf-group { margin-bottom: 16px; min-width: 0; }
 .sf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .sf-label {
   display: block; font-size: 0.78rem; font-weight: 600;
@@ -1123,6 +1123,15 @@ body { background: var(--navy); color: var(--text); }
   .boat-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; font-size: 0.75rem; }
   .boat-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .boat-actions { flex-wrap: wrap; gap: 6px; row-gap: 8px; }
+  /* Two- and three-column form rows (.sf-row) -- trip date/time, group
+     contact fields, compressor start/stop time, report date range, etc. --
+     were squeezing native date/time inputs so tight on phone widths that
+     they visually overlapped or spilled past the card edge. Stacking every
+     .sf-row to a single column on phones fixes the overlap and also makes
+     every field the same full width, so the form reads as aligned instead
+     of ragged. The !important is needed because a couple of these rows set
+     grid-template-columns inline (e.g. the compressor fill-log row). */
+  .sf-row { grid-template-columns: 1fr !important; }
 }
 
 /* ─── HELP / FAQ ─── */
