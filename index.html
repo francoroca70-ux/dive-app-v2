@@ -5243,10 +5243,7 @@ async function initAuth() {
     showScreen('login');
   }
 
-  // Hide loading
-  const loading = document.getElementById('loading');
-  loading.classList.add('hidden');
-  setTimeout(() => loading.style.display = 'none', 300);
+  hideLoadingScreen();
 }
 
 // ─── LOGIN ───
@@ -12171,11 +12168,23 @@ document.getElementById('confirm-modal-ok').addEventListener('click', () => {
 // ─── END CONFIRM / PROMPT / ALERT MODAL ───
 
 // ─── START ───
+// The loading overlay (Seven Seas logo) is only ever removed here, on every
+// possible startup path -- previously it was hidden solely inside initAuth(),
+// so opening an invite link (?invite=...) or a remote waiver-signing link
+// (?waiver=...) returned before initAuth() ran and left the logo on screen
+// forever, even though the invite/waiver form underneath had already loaded.
+function hideLoadingScreen() {
+  const loading = document.getElementById('loading');
+  if (!loading) return;
+  loading.classList.add('hidden');
+  setTimeout(() => loading.style.display = 'none', 300);
+}
+
 (async () => {
   const hasInvite = await checkForInviteToken();
-  if (hasInvite) return;
+  if (hasInvite) { hideLoadingScreen(); return; }
   const hasWaiverLink = await checkForWaiverToken();
-  if (hasWaiverLink) return;
+  if (hasWaiverLink) { hideLoadingScreen(); return; }
   await initAuth();
 })();
 
