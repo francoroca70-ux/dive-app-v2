@@ -17,7 +17,7 @@ begin
   for keep_cat in
     select distinct on (org_id, key) id, org_id, key
     from gear_categories
-    order by org_id, key, created_at asc
+    order by org_id, key, id asc
   loop
     for dup_cat in
       select id from gear_categories
