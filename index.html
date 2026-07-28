@@ -168,6 +168,18 @@ body { background: var(--navy); color: var(--text); }
   background: linear-gradient(160deg, var(--navy) 0%, var(--navy2) 60%, #0d3348 100%);
   padding: 24px;
 }
+
+/* ─── ACCEPT INVITE / PUBLIC WAIVER SIGNING SCREENS ───
+   Both are reached with no session (invite/waiver email links), same family
+   as login/forgot -- need the same centering + background rules, which
+   .screen.active{display:flex} alone doesn't provide (that's why the invite
+   page was rendering left/top-aligned on a plain dark background instead of
+   centered like every other auth screen). */
+#screen-accept-invite, #screen-sign-waivers {
+  align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--navy) 0%, var(--navy2) 60%, #0d3348 100%);
+  padding: 24px;
+}
 .back-link {
   display: inline-flex; align-items: center; gap: 6px;
   color: rgba(255,255,255,0.4); font-size: 0.83rem;
@@ -4207,28 +4219,34 @@ window.addEventListener('offline', () => { isOffline = true; updateOfflineBanner
 window.addEventListener('online', () => { isOffline = false; updateOfflineBanner(); flushOfflineQueue(); });
 
 // ─── ACCEPT INVITE ───
+// Reached via ?invite=TOKEN in the staff invite email. Runs before any
+// session exists, so -- same reasoning as the public waiver-signing flow
+// below -- this never queries the `invites` table directly with the anon
+// key (an open anon SELECT policy on invites would leak every pending
+// invite's email/role/org across every operation using this app). Instead
+// everything goes through the invite-accept edge function, which uses the
+// service role key and only ever returns/acts on the one invite matching
+// this token.
 let pendingInvite = null;
 async function checkForInviteToken() {
   const params = new URLSearchParams(window.location.search);
   const token = params.get('invite');
   if (!token) return false;
 
-  const { data: invite } = await sb.from('invites').select('*').eq('token', token).eq('accepted', false).maybeSingle();
-  if (!invite) {
+  const { data, error } = await sb.functions.invoke('invite-accept', { body: { action: 'status', token } });
+  if (error || !data || !data.valid) {
     showScreen('accept-invite');
     document.getElementById('accept-invite-form').style.display = 'none';
     document.getElementById('accept-invite-invalid').style.display = 'block';
     return true;
   }
 
-  const { data: org } = await sb.from('organizations').select('name').eq('id', invite.org_id).single();
-
-  pendingInvite = invite;
-  const roleLabel = (invite.custom_role_name || invite.role || 'crew').replace(/_/g, ' ');
+  pendingInvite = { token, email: data.email, full_name: data.fullName, role: data.role, custom_role_name: data.customRoleName };
+  const roleLabel = (data.customRoleName || data.role || 'crew').replace(/_/g, ' ');
   document.getElementById('accept-invite-desc').textContent =
-    `You've been invited to join ${org?.name || 'this operation'} as ${roleLabel}. Set a password to finish creating your account.`;
-  document.getElementById('accept-invite-name').value = invite.full_name || '';
-  document.getElementById('accept-invite-email').value = invite.email;
+    `You've been invited to join ${data.orgName || 'this operation'} as ${roleLabel}. Set a password to finish creating your account.`;
+  document.getElementById('accept-invite-name').value = data.fullName || '';
+  document.getElementById('accept-invite-email').value = data.email;
   document.getElementById('accept-invite-form').style.display = 'block';
   document.getElementById('accept-invite-invalid').style.display = 'none';
   showScreen('accept-invite');
@@ -4284,28 +4302,21 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
     return;
   }
 
-  const { data: existingStaff } = await sb.from('staff').select('id').eq('id', userId).eq('org_id', pendingInvite.org_id).maybeSingle();
-  if (!existingStaff) {
-    const { error: staffErr } = await sb.from('staff').insert({
-      id: userId,
-      org_id: pendingInvite.org_id,
-      full_name: fullName,
-      email: pendingInvite.email,
-      role: pendingInvite.role,
-      custom_role_name: pendingInvite.role === 'custom' ? (pendingInvite.custom_role_name || null) : null
-    });
-    if (staffErr) {
-      errorEl.textContent = 'Signed in, but could not finish linking your account to this operation. Send this to Fran: ' + staffErr.message;
-      errorEl.classList.add('visible');
-      btn.disabled = false; btn.textContent = 'Set up account';
-      return;
-    }
-    if (pendingInvite.location_id) {
-      await sb.from('staff_locations').insert({ staff_id: userId, location_id: pendingInvite.location_id });
-    }
+  // Same reasoning as the lookup above: creating the staff row and marking
+  // the invite accepted both go through invite-accept (service role) rather
+  // than direct sb.from(...) calls, so we don't need a self-insert RLS
+  // policy on `staff` or an update policy on `invites` for a user who, from
+  // RLS's point of view, isn't staff of this org yet at the moment they're
+  // trying to become staff of this org.
+  const { data: acceptData, error: acceptErr } = await sb.functions.invoke('invite-accept', {
+    body: { action: 'accept', token: pendingInvite.token, userId, fullName }
+  });
+  if (acceptErr || !acceptData?.success) {
+    errorEl.textContent = 'Signed in, but could not finish linking your account to this operation. Send this to Fran: ' + (acceptErr?.message || acceptData?.error || 'unknown error');
+    errorEl.classList.add('visible');
+    btn.disabled = false; btn.textContent = 'Set up account';
+    return;
   }
-
-  await sb.from('invites').update({ accepted: true }).eq('id', pendingInvite.id);
 
   window.history.replaceState({}, '', window.location.pathname);
   pendingInvite = null;

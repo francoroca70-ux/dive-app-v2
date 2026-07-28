@@ -1,0 +1,113 @@
+// Supabase Edge Function: invite-accept
+// Powers the public, no-login "you're invited" page reached via a link in
+// the staff invite email (index.html?invite=TOKEN). Same reasoning as
+// waiver-remote-signing: the anon key has no RLS access to the `invites`
+// table (an open anon SELECT policy would leak every pending invite --
+// email, role, org name -- across every operation using this app), so this
+// runs entirely on the service role key instead. Two actions:
+//   - status: looks up the invite by token, returns the safe display fields
+//   - accept: called after the browser's own supabase.auth.signUp/signIn
+//     succeeds: creates the staff row + marks the invite accepted, using the
+//     already-known user id -- avoids needing a self-insert RLS policy on
+//     `staff` for brand-new accounts.
+//
+// Called from index.html via sb.functions.invoke('invite-accept', { body: {...} }).
+// No secrets need to be set manually -- SUPABASE_URL and
+// SUPABASE_SERVICE_ROLE_KEY are automatically available to every edge function.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+  try {
+    const body = await req.json();
+    const { action, token } = body || {};
+    if (!action || !token) {
+      return json({ error: "Missing action or token" }, 400);
+    }
+
+    // Every action starts by resolving the invite the same way -- must be
+    // unaccepted. Re-checked again inside `accept` in case of a double click.
+    const { data: invite } = await sb
+      .from("invites")
+      .select("id, org_id, email, role, custom_role_name, full_name, location_id, accepted")
+      .eq("token", token)
+      .eq("accepted", false)
+      .maybeSingle();
+
+    if (!invite) return json({ valid: false, error: "not_found" });
+
+    // ─── action: status ───
+    if (action === "status") {
+      const { data: org } = await sb.from("organizations").select("name").eq("id", invite.org_id).maybeSingle();
+      return json({
+        valid: true,
+        email: invite.email,
+        fullName: invite.full_name || "",
+        role: invite.role,
+        customRoleName: invite.custom_role_name || null,
+        orgName: org?.name || "",
+      });
+    }
+
+    // ─── action: accept ───
+    // Runs after the browser has already created/signed in to the auth user
+    // for invite.email, so userId is trustworthy for linking -- but we still
+    // never trust org_id/role/email from the client, only from the token's
+    // own invite row looked up above.
+    if (action === "accept") {
+      const { userId, fullName } = body || {};
+      if (!userId) return json({ error: "Missing userId" }, 400);
+
+      const { data: existingStaff } = await sb
+        .from("staff")
+        .select("id")
+        .eq("id", userId)
+        .eq("org_id", invite.org_id)
+        .maybeSingle();
+
+      if (!existingStaff) {
+        const { error: staffErr } = await sb.from("staff").insert({
+          id: userId,
+          org_id: invite.org_id,
+          full_name: fullName || invite.full_name || "",
+          email: invite.email,
+          role: invite.role,
+          custom_role_name: invite.role === "custom" ? (invite.custom_role_name || null) : null,
+        });
+        if (staffErr) return json({ error: staffErr.message }, 500);
+
+        if (invite.location_id) {
+          await sb.from("staff_locations").insert({ staff_id: userId, location_id: invite.location_id });
+        }
+      }
+
+      await sb.from("invites").update({ accepted: true }).eq("id", invite.id);
+      return json({ success: true });
+    }
+
+    return json({ error: "Unknown action" }, 400);
+  } catch (err) {
+    return json({ error: (err as Error).message }, 500);
+  }
+});
