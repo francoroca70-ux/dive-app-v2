@@ -6297,7 +6297,10 @@ async function openNewTrip() {
   document.getElementById('trip-date').min = todayLocalStr;
   document.getElementById('trip-date').value = formatDate(calDate) < todayLocalStr ? todayLocalStr : formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
-  document.getElementById('trip-arrival').value = '';
+  // Default the minutes to :00 so tapping the field only needs the hour
+  // typed/scrolled -- an empty value shows a blank "--:--" on most phones,
+  // forcing you to fill in the minutes every single time.
+  document.getElementById('trip-arrival').value = '00:00';
   document.getElementById('trip-end-date').value = '';
   document.getElementById('trip-enddate-group').style.display = 'none';
   document.getElementById('trip-dive-sites').value = '';
