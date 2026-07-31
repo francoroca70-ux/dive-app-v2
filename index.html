@@ -11081,6 +11081,19 @@ async function loadGearInventory() {
 }
 function renderGearInventory(categories, items, stockMap) {
   const el = document.getElementById('inventory-categories');
+  // Preserve which categories/items are currently expanded across re-renders.
+  // Every add/repair/return/discard action calls loadGearInventory() to
+  // refresh the stock counts, which rebuilds this whole section from scratch
+  // -- previously that always started fully collapsed, so logging gear kept
+  // snapping shut the exact category (e.g. BCDs) or item you were working in.
+  // Category/item element ids are deterministic (based on the category/item's
+  // own id), so just remembering which ones were open before the rebuild and
+  // re-opening those same ids afterward is enough -- no separate state needed.
+  const expandedIds = new Set();
+  el.querySelectorAll('[id^="inv-cat-body-"], [id^="inv-item-body-"]').forEach(node => {
+    if (node.style.display === 'block') expandedIds.add(node.id);
+  });
+
   el.innerHTML = categories.map(cat => {
     const catItems = items.filter(i => i.category_id === cat.id);
     if (!catItems.length) return '';
@@ -11148,6 +11161,13 @@ function renderGearInventory(categories, items, stockMap) {
       <div id="${catBodyId}" style="display:none;">${itemsHtml}</div>
     </div>`;
   }).join('');
+
+  expandedIds.forEach(id => {
+    const node = document.getElementById(id);
+    const arrow = document.getElementById(id + '-arrow');
+    if (node) node.style.display = 'block';
+    if (arrow) arrow.style.transform = 'rotate(90deg)';
+  });
 }
 
 async function addGearItemToCategory(categoryId) {
