@@ -48,11 +48,17 @@ Deno.serve(async (req: Request) => {
 
     // Every action starts by resolving the invite the same way -- must be
     // unaccepted. Re-checked again inside `accept` in case of a double click.
+    // Match accepted = false OR NULL, not just false: the invites table's
+    // `accepted` column has no default set at the row level in the insert
+    // code (Settings -> Crew never sets it), so if the column itself
+    // defaults to NULL rather than false, a plain `.eq('accepted', false)`
+    // would never match ANY invite, ever, under normal SQL NULL semantics --
+    // which looks exactly like "this invite is invalid" for every invite.
     const { data: invite } = await sb
       .from("invites")
       .select("id, org_id, email, role, custom_role_name, full_name, location_id, accepted")
       .eq("token", token)
-      .eq("accepted", false)
+      .or("accepted.eq.false,accepted.is.null")
       .maybeSingle();
 
     if (!invite) return json({ valid: false, error: "not_found" });

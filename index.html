@@ -6271,6 +6271,7 @@ document.getElementById('trip-type-select').addEventListener('change', onTripTyp
 document.getElementById('trip-end-date').addEventListener('change', () => {
   renderGroupsPanel();
   renderTripCrewSection();
+  checkBoatConflict();
 });
 
 // ─── GROUPS STATE ───
@@ -6339,7 +6340,14 @@ async function openTrip(id) {
   document.getElementById('trip-end-date').value = trip.end_date || '';
   document.getElementById('trip-dive-sites').value = trip.dive_sites || '';
   setBookingMode(trip.booking_mode || 'private');
-  populateTripBoats(trip.boat_id);
+  await populateTripBoats(trip.boat_id);
+  // The earlier checkBoatConflict() call inside onTripTypeChange() ran before
+  // this trip's actual date/end date/boat were loaded into the form (it only
+  // saw whatever was left over from the previously open trip), so its result
+  // is stale. Re-run it now that every field reflects the real trip -- this
+  // is what was causing the conflict banner to stay stuck on screen even
+  // when reopening a trip with no changes at all.
+  await checkBoatConflict();
 
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('btn-save-trip').textContent = 'Update trip';
@@ -6734,6 +6742,13 @@ async function populateTripBoats(selectedId) {
 async function checkBoatConflict() {
   const boatId = document.getElementById('trip-boat').value;
   const date = document.getElementById('trip-date').value;
+  // Multi-day charters (Private Charter etc.) have their own end date -- a
+  // single-day trip's range is just [date, date]. Previously this only ever
+  // compared trip_date to trip_date, so extending a charter's end date never
+  // actually checked the new day(s) for conflicts, and a same-boat trip
+  // whose range merely overlapped (rather than started on the exact same
+  // day) could be missed entirely.
+  const endDate = document.getElementById('trip-end-date').value || date;
   const newStart = document.getElementById('trip-time').value || '00:00';
   const newEnd = document.getElementById('trip-arrival').value || '23:59';
   const warning = document.getElementById('boat-conflict-warning');
@@ -6742,14 +6757,25 @@ async function checkBoatConflict() {
 
   const { data: existing } = await sb
     .from('trips')
-    .select('id, trip_name, contact_name, trip_time, arrival_time, booking_mode, max_guests')
+    .select('id, trip_name, contact_name, trip_time, arrival_time, booking_mode, max_guests, trip_date, end_date')
     .eq('boat_id', boatId)
-    .eq('trip_date', date)
+    .lte('trip_date', endDate)
+    .or(`end_date.gte.${date},end_date.is.null`)
     .neq('id', currentTripId || '00000000-0000-0000-0000-000000000000');
 
-  if (!existing || existing.length === 0) { warning.style.display = 'none'; return; }
+  if (!existing || existing.length === 0) { warning.style.display = 'none'; window.currentBoatConflict = false; return; }
 
-  const overlaps = existing.filter(t => {
+  // The `end_date.is.null` branch above matches any single-day trip with
+  // trip_date <= endDate regardless of how far in the past -- narrow that
+  // down here to trips whose actual [trip_date, end_date] range overlaps
+  // this one's [date, endDate].
+  const dateOverlaps = existing.filter(t => {
+    const tEndDate = t.end_date || t.trip_date;
+    return t.trip_date <= endDate && tEndDate >= date;
+  });
+  if (dateOverlaps.length === 0) { warning.style.display = 'none'; window.currentBoatConflict = false; return; }
+
+  const overlaps = dateOverlaps.filter(t => {
     const tStart = t.trip_time?.slice(0,5) || '00:00';
     const tEnd = t.arrival_time?.slice(0,5) || '23:59';
     return newStart < tEnd && newEnd > tStart;
