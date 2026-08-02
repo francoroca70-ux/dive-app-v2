@@ -3614,6 +3614,7 @@ const TRANSLATIONS = {
     wt_question_singular: ' question on file', wt_questions_plural: ' questions on file',
     wt_no_questions_yet: "No questions yet — Medical can't be signed",
     wt_medical_title_ph: 'e.g. Dive Medical Statement',
+    wt_medical_title_label: 'Title', wt_medical_title_required: 'Title is required.',
     wt_medical_instructions: 'List the conditions or questions guests must tick if they apply to them. Each one becomes a checkbox on the sign form.',
     wt_add_question: '+ Add question', wt_no_questions_added: 'No questions added yet.',
     wt_add_one_question: 'Add at least one question.',
@@ -4108,6 +4109,7 @@ const TRANSLATIONS = {
     wt_question_singular: ' pregunta registrada', wt_questions_plural: ' preguntas registradas',
     wt_no_questions_yet: 'Aún no hay preguntas — Médico no se puede firmar',
     wt_medical_title_ph: 'ej. Declaración Médica de Buceo',
+    wt_medical_title_label: 'Título', wt_medical_title_required: 'El título es obligatorio.',
     wt_medical_instructions: 'Enumera las condiciones o preguntas que los huéspedes deben marcar si les aplican. Cada una se convierte en una casilla en el formulario de firma.',
     wt_add_question: '+ Agregar pregunta', wt_no_questions_added: 'Aún no se han agregado preguntas.',
     wt_add_one_question: 'Agrega al menos una pregunta.',
@@ -4819,7 +4821,9 @@ function rwRenderTemplateContent(type, template, questions) {
   window.rwResponses = {};
   if (type === 'medical') {
     container.innerHTML = `
-      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : t('wv_medical_questionnaire')} ${t('wv_tick_anything_applies')}</p>
+      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : t('wv_medical_questionnaire')}</p>
+      ${template.body_text ? `<div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:180px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;margin-bottom:10px;">${template.body_text}</div>` : ''}
+      <p class="sf-label" style="margin-bottom:6px;">${t('wv_tick_anything_applies')}</p>
       <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto;background:var(--foam);">
         ${questions.map(q => `
           <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.85rem;padding:6px 0;cursor:pointer;">
@@ -6103,8 +6107,12 @@ function renderMedicalTemplateEditor(template, questions) {
   container.innerHTML = `
     <div style="margin-bottom:10px;">${statusHtml}</div>
     <div class="sf-group">
-      <label class="sf-label">${t('wt_title_label')}</label>
+      <label class="sf-label">${t('wt_medical_title_label')}</label>
       <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="${t('wt_medical_title_ph')}">
+    </div>
+    <div class="sf-group">
+      <label class="sf-label">${t('wt_body_label')}</label>
+      <textarea class="sf-input" id="wt-body" rows="8" placeholder="${t('wt_body_ph')}">${template?.body_text || ''}</textarea>
     </div>
     <p class="card-desc" style="margin-bottom:8px;">${t('wt_medical_instructions')}</p>
     <div id="medical-questions-list"></div>
@@ -6142,8 +6150,19 @@ function removeMedicalQuestionRow(i) {
 
 async function saveMedicalWaiverTemplate() {
   const feedback = document.getElementById('wt-save-feedback');
-  const title = document.getElementById('wt-title').value.trim() || null;
+  const title = document.getElementById('wt-title').value.trim();
+  const body = document.getElementById('wt-body').value.trim();
   const questions = (window._medicalQuestionsDraft || []).map(q => q.trim()).filter(Boolean);
+  if (!title) {
+    feedback.textContent = t('wt_medical_title_required');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!body) {
+    feedback.textContent = t('wt_text_required');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
   if (!questions.length) {
     feedback.textContent = t('wt_add_one_question');
     feedback.className = 'save-feedback error visible';
@@ -6153,6 +6172,7 @@ async function saveMedicalWaiverTemplate() {
     org_id: currentOrgId,
     waiver_type: 'medical',
     title: title,
+    body_text: body,
     active: true,
     updated_at: new Date().toISOString()
   }, { onConflict: 'org_id,waiver_type' }).select().single();
@@ -8972,7 +8992,9 @@ function renderSignTemplateContent(type, template, questions) {
   if (type === 'medical') {
     window.currentSignResponses = {};
     container.innerHTML = `
-      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : t('wv_medical_questionnaire')} ${t('wv_tick_anything_applies')}</p>
+      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : t('wv_medical_questionnaire')}</p>
+      ${template.body_text ? `<div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:180px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;margin-bottom:10px;">${template.body_text}</div>` : ''}
+      <p class="sf-label" style="margin-bottom:6px;">${t('wv_tick_anything_applies')}</p>
       <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto;background:var(--foam);">
         ${questions.map(q => `
           <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.85rem;padding:6px 0;cursor:pointer;">
