@@ -175,7 +175,7 @@ body { background: var(--navy); color: var(--text); }
    .screen.active{display:flex} alone doesn't provide (that's why the invite
    page was rendering left/top-aligned on a plain dark background instead of
    centered like every other auth screen). */
-#screen-accept-invite, #screen-sign-waivers, #screen-signup {
+#screen-accept-invite, #screen-sign-waivers, #screen-signup, #screen-reset-password {
   align-items: center; justify-content: center;
   background: linear-gradient(160deg, var(--navy) 0%, var(--navy2) 60%, #0d3348 100%);
   padding: 24px;
@@ -1535,6 +1535,34 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<!-- ─── SET NEW PASSWORD SCREEN (reached via the reset-password email link) ───
+     Supabase's recovery link logs the browser in with a temporary session so
+     updateUser({password}) can succeed, but that also means the normal boot
+     sequence would otherwise see "session exists" and drop the person straight
+     into the app -- skipping the whole point of the link. checkForPasswordRecovery()
+     detects the type=recovery marker in the URL and routes here instead. -->
+<div id="screen-reset-password" class="screen">
+  <div class="login-box">
+    <div class="login-logo-badge"><img src="assets/logo-full.png" alt="Seven Seas"></div>
+    <div class="login-tagline" data-i18n="login_tagline">Water operations platform</div>
+    <div class="login-card">
+      <h2 data-i18n="reset_pw_title">Set a new password</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;" data-i18n="reset_pw_subtitle">Choose a new password for your account.</p>
+      <div class="form-group">
+        <label data-i18n="set_new_password">New password</label>
+        <input type="password" id="reset-pw-password" placeholder="At least 6 characters" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label data-i18n="set_confirm_new_password">Confirm new password</label>
+        <input type="password" id="reset-pw-password-confirm" placeholder="At least 6 characters" autocomplete="new-password">
+      </div>
+      <button class="btn-login" id="btn-reset-pw-save" data-i18n="set_save_password">Save password</button>
+      <div class="login-error" id="reset-pw-error"></div>
+      <div class="success-msg" id="reset-pw-success" data-i18n="reset_pw_success">Password updated — taking you in...</div>
+    </div>
+  </div>
+</div>
+
 <!-- ─── ACCEPT INVITE SCREEN ─── -->
 <div id="screen-accept-invite" class="screen">
   <div class="login-box">
@@ -2696,6 +2724,23 @@ body { background: var(--navy); color: var(--text); }
             <div class="settings-value" id="settings-role">Owner</div>
           </div>
           <button class="btn-danger-sm" id="btn-change-password" data-i18n="set_change_password">Change password</button>
+
+          <!-- Change password form (hidden by default) -->
+          <div class="inline-form" id="form-change-password" style="display:none;margin-top:14px;">
+            <div class="sf-group">
+              <label class="sf-label" data-i18n="set_new_password">New password</label>
+              <input class="sf-input" type="password" id="account-new-password" placeholder="At least 6 characters" autocomplete="new-password">
+            </div>
+            <div class="sf-group">
+              <label class="sf-label" data-i18n="set_confirm_new_password">Confirm new password</label>
+              <input class="sf-input" type="password" id="account-new-password-confirm" placeholder="At least 6 characters" autocomplete="new-password">
+            </div>
+            <div class="settings-actions">
+              <button class="btn-save" id="btn-save-new-password" data-i18n="set_save_password">Save password</button>
+              <button class="btn-cancel" id="btn-cancel-change-password" data-i18n="tt_cancel">Cancel</button>
+              <span class="save-feedback" id="change-password-feedback"></span>
+            </div>
+          </div>
         </div>
 
         <!-- Organisation card -->
@@ -3184,6 +3229,7 @@ const TRANSLATIONS = {
 
     forgot_title: 'Reset your password', forgot_back: '← Back to sign in', forgot_email_label: 'Email',
     forgot_send_btn: 'Send reset link', forgot_success: 'Reset link sent — check your inbox.',
+    reset_pw_title: 'Set a new password', reset_pw_subtitle: 'Choose a new password for your account.', reset_pw_success: 'Password updated — taking you in...',
 
     accept_invite_name_label: 'Full name', accept_invite_email_label: 'Email', accept_invite_password_label: 'Password',
     accept_invite_btn: 'Set up account',
@@ -3445,6 +3491,7 @@ const TRANSLATIONS = {
     gear_filter_replaced: 'Filter replaced', gear_no_activity_yet: 'No activity yet.',
 
     set_account: 'Account', set_signed_in_as: 'Signed in as', set_role: 'Role', set_change_password: 'Change password',
+    set_new_password: 'New password', set_confirm_new_password: 'Confirm new password', set_save_password: 'Save password',
     set_organisation: 'Organisation', set_org_notice_new: 'No organisation set up yet. Fill in your details below and save.',
     set_your_full_name: 'Your full name', set_your_full_name_ph: 'e.g. Jane Smith',
     set_operation_name: 'Operation name', set_operation_name_ph: 'e.g. Blue Water Dive Centre',
@@ -3676,6 +3723,7 @@ const TRANSLATIONS = {
 
     forgot_title: 'Restablece tu contraseña', forgot_back: '← Volver a iniciar sesión', forgot_email_label: 'Correo electrónico',
     forgot_send_btn: 'Enviar enlace', forgot_success: 'Enlace enviado — revisa tu correo.',
+    reset_pw_title: 'Elegí una nueva contraseña', reset_pw_subtitle: 'Elegí una nueva contraseña para tu cuenta.', reset_pw_success: 'Contraseña actualizada — entrando...',
 
     accept_invite_name_label: 'Nombre completo', accept_invite_email_label: 'Correo electrónico', accept_invite_password_label: 'Contraseña',
     accept_invite_btn: 'Configurar cuenta',
@@ -3937,6 +3985,7 @@ const TRANSLATIONS = {
     gear_filter_replaced: 'Filtro reemplazado', gear_no_activity_yet: 'Aún no hay actividad.',
 
     set_account: 'Cuenta', set_signed_in_as: 'Sesión iniciada como', set_role: 'Rol', set_change_password: 'Cambiar contraseña',
+    set_new_password: 'Nueva contraseña', set_confirm_new_password: 'Confirmar nueva contraseña', set_save_password: 'Guardar contraseña',
     set_organisation: 'Organización', set_org_notice_new: 'Aún no has configurado tu organización. Completa tus datos abajo y guarda.',
     set_your_full_name: 'Tu nombre completo', set_your_full_name_ph: 'ej. Jane Smith',
     set_operation_name: 'Nombre de la operación', set_operation_name_ph: 'ej. Blue Water Dive Centre',
@@ -5741,6 +5790,64 @@ document.getElementById('btn-signout').addEventListener('click', async () => {
   showScreen('login');
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
+});
+
+// ─── SETTINGS: CHANGE PASSWORD (while already signed in) ───
+// This used to be a dead button -- no click handler existed at all, so
+// nothing happened when you pressed it. Since the person is already
+// authenticated here, this can go straight through updateUser({password})
+// instead of the email-link recovery flow used from the login screen.
+document.getElementById('btn-change-password').addEventListener('click', () => {
+  document.getElementById('form-change-password').style.display = 'block';
+  document.getElementById('btn-change-password').style.display = 'none';
+});
+
+document.getElementById('btn-cancel-change-password').addEventListener('click', () => {
+  document.getElementById('form-change-password').style.display = 'none';
+  document.getElementById('btn-change-password').style.display = 'inline-block';
+  document.getElementById('account-new-password').value = '';
+  document.getElementById('account-new-password-confirm').value = '';
+  document.getElementById('change-password-feedback').className = 'save-feedback';
+});
+
+document.getElementById('btn-save-new-password').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-new-password');
+  const feedback = document.getElementById('change-password-feedback');
+  const pw = document.getElementById('account-new-password').value;
+  const pwConfirm = document.getElementById('account-new-password-confirm').value;
+
+  if (!pw || pw.length < 6) {
+    feedback.textContent = 'Password must be at least 6 characters.';
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (pw !== pwConfirm) {
+    feedback.textContent = "Passwords don't match.";
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  const { error } = await sb.auth.updateUser({ password: pw });
+  btn.disabled = false;
+  btn.textContent = t('set_save_password');
+
+  if (error) {
+    feedback.textContent = error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  feedback.textContent = 'Password updated.';
+  feedback.className = 'save-feedback visible';
+  document.getElementById('account-new-password').value = '';
+  document.getElementById('account-new-password-confirm').value = '';
+  setTimeout(() => {
+    document.getElementById('form-change-password').style.display = 'none';
+    document.getElementById('btn-change-password').style.display = 'inline-block';
+    feedback.className = 'save-feedback';
+  }, 2000);
 });
 
 // ─── LISTEN FOR AUTH CHANGES ───
@@ -12546,13 +12653,85 @@ function hideLoadingScreen() {
   setTimeout(() => loading.style.display = 'none', 300);
 }
 
+// Supabase's "reset password" email link logs the browser straight in with a
+// short-lived recovery session (that's how updateUser({password}) is allowed
+// to work without the old password) -- but that also means initAuth() below
+// would see "session exists" and drop the person straight into the app,
+// completely skipping the point of the link. Supabase marks these links with
+// type=recovery, either in the URL hash (#access_token=...&type=recovery,
+// the default implicit flow) or as a query param, so catch that before
+// initAuth ever runs and show the "set a new password" screen instead.
+function checkForPasswordRecovery() {
+  const hash = window.location.hash || '';
+  const params = new URLSearchParams(window.location.search);
+  const isRecovery = hash.includes('type=recovery') || params.get('type') === 'recovery';
+  if (!isRecovery) return false;
+  showScreen('reset-password');
+  return true;
+}
+
 (async () => {
+  if (checkForPasswordRecovery()) { hideLoadingScreen(); return; }
   const hasInvite = await checkForInviteToken();
   if (hasInvite) { hideLoadingScreen(); return; }
   const hasWaiverLink = await checkForWaiverToken();
   if (hasWaiverLink) { hideLoadingScreen(); return; }
   await initAuth();
 })();
+
+document.getElementById('btn-reset-pw-save').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-reset-pw-save');
+  const errorEl = document.getElementById('reset-pw-error');
+  const successEl = document.getElementById('reset-pw-success');
+  const pw = document.getElementById('reset-pw-password').value;
+  const pwConfirm = document.getElementById('reset-pw-password-confirm').value;
+  errorEl.classList.remove('visible');
+
+  if (!pw || pw.length < 6) {
+    errorEl.textContent = t('signup_err_password_length') || 'Password must be at least 6 characters.';
+    errorEl.classList.add('visible');
+    return;
+  }
+  if (pw !== pwConfirm) {
+    errorEl.textContent = t('signup_err_password_match') || "Passwords don't match.";
+    errorEl.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const { error } = await sb.auth.updateUser({ password: pw });
+
+  if (error) {
+    errorEl.textContent = error.message;
+    errorEl.classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = t('set_save_password');
+    return;
+  }
+
+  btn.style.display = 'none';
+  successEl.classList.add('visible');
+
+  // The recovery session is already a real, valid session at this point --
+  // clear the #access_token=...&type=recovery fragment so a refresh doesn't
+  // re-trigger this screen, then drop them into the app like a normal login.
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  setTimeout(async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      initHome(session.user);
+      await loadSettings(session.user);
+      loadFleet();
+      loadCrew();
+      await renderCalendar();
+      showScreen('app');
+    } else {
+      showScreen('login');
+    }
+  }, 1200);
+});
 
 // ─── PWA: register service worker (app shell caching for install + offline load) ───
 if ('serviceWorker' in navigator) {
