@@ -373,6 +373,44 @@ body { background: var(--navy); color: var(--text); }
 }
 .stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
 
+/* Identity bubble -- which operation/location you're currently in. Used to
+   live as small, low-contrast text tucked inside the setup banner; moved
+   into its own stat-card (same bubble language as Trips/Guests/Boats/Crew)
+   so it reads as a first-class piece of info instead of an afterthought,
+   and given the dark brand gradient so it still visually leads the row. */
+.stat-card-brand {
+  background: linear-gradient(135deg, var(--navy) 0%, #0d3348 100%);
+  border-color: transparent;
+}
+.stat-card-brand .stat-label { color: rgba(255,255,255,0.55); }
+.stat-card-brand .stat-value { color: var(--white); font-size: 1.5rem; }
+.stat-card-brand .stat-sub { color: rgba(255,255,255,0.7); }
+
+/* Home "getting started" checklist -- replaces a single vague paragraph
+   with per-step done/not-done state, each one clickable straight to the
+   page that resolves it. */
+.onboard-checklist { display: flex; flex-direction: column; gap: 10px; }
+.onboard-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--foam);
+  font-size: 0.88rem; font-weight: 600; color: var(--navy);
+  cursor: pointer; transition: background 0.15s;
+}
+.onboard-step:hover { background: rgba(79,195,247,0.1); }
+.onboard-step.done {
+  cursor: default; color: var(--muted);
+  background: rgba(47,133,90,0.06); border-color: rgba(47,133,90,0.2);
+  text-decoration: line-through;
+}
+.onboard-step.done:hover { background: rgba(47,133,90,0.06); }
+.onboard-check {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 800; color: var(--white);
+}
+.onboard-step.done .onboard-check { background: var(--success); border-color: var(--success); }
+
 /* Coming soon placeholder */
 .coming-soon {
   text-align: center; padding: 80px 40px;
@@ -1776,6 +1814,11 @@ body { background: var(--navy); color: var(--text); }
           <button class="btn-cancel" style="padding:4px 10px;font-size:0.75rem;flex-shrink:0;" onclick="dismissShopMismatchBanner()" data-i18n="shop_mismatch_dismiss">Got it</button>
         </div>
         <div class="stat-grid">
+          <div class="stat-card stat-card-brand" id="stat-card-identity" style="display:none;">
+            <div class="stat-label" data-i18n="home_current_shop_prefix">Currently viewing</div>
+            <div class="stat-value" id="home-org-name">—</div>
+            <div class="stat-sub" id="home-current-shop"></div>
+          </div>
           <div class="stat-card">
             <div class="stat-label" data-i18n="stat_trips_today">Trips today</div>
             <div class="stat-value" id="stat-trips">—</div>
@@ -1797,10 +1840,7 @@ body { background: var(--navy); color: var(--text); }
             <div class="stat-sub" data-i18n="stat_crew_sub">staff accounts</div>
           </div>
         </div>
-        <div class="card">
-          <h2 data-i18n="getting_started_title">Getting started</h2>
-          <p data-i18n="getting_started_sub">Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.</p>
-        </div>
+        <div class="card" id="home-bottom-card"></div>
       </div>
 
       <!-- CALENDAR -->
@@ -3261,7 +3301,7 @@ const TRANSLATIONS = {
 
     greeting_morning: 'Good morning', greeting_afternoon: 'Good afternoon', greeting_evening: 'Good evening',
     home_banner_ready: 'Your operations dashboard. All systems ready.', home_banner_view_calendar: 'View Calendar',
-    home_current_shop_prefix: 'Currently viewing: ',
+    home_current_shop_prefix: 'Currently viewing',
     shop_mismatch_dismiss: 'Got it', shop_mismatch_text: "You're viewing {shop}, which isn't one of your assigned shops. Double-check this is where you mean to log bookings, checklists, or waivers today.",
 
     tk_new_task_list: '+ New Task List', tk_my_tasks: 'My Tasks', tk_all_tasks: 'All Task Lists',
@@ -3307,7 +3347,15 @@ const TRANSLATIONS = {
     gr_unit_units: 'units', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'bars', gr_unit_sets: 'sets',
 
     getting_started_title: 'Getting started',
-    getting_started_sub: 'Your Seven Seas account is live. Head to Settings to add your operation details, then start adding boats and crew.',
+    getting_started_sub: 'Finish these three steps to unlock daily bookings and cash-ups:',
+    onboard_step_boat: 'Add at least one boat in Fleet',
+    onboard_step_prices: 'Set a price for at least one trip type in Settings',
+    onboard_step_crew: 'Invite at least one crew member',
+    home_finance_title: 'Money in',
+    home_finance_today: 'Today',
+    home_finance_yesterday: 'Yesterday',
+    home_finance_from_cashups: 'from closed cash-ups',
+    home_finance_view_reports: 'View full reports →',
 
     day_sun: 'Sun', day_mon: 'Mon', day_tue: 'Tue', day_wed: 'Wed', day_thu: 'Thu', day_fri: 'Fri', day_sat: 'Sat',
     cal_no_trips: 'No trips', cal_no_boat: 'No boat', cal_guests_suffix: 'guests', cal_more: 'more', cal_trip_fallback: 'Trip',
@@ -3749,14 +3797,14 @@ const TRANSLATIONS = {
     cal_today: 'Hoy', cal_day: 'Día', cal_week: 'Semana', cal_month: 'Mes', cal_new_trip: '+ Nueva salida',
 
     stat_trips_today: 'Salidas hoy', stat_trips_sub: 'programadas',
-    stat_guests_today: 'Huéspedes hoy', stat_guests_sub: 'en todas las salidas',
+    stat_guests_today: 'Cantidad de huéspedes', stat_guests_sub: 'en todas las salidas',
     stat_boats: 'Embarcaciones activas', stat_boats_sub: 'en la flota',
     stat_crew: 'Tripulación activa', stat_crew_sub: 'cuentas de personal',
     setup_banner_title: 'Configura tu operación', setup_banner_sub: 'Agrega los datos de tu negocio, embarcaciones e invita a tu tripulación para comenzar.', setup_banner_btn: 'Ir a Configuración',
 
     greeting_morning: 'Buenos días', greeting_afternoon: 'Buenas tardes', greeting_evening: 'Buenas noches',
     home_banner_ready: 'Tu panel de operaciones. Todo listo.', home_banner_view_calendar: 'Ver Calendario',
-    home_current_shop_prefix: 'Viendo actualmente: ',
+    home_current_shop_prefix: 'Viendo actualmente',
     shop_mismatch_dismiss: 'Entendido', shop_mismatch_text: 'Estás viendo {shop}, que no es uno de tus locales asignados. Verificá que sea donde querés registrar reservas, checklists o waivers hoy.',
 
     tk_new_task_list: '+ Nueva Lista de Tareas', tk_my_tasks: 'Mis Tareas', tk_all_tasks: 'Todas las Listas',
@@ -3802,7 +3850,15 @@ const TRANSLATIONS = {
     gr_unit_units: 'unidades', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'barras', gr_unit_sets: 'juegos',
 
     getting_started_title: 'Primeros pasos',
-    getting_started_sub: 'Tu cuenta de Seven Seas ya está activa. Ve a Configuración para agregar los datos de tu operación y luego empieza a agregar embarcaciones y tripulación.',
+    getting_started_sub: 'Completá estos tres pasos para habilitar las reservas diarias y los cierres de caja:',
+    onboard_step_boat: 'Agregá al menos una embarcación en Flota',
+    onboard_step_prices: 'Definí un precio para al menos un tipo de salida en Configuración',
+    onboard_step_crew: 'Invitá al menos un miembro de la tripulación',
+    home_finance_title: 'Entrada de dinero',
+    home_finance_today: 'Hoy',
+    home_finance_yesterday: 'Ayer',
+    home_finance_from_cashups: 'de cierres de caja cerrados',
+    home_finance_view_reports: 'Ver reportes completos →',
 
     day_sun: 'Dom', day_mon: 'Lun', day_tue: 'Mar', day_wed: 'Mié', day_thu: 'Jue', day_fri: 'Vie', day_sat: 'Sáb',
     cal_no_trips: 'Sin salidas', cal_no_boat: 'Sin embarcación', cal_guests_suffix: 'huéspedes', cal_more: 'más', cal_trip_fallback: 'Salida',
@@ -4997,17 +5053,22 @@ async function updateHomeBanner() {
   if (!currentOrgId) return;
   const { data: org } = await sb.from('organizations').select('name').eq('id', currentOrgId).single();
   const banner = document.getElementById('setup-banner');
+  const identityCard = document.getElementById('stat-card-identity');
   if (org && org.name) {
-    // Replace banner with welcome banner showing operation name
-    banner.innerHTML = `<div>
-      <h2 style="color:var(--white);font-size:1.1rem;margin-bottom:4px;">${org.name}</h2>
-      <p id="home-current-shop" style="color:rgba(255,255,255,0.7);font-size:0.85rem;margin-bottom:4px;"></p>
-      <p>${t('home_banner_ready')}</p>
-    </div>
-    <button class="btn-setup" onclick="showPage('calendar')">${t('home_banner_view_calendar')}</button>`;
+    // Used to repurpose the dark "set up your operation" banner into a
+    // welcome banner with the org name in small text -- easy to miss, and
+    // it buried "which operation am I looking at" as an afterthought. That
+    // identity now lives in its own bubble in the stat row instead (same
+    // treatment as Trips/Guests/Boats/Crew), so the setup banner just goes
+    // away once there's an org, and the name gets real size/prominence.
+    banner.style.display = 'none';
+    if (identityCard) identityCard.style.display = 'block';
+    const nameEl = document.getElementById('home-org-name');
+    if (nameEl) nameEl.textContent = org.name;
   }
   await updateAppContext(org && org.name);
   await refreshHomeStats();
+  await renderHomeGettingStartedOrFinance();
 }
 function locationStorageKey() { return 'sevenSeasLocationId_' + (currentOrgId || 'none'); }
 
@@ -5035,7 +5096,7 @@ async function updateAppContext(orgName) {
   } else if (locations.length === 1) {
     locWrap.style.display = 'none';
     currentLocationId = locations[0].id;
-    if (shopLabelEl) shopLabelEl.textContent = t('home_current_shop_prefix') + locations[0].name;
+    if (shopLabelEl) shopLabelEl.textContent = locations[0].name;
   } else {
     locWrap.style.display = 'inline-flex';
     picker.innerHTML = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
@@ -5044,7 +5105,7 @@ async function updateAppContext(orgName) {
     }
     picker.value = currentLocationId;
     const current = locations.find(l => l.id === currentLocationId);
-    if (shopLabelEl) shopLabelEl.textContent = current ? t('home_current_shop_prefix') + current.name : '';
+    if (shopLabelEl) shopLabelEl.textContent = current ? current.name : '';
   }
   localStorage.setItem(locationStorageKey(), currentLocationId || '');
   await checkShopMismatchBanner();
@@ -5086,12 +5147,91 @@ async function refreshHomeStats() {
   }
 }
 
+function renderOnboardStep(done, label, pageId) {
+  return `<div class="onboard-step${done ? ' done' : ''}" ${done ? '' : `onclick="showPage('${pageId}')"`}>
+    <span class="onboard-check">${done ? '✓' : ''}</span>
+    <span>${label}</span>
+  </div>`;
+}
+
+// Home's bottom card is either a "here's exactly what's left" checklist
+// (before the operation can really run: a boat, a priced trip type, and
+// someone besides the owner) or, once those are done, the owner's own
+// quick money snapshot -- yesterday vs. today, pulled from Cash-Ups. Crew
+// members other than the owner never see the finance version, per Fran:
+// financial info is owner-only.
+async function renderHomeGettingStartedOrFinance() {
+  if (!currentOrgId) return;
+  const container = document.getElementById('home-bottom-card');
+  if (!container) return;
+
+  const [{ count: boatsCount }, { data: pricedTypes }, { count: staffCount }] = await Promise.all([
+    sb.from('boats').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('active', true),
+    sb.from('trip_types').select('id').eq('org_id', currentOrgId).eq('is_active', true).gt('default_price', 0).limit(1),
+    sb.from('staff').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId)
+  ]);
+
+  const hasBoat = (boatsCount || 0) > 0;
+  const hasPricedTrip = (pricedTypes || []).length > 0;
+  const hasCrew = (staffCount || 0) > 1;
+  const setupComplete = hasBoat && hasPricedTrip && hasCrew;
+
+  if (!setupComplete) {
+    container.style.display = 'block';
+    container.innerHTML = `
+      <h2>${t('getting_started_title')}</h2>
+      <p class="card-desc" style="margin-bottom:14px;">${t('getting_started_sub')}</p>
+      <div class="onboard-checklist">
+        ${renderOnboardStep(hasBoat, t('onboard_step_boat'), 'fleet')}
+        ${renderOnboardStep(hasPricedTrip, t('onboard_step_prices'), 'settings')}
+        ${renderOnboardStep(hasCrew, t('onboard_step_crew'), 'crew')}
+      </div>
+    `;
+    return;
+  }
+
+  if (currentUserRole !== 'owner') {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  container.style.display = 'block';
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yestStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  let cuQuery = sb.from('cash_ups').select('cash_up_date,total_cash,total_card,total_transfer')
+    .eq('org_id', currentOrgId).in('cash_up_date', [todayStr, yestStr]);
+  if (currentLocationId) cuQuery = cuQuery.eq('location_id', currentLocationId);
+  const { data: cashUps } = await cuQuery;
+  const sumFor = (dateStr) => (cashUps || []).filter(c => c.cash_up_date === dateStr)
+    .reduce((sum, c) => sum + (c.total_cash || 0) + (c.total_card || 0) + (c.total_transfer || 0), 0);
+  const todayTotal = sumFor(todayStr);
+  const yestTotal = sumFor(yestStr);
+
+  container.innerHTML = `
+    <h2>${t('home_finance_title')}</h2>
+    <div class="stat-grid" style="margin-top:14px;margin-bottom:0;">
+      <div class="stat-card">
+        <div class="stat-label">${t('home_finance_today')}</div>
+        <div class="stat-value">$${todayTotal.toLocaleString()}</div>
+        <div class="stat-sub">${t('home_finance_from_cashups')}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">${t('home_finance_yesterday')}</div>
+        <div class="stat-value">$${yestTotal.toLocaleString()}</div>
+        <div class="stat-sub">${t('home_finance_from_cashups')}</div>
+      </div>
+    </div>
+    <p class="card-desc" style="margin-top:12px;"><a href="#" onclick="showPage('reports');return false;">${t('home_finance_view_reports')}</a></p>
+  `;
+}
+
 document.getElementById('location-picker').addEventListener('change', (e) => {
   currentLocationId = e.target.value;
   localStorage.setItem(locationStorageKey(), currentLocationId || '');
   const current = (e.target.options[e.target.selectedIndex] || {}).text;
   const shopLabelEl = document.getElementById('home-current-shop');
-  if (shopLabelEl && current) shopLabelEl.textContent = t('home_current_shop_prefix') + current;
+  if (shopLabelEl && current) shopLabelEl.textContent = current;
   checkShopMismatchBanner();
   // Jump to Home so the shop switch is obviously reflected, instead of silently
   // refreshing numbers behind whatever page happened to be open.
