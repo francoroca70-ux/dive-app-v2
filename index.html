@@ -385,6 +385,13 @@ body { background: var(--navy); color: var(--text); }
 .stat-card-brand .stat-label { color: rgba(255,255,255,0.55); }
 .stat-card-brand .stat-value { color: var(--white); font-size: 1.5rem; }
 .stat-card-brand .stat-sub { color: rgba(255,255,255,0.7); }
+/* The specific shop name (e.g. "Intercon") needs to read instantly, at a
+   glance, same weight/family as the operation name above it -- not as a
+   faded caption. It's a second value line, not a sub-label. */
+.stat-card-brand #home-current-shop {
+  font-size: 1.3rem; font-weight: 800; color: var(--white);
+  letter-spacing: -0.02em; line-height: 1.1; margin-top: 4px;
+}
 
 /* Home "getting started" checklist -- replaces a single vague paragraph
    with per-step done/not-done state, each one clickable straight to the
@@ -657,6 +664,14 @@ body { background: var(--navy); color: var(--text); }
   color: var(--success); opacity: 0; transition: opacity 0.3s;
 }
 .save-feedback.visible { opacity: 1; }
+.finance-view-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--blue); font-weight: 700; font-size: 0.85rem;
+  text-decoration: none; font-family: 'Inter', sans-serif;
+  transition: gap 0.15s;
+}
+.finance-view-link:hover { gap: 8px; text-decoration: underline; }
+.finance-view-link .arrow { transition: transform 0.15s; }
 .save-feedback.error { color: var(--error); }
 .inline-form {
   margin-top: 20px; padding: 20px;
@@ -3355,7 +3370,7 @@ const TRANSLATIONS = {
     home_finance_today: 'Today',
     home_finance_yesterday: 'Yesterday',
     home_finance_from_cashups: 'from closed cash-ups',
-    home_finance_view_reports: 'View full reports →',
+    home_finance_view_reports: 'View full reports',
 
     day_sun: 'Sun', day_mon: 'Mon', day_tue: 'Tue', day_wed: 'Wed', day_thu: 'Thu', day_fri: 'Fri', day_sat: 'Sat',
     cal_no_trips: 'No trips', cal_no_boat: 'No boat', cal_guests_suffix: 'guests', cal_more: 'more', cal_trip_fallback: 'Trip',
@@ -3858,7 +3873,7 @@ const TRANSLATIONS = {
     home_finance_today: 'Hoy',
     home_finance_yesterday: 'Ayer',
     home_finance_from_cashups: 'de cierres de caja cerrados',
-    home_finance_view_reports: 'Ver reportes completos →',
+    home_finance_view_reports: 'Ver reportes completos',
 
     day_sun: 'Dom', day_mon: 'Lun', day_tue: 'Mar', day_wed: 'Mié', day_thu: 'Jue', day_fri: 'Vie', day_sat: 'Sáb',
     cal_no_trips: 'Sin salidas', cal_no_boat: 'Sin embarcación', cal_guests_suffix: 'huéspedes', cal_more: 'más', cal_trip_fallback: 'Salida',
@@ -5227,7 +5242,7 @@ async function renderHomeGettingStartedOrFinance() {
         <div class="stat-sub">${t('home_finance_from_cashups')}</div>
       </div>
     </div>
-    <p class="card-desc" style="margin-top:12px;"><a href="#" onclick="showPage('reports');return false;">${t('home_finance_view_reports')}</a></p>
+    <a href="#" class="finance-view-link" style="margin-top:14px;" onclick="showPage('reports');return false;">${t('home_finance_view_reports')} <span class="arrow">&rarr;</span></a>
   `;
 }
 
