@@ -671,7 +671,12 @@ body { background: var(--navy); color: var(--text); }
   cursor: pointer; font-family: 'Inter', sans-serif;
   transition: all 0.15s;
 }
-.lang-btn.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+/* Was navy-on-navy on the dark login/signup/invite screens -- the "selected"
+   state blended straight into the page background, so the unselected white
+   button looked more prominent than the actual active one. Teal is the
+   app's one accent color that reads clearly against both the dark auth
+   screens and the light in-app nav bar, so it's unambiguous either place. */
+.lang-btn.active { background: var(--teal); color: var(--navy); border-color: var(--teal); font-weight: 800; }
 
 
 .crew-member-tag-v2 {
