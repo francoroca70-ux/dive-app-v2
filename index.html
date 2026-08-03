@@ -673,10 +673,10 @@ body { background: var(--navy); color: var(--text); }
 }
 /* Was navy-on-navy on the dark login/signup/invite screens -- the "selected"
    state blended straight into the page background, so the unselected white
-   button looked more prominent than the actual active one. Teal is the
-   app's one accent color that reads clearly against both the dark auth
-   screens and the light in-app nav bar, so it's unambiguous either place. */
-.lang-btn.active { background: var(--teal); color: var(--navy); border-color: var(--teal); font-weight: 800; }
+   button looked more prominent than the actual active one. Matches the same
+   blue used for every other "selected tab" in the app (.cl-tab.active, e.g.
+   Crew -> Turnos) so the selected state reads consistently everywhere. */
+.lang-btn.active { background: var(--blue); color: var(--white); border-color: var(--blue); font-weight: 800; }
 
 
 .crew-member-tag-v2 {
