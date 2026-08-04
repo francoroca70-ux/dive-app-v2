@@ -327,6 +327,11 @@ body { background: var(--navy); color: var(--text); }
 .group-card-remove {
   position: absolute; top: 14px; right: 14px;
 }
+.group-activity-override-badge {
+  display: inline-block; font-size: 0.72rem; font-weight: 700;
+  color: #b7791f; background: #fef3d5; border: 1px solid #f0d99a;
+  border-radius: 6px; padding: 6px 10px; text-transform: uppercase; letter-spacing: 0.04em;
+}
 .card h2 {
   font-size: 1rem; font-weight: 700; color: var(--navy);
   margin-bottom: 4px;
@@ -3483,6 +3488,7 @@ const TRANSLATIONS = {
     tgo_twin_10l: 'Twin 10L', tgo_twin_12l: 'Twin 12L', tgo_shop_mask: 'Shop mask', tgo_personal_mask: 'Personal mask',
     tt_link_tab: 'Link to guest tab (optional)', tt_check_in: 'Check In',
     tt_group_contact: 'Group {n} — Contact', tt_booked_by_placeholder: 'Staff member name', tt_save_add_guests: 'Save the trip to add guests.',
+    tt_activity_type: 'Activity type', tt_same_as_trip: 'Same as trip', tt_activity_override_badge: 'Different activity',
     tt_save_log_payments: 'Save the trip to log payments.', tt_no_tab: 'No tab — pay per trip', tt_checked_in: 'Checked In', tt_checkin_disabled_title: 'Add guests first',
     tt_confirm_checkin: 'Confirm check-in', tt_verify_against: 'Verify against: ', tt_already_checked_in: '(already checked in)',
     tt_confirm_checkin_btn: 'Confirm Check-In', tt_cancel: 'Cancel', tt_no_crew_yet: 'No crew assigned yet.', tt_select_crew_member: 'Select crew member',
@@ -3999,6 +4005,7 @@ const TRANSLATIONS = {
     tgo_twin_10l: 'Doble 10L', tgo_twin_12l: 'Doble 12L', tgo_shop_mask: 'Máscara del local', tgo_personal_mask: 'Máscara personal',
     tt_link_tab: 'Vincular a cuenta de huésped (opcional)', tt_check_in: 'Registrar Llegada',
     tt_group_contact: 'Grupo {n} — Contacto', tt_booked_by_placeholder: 'Nombre del miembro del personal', tt_save_add_guests: 'Guarda la salida para agregar huéspedes.',
+    tt_activity_type: 'Tipo de actividad', tt_same_as_trip: 'Igual que la salida', tt_activity_override_badge: 'Actividad diferente',
     tt_save_log_payments: 'Guarda la salida para registrar pagos.', tt_no_tab: 'Sin cuenta — pagar por salida', tt_checked_in: 'Registrado', tt_checkin_disabled_title: 'Agrega huéspedes primero',
     tt_confirm_checkin: 'Confirmar llegada', tt_verify_against: 'Verificar contra: ', tt_already_checked_in: '(ya registrado)',
     tt_confirm_checkin_btn: 'Confirmar Llegada', tt_cancel: 'Cancelar', tt_no_crew_yet: 'Aún no hay tripulación asignada.', tt_select_crew_member: 'Seleccionar miembro de la tripulación',
@@ -7129,6 +7136,23 @@ async function loadTripTypesForModal() {
   return currentTripTypes;
 }
 
+// Pulled out of populateTripTypeSelect so a group's own "Activity type"
+// override dropdown (added for mixed dive+snorkel trips) can render the same
+// grouped <optgroup> markup against the already-loaded currentTripTypes list.
+function tripTypeOptionsHtml(selectedId) {
+  const grouped = {};
+  currentTripTypes.forEach(tType => {
+    const cat = CATEGORY_LABELS[tType.category] || tType.category || 'Other';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(tType);
+  });
+  return Object.entries(grouped).map(([cat, items]) =>
+    `<optgroup label="${cat}">` +
+    items.map(tType => `<option value="${tType.id}" ${tType.id === selectedId ? 'selected' : ''}>${trTypeName(tType.name)}</option>`).join('') +
+    `</optgroup>`
+  ).join('');
+}
+
 async function populateTripTypeSelect(selectedId) {
   const types = await loadTripTypesForModal();
   const sel = document.getElementById('trip-type-select');
@@ -7136,17 +7160,39 @@ async function populateTripTypeSelect(selectedId) {
     sel.innerHTML = `<option value="">${t('tt_no_trip_types')}</option>`;
     return;
   }
-  const grouped = {};
-  types.forEach(tType => {
-    const cat = CATEGORY_LABELS[tType.category] || tType.category || 'Other';
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(tType);
-  });
-  sel.innerHTML = Object.entries(grouped).map(([cat, items]) =>
-    `<optgroup label="${cat}">` +
-    items.map(tType => `<option value="${tType.id}" ${tType.id === selectedId ? 'selected' : ''}>${trTypeName(tType.name)}</option>`).join('') +
-    `</optgroup>`
-  ).join('');
+  sel.innerHTML = tripTypeOptionsHtml(selectedId);
+}
+
+// A group's own trip_type_id (if set) overrides the trip's default type for
+// everything specific to that group -- gear fields, tank math, and required
+// waivers. This is what lets a snorkel group ride along on a dive trip
+// without being treated as divers. Falls back to the trip's own selected
+// type when the group has no override.
+function effectiveTripTypeForGroup(group) {
+  if (group?.trip_type_id) {
+    const override = currentTripTypes.find(tt => tt.id === group.trip_type_id);
+    if (override) return override;
+  }
+  const defaultId = document.getElementById('trip-type-select').value;
+  return currentTripTypes.find(tt => tt.id === defaultId) || null;
+}
+
+// Pulled out of onTripTypeChange so per-group gear-field loading (needed once
+// a group can override the trip's default activity type) can reuse the same
+// query instead of duplicating it.
+async function fetchGearFieldsForType(tripTypeId) {
+  if (!tripTypeId) return [];
+  const { data: ttgf } = await sb
+    .from('trip_type_gear_fields')
+    .select('*, gear_field_definitions(*)')
+    .eq('trip_type_id', tripTypeId)
+    .order('sort_order');
+  return (ttgf || []).map(r => r.gear_field_definitions ? { ...r.gear_field_definitions, rental_fee: r.rental_fee } : null).filter(Boolean);
+}
+
+async function loadGearFieldsForType(tripTypeId) {
+  selectedTripTypeFields = await fetchGearFieldsForType(tripTypeId);
+  return selectedTripTypeFields;
 }
 
 async function onTripTypeChange() {
@@ -7171,13 +7217,10 @@ async function onTripTypeChange() {
   checkBoatConflict();
   renderTripCrewSection();
 
-  // Load gear fields for this trip type for participant form later
-  const { data: ttgf } = await sb
-    .from('trip_type_gear_fields')
-    .select('*, gear_field_definitions(*)')
-    .eq('trip_type_id', typeId)
-    .order('sort_order');
-  selectedTripTypeFields = (ttgf || []).map(r => r.gear_field_definitions ? { ...r.gear_field_definitions, rental_fee: r.rental_fee } : null).filter(Boolean);
+  // Load gear fields for this trip type for participant form later (this is
+  // the trip's own DEFAULT type; a group with its own override loads its
+  // fields separately, on demand, in showAddGuestForm).
+  await loadGearFieldsForType(typeId);
 }
 
 document.getElementById('trip-type-select').addEventListener('change', onTripTypeChange);
@@ -7419,6 +7462,16 @@ async function groupCardHTML(g, index) {
         <input class="sf-input" type="text" autocomplete="off" value="${(g.booked_by||'').replace(/"/g,'&quot;')}" placeholder="${t('tt_booked_by_placeholder')}" onblur="updateGroupField('${key}','booked_by', this.value)">
       </div>
     </div>
+    <div class="sf-row">
+      <div class="sf-group">
+        <label class="sf-label">${t('tt_activity_type')}</label>
+        <select class="sf-input" onchange="updateGroupTripType('${key}', this.value)">
+          <option value="">${t('tt_same_as_trip')}</option>
+          ${tripTypeOptionsHtml(g.trip_type_id || '')}
+        </select>
+      </div>
+      ${g.trip_type_id ? `<div class="sf-group" style="display:flex;align-items:flex-end;padding-bottom:9px;"><span class="group-activity-override-badge">${t('tt_activity_override_badge')}</span></div>` : ''}
+    </div>
     ${checkInHtml ? `<div style="margin-top:14px;">${checkInHtml}</div><div id="checkin-panel-${g.id}" style="display:none;margin-top:10px;"></div>` : ''}
 
     <div class="card-section-title" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;">
@@ -7536,6 +7589,29 @@ async function updateGroupField(key, field, value) {
       sendBookingConfirmationIfNeeded(g.id);
     }
   }
+}
+
+// A group's activity-type override (dive vs. snorkel riding the same boat
+// slot) -- persists trip_type_id on the group and re-renders so its gear
+// fields, tank math, and required waivers switch to resolve from this type
+// instead of the trip's own default.
+async function updateGroupTripType(key, value) {
+  const g = findGroupByKey(key);
+  if (!g) return;
+  g.trip_type_id = value || null;
+  if (g.id) {
+    await sb.from('trip_groups').update({ trip_type_id: g.trip_type_id }).eq('id', g.id);
+  }
+  // Same auto-fill courtesy as the trip-level default: only touches the
+  // price if the group hasn't had one set yet.
+  if (g.trip_type_id && !g.price_per_person) {
+    const overrideType = currentTripTypes.find(tt => tt.id === g.trip_type_id);
+    if (overrideType?.default_price) {
+      g.price_per_person = overrideType.default_price;
+      if (g.id) await sb.from('trip_groups').update({ price_per_person: g.price_per_person }).eq('id', g.id);
+    }
+  }
+  await renderGroupsPanel();
 }
 
 // ─── BOOKING CONFIRMATION EMAIL (light version) ───
@@ -8862,15 +8938,22 @@ async function printManifest() {
       if (p.is_certified === true || p.is_certified === false) showCertColumn = true;
     });
   });
-  // Show every gear field configured on this trip type, not just ones where someone
-  // deviated from the default — otherwise a column silently disappears from the manifest.
-  const gearColumns = selectedTripTypeFields;
+
+  // A group can run its own activity type (e.g. a snorkel group riding a dive
+  // trip), so gear columns and required waivers are resolved PER GROUP from
+  // its own effective type rather than once for the whole trip. Fields are
+  // cached per trip_type_id so a repeated override doesn't re-query.
+  const gearFieldsByTypeId = {};
+  async function gearFieldsForType(id) {
+    if (!id || id === typeId) return selectedTripTypeFields;
+    if (!gearFieldsByTypeId[id]) gearFieldsByTypeId[id] = await fetchGearFieldsForType(id);
+    return gearFieldsByTypeId[id];
+  }
 
   // Waiver status per guest — only relevant if waivers are enabled for this org.
   // Pull every signed waiver across every group on this trip in one query so the
   // manifest can show, guest by guest, exactly who's missing exactly what.
   const showWaiverColumn = !!window.waiversEnabled;
-  const requiredWaiverTypes = (tripType?.required_waiver_types && tripType.required_waiver_types.length) ? tripType.required_waiver_types : ['liability'];
   const signedTypesByParticipant = {};
   if (showWaiverColumn) {
     const allParticipantIds = tripGroups_cache.flatMap(g => (groupParticipants_cache[g.id] || []).map(p => p.id));
@@ -8886,7 +8969,14 @@ async function printManifest() {
 
   const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-  const groupsHtml = tripGroups_cache.map((g, i) => {
+  const groupsHtml = (await Promise.all(tripGroups_cache.map(async (g, i) => {
+    const groupType = effectiveTripTypeForGroup(g);
+    const gearColumns = await gearFieldsForType(g.trip_type_id);
+    const requiredWaiverTypes = (groupType?.required_waiver_types && groupType.required_waiver_types.length) ? groupType.required_waiver_types : ['liability'];
+    // Only worth a callout when the group actually diverges from the trip's
+    // own default type -- otherwise every group would show the same note.
+    const activityNote = (g.trip_type_id && g.trip_type_id !== typeId && groupType)
+      ? `<p class="manifest-group-notes" style="font-style:normal;font-weight:600;">Activity: ${escapeHtml(trTypeName(groupType.name))}</p>` : '';
     const participants = groupParticipants_cache[g.id] || [];
     let missingCount = 0;
     const missingList = [];
@@ -8926,6 +9016,7 @@ async function printManifest() {
     return `
       <div class="manifest-group">
         <h3>${escapeHtml(g.contact_name) || 'Group ' + (i + 1)}${g.contact_phone ? ' · ' + escapeHtml(g.contact_phone) : ''}</h3>
+        ${activityNote}
         ${g.notes ? `<p class="manifest-group-notes">${escapeHtml(g.notes)}</p>` : ''}
         ${waiverSummary}
         <table>
@@ -8934,7 +9025,7 @@ async function printManifest() {
         </table>
       </div>
     `;
-  }).join('');
+  }))).join('');
 
   const crewNames = tripCrewCache.map(c => c.full_name).join(', ') || 'No crew assigned';
 
@@ -9000,7 +9091,21 @@ async function loadWaivers() {
   const tripById = {};
   (todaysTrips || []).forEach(t => tripById[t.id] = t);
 
-  const tripTypeIds = [...new Set((todaysTrips || []).map(t => t.trip_type_id).filter(Boolean))];
+  // A group can override the trip's own activity type (e.g. a snorkel group
+  // riding along on a dive trip), so its required waivers must be resolved
+  // per-group, not assumed from the trip's default type.
+  let todaysGroups = [];
+  if (tripIds.length) {
+    const { data } = await sb.from('trip_groups').select('id, trip_id, trip_type_id, contact_name').in('trip_id', tripIds);
+    todaysGroups = data || [];
+  }
+  const groupTypeById = {};
+  todaysGroups.forEach(g => { groupTypeById[g.id] = g.trip_type_id; });
+
+  const tripTypeIds = [...new Set([
+    ...(todaysTrips || []).map(t => t.trip_type_id),
+    ...todaysGroups.map(g => g.trip_type_id)
+  ].filter(Boolean))];
   const requiredWaiversByTripTypeId = {};
   if (tripTypeIds.length) {
     const { data: tts } = await sb.from('trip_types').select('id, required_waiver_types').in('id', tripTypeIds);
@@ -9027,7 +9132,8 @@ async function loadWaivers() {
   const pendingRows = [];
   participants.forEach(p => {
     const trip = tripById[p.trip_id];
-    const requiredTypes = (trip && requiredWaiversByTripTypeId[trip.trip_type_id]) || ['liability'];
+    const effectiveTypeId = (p.group_id && groupTypeById[p.group_id]) || trip?.trip_type_id;
+    const requiredTypes = requiredWaiversByTripTypeId[effectiveTypeId] || ['liability'];
     const signedTypes = signedTypesByParticipant[p.id] || new Set();
     const isMinor = calcAge(p.date_of_birth) !== null && calcAge(p.date_of_birth) < 18;
     requiredTypes.forEach(type => {
@@ -9048,7 +9154,7 @@ async function loadWaivers() {
     </div>`;
   }).join('') : `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
 
-  await renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaiversByTripTypeId, participants, signedTypesByParticipant);
+  await renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaiversByTripTypeId, participants, signedTypesByParticipant, todaysGroups);
   await renderWaiverLog();
 }
 
@@ -9056,15 +9162,17 @@ async function loadWaivers() {
 // One row per booking group with guests today, showing who in that group has
 // signed and who hasn't — same idea as Smartwaiver's group/event manager view.
 // Reuses everything loadWaivers() already fetched instead of re-querying.
-async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaiversByTripTypeId, participants, signedTypesByParticipant) {
+async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaiversByTripTypeId, participants, signedTypesByParticipant, todaysGroups) {
   const listEl = document.getElementById('remote-waiver-groups-list');
   if (!tripIds.length) {
     listEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
     return;
   }
 
-  const { data: groups } = await sb.from('trip_groups').select('id, trip_id, contact_name').in('trip_id', tripIds);
-  const groupIds = (groups || []).map(g => g.id);
+  // Reuse the groups (with each one's own activity-type override) already
+  // fetched by loadWaivers instead of re-querying without trip_type_id.
+  const groups = todaysGroups || [];
+  const groupIds = groups.map(g => g.id);
   if (!groupIds.length) {
     listEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
     return;
@@ -9083,7 +9191,8 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
     const groupParticipants = participantsByGroup[g.id] || [];
     const missing = [];
     groupParticipants.forEach(p => {
-      const requiredTypes = (trip && requiredWaiversByTripTypeId[trip.trip_type_id]) || ['liability'];
+      const effectiveTypeId = g.trip_type_id || trip?.trip_type_id;
+      const requiredTypes = requiredWaiversByTripTypeId[effectiveTypeId] || ['liability'];
       const signedTypes = signedTypesByParticipant[p.id] || new Set();
       const missingTypes = requiredTypes.filter(type => !signedTypes.has(type));
       if (missingTypes.length) missing.push({ id: p.id, name: p.full_name, types: missingTypes.map(mt => waiverTypeLabels[mt] || mt).join(', ') });
@@ -10090,14 +10199,19 @@ function trCertLevel(level) {
   return key ? t(key) : level;
 }
 
-function renderDynamicGearFieldsFor(groupId) {
+// A group's own activity-type override can mean a totally different gear
+// field set than the trip's default (snorkel guests don't need reg/BCD
+// fields) -- fields defaults to the trip-level selectedTripTypeFields for
+// any caller that hasn't resolved a group-specific set.
+function renderDynamicGearFieldsFor(groupId, fields) {
+  fields = fields || selectedTripTypeFields;
   const container = document.getElementById('dynamic-gear-fields-' + groupId);
   if (!container) return;
-  if (!selectedTripTypeFields.length) {
+  if (!fields.length) {
     container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('tt_no_gear_fields')}</p>`;
     return;
   }
-  container.innerHTML = selectedTripTypeFields.map(f => {
+  container.innerHTML = fields.map(f => {
     const inputId = `pgear-${groupId}-${f.field_key}`;
     const label = trGearFieldLabel(f);
     const feeNote = f.rental_fee ? `<span style="font-size:0.72rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;"> · +$${parseFloat(f.rental_fee).toFixed(2)} ${t('tt_if_renting')}</span>` : '';
@@ -10124,7 +10238,11 @@ function renderDynamicGearFieldsFor(groupId) {
 }
 
 window.currentEditingParticipantId = {};
-function showAddGuestForm(groupId, prefill) {
+// Per-group gear field sets, keyed by group id -- populated whenever the add-
+// guest form opens, since a group with its own activity-type override needs
+// its OWN gear fields, not the trip's default set (selectedTripTypeFields).
+let groupGearFieldsCache = {};
+async function showAddGuestForm(groupId, prefill) {
   const form = document.getElementById('form-add-participant-' + groupId);
   form.style.display = 'block';
   window.currentEditingParticipantId[groupId] = prefill ? prefill.id : null;
@@ -10134,8 +10252,8 @@ function showAddGuestForm(groupId, prefill) {
   document.getElementById('p-dob-' + groupId).value = prefill?.date_of_birth || '';
   document.getElementById('p-notes-' + groupId).value = prefill?.notes || '';
 
-  const typeId = document.getElementById('trip-type-select').value;
-  const tripType = currentTripTypes.find(t => t.id === typeId);
+  const group = findGroupByKey(groupId);
+  const tripType = effectiveTripTypeForGroup(group);
   const isDiving = tripType?.category === 'diving';
   document.getElementById('cert-section-' + groupId).style.display = isDiving ? 'block' : 'none';
   const needsDob = !!(tripType?.required_waiver_types || []).includes('minor');
@@ -10148,7 +10266,12 @@ function showAddGuestForm(groupId, prefill) {
   document.getElementById('cert-level-wrap-' + groupId).style.display = certStatus ? 'block' : 'none';
   document.getElementById('cert-level-' + groupId).value = prefill?.certification_level || '';
 
-  renderDynamicGearFieldsFor(groupId);
+  // Resolve gear fields from THIS group's effective type (falls back to the
+  // trip default type when the group has no override of its own).
+  groupGearFieldsCache[groupId] = (group?.trip_type_id && group.trip_type_id !== document.getElementById('trip-type-select').value)
+    ? await fetchGearFieldsForType(tripType?.id)
+    : selectedTripTypeFields;
+  renderDynamicGearFieldsFor(groupId, groupGearFieldsCache[groupId]);
   if (prefill?.gear) {
     Object.entries(prefill.gear).forEach(([key, val]) => {
       const el = document.getElementById(`pgear-${groupId}-${key}`);
@@ -10186,8 +10309,11 @@ async function saveGroupParticipant(groupId) {
     return;
   }
 
-  const typeId = document.getElementById('trip-type-select').value;
-  const tripType = currentTripTypes.find(t => t.id === typeId);
+  // Resolve diving/cert requirements from THIS group's own effective type,
+  // not the trip-level dropdown -- a snorkel group riding a dive trip must
+  // not be forced through the certification prompt.
+  const group = findGroupByKey(groupId);
+  const tripType = effectiveTripTypeForGroup(group);
   const isDiving = tripType?.category === 'diving';
   const certStatus = window.currentGuestCertStatus[groupId];
   if (isDiving && (certStatus === null || certStatus === undefined)) {
@@ -10199,7 +10325,7 @@ async function saveGroupParticipant(groupId) {
 
   const gear = {};
   let rentalSurcharge = 0;
-  selectedTripTypeFields.forEach(f => {
+  (groupGearFieldsCache[groupId] || selectedTripTypeFields).forEach(f => {
     const el = document.getElementById(`pgear-${groupId}-${f.field_key}`);
     if (el && el.value) {
       gear[f.field_key] = el.value;
@@ -10475,9 +10601,17 @@ const DIVING_CREW_ROLES = ['instructor', 'divemaster', 'dive_guide'];
 async function loadTodaysTripList() {
   if (!currentOrgId) return;
   const today = formatDate(new Date());
+
+  // A group can carry its own activity type (a snorkel group riding along on
+  // a dive trip, say), so tank math can't assume one type for everyone
+  // aboard -- this is the lookup used to resolve each group's own type.
+  const { data: allTypes } = await sb.from('trip_types').select('id, num_tanks, needs_tank_count').eq('org_id', currentOrgId);
+  const typeById = {};
+  (allTypes || []).forEach(tt => { typeById[tt.id] = tt; });
+
   const { data: trips } = await sb
     .from('trips')
-    .select('id, trip_name, trip_time, trip_type, trip_types(name, num_tanks, needs_tank_count), participants(id, gear), trip_crew(staff(role))')
+    .select('id, trip_name, trip_time, trip_type, trip_types(name, num_tanks, needs_tank_count), participants(id, gear, group_id), trip_crew(staff(role)), trip_groups(id, trip_type_id)')
     .eq('org_id', currentOrgId)
     .eq('trip_date', today)
     .order('trip_time');
@@ -10491,29 +10625,50 @@ async function loadTodaysTripList() {
   list.innerHTML = trips.map(tr => {
     const name = tr.trip_name || trTypeName(tr.trip_types?.name) || trTypeName(tr.trip_type) || t('cal_trip_fallback');
     const time = tr.trip_time?.slice(0,5) || '';
-    const guests = tr.participants?.length || 0;
-    const numTanks = tr.trip_types?.num_tanks || 1;
-    const needsTanks = tr.trip_types?.needs_tank_count;
+    const guests = (tr.participants || []).length;
+
+    const groupTypeById = {};
+    (tr.trip_groups || []).forEach(g => { groupTypeById[g.id] = g.trip_type_id; });
+    // Each participant's own group may override the trip's type -- resolve
+    // per participant so a snorkel guest never gets counted as needing a
+    // tank just because they're on a trip labeled "2 Dives".
+    const enrichedParticipants = (tr.participants || []).map(p => {
+      const overrideId = p.group_id ? groupTypeById[p.group_id] : null;
+      const effType = (overrideId && typeById[overrideId]) || tr.trip_types || {};
+      return { ...p, _needsTanks: !!effType.needs_tank_count, _numTanks: effType.num_tanks || 1 };
+    });
+    const anyNeedsTanks = enrichedParticipants.some(p => p._needsTanks);
+    const guestTankUnits = enrichedParticipants.reduce((sum, p) => sum + (p._needsTanks ? p._numTanks : 0), 0);
     const divingCrewCount = (tr.trip_crew || []).filter(tc => DIVING_CREW_ROLES.includes(tc.staff?.role)).length;
-    // Guests + diving crew, plus 2 spares whenever tanks are needed at all --
-    // per Fran, never load out to the exact headcount with nothing in reserve.
-    const totalTankCount = needsTanks ? (guests + divingCrewCount) * numTanks + 2 : 0;
-    const tanks = needsTanks ? `${totalTankCount} ${t('cl_tanks_needed')}` : '';
+    // Crew are assigned to the trip as a whole rather than one specific
+    // group, so if diving is happening on this boat at all, assume assigned
+    // instructors/DMs need a tank too -- one tank each is the common case.
+    const crewTankUnits = anyNeedsTanks ? divingCrewCount * (tr.trip_types?.needs_tank_count ? (tr.trip_types.num_tanks || 1) : 1) : 0;
+    // Plus 2 spares whenever tanks are needed at all -- per Fran, never load
+    // out to the exact headcount with nothing in reserve.
+    const totalTankCount = anyNeedsTanks ? guestTankUnits + crewTankUnits + 2 : 0;
+    const tanks = anyNeedsTanks ? `${totalTankCount} ${t('cl_tanks_needed')}` : '';
+    const clickPayload = { tripId: tr.id, participants: enrichedParticipants, anyNeedsTanks, divingCrewCount,
+      defaultNumTanks: tr.trip_types?.num_tanks || 1, defaultNeedsTanks: !!tr.trip_types?.needs_tank_count };
     return `<div class="cl-trip-pill ${currentChecklistTripId===tr.id?'selected':''}"
-      onclick="selectChecklistTrip('${tr.id}',${JSON.stringify(tr.participants||[]).replace(/"/g,'&quot;')},${numTanks},${needsTanks?'true':'false'},'${name}','${time}',${divingCrewCount})">
+      onclick="selectChecklistTrip(${JSON.stringify(clickPayload).replace(/"/g,'&quot;')})">
       <div style="font-weight:600;font-size:0.875rem;">${time ? time+' — ' : ''}${name}</div>
       <div style="font-size:0.75rem;color:var(--muted);">${guests} ${guests!==1?t('cl_guest_plural'):t('cl_guest_singular')}${tanks?' · '+tanks:''}</div>
     </div>`;
   }).join('');
 }
 
-function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripName, tripTime, divingCrewCount) {
+function selectChecklistTrip(payload) {
+  const { tripId, participants, anyNeedsTanks, divingCrewCount, defaultNumTanks, defaultNeedsTanks } = payload;
   currentChecklistTripId = tripId;
-  divingCrewCount = divingCrewCount || 0;
 
   // Recalculate gear totals from participants -- broken down by exact size
   // (not just a headline count), since that's what an instructor actually
-  // needs to know before loading the boat.
+  // needs to know before loading the boat. Tank need/count is resolved PER
+  // PARTICIPANT via their own group's effective trip type (a snorkel group
+  // riding along on a dive trip shouldn't be counted for tanks), while other
+  // gear fields (masks, fins, etc.) are read straight from each guest's own
+  // saved gear selections regardless of type.
   const gearTotals = {};
   let totalTanks = 0;
   let totalWeight = 0;
@@ -10521,11 +10676,11 @@ function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripNam
 
   participants.forEach(p => {
     const g = typeof p.gear === 'string' ? JSON.parse(p.gear||'{}') : (p.gear||{});
-    if (needsTanks) totalTanks += numTanks;
+    if (p._needsTanks) totalTanks += (p._numTanks || 1);
     Object.entries(g).forEach(([k,v]) => {
       if (!v || v === 'Own gear' || v === 'None') return;
       if (k === 'weight_kg') { totalWeight += parseFloat(v)||0; return; }
-      if (k === 'tank_size') { tankSizes[v] = (tankSizes[v]||0) + numTanks; return; }
+      if (k === 'tank_size') { tankSizes[v] = (tankSizes[v]||0) + (p._numTanks || 1); return; }
       if (!gearTotals[k]) gearTotals[k] = {};
       gearTotals[k][v] = (gearTotals[k][v]||0) + 1;
     });
@@ -10533,9 +10688,11 @@ function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripNam
 
   // Diving crew assigned to this trip need their own tank too, and every
   // load-out carries 2 spares -- neither comes from participant records,
-  // so both are added on top of the guest count.
-  if (needsTanks) totalTanks += divingCrewCount * numTanks;
-  const spareTanks = needsTanks ? 2 : 0;
+  // so both are added on top of the guest count. Crew aren't tied to a
+  // specific group, so fall back to the trip's own default type for their
+  // per-tank count.
+  if (anyNeedsTanks) totalTanks += divingCrewCount * (defaultNumTanks || 1);
+  const spareTanks = anyNeedsTanks ? 2 : 0;
   totalTanks += spareTanks;
 
   // Build gear summary
