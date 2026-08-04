@@ -1333,8 +1333,8 @@ body { background: var(--navy); color: var(--text); }
         <input class="sf-input" type="text" id="confirm-modal-input2" placeholder="" autocomplete="off">
       </div>
       <div class="settings-actions" style="justify-content:flex-end;">
-        <button class="btn-cancel" id="confirm-modal-cancel">Cancel</button>
-        <button class="btn-save" id="confirm-modal-ok">Confirm</button>
+        <button class="btn-cancel" id="confirm-modal-cancel" data-i18n="tt_cancel">Cancel</button>
+        <button class="btn-save" id="confirm-modal-ok" data-i18n="modal_confirm">Confirm</button>
       </div>
     </div>
   </div>
@@ -3862,6 +3862,38 @@ const TRANSLATIONS = {
     set_required_waivers_desc: 'Guests booked on this trip type must sign each of these before their trip. Defaults to Liability if none are selected.',
     guest_dob: 'Date of birth',
     guest_dob_hint: 'Used to show a parent/guardian signature section on waivers for minors.',
+
+    // i18n audit pass -- generic feedback/warning/banner strings that were
+    // previously hardcoded in English regardless of the selected language.
+    offline_banner_waiting: "You're offline — {n} change{s} waiting to sync. Checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.",
+    offline_banner_no_changes: "You're offline — checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.",
+    offline_syncing_back: 'Back online — syncing {n} change{s}...', offline_syncing: 'Syncing {n} change{s}...', offline_all_synced: 'All changes synced ✓',
+    auth_invite_desc: "You've been invited to join {org} as {role}. Set a password to finish creating your account.", auth_this_operation: 'this operation',
+    auth_enter_name: 'Enter your name.', auth_password_min: 'Password must be at least 6 characters.', auth_setting_up: 'Setting up...',
+    auth_account_exists: "An account already exists for this email. Enter that account's password, or ask for a password reset first.",
+    auth_set_up_account: 'Set up account', auth_could_not_verify: 'Could not verify your account. If you just signed up, confirm your email first, then try this link again.',
+    auth_link_error_prefix: 'Signed in, but could not finish linking your account to this operation. Send this to Fran: ', auth_unknown_error: 'unknown error',
+    auth_enter_email_password: 'Enter your email and password.', auth_signing_in: 'Signing in...', auth_invalid_credentials: 'Email or password is incorrect.', auth_sign_in: 'Sign in',
+    auth_enter_email: 'Enter your email address.', auth_sending: 'Sending...', auth_send_reset_link: 'Send reset link', auth_sent: 'Sent',
+    auth_passwords_dont_match: "Passwords don't match.", auth_password_updated: 'Password updated.',
+    common_saving: 'Saving...', common_error_saving: 'Error saving.', common_error_saving_retry: 'Error saving. Try again.', common_name_required: 'Name is required.',
+    org_name_required: 'Operation name is required.', org_email_required: 'Contact email is required — guests see it on booking confirmations.',
+    loc_name_required: 'Location name required.', loc_save_org_first: 'Save your organisation details first.',
+    tt_trip_details: 'Trip details', tt_offline_booking: "You're offline — bookings need a live connection so nothing gets double-booked. Try again once you're back online.",
+    tt_field_date: 'Date', tt_field_departure_time: 'Departure time', tt_field_arrival_time: 'Arrival time', tt_field_end_date: 'End date',
+    tt_end_date_order: 'End date must be on or after the start date', tt_field_contact_name: 'Contact name', tt_field_contact_phone: 'Contact phone',
+    tt_date_in_past: 'Date cannot be in the past', tt_time_in_past: 'Departure time cannot be in the past', tt_missing_prefix: 'Missing: ',
+    tt_cannot_save_conflict: 'Cannot save: resolve the boat conflict first.', tt_cannot_save_crew_conflict: 'Cannot save: {names} is already crewed on an overlapping trip.',
+    tt_cannot_save_capacity: 'Cannot save: too many guests for this boat once crew is accounted for.', tt_error_saving_trip: 'Error saving trip.', tt_groups_count: 'Groups ({n})',
+    checkin_offline: "You're offline — check-in needs a live connection.",
+    wv_error_loading: 'Error loading waivers.', wv_allow_popups_export: 'Please allow pop-ups to export.',
+    pay_offline: "You're offline — payments need a live connection so nothing gets logged twice or lost. Try again once you're back online.",
+    pay_exceeds_owed_note: "This exceeds what's owed — please add a note explaining why.",
+    guest_offline: "You're offline — guest changes need a live connection. Try again once you're back online.",
+    guest_cert_required: 'Please indicate whether this guest is a certified diver.',
+    maint_fields_required: 'Title, date and description are required.', maint_saved_offline: "Saved offline — will sync automatically when you're back online.",
+    comp_fields_required: 'Location, name and filter lifespan are required.',
+    modal_confirm: 'Confirm', modal_ok: 'OK', modal_submit: 'Submit',
   },
   es: {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
@@ -4379,6 +4411,38 @@ const TRANSLATIONS = {
     set_required_waivers_desc: 'Los huéspedes reservados en este tipo de salida deben firmar cada una de estas antes de su salida. Por defecto es Responsabilidad si no seleccionas ninguna.',
     guest_dob: 'Fecha de nacimiento',
     guest_dob_hint: 'Se usa para mostrar una sección de firma de padre/madre o tutor en las exenciones de menores.',
+
+    // i18n audit pass -- generic feedback/warning/banner strings that were
+    // previously hardcoded in English regardless of the selected language.
+    offline_banner_waiting: 'Estás sin conexión — {n} cambio{s} esperando para sincronizar. Checklists, tareas, firma de exenciones y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
+    offline_banner_no_changes: 'Estás sin conexión — checklists, tareas, firma de exenciones y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
+    offline_syncing_back: 'De vuelta en línea — sincronizando {n} cambio{s}...', offline_syncing: 'Sincronizando {n} cambio{s}...', offline_all_synced: 'Todos los cambios sincronizados ✓',
+    auth_invite_desc: 'Fuiste invitado a unirte a {org} como {role}. Configurá una contraseña para terminar de crear tu cuenta.', auth_this_operation: 'esta operación',
+    auth_enter_name: 'Ingresá tu nombre.', auth_password_min: 'La contraseña debe tener al menos 6 caracteres.', auth_setting_up: 'Configurando...',
+    auth_account_exists: 'Ya existe una cuenta con este email. Ingresá la contraseña de esa cuenta, o pedí un restablecimiento de contraseña primero.',
+    auth_set_up_account: 'Configurar cuenta', auth_could_not_verify: 'No pudimos verificar tu cuenta. Si acabás de registrarte, confirmá tu email primero y volvé a intentar este enlace.',
+    auth_link_error_prefix: 'Sesión iniciada, pero no se pudo terminar de vincular tu cuenta a esta operación. Enviale esto a Fran: ', auth_unknown_error: 'error desconocido',
+    auth_enter_email_password: 'Ingresá tu email y contraseña.', auth_signing_in: 'Iniciando sesión...', auth_invalid_credentials: 'El email o la contraseña son incorrectos.', auth_sign_in: 'Iniciar sesión',
+    auth_enter_email: 'Ingresá tu dirección de email.', auth_sending: 'Enviando...', auth_send_reset_link: 'Enviar enlace de restablecimiento', auth_sent: 'Enviado',
+    auth_passwords_dont_match: 'Las contraseñas no coinciden.', auth_password_updated: 'Contraseña actualizada.',
+    common_saving: 'Guardando...', common_error_saving: 'Error al guardar.', common_error_saving_retry: 'Error al guardar. Intentá de nuevo.', common_name_required: 'El nombre es obligatorio.',
+    org_name_required: 'El nombre de la operación es obligatorio.', org_email_required: 'El email de contacto es obligatorio — los huéspedes lo ven en las confirmaciones de reserva.',
+    loc_name_required: 'El nombre del local es obligatorio.', loc_save_org_first: 'Guardá los datos de tu organización primero.',
+    tt_trip_details: 'Detalles de la salida', tt_offline_booking: 'Estás sin conexión — las reservas necesitan conexión para que nada se reserve dos veces. Intentá de nuevo cuando vuelvas a estar en línea.',
+    tt_field_date: 'Fecha', tt_field_departure_time: 'Hora de salida', tt_field_arrival_time: 'Hora de regreso', tt_field_end_date: 'Fecha de fin',
+    tt_end_date_order: 'La fecha de fin debe ser igual o posterior a la fecha de inicio', tt_field_contact_name: 'Nombre de contacto', tt_field_contact_phone: 'Teléfono de contacto',
+    tt_date_in_past: 'La fecha no puede ser en el pasado', tt_time_in_past: 'La hora de salida no puede ser en el pasado', tt_missing_prefix: 'Falta: ',
+    tt_cannot_save_conflict: 'No se puede guardar: resolvé primero el conflicto de embarcación.', tt_cannot_save_crew_conflict: 'No se puede guardar: {names} ya está asignado a otra salida que se superpone.',
+    tt_cannot_save_capacity: 'No se puede guardar: demasiados huéspedes para esta embarcación una vez contada la tripulación.', tt_error_saving_trip: 'Error al guardar la salida.', tt_groups_count: 'Grupos ({n})',
+    checkin_offline: 'Estás sin conexión — el registro de llegada necesita conexión.',
+    wv_error_loading: 'Error al cargar las exenciones.', wv_allow_popups_export: 'Permití las ventanas emergentes para exportar.',
+    pay_offline: 'Estás sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Intentá de nuevo cuando vuelvas a estar en línea.',
+    pay_exceeds_owed_note: 'Esto excede lo adeudado — por favor agregá una nota explicando por qué.',
+    guest_offline: 'Estás sin conexión — los cambios de huéspedes necesitan conexión. Intentá de nuevo cuando vuelvas a estar en línea.',
+    guest_cert_required: 'Por favor indicá si este huésped es buzo certificado.',
+    maint_fields_required: 'Título, fecha y descripción son obligatorios.', maint_saved_offline: 'Guardado sin conexión — se sincronizará automáticamente cuando vuelvas a estar en línea.',
+    comp_fields_required: 'Local, nombre y vida útil del filtro son obligatorios.',
+    modal_confirm: 'Confirmar', modal_ok: 'OK', modal_submit: 'Enviar',
   }
 };
 
@@ -4405,6 +4469,11 @@ function applyTranslations() {
 // Handles UI pieces that mix translated text with live data (org name, today's date,
 // time-of-day greeting), so a simple data-i18n tag on its own can't cover them.
 function refreshDynamicTranslations() {
+  // The offline/sync banner sets its text once, from JS, whenever connection
+  // state changes -- if it's already showing when the language is switched,
+  // it stays in the old language until the next state change unless we
+  // explicitly re-run it here.
+  if (typeof updateOfflineBanner === 'function') updateOfflineBanner();
   const greetingEl = document.getElementById('home-greeting');
   if (greetingEl) {
     const hour = new Date().getHours();
@@ -4432,6 +4501,15 @@ function refreshDynamicTranslations() {
   }
   if (typeof currentOrgId !== 'undefined' && currentOrgId) {
     if (typeof renderCalendar === 'function') renderCalendar();
+    // The trip modal's boat-conflict and guest-capacity warnings set their
+    // text once, from JS, whenever their inputs change -- if the modal is
+    // open when the language is switched, re-run both so an already-visible
+    // warning doesn't stay stuck in the old language.
+    const tripModal = document.getElementById('modal-trip');
+    if (tripModal && tripModal.style.display !== 'none') {
+      if (typeof checkBoatConflict === 'function') checkBoatConflict();
+      if (typeof checkGuestCapacity === 'function') checkGuestCapacity();
+    }
     if (typeof loadFleet === 'function') loadFleet();
     // loadFleet() only rebuilds the top boat-card list — the expanded boat
     // detail section (engine cards, per-engine logs/maintenance) is a
@@ -4668,12 +4746,12 @@ function updateOfflineBanner() {
     banner.className = 'offline';
     banner.style.display = 'flex';
     banner.querySelector('.offline-banner-text').textContent = count > 0
-      ? `You're offline — ${count} change${count > 1 ? 's' : ''} waiting to sync. Checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.`
-      : `You're offline — checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.`;
+      ? t('offline_banner_waiting').replace('{n}', count).replace('{s}', count > 1 ? 's' : '')
+      : t('offline_banner_no_changes');
   } else if (count > 0) {
     banner.className = 'syncing';
     banner.style.display = 'flex';
-    banner.querySelector('.offline-banner-text').textContent = `Back online — syncing ${count} queued change${count > 1 ? 's' : ''}...`;
+    banner.querySelector('.offline-banner-text').textContent = t('offline_syncing_back').replace('{n}', count).replace('{s}', count > 1 ? 's' : '');
   } else {
     banner.style.display = 'none';
   }
@@ -4737,7 +4815,7 @@ async function flushOfflineQueue() {
   if (banner) {
     banner.className = 'syncing';
     banner.style.display = 'flex';
-    banner.querySelector('.offline-banner-text').textContent = `Syncing ${queue.length} queued change${queue.length > 1 ? 's' : ''}...`;
+    banner.querySelector('.offline-banner-text').textContent = t('offline_syncing').replace('{n}', queue.length).replace('{s}', queue.length > 1 ? 's' : '');
   }
   let i = 0;
   for (; i < queue.length; i++) {
@@ -4751,7 +4829,7 @@ async function flushOfflineQueue() {
   const remaining = queue.slice(i);
   setOfflineQueue(remaining);
   if (remaining.length === 0 && banner) {
-    banner.querySelector('.offline-banner-text').textContent = 'All changes synced ✓';
+    banner.querySelector('.offline-banner-text').textContent = t('offline_all_synced');
     setTimeout(() => { if (!isOffline && getOfflineQueue().length === 0) banner.style.display = 'none'; }, 2500);
   }
 }
@@ -4785,7 +4863,7 @@ async function checkForInviteToken() {
   pendingInvite = { token, email: data.email, full_name: data.fullName, role: data.role, custom_role_name: data.customRoleName };
   const roleLabel = (data.customRoleName || data.role || 'crew').replace(/_/g, ' ');
   document.getElementById('accept-invite-desc').textContent =
-    `You've been invited to join ${data.orgName || 'this operation'} as ${roleLabel}. Set a password to finish creating your account.`;
+    t('auth_invite_desc').replace('{org}', data.orgName || t('auth_this_operation')).replace('{role}', roleLabel);
   document.getElementById('accept-invite-name').value = data.fullName || '';
   document.getElementById('accept-invite-email').value = data.email;
   document.getElementById('accept-invite-form').style.display = 'block';
@@ -4802,18 +4880,18 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
   errorEl.classList.remove('visible');
 
   if (!fullName) {
-    errorEl.textContent = 'Enter your name.';
+    errorEl.textContent = t('auth_enter_name');
     errorEl.classList.add('visible');
     return;
   }
   if (!password || password.length < 6) {
-    errorEl.textContent = 'Password must be at least 6 characters.';
+    errorEl.textContent = t('auth_password_min');
     errorEl.classList.add('visible');
     return;
   }
   if (!pendingInvite) return;
 
-  btn.disabled = true; btn.textContent = 'Setting up...';
+  btn.disabled = true; btn.textContent = t('auth_setting_up');
 
   let userId = null;
   const { data: signUpData, error: signUpErr } = await sb.auth.signUp({ email: pendingInvite.email, password });
@@ -4828,18 +4906,18 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
     // Most likely: this email already has an account (e.g. they work at another shop too).
     const { data: signInData, error: signInErr } = await sb.auth.signInWithPassword({ email: pendingInvite.email, password });
     if (signInErr || !signInData?.user) {
-      errorEl.textContent = 'An account already exists for this email. Enter that account\'s password, or ask for a password reset first.';
+      errorEl.textContent = t('auth_account_exists');
       errorEl.classList.add('visible');
-      btn.disabled = false; btn.textContent = 'Set up account';
+      btn.disabled = false; btn.textContent = t('auth_set_up_account');
       return;
     }
     userId = signInData.user.id;
   }
 
   if (!userId) {
-    errorEl.textContent = 'Could not verify your account. If you just signed up, confirm your email first, then try this link again.';
+    errorEl.textContent = t('auth_could_not_verify');
     errorEl.classList.add('visible');
-    btn.disabled = false; btn.textContent = 'Set up account';
+    btn.disabled = false; btn.textContent = t('auth_set_up_account');
     return;
   }
 
@@ -4853,9 +4931,9 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
     body: { action: 'accept', token: pendingInvite.token, userId, fullName }
   });
   if (acceptErr || !acceptData?.success) {
-    errorEl.textContent = 'Signed in, but could not finish linking your account to this operation. Send this to Fran: ' + (acceptErr?.message || acceptData?.error || 'unknown error');
+    errorEl.textContent = t('auth_link_error_prefix') + (acceptErr?.message || acceptData?.error || t('auth_unknown_error'));
     errorEl.classList.add('visible');
-    btn.disabled = false; btn.textContent = 'Set up account';
+    btn.disabled = false; btn.textContent = t('auth_set_up_account');
     return;
   }
 
@@ -6050,13 +6128,13 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   const errorEl = document.getElementById('login-error');
 
   if (!email || !password) {
-    errorEl.textContent = 'Enter your email and password.';
+    errorEl.textContent = t('auth_enter_email_password');
     errorEl.classList.add('visible');
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Signing in...';
+  btn.textContent = t('auth_signing_in');
   errorEl.classList.remove('visible');
 
   const rememberMe = document.getElementById('login-remember-me').checked;
@@ -6066,11 +6144,11 @@ document.getElementById('btn-login').addEventListener('click', async () => {
 
   if (error) {
     errorEl.textContent = error.message === 'Invalid login credentials'
-      ? 'Email or password is incorrect.'
+      ? t('auth_invalid_credentials')
       : error.message;
     errorEl.classList.add('visible');
     btn.disabled = false;
-    btn.textContent = 'Sign in';
+    btn.textContent = t('auth_sign_in');
     return;
   }
 
@@ -6189,13 +6267,13 @@ document.getElementById('btn-reset').addEventListener('click', async () => {
   const successEl = document.getElementById('forgot-success');
 
   if (!email) {
-    errorEl.textContent = 'Enter your email address.';
+    errorEl.textContent = t('auth_enter_email');
     errorEl.classList.add('visible');
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Sending...';
+  btn.textContent = t('auth_sending');
   errorEl.classList.remove('visible');
 
   const { error } = await sb.auth.resetPasswordForEmail(email);
@@ -6204,12 +6282,12 @@ document.getElementById('btn-reset').addEventListener('click', async () => {
     errorEl.textContent = error.message;
     errorEl.classList.add('visible');
     btn.disabled = false;
-    btn.textContent = 'Send reset link';
+    btn.textContent = t('auth_send_reset_link');
     return;
   }
 
   successEl.classList.add('visible');
-  btn.textContent = 'Sent';
+  btn.textContent = t('auth_sent');
 });
 
 // ─── SIGN OUT ───
@@ -6245,18 +6323,18 @@ document.getElementById('btn-save-new-password').addEventListener('click', async
   const pwConfirm = document.getElementById('account-new-password-confirm').value;
 
   if (!pw || pw.length < 6) {
-    feedback.textContent = 'Password must be at least 6 characters.';
+    feedback.textContent = t('auth_password_min');
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (pw !== pwConfirm) {
-    feedback.textContent = "Passwords don't match.";
+    feedback.textContent = t('auth_passwords_dont_match');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.textContent = t('common_saving');
   const { error } = await sb.auth.updateUser({ password: pw });
   btn.disabled = false;
   btn.textContent = t('set_save_password');
@@ -6267,7 +6345,7 @@ document.getElementById('btn-save-new-password').addEventListener('click', async
     return;
   }
 
-  feedback.textContent = 'Password updated.';
+  feedback.textContent = t('auth_password_updated');
   feedback.className = 'save-feedback visible';
   document.getElementById('account-new-password').value = '';
   document.getElementById('account-new-password-confirm').value = '';
@@ -6622,18 +6700,18 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
   const captainElevated = document.getElementById('chk-captain-elevated').checked;
 
   if (!name) {
-    feedback.textContent = 'Operation name is required.';
+    feedback.textContent = t('org_name_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (!email) {
-    feedback.textContent = 'Contact email is required — guests see it on booking confirmations.';
+    feedback.textContent = t('org_email_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.textContent = t('common_saving');
 
   const { data: { user } } = await sb.auth.getUser();
 
@@ -6646,9 +6724,9 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
       .single();
 
     if (orgErr) {
-      feedback.textContent = 'Error saving. Try again.';
+      feedback.textContent = t('common_error_saving_retry');
       feedback.className = 'save-feedback error visible';
-      btn.disabled = false; btn.textContent = 'Save organisation';
+      btn.disabled = false; btn.textContent = t('set_save_org');
       return;
     }
 
@@ -6697,9 +6775,9 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
       .eq('id', currentOrgId);
 
     if (error) {
-      feedback.textContent = 'Error saving. Try again.';
+      feedback.textContent = t('common_error_saving_retry');
       feedback.className = 'save-feedback error visible';
-      btn.disabled = false; btn.textContent = 'Save organisation';
+      btn.disabled = false; btn.textContent = t('set_save_org');
       return;
     }
 
@@ -6730,9 +6808,9 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     }
   }
 
-  feedback.textContent = 'Saved';
+  feedback.textContent = t('set_saved');
   feedback.className = 'save-feedback visible';
-  btn.disabled = false; btn.textContent = 'Save organisation';
+  btn.disabled = false; btn.textContent = t('set_save_org');
   setTimeout(() => feedback.classList.remove('visible'), 3000);
 
   // Hide setup banner on home
@@ -6760,26 +6838,26 @@ document.getElementById('btn-save-location').addEventListener('click', async () 
   const timezone = document.getElementById('loc-timezone').value;
 
   if (!name) {
-    feedback.textContent = 'Location name required.';
+    feedback.textContent = t('loc_name_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (!currentOrgId) {
-    feedback.textContent = 'Save your organisation details first.';
+    feedback.textContent = t('loc_save_org_first');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('common_saving');
 
   const { error } = await sb.from('locations').insert({
     org_id: currentOrgId, name, country, timezone
   });
 
   if (error) {
-    feedback.textContent = 'Error saving.';
+    feedback.textContent = t('common_error_saving');
     feedback.className = 'save-feedback error visible';
-    btn.disabled = false; btn.textContent = 'Save location';
+    btn.disabled = false; btn.textContent = t('set_save_location');
     return;
   }
 
@@ -6787,7 +6865,7 @@ document.getElementById('btn-save-location').addEventListener('click', async () 
   document.getElementById('loc-country').value = '';
   document.getElementById('form-add-location').style.display = 'none';
   document.getElementById('btn-add-location').style.display = 'block';
-  btn.disabled = false; btn.textContent = 'Save location';
+  btn.disabled = false; btn.textContent = t('set_save_location');
   feedback.className = 'save-feedback';
 
   await loadLocations();
@@ -7246,9 +7324,9 @@ async function openNewTrip() {
   currentTripId = null;
   tripGroups_cache = [blankGroup()];
   groupParticipants_cache = {};
-  document.getElementById('modal-trip-title').textContent = 'New trip';
+  document.getElementById('modal-trip-title').textContent = t('tt_new_trip_title');
   document.getElementById('trip-form-section').style.display = 'block';
-  document.getElementById('btn-save-trip').textContent = 'Save trip';
+  document.getElementById('btn-save-trip').textContent = t('tt_save_trip');
   document.getElementById('btn-delete-trip').style.display = 'none';
   document.getElementById('btn-print-manifest').style.display = 'none';
   const todayLocalStr = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
@@ -7293,7 +7371,7 @@ async function openTrip(id) {
   tripGroups_cache = (groups && groups.length) ? groups : [blankGroup()];
   groupParticipants_cache = {};
 
-  document.getElementById('modal-trip-title').textContent = tripGroups_cache[0]?.contact_name || 'Trip details';
+  document.getElementById('modal-trip-title').textContent = tripGroups_cache[0]?.contact_name || t('tt_trip_details');
   await populateTripTypeSelect(trip.trip_type_id);
   await onTripTypeChange();
 
@@ -7313,7 +7391,7 @@ async function openTrip(id) {
   await checkBoatConflict();
 
   document.getElementById('trip-form-section').style.display = 'block';
-  document.getElementById('btn-save-trip').textContent = 'Update trip';
+  document.getElementById('btn-save-trip').textContent = t('tt_update_trip');
   document.getElementById('btn-delete-trip').style.display = 'inline-block';
   document.getElementById('btn-print-manifest').style.display = 'inline-block';
   document.getElementById('modal-trip').style.display = 'flex';
@@ -7371,7 +7449,7 @@ async function setBookingMode(mode) {
 // ─── GROUPS PANEL ───
 async function renderGroupsPanel() {
   const list = document.getElementById('groups-list');
-  document.getElementById('groups-title').textContent = tripGroups_cache.length > 1 ? `Groups (${tripGroups_cache.length})` : 'Group';
+  document.getElementById('groups-title').textContent = tripGroups_cache.length > 1 ? t('tt_groups_count').replace('{n}', tripGroups_cache.length) : t('tt_group');
   document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared' && currentTripId) ? 'inline-block' : 'none';
   const cardsHtml = await Promise.all(tripGroups_cache.map((g, i) => groupCardHTML(g, i)));
   list.innerHTML = cardsHtml.join('');
@@ -7554,7 +7632,7 @@ function showCheckInPanel(groupId) {
 async function confirmCheckIn(groupId) {
   if (isOffline) {
     const feedback = document.getElementById('checkin-feedback-' + groupId);
-    if (feedback) { feedback.textContent = "You're offline — check-in needs a live connection."; feedback.className = 'save-feedback error visible'; }
+    if (feedback) { feedback.textContent = t('checkin_offline'); feedback.className = 'save-feedback error visible'; }
     return;
   }
   const boxes = document.querySelectorAll(`.checkin-box-${groupId}`);
@@ -7583,7 +7661,7 @@ async function updateGroupField(key, field, value) {
     await sb.from('trip_groups').update({ [field]: val }).eq('id', g.id);
     if (field === 'price_per_person') await refreshGroupPaymentSection(g.id);
     if (field === 'contact_name' && tripGroups_cache[0]?.id === g.id) {
-      document.getElementById('modal-trip-title').textContent = val || 'Trip details';
+      document.getElementById('modal-trip-title').textContent = val || t('tt_trip_details');
     }
     if (field === 'contact_email' && val) {
       sendBookingConfirmationIfNeeded(g.id);
@@ -8773,7 +8851,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-trip');
   const feedback = document.getElementById('trip-save-feedback');
   if (isOffline) {
-    feedback.textContent = "You're offline — bookings need a live connection so nothing gets double-booked. Try again once you're back online.";
+    feedback.textContent = t('tt_offline_booking');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -8789,13 +8867,13 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const endDate = isMultiDay ? document.getElementById('trip-end-date').value : null;
 
   const errors = [];
-  if (!date) errors.push('Date');
-  if (!time) errors.push('Departure time');
-  if (!arrival) errors.push('Arrival time');
-  if (isMultiDay && !endDate) errors.push('End date');
-  if (isMultiDay && endDate && endDate < date) errors.push('End date must be on or after the start date');
-  if (!primaryGroup.contact_name) errors.push('Contact name');
-  if (!primaryGroup.contact_phone) errors.push('Contact phone');
+  if (!date) errors.push(t('tt_field_date'));
+  if (!time) errors.push(t('tt_field_departure_time'));
+  if (!arrival) errors.push(t('tt_field_arrival_time'));
+  if (isMultiDay && !endDate) errors.push(t('tt_field_end_date'));
+  if (isMultiDay && endDate && endDate < date) errors.push(t('tt_end_date_order'));
+  if (!primaryGroup.contact_name) errors.push(t('tt_field_contact_name'));
+  if (!primaryGroup.contact_phone) errors.push(t('tt_field_contact_phone'));
 
   // Block booking a trip in the past — only for new bookings, so editing/managing an
   // existing trip that has since passed (adding payments, notes, etc.) still works.
@@ -8803,37 +8881,37 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     const nowTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    if (date < todayStr) errors.push('Date cannot be in the past');
-    else if (date === todayStr && time && time < nowTimeStr) errors.push('Departure time cannot be in the past');
+    if (date < todayStr) errors.push(t('tt_date_in_past'));
+    else if (date === todayStr && time && time < nowTimeStr) errors.push(t('tt_time_in_past'));
   }
 
   if (errors.length) {
-    feedback.textContent = 'Missing: ' + errors.join(', ');
+    feedback.textContent = t('tt_missing_prefix') + errors.join(', ');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
   await checkBoatConflict();
   if (window.currentBoatConflict) {
-    feedback.textContent = 'Cannot save: resolve the boat conflict first.';
+    feedback.textContent = t('tt_cannot_save_conflict');
     feedback.className = 'save-feedback error visible';
     return;
   }
   const { conflicted: crewConflicts } = await getEligibleCrewData();
   const stillConflicted = tripCrewCache.filter(c => crewConflicts[c.staff_id]);
   if (stillConflicted.length) {
-    feedback.textContent = `Cannot save: ${stillConflicted.map(c => c.full_name).join(', ')} is already crewed on an overlapping trip.`;
+    feedback.textContent = t('tt_cannot_save_crew_conflict').replace('{names}', stillConflicted.map(c => c.full_name).join(', '));
     feedback.className = 'save-feedback error visible';
     return;
   }
   await checkGuestCapacity();
   if (window.currentCapacityExceeded) {
-    feedback.textContent = 'Cannot save: too many guests for this boat once crew is accounted for.';
+    feedback.textContent = t('tt_cannot_save_capacity');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('common_saving');
 
   const payload = {
     org_id: currentOrgId,
@@ -8861,9 +8939,9 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   if (!currentTripId) {
     const { data, error } = await sb.from('trips').insert(payload).select().single();
     if (error) {
-      feedback.textContent = 'Error saving trip.';
+      feedback.textContent = t('tt_error_saving_trip');
       feedback.className = 'save-feedback error visible';
-      btn.disabled = false; btn.textContent = 'Save trip';
+      btn.disabled = false; btn.textContent = t('tt_save_trip');
       return;
     }
     tripId = data.id;
@@ -8905,12 +8983,12 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   await renderTripCrewSection();
   await renderGroupsPanel();
 
-  feedback.textContent = 'Saved';
+  feedback.textContent = t('set_saved');
   feedback.className = 'save-feedback visible';
-  btn.disabled = false; btn.textContent = 'Update trip';
+  btn.disabled = false; btn.textContent = t('tt_update_trip');
   document.getElementById('btn-delete-trip').style.display = 'inline-block';
   document.getElementById('btn-print-manifest').style.display = 'inline-block';
-  document.getElementById('modal-trip-title').textContent = primaryGroup.contact_name || 'Trip details';
+  document.getElementById('modal-trip-title').textContent = primaryGroup.contact_name || t('tt_trip_details');
   document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared') ? 'inline-block' : 'none';
 
   if (typeof refreshHomeStats === 'function') refreshHomeStats();
@@ -9712,12 +9790,12 @@ async function exportWaiversForDay(date) {
   const { data, error } = await query;
 
   if (error) {
-    feedback.textContent = 'Error loading waivers.';
+    feedback.textContent = t('wv_error_loading');
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (!data || !data.length) {
-    feedback.textContent = 'No waivers signed on this date.';
+    feedback.textContent = t('wv_no_waivers_date');
     feedback.className = 'save-feedback visible';
     return;
   }
@@ -9773,7 +9851,7 @@ async function exportWaiversForDay(date) {
 
   const win = window.open('', '_blank');
   if (!win) {
-    feedback.textContent = 'Please allow pop-ups to export.';
+    feedback.textContent = t('wv_allow_popups_export');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -10030,17 +10108,17 @@ function cancelLogPayment(groupId) {
 async function confirmLogPayment(groupId, total, paid) {
   const feedback = document.getElementById('log-payment-feedback-' + groupId);
   if (isOffline) {
-    feedback.textContent = "You're offline — payments need a live connection so nothing gets logged twice or lost. Try again once you're back online.";
+    feedback.textContent = t('pay_offline');
     feedback.className = 'save-feedback error visible';
     return;
   }
   const amount = parseFloat(document.getElementById('new-payment-amount-' + groupId).value);
   const method = window.currentPaymentMethod[groupId];
   const note = document.getElementById('new-payment-note-' + groupId).value.trim();
-  if (!amount || amount <= 0) { feedback.textContent = 'Enter a valid amount.'; feedback.className = 'save-feedback error visible'; return; }
-  if (!method) { feedback.textContent = 'Select a payment method.'; feedback.className = 'save-feedback error visible'; return; }
+  if (!amount || amount <= 0) { feedback.textContent = t('cu_enter_valid_amount'); feedback.className = 'save-feedback error visible'; return; }
+  if (!method) { feedback.textContent = t('gt_select_payment_method'); feedback.className = 'save-feedback error visible'; return; }
   const wouldExceed = (paid + amount) > total;
-  if (wouldExceed && !note) { feedback.textContent = "This exceeds what's owed — please add a note explaining why."; feedback.className = 'save-feedback error visible'; return; }
+  if (wouldExceed && !note) { feedback.textContent = t('pay_exceeds_owed_note'); feedback.className = 'save-feedback error visible'; return; }
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('payments').insert({
     org_id: currentOrgId, location_id: currentLocationId, trip_id: currentTripId, group_id: groupId,
@@ -10297,7 +10375,7 @@ function cancelAddGuest(groupId) {
 async function saveGroupParticipant(groupId) {
   const feedback = document.getElementById('p-save-feedback-' + groupId);
   if (isOffline) {
-    feedback.textContent = "You're offline — guest changes need a live connection. Try again once you're back online.";
+    feedback.textContent = t('guest_offline');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -10317,7 +10395,7 @@ async function saveGroupParticipant(groupId) {
   const isDiving = tripType?.category === 'diving';
   const certStatus = window.currentGuestCertStatus[groupId];
   if (isDiving && (certStatus === null || certStatus === undefined)) {
-    feedback.textContent = 'Please indicate whether this guest is a certified diver.';
+    feedback.textContent = t('guest_cert_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -10352,7 +10430,7 @@ async function saveGroupParticipant(groupId) {
     : await sb.from('participants').insert({ trip_id: currentTripId, group_id: groupId, ...payload });
 
   if (error) {
-    feedback.textContent = 'Error saving.';
+    feedback.textContent = t('common_error_saving');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -10370,7 +10448,7 @@ async function saveGroupParticipant(groupId) {
 }
 
 async function removeGroupParticipant(participantId, groupId) {
-  if (isOffline) { await showAlertModal("You're offline — guest changes need a live connection."); return; }
+  if (isOffline) { await showAlertModal(t('guest_offline')); return; }
   if (!(await showConfirmModal('Remove this guest?'))) return;
   await sb.from('participants').delete().eq('id', participantId);
   await loadGroupParticipants(groupId);
@@ -12068,12 +12146,12 @@ document.getElementById('btn-save-gear-item').addEventListener('click', async ()
   const notes = document.getElementById('reg-notes').value.trim();
 
   if (!name) {
-    feedback.textContent = 'Name is required.';
+    feedback.textContent = t('common_name_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('common_saving');
   const { error } = await sb.from('gear').insert({
     org_id: currentOrgId,
     location_id: locationId,
@@ -12084,10 +12162,10 @@ document.getElementById('btn-save-gear-item').addEventListener('click', async ()
     status: 'available',
     notes: notes || null
   });
-  btn.disabled = false; btn.textContent = 'Register item';
+  btn.disabled = false; btn.textContent = t('gear_register_item_title');
 
   if (error) {
-    feedback.textContent = 'Error: ' + error.message;
+    feedback.textContent = t('common_error_prefix') + error.message;
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -12261,7 +12339,7 @@ document.getElementById('btn-delete-gear-item').addEventListener('click', async 
   if (!(await showConfirmModal('Remove this gear item? Its maintenance history will stay on file but will no longer be linked to a named item.'))) return;
   const { error } = await sb.from('gear').delete().eq('id', window.currentGearDetailId);
   if (error) {
-    feedback.textContent = 'Error: ' + error.message;
+    feedback.textContent = t('common_error_prefix') + error.message;
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -12296,12 +12374,12 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
   const nextDue = document.getElementById('gdm-next-due').value;
 
   if (!title || !description || !date) {
-    feedback.textContent = 'Title, date and description are required.';
+    feedback.textContent = t('maint_fields_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('common_saving');
   const { data: { user } } = await sb.auth.getUser();
   const logPayload = {
     org_id: currentOrgId,
@@ -12323,15 +12401,15 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
   } else {
     ({ error } = await sb.from('maintenance_logs').insert(logPayload));
   }
-  btn.disabled = false; btn.textContent = 'Save entry';
+  btn.disabled = false; btn.textContent = t('gear_save_entry');
 
   if (error) {
-    feedback.textContent = 'Error: ' + error.message;
+    feedback.textContent = t('common_error_prefix') + error.message;
     feedback.className = 'save-feedback error visible';
     return;
   }
   if (isOffline) {
-    feedback.textContent = 'Saved offline — will sync automatically when you\'re back online.';
+    feedback.textContent = t('maint_saved_offline');
     feedback.className = 'save-feedback visible';
   } else {
     // Keep the gear item's own service dates in sync with its latest logged entry
@@ -12641,18 +12719,18 @@ document.getElementById('btn-save-compressor').addEventListener('click', async (
   const name = document.getElementById('compressor-name').value.trim();
   const interval = document.getElementById('compressor-interval').value;
   if (!locationId || !name || !interval) {
-    feedback.textContent = 'Location, name and filter lifespan are required.';
+    feedback.textContent = t('comp_fields_required');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = t('common_saving');
   const { error } = await sb.from('compressors').insert({
     org_id: currentOrgId, location_id: locationId, boat_id: boatId || null, name,
     filter_interval_hours: parseFloat(interval), current_hours: 0
   });
-  btn.disabled = false; btn.textContent = 'Add Compressor';
+  btn.disabled = false; btn.textContent = t('gear_add_compressor_title');
   if (error) {
-    feedback.textContent = 'Error saving.';
+    feedback.textContent = t('common_error_saving');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -13446,7 +13524,7 @@ function showConfirmModal(message, options = {}) {
     document.getElementById('confirm-modal-input-wrap').style.display = 'none';
     document.getElementById('confirm-modal-input2-wrap').style.display = 'none';
     const okBtn = document.getElementById('confirm-modal-ok');
-    okBtn.textContent = options.okText || 'Confirm';
+    okBtn.textContent = options.okText || t('modal_confirm');
     okBtn.style.background = options.danger ? 'var(--error)' : '';
     document.getElementById('confirm-modal-cancel').style.display = options.hideCancel ? 'none' : 'inline-block';
     document.getElementById('modal-confirm').style.display = 'flex';
@@ -13454,7 +13532,7 @@ function showConfirmModal(message, options = {}) {
 }
 
 function showAlertModal(message) {
-  return showConfirmModal(message, { okText: 'OK', hideCancel: true });
+  return showConfirmModal(message, { okText: t('modal_ok'), hideCancel: true });
 }
 
 function showPromptModal(message, placeholder, defaultValue) {
@@ -13467,7 +13545,7 @@ function showPromptModal(message, placeholder, defaultValue) {
     input.placeholder = placeholder || '';
     input.value = defaultValue || '';
     const okBtn = document.getElementById('confirm-modal-ok');
-    okBtn.textContent = 'Submit';
+    okBtn.textContent = t('modal_submit');
     okBtn.style.background = '';
     document.getElementById('confirm-modal-cancel').style.display = 'inline-block';
     document.getElementById('modal-confirm').style.display = 'flex';
@@ -13489,7 +13567,7 @@ function showTwoFieldModal(message, placeholder1, placeholder2) {
     input2.placeholder = placeholder2 || '';
     input2.value = '';
     const okBtn = document.getElementById('confirm-modal-ok');
-    okBtn.textContent = 'Confirm';
+    okBtn.textContent = t('modal_confirm');
     okBtn.style.background = '';
     document.getElementById('confirm-modal-cancel').style.display = 'inline-block';
     document.getElementById('modal-confirm').style.display = 'flex';
@@ -13580,7 +13658,7 @@ document.getElementById('btn-reset-pw-save').addEventListener('click', async () 
   }
 
   btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.textContent = t('common_saving');
 
   const { error } = await sb.auth.updateUser({ password: pw });
 
