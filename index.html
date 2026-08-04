@@ -393,6 +393,51 @@ body { background: var(--navy); color: var(--text); }
   letter-spacing: -0.02em; line-height: 1.1; margin-top: 4px;
 }
 
+/* Home dashboard, role-scoped section (trips today, task banner, phase-2
+   checklist) -- multiple stacked cards rather than one, so each block gets
+   its own margin instead of relying on a single wrapping .card. */
+#home-dynamic-section .card { margin-bottom: 16px; }
+#home-dynamic-section .card:last-child { margin-bottom: 0; }
+
+.home-trip-list { display: flex; flex-direction: column; margin-top: 10px; }
+.home-trip-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.home-trip-row:last-child { border-bottom: none; }
+.home-trip-time {
+  font-size: 1rem; font-weight: 800; color: var(--navy);
+  min-width: 56px; flex-shrink: 0;
+}
+.home-trip-name { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+.home-trip-meta { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+/* Task-due-today banner -- needs to read as "this needs your attention",
+   same amber tone already used for .warning-banner.caution elsewhere. */
+.home-task-banner {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3);
+  cursor: pointer; transition: background 0.15s;
+}
+.home-task-banner:hover { background: rgba(251,191,36,0.14); }
+.home-task-banner-icon {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: #92660a; color: var(--white); font-weight: 800; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.home-task-banner-title { font-weight: 700; color: #92660a; font-size: 0.9rem; }
+.home-task-banner-sub { font-size: 0.82rem; color: #92660a; opacity: 0.85; margin-top: 2px; }
+
+/* Phase-2 setup checklist -- lower-priority nudges (compressor, gear count)
+   that shouldn't compete with the finance card, so it's collapsible and
+   remembers the owner's preference between visits. */
+.phase2-header {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+}
+.phase2-toggle-icon { color: var(--muted); font-size: 0.9rem; }
+.phase2-checklist.collapsed .phase2-header { margin-bottom: 0; }
+
 /* Home "getting started" checklist -- replaces a single vague paragraph
    with per-step done/not-done state, each one clickable straight to the
    page that resolves it. */
@@ -1855,7 +1900,7 @@ body { background: var(--navy); color: var(--text); }
             <div class="stat-sub" data-i18n="stat_crew_sub">staff accounts</div>
           </div>
         </div>
-        <div class="card" id="home-bottom-card"></div>
+        <div id="home-dynamic-section"></div>
       </div>
 
       <!-- CALENDAR -->
@@ -3371,6 +3416,12 @@ const TRANSLATIONS = {
     home_finance_yesterday: 'Yesterday',
     home_finance_from_cashups: 'from closed cash-ups',
     home_finance_view_reports: 'View full reports',
+    home_trips_today_title_all: "Today's trips", home_trips_today_title_mine: "Your trips today",
+    home_trips_today_empty_all: 'No trips scheduled for today.', home_trips_today_empty_mine: "You're not assigned to any trips today.",
+    home_trips_no_boat: 'No boat assigned', home_trips_guests_suffix: 'guests',
+    home_task_banner_title_single: 'You have a task due today', home_task_banner_title_plural: 'You have tasks due today',
+    phase2_title: 'Next: gear & equipment setup', phase2_sub: 'Optional, but worth finishing once trips are running:',
+    phase2_step_compressor: 'Add at least one compressor in Gear', phase2_step_gear: 'Set stock counts for at least one gear item in Gear',
 
     day_sun: 'Sun', day_mon: 'Mon', day_tue: 'Tue', day_wed: 'Wed', day_thu: 'Thu', day_fri: 'Fri', day_sat: 'Sat',
     cal_no_trips: 'No trips', cal_no_boat: 'No boat', cal_guests_suffix: 'guests', cal_more: 'more', cal_trip_fallback: 'Trip',
@@ -3874,6 +3925,12 @@ const TRANSLATIONS = {
     home_finance_yesterday: 'Ayer',
     home_finance_from_cashups: 'de cierres de caja cerrados',
     home_finance_view_reports: 'Ver reportes completos',
+    home_trips_today_title_all: 'Salidas de hoy', home_trips_today_title_mine: 'Tus salidas de hoy',
+    home_trips_today_empty_all: 'No hay salidas programadas para hoy.', home_trips_today_empty_mine: 'No estás asignado a ninguna salida hoy.',
+    home_trips_no_boat: 'Sin embarcación asignada', home_trips_guests_suffix: 'huéspedes',
+    home_task_banner_title_single: 'Tenés una tarea con vencimiento hoy', home_task_banner_title_plural: 'Tenés tareas con vencimiento hoy',
+    phase2_title: 'Siguiente: equipo y material', phase2_sub: 'Opcional, pero conviene terminarlo una vez que las salidas estén en marcha:',
+    phase2_step_compressor: 'Agregá al menos un compresor en Equipo', phase2_step_gear: 'Cargá el stock de al menos un ítem de equipo en Equipo',
 
     day_sun: 'Dom', day_mon: 'Lun', day_tue: 'Mar', day_wed: 'Mié', day_thu: 'Jue', day_fri: 'Vie', day_sat: 'Sáb',
     cal_no_trips: 'Sin salidas', cal_no_boat: 'Sin embarcación', cal_guests_suffix: 'huéspedes', cal_more: 'más', cal_trip_fallback: 'Salida',
@@ -5174,15 +5231,17 @@ function renderOnboardStep(done, label, pageId) {
   </div>`;
 }
 
-// Home's bottom card is either a "here's exactly what's left" checklist
+// Home's dynamic section is either a "here's exactly what's left" checklist
 // (before the operation can really run: a boat, a priced trip type, and
-// someone besides the owner) or, once those are done, the owner's own
-// quick money snapshot -- yesterday vs. today, pulled from Cash-Ups. Crew
-// members other than the owner never see the finance version, per Fran:
-// financial info is owner-only.
+// someone besides the owner) or, once that minimum is done, a role-scoped
+// dashboard: owner gets money + everyone's trips + a secondary setup
+// checklist; manager gets everyone's trips; captain and general crew get
+// only the trips they're personally assigned to. This mirrors the same
+// role pyramid used everywhere else in the app (owner/manager see
+// everything, captain/crew see their own slice).
 async function renderHomeGettingStartedOrFinance() {
   if (!currentOrgId) return;
-  const container = document.getElementById('home-bottom-card');
+  const container = document.getElementById('home-dynamic-section');
   if (!container) return;
 
   const [{ count: boatsCount }, { data: pricedTypes }, { count: staffCount }] = await Promise.all([
@@ -5197,8 +5256,7 @@ async function renderHomeGettingStartedOrFinance() {
   const setupComplete = hasBoat && hasPricedTrip && hasCrew;
 
   if (!setupComplete) {
-    container.style.display = 'block';
-    container.innerHTML = `
+    container.innerHTML = `<div class="card">
       <h2>${t('getting_started_title')}</h2>
       <p class="card-desc" style="margin-bottom:14px;">${t('getting_started_sub')}</p>
       <div class="onboard-checklist">
@@ -5206,17 +5264,36 @@ async function renderHomeGettingStartedOrFinance() {
         ${renderOnboardStep(hasPricedTrip, t('onboard_step_prices'), 'settings')}
         ${renderOnboardStep(hasCrew, t('onboard_step_crew'), 'crew')}
       </div>
-    `;
+    </div>`;
     return;
   }
 
-  if (currentUserRole !== 'owner') {
-    container.style.display = 'none';
-    container.innerHTML = '';
-    return;
-  }
-  container.style.display = 'block';
+  const { data: { user } } = await sb.auth.getUser();
+  const myId = user && user.id;
+  const blocks = [];
 
+  if (currentUserRole === 'owner') {
+    blocks.push(await buildFinanceCardHtml());
+    blocks.push(await buildTripsTodayHtml('all'));
+    blocks.push(await buildPhase2ChecklistHtml());
+  } else if (currentUserRole === 'manager') {
+    blocks.push(await buildTaskBannerHtml(myId));
+    blocks.push(await buildTripsTodayHtml('all'));
+  } else {
+    // Captain and every other crew role (deckhand, instructor, front desk,
+    // etc.) only see what's assigned to them personally.
+    blocks.push(await buildTaskBannerHtml(myId));
+    blocks.push(await buildTripsTodayHtml('mine', myId));
+  }
+
+  container.innerHTML = blocks.filter(Boolean).join('');
+}
+
+// Owner-only money snapshot -- yesterday vs. today, pulled from Cash-Ups.
+// Split out of the old single-card render so it can be one block among
+// several stacked cards. Per Fran: financial info is owner-only, so this
+// is only ever called from the owner branch above.
+async function buildFinanceCardHtml() {
   const todayStr = new Date().toISOString().split('T')[0];
   const yestStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
   let cuQuery = sb.from('cash_ups').select('cash_up_date,total_cash,total_card,total_transfer')
@@ -5228,7 +5305,7 @@ async function renderHomeGettingStartedOrFinance() {
   const todayTotal = sumFor(todayStr);
   const yestTotal = sumFor(yestStr);
 
-  container.innerHTML = `
+  return `<div class="card">
     <h2>${t('home_finance_title')}</h2>
     <div class="stat-grid" style="margin-top:14px;margin-bottom:0;">
       <div class="stat-card">
@@ -5243,7 +5320,141 @@ async function renderHomeGettingStartedOrFinance() {
       </div>
     </div>
     <a href="#" class="finance-view-link" style="margin-top:14px;" onclick="showPage('reports');return false;">${t('home_finance_view_reports')} <span class="arrow">&rarr;</span></a>
-  `;
+  </div>`;
+}
+
+// Today's trips, role-scoped. scope 'all' = every trip today across the
+// current location (owner/manager); scope 'mine' = only trips this staff
+// member is assigned to via trip_crew (captain/crew). Sorted chronologically,
+// morning first, per Fran's explicit ask.
+async function buildTripsTodayHtml(scope, myId) {
+  const today = new Date().toISOString().split('T')[0];
+  const tripCols = 'id, org_id, location_id, trip_date, end_date, trip_time, arrival_time, trip_type, trip_name, boat_id, boats(name)';
+  let trips = [];
+
+  if (scope === 'mine') {
+    if (!myId) return '';
+    const { data } = await sb.from('trip_crew')
+      .select(`trip_id, trips!inner(${tripCols})`)
+      .eq('staff_id', myId);
+    trips = (data || [])
+      .map(r => r.trips)
+      .filter(tr => tr && tr.org_id === currentOrgId
+        && (!currentLocationId || tr.location_id === currentLocationId)
+        && tr.trip_date <= today && (tr.end_date ? tr.end_date >= today : tr.trip_date === today));
+  } else {
+    let q = sb.from('trips').select(tripCols)
+      .eq('org_id', currentOrgId)
+      .lte('trip_date', today)
+      .or(`end_date.gte.${today},and(end_date.is.null,trip_date.eq.${today})`);
+    if (currentLocationId) q = q.eq('location_id', currentLocationId);
+    const { data } = await q;
+    trips = data || [];
+  }
+  trips.sort((a, b) => (a.trip_time || '').localeCompare(b.trip_time || ''));
+
+  const title = scope === 'all' ? t('home_trips_today_title_all') : t('home_trips_today_title_mine');
+
+  if (!trips.length) {
+    return `<div class="card">
+      <h2>${title}</h2>
+      <p class="card-desc" style="margin-top:8px;">${scope === 'all' ? t('home_trips_today_empty_all') : t('home_trips_today_empty_mine')}</p>
+    </div>`;
+  }
+
+  const tripIds = trips.map(tr => tr.id);
+  const { data: parts } = await sb.from('participants').select('trip_id').in('trip_id', tripIds);
+  const guestCounts = {};
+  (parts || []).forEach(p => { guestCounts[p.trip_id] = (guestCounts[p.trip_id] || 0) + 1; });
+
+  const rows = trips.map(tr => `
+    <div class="home-trip-row">
+      <div class="home-trip-time">${tr.trip_time ? tr.trip_time.slice(0, 5) : '—'}</div>
+      <div class="home-trip-info">
+        <div class="home-trip-name">${trTypeName(tr.trip_type) || tr.trip_name || t('wv_trip_fallback')}</div>
+        <div class="home-trip-meta">${tr.boats && tr.boats.name ? tr.boats.name : t('home_trips_no_boat')} · ${guestCounts[tr.id] || 0} ${t('home_trips_guests_suffix')}</div>
+      </div>
+    </div>
+  `).join('');
+
+  return `<div class="card">
+    <h2>${title}</h2>
+    <div class="home-trip-list">${rows}</div>
+  </div>`;
+}
+
+// Prominent "this needs your attention" banner -- shown to anyone (except
+// the owner) who has an incomplete task list assigned to them with a due
+// date of today or earlier. Per Fran: for crew this sits right at the top,
+// front and center, before the trip list.
+async function buildTaskBannerHtml(myId) {
+  if (!myId) return '';
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await sb.from('task_list_assignees')
+    .select('*, task_lists(*)')
+    .eq('staff_id', myId)
+    .is('completed_at', null);
+  const dueTasks = (data || []).filter(a => a.task_lists && a.task_lists.due_date && a.task_lists.due_date <= today);
+  if (!dueTasks.length) return '';
+
+  const titles = dueTasks.map(a => a.task_lists.title).filter(Boolean);
+  const shown = titles.slice(0, 2).join(', ');
+  const moreCount = titles.length - 2;
+  const sub = moreCount > 0 ? `${shown} +${moreCount}` : shown;
+  const title = dueTasks.length === 1 ? t('home_task_banner_title_single') : t('home_task_banner_title_plural');
+
+  return `<div class="card home-task-banner" onclick="showPage('tasks')">
+    <div class="home-task-banner-icon">!</div>
+    <div>
+      <div class="home-task-banner-title">${title}</div>
+      <div class="home-task-banner-sub">${sub}</div>
+    </div>
+  </div>`;
+}
+
+// Owner-only "phase 2" nudges -- lower-stakes than the phase-1 checklist
+// (boat/price/crew), so it's collapsible and remembers the owner's
+// collapse preference. Once both items are done it stops rendering
+// entirely rather than sitting around empty.
+async function buildPhase2ChecklistHtml() {
+  const { count: compCount } = await sb.from('compressors').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId);
+  const hasCompressor = (compCount || 0) > 0;
+
+  const { data: orgGearItems } = await sb.from('gear_items').select('id').eq('org_id', currentOrgId).limit(500);
+  let hasGearStock = false;
+  if (orgGearItems && orgGearItems.length) {
+    const { data: stockRows } = await sb.from('gear_stock').select('id')
+      .in('gear_item_id', orgGearItems.map(g => g.id)).gt('available_count', 0).limit(1);
+    hasGearStock = !!(stockRows && stockRows.length);
+  }
+
+  if (hasCompressor && hasGearStock) return '';
+
+  const collapsed = localStorage.getItem('phase2ChecklistCollapsed') === 'true';
+  return `<div class="card phase2-checklist${collapsed ? ' collapsed' : ''}" id="phase2-checklist-card">
+    <div class="phase2-header" onclick="togglePhase2Checklist()">
+      <h2 style="margin:0;">${t('phase2_title')}</h2>
+      <span class="phase2-toggle-icon">${collapsed ? '▸' : '▾'}</span>
+    </div>
+    <div class="phase2-body" style="${collapsed ? 'display:none;' : ''}">
+      <p class="card-desc" style="margin:8px 0 14px;">${t('phase2_sub')}</p>
+      <div class="onboard-checklist">
+        ${renderOnboardStep(hasCompressor, t('phase2_step_compressor'), 'gear')}
+        ${renderOnboardStep(hasGearStock, t('phase2_step_gear'), 'gear')}
+      </div>
+    </div>
+  </div>`;
+}
+function togglePhase2Checklist() {
+  const card = document.getElementById('phase2-checklist-card');
+  if (!card) return;
+  const body = card.querySelector('.phase2-body');
+  const icon = card.querySelector('.phase2-toggle-icon');
+  const wasCollapsed = card.classList.contains('collapsed');
+  card.classList.toggle('collapsed', !wasCollapsed);
+  body.style.display = wasCollapsed ? '' : 'none';
+  icon.textContent = wasCollapsed ? '▾' : '▸';
+  localStorage.setItem('phase2ChecklistCollapsed', wasCollapsed ? 'false' : 'true');
 }
 
 document.getElementById('location-picker').addEventListener('change', (e) => {
