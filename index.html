@@ -438,6 +438,22 @@ body { background: var(--navy); color: var(--text); }
 .phase2-toggle-icon { color: var(--muted); font-size: 0.9rem; }
 .phase2-checklist.collapsed .phase2-header { margin-bottom: 0; }
 
+/* Logged Checklists -- chronological, grouped by day. */
+.cl-logged-day-group { margin-bottom: 22px; }
+.cl-logged-day-group:last-child { margin-bottom: 0; }
+.cl-logged-day-heading {
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--blue); margin-bottom: 8px;
+  padding-bottom: 6px; border-bottom: 2px solid var(--foam);
+}
+.cl-logged-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.cl-logged-row:last-child { border-bottom: none; }
+.cl-logged-row-title { font-weight: 700; font-size: 0.88rem; color: var(--navy); }
+.cl-logged-row-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
 /* Home "getting started" checklist -- replaces a single vague paragraph
    with per-step done/not-done state, each one clickable straight to the
    page that resolves it. */
@@ -2367,8 +2383,8 @@ body { background: var(--navy); color: var(--text); }
         <!-- Tab row -->
         <div class="cl-tab-row">
           <div class="cl-tab active" onclick="showChecklistView('tripprep',this)" data-i18n="cl_tab_tripprep">Trip Prep</div>
-          <div class="cl-tab" id="cl-tab-captain" onclick="showChecklistView('captaincheck',this)" data-i18n="cl_tab_captain">Captain</div>
           <div class="cl-tab" onclick="showChecklistView('department',this)" data-i18n="cl_tab_department">Department Routines</div>
+          <div class="cl-tab" id="cl-tab-logged" onclick="showChecklistView('logged',this)" style="display:none;" data-i18n="cl_tab_logged">Logged Checklists</div>
         </div>
 
         <!-- TRIP PREP — smart, linked to booking, role-filtered -->
@@ -2397,7 +2413,7 @@ body { background: var(--navy); color: var(--text); }
               <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
                 <button class="btn-save" onclick="instructorSignOff()" data-i18n="cl_sign_off_gear">Sign Off — Gear Ready</button>
-                <button class="btn-cancel" onclick="initInstructorChecklist()" data-i18n="cl_reset">Reset</button>
+                <button class="btn-cancel" onclick="resetInstructorChecklist()" data-i18n="cl_reset">Reset</button>
               </div>
             </div>
           </div>
@@ -2409,36 +2425,49 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
 
-        <!-- CAPTAIN — vessel safety, independent of trips -->
-        <div id="cl-captaincheck" class="cl-view" style="display:none;">
+        <!-- DEPARTMENT ROUTINES — one home per department (Captain, Instructor/DM, Deck),
+             each with four cadences (Morning, End of Day, Monthly, Yearly). The old standalone
+             "Captain" tab (Vessel Safety Check) was a near-duplicate of "Captain → Morning" here
+             and only one of the two was ever logged -- merged into one authoritative routine so
+             there's a single captain morning checklist, and it's still logged the same way. -->
+        <div id="cl-department" class="cl-view" style="display:none;">
           <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div class="card-section-title" style="margin-bottom:0;" data-i18n="cl_vessel_safety_check">Vessel Safety Check</div>
-              <div class="cl-role-badge" id="cl-captain-status" data-i18n="cl_pending">Pending</div>
+            <div class="card-section-title" style="margin-bottom:4px;" data-i18n="cl_department_routines">Department Routines</div>
+            <p class="card-desc" style="margin-bottom:14px;" data-i18n="cl_reusable_routines_hint">Recurring routines per department, each signed off and logged.</p>
+            <div class="cl-role-tab-row" id="dept-tabs"></div>
+            <div class="cl-tab-row" id="dept-cadence-tabs" style="margin-top:10px;"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0;">
+              <div class="card-section-title" style="margin-bottom:0;" id="dept-routine-title"></div>
+              <div class="cl-role-badge" id="dept-routine-status" data-i18n="cl_pending">Pending</div>
             </div>
-            <p class="card-desc" style="margin-bottom:16px;" data-i18n="cl_complete_once_daily">Complete once per day before first departure. Independent of individual trips.</p>
-            <div class="cl-progress-bar"><div class="cl-progress-fill" id="cl-captain-progress"></div></div>
-            <div id="cl-captain-items"></div>
+            <div class="cl-progress-bar"><div class="cl-progress-fill" id="dept-routine-progress"></div></div>
+            <div id="dept-list"></div>
             <div class="cl-signoff">
-              <div class="card-section-title" data-i18n="cl_captain_signoff">Captain Sign-Off</div>
-              <input class="sf-input" type="text" id="cl-captain-name" placeholder="Captain name" data-i18n-placeholder="cl_captain_name">
-              <input class="sf-input" type="text" id="cl-captain-boat" placeholder="Boat name" style="margin-top:8px;" data-i18n-placeholder="cl_boat_name">
-              <div class="cl-done-banner" id="cl-captain-done" style="display:none;"></div>
+              <input class="sf-input" type="text" id="dept-routine-name" placeholder="Your name" data-i18n-placeholder="cl_your_name">
+              <div class="cl-done-banner" id="dept-routine-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
-                <button class="btn-save" onclick="captainSignOff()" data-i18n="cl_sign_off_depart">Sign Off — Clear to Depart</button>
-                <button class="btn-cancel" onclick="initCaptainChecklist()" data-i18n="cl_reset">Reset</button>
+                <button class="btn-save" onclick="deptRoutineSignOff()" data-i18n="cl_sign_off_routine">Sign Off</button>
+                <button class="btn-cancel" onclick="resetDeptRoutine()" data-i18n="cl_reset">Reset</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- DEPARTMENT ROUTINES -->
-        <div id="cl-department" class="cl-view" style="display:none;">
+        <!-- LOGGED CHECKLISTS — every instructor/captain sign-off, owner/manager/captain only.
+             Kept inside Checklists (not Reports) on purpose: Reports is revenue/cash data,
+             owner-only, and this history needs to be visible to manager and captain too. -->
+        <div id="cl-logged" class="cl-view" style="display:none;">
           <div class="card">
-            <div class="card-section-title" style="margin-bottom:12px;" data-i18n="cl_department_routines">Department Routines</div>
-            <p class="card-desc" data-i18n="cl_reusable_routines_hint">Reusable daily routines per department — not linked to bookings.</p>
-            <div class="cl-role-tab-row" id="dept-tabs"></div>
-            <div id="dept-list"></div>
+            <div class="card-section-title" style="margin-bottom:4px;" data-i18n="cl_logged_title">Logged Checklists</div>
+            <p class="card-desc" style="margin-bottom:14px;" data-i18n="cl_logged_sub">Every gear and vessel sign-off, organized by day.</p>
+            <div class="inline-form" style="margin-bottom:16px;align-items:flex-end;">
+              <div class="sf-group" style="max-width:220px;margin-bottom:0;">
+                <label class="sf-label" data-i18n="cl_logged_search_date">Search a date</label>
+                <input class="sf-input" type="date" id="cl-logged-date-search">
+              </div>
+              <button class="btn-cancel" id="cl-logged-clear-search" data-i18n="cl_logged_clear">Clear</button>
+            </div>
+            <div id="cl-logged-list"></div>
           </div>
         </div>
       </div>
@@ -3548,15 +3577,22 @@ const TRANSLATIONS = {
     crew_assign_location: 'Assign location', crew_or_set_status: 'Or set status', crew_save_location: 'Save location',
     crew_remove_confirm: 'Remove {name} from your crew?', crew_cancel_invite_confirm: 'Cancel this invite?',
 
-    cl_tab_tripprep: 'Trip Prep', cl_tab_captain: 'Captain', cl_tab_department: 'Department Routines',
+    cl_tab_tripprep: 'Trip Prep', cl_tab_captain: 'Captain', cl_tab_department: 'Department Routines', cl_tab_logged: 'Logged Checklists',
+    cl_logged_title: 'Logged Checklists', cl_logged_sub: 'Every gear and vessel sign-off, organized by day.',
+    cl_logged_search_date: 'Search a date', cl_logged_clear: 'Clear', cl_logged_none: 'No checklists logged yet.',
+    cl_logged_vessel_check: 'Vessel safety check',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
     cl_your_name: 'Your name', cl_sign_off_gear: 'Sign Off — Gear Ready', cl_reset: 'Reset',
+    cl_sign_off_routine: 'Sign Off', cl_select_trip_first: 'Select a trip above first.',
+    cl_includes_spares: 'includes {n} spares',
+    cl_dept_captain: 'Captain', cl_dept_instructor: 'Instructor / DM', cl_dept_deck: 'Deck',
+    cl_cadence_morning: 'Morning', cl_cadence_eod: 'End of Day', cl_cadence_monthly: 'Monthly', cl_cadence_yearly: 'Yearly',
     cl_crew_signoff_status: 'Crew Sign-Off Status', cl_vessel_safety_check: 'Vessel Safety Check',
     cl_complete_once_daily: 'Complete once per day before first departure. Independent of individual trips.',
     cl_captain_signoff: 'Captain Sign-Off', cl_captain_name: 'Captain name', cl_boat_name: 'Boat name',
     cl_sign_off_depart: 'Sign Off — Clear to Depart', cl_department_routines: 'Department Routines',
-    cl_reusable_routines_hint: 'Reusable daily routines per department — not linked to bookings.',
+    cl_reusable_routines_hint: 'Recurring routines per department, each signed off and logged.',
     cl_complete_check: 'Complete ✓', cl_enter_captain_name: 'Enter captain name to sign off.', cl_enter_your_name: 'Enter your name to sign off.',
     cl_items_incomplete: ' items incomplete. Sign off anyway?', cl_signed_off_by: 'Signed off by ', cl_saved_offline_sync: ' (saved offline — will sync automatically)',
     cl_no_trips_today: 'No trips today. You can still use checklists independently.', cl_guest_singular: 'guest', cl_guest_plural: 'guests',
@@ -4057,15 +4093,22 @@ const TRANSLATIONS = {
     crew_assign_location: 'Asignar ubicación', crew_or_set_status: 'O establecer estado', crew_save_location: 'Guardar ubicación',
     crew_remove_confirm: '¿Eliminar a {name} de tu tripulación?', crew_cancel_invite_confirm: '¿Cancelar esta invitación?',
 
-    cl_tab_tripprep: 'Preparación de Salida', cl_tab_captain: 'Capitán', cl_tab_department: 'Rutinas por Área',
+    cl_tab_tripprep: 'Preparación de Salida', cl_tab_captain: 'Capitán', cl_tab_department: 'Rutinas por Área', cl_tab_logged: 'Checklists Logueadas',
+    cl_logged_title: 'Checklists Logueadas', cl_logged_sub: 'Cada confirmación de equipo y de embarcación, organizada por día.',
+    cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
+    cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
     cl_your_name: 'Tu nombre', cl_sign_off_gear: 'Confirmar — Equipo Listo', cl_reset: 'Reiniciar',
+    cl_sign_off_routine: 'Confirmar', cl_select_trip_first: 'Primero seleccioná una salida arriba.',
+    cl_includes_spares: 'incluye {n} de repuesto',
+    cl_dept_captain: 'Capitán', cl_dept_instructor: 'Instructor / DM', cl_dept_deck: 'Cubierta',
+    cl_cadence_morning: 'Mañana', cl_cadence_eod: 'Fin del Día', cl_cadence_monthly: 'Mensual', cl_cadence_yearly: 'Anual',
     cl_crew_signoff_status: 'Estado de Confirmación de Tripulación', cl_vessel_safety_check: 'Revisión de Seguridad de la Embarcación',
     cl_complete_once_daily: 'Completar una vez al día antes de la primera salida. Independiente de las salidas individuales.',
     cl_captain_signoff: 'Confirmación del Capitán', cl_captain_name: 'Nombre del capitán', cl_boat_name: 'Nombre de la embarcación',
     cl_sign_off_depart: 'Confirmar — Listo para Zarpar', cl_department_routines: 'Rutinas por Área',
-    cl_reusable_routines_hint: 'Rutinas diarias reutilizables por área — no vinculadas a reservas.',
+    cl_reusable_routines_hint: 'Rutinas recurrentes por departamento, cada una firmada y logueada.',
     cl_complete_check: 'Completo ✓', cl_enter_captain_name: 'Ingresa el nombre del capitán para confirmar.', cl_enter_your_name: 'Ingresa tu nombre para confirmar.',
     cl_items_incomplete: ' elementos incompletos. ¿Confirmar de todos modos?', cl_signed_off_by: 'Confirmado por ', cl_saved_offline_sync: ' (guardado sin conexión — se sincronizará automáticamente)',
     cl_no_trips_today: 'No hay salidas hoy. Aún puedes usar las listas de verificación de forma independiente.', cl_guest_singular: 'huésped', cl_guest_plural: 'huéspedes',
@@ -4410,7 +4453,6 @@ function refreshDynamicTranslations() {
     }
     if (document.getElementById('page-settings') && document.getElementById('page-settings').classList.contains('active') && typeof updateWaiversStatusBadge === 'function') updateWaiversStatusBadge();
     if (document.getElementById('page-checklists') && document.getElementById('page-checklists').classList.contains('active')) {
-      if (typeof initCaptainChecklist === 'function') initCaptainChecklist();
       if (typeof initInstructorChecklist === 'function') initInstructorChecklist();
       if (typeof initDeptChecklists === 'function') initDeptChecklists();
     }
@@ -5504,7 +5546,6 @@ function refreshCurrentView() {
   if (pageId === 'page-fleet' && typeof loadFleet === 'function') loadFleet();
   if (pageId === 'page-crew' && typeof loadCrew === 'function') loadCrew();
   if (pageId === 'page-checklists') {
-    if (typeof initCaptainChecklist === 'function') initCaptainChecklist();
     if (typeof initInstructorChecklist === 'function') initInstructorChecklist();
     if (typeof initDeptChecklists === 'function') initDeptChecklists();
   }
@@ -7171,10 +7212,12 @@ async function openNewTrip() {
   document.getElementById('trip-date').min = todayLocalStr;
   document.getElementById('trip-date').value = formatDate(calDate) < todayLocalStr ? todayLocalStr : formatDate(calDate);
   document.getElementById('trip-time').value = '08:00';
-  // Default the minutes to :00 so tapping the field only needs the hour
-  // typed/scrolled -- an empty value shows a blank "--:--" on most phones,
-  // forcing you to fill in the minutes every single time.
-  document.getElementById('trip-arrival').value = '00:00';
+  // Arrival used to default to '00:00' so mobile time pickers didn't show a
+  // blank "--:--" -- but that silently satisfied the "Arrival time" required
+  // check without anyone ever entering a real return time, which breaks any
+  // feature that needs to know when a trip actually ends (gear turnaround
+  // between trips, for one). Left blank on purpose so it's genuinely required.
+  document.getElementById('trip-arrival').value = '';
   document.getElementById('trip-end-date').value = '';
   document.getElementById('trip-enddate-group').style.display = 'none';
   document.getElementById('trip-dive-sites').value = '';
@@ -10216,25 +10259,6 @@ async function removeGroupParticipant(participantId, groupId) {
 
 // ─── CHECKLISTS ───
 
-const CAPTAIN_ITEMS_I18N = [
-  { id:'c1', en:'Engine started and warmed up — no unusual sounds or smoke', es:'Motor encendido y calentado — sin ruidos o humo inusual' },
-  { id:'c2', en:'Engine oil level checked', es:'Nivel de aceite del motor revisado' },
-  { id:'c3', en:'Fuel confirmed — sufficient for trip + 25% reserve', es:'Combustible confirmado — suficiente para la salida + 25% de reserva' },
-  { id:'c4', en:'Bilge pumped and dry', es:'Sentina bombeada y seca' },
-  { id:'c5', en:'Navigation lights tested (red port, green starboard, white stern)', es:'Luces de navegación probadas (roja babor, verde estribor, blanca popa)' },
-  { id:'c6', en:'VHF radio operational — channel 16 confirmed', es:'Radio VHF operativa — canal 16 confirmado' },
-  { id:'c7', en:'Life jackets aboard — count matches max POB', es:'Chalecos salvavidas a bordo — cantidad coincide con el máximo de personas a bordo' },
-  { id:'c8', en:'Fire extinguisher in place — pin intact, not expired', es:'Extintor en su lugar — pasador intacto, no vencido' },
-  { id:'c9', en:'First aid kit stocked and accessible', es:'Botiquín de primeros auxilios abastecido y accesible' },
-  { id:'c10', en:'Flares in date — count confirmed', es:'Bengalas vigentes — cantidad confirmada' },
-  { id:'c11', en:'Anchor and rode aboard', es:'Ancla y cabo de ancla a bordo' },
-  { id:'c12', en:'Mooring lines and fenders ready', es:'Cabos de amarre y defensas listos' },
-  { id:'c13', en:'Weather check completed — conditions acceptable', es:'Revisión del clima completada — condiciones aceptables' },
-  { id:'c14', en:'Float plan filed / shore contact notified', es:'Plan de navegación presentado / contacto en tierra notificado' },
-  { id:'c15', en:'Dive flag / alpha flag aboard (if applicable)', es:'Bandera de buceo / bandera alfa a bordo (si aplica)' },
-];
-function CAPTAIN_ITEMS_get() { return CAPTAIN_ITEMS_I18N.map(i => ({ id: i.id, text: currentLanguage === 'es' ? i.es : i.en })); }
-
 const INSTRUCTOR_ITEMS_I18N = [
   { id:'i1', en:'Guest gear manifest checked against booking', es:'Manifiesto de equipo de huéspedes verificado contra la reserva' },
   { id:'i2', en:'All BCDs on board — sizes confirmed per booking', es:'Todos los BCD a bordo — tallas confirmadas según la reserva' },
@@ -10253,51 +10277,175 @@ const INSTRUCTOR_ITEMS_I18N = [
 ];
 function INSTRUCTOR_ITEMS_get() { return INSTRUCTOR_ITEMS_I18N.map(i => ({ id: i.id, text: currentLanguage === 'es' ? i.es : i.en })); }
 
-const DEPT_CHECKLISTS_I18N = [
-  { key: 'morning_captain', en: 'Morning — Captain', es: 'Mañana — Capitán', items: [
-    { en:'Engine room inspection complete', es:'Inspección de sala de máquinas completa' },
-    { en:'Bilge checked and pumped', es:'Sentina revisada y bombeada' },
-    { en:'Fuel and oil levels logged', es:'Niveles de combustible y aceite registrados' },
-    { en:'VHF check with marina / port authority', es:'Revisión de VHF con la marina / autoridad portuaria' },
-    { en:'Weather briefing completed', es:'Briefing meteorológico completado' },
-    { en:'Daily log started', es:'Bitácora diaria iniciada' },
-  ]},
-  { key: 'morning_instructor', en: 'Morning — Instructor', es: 'Mañana — Instructor', items: [
-    { en:'Student waivers and certs checked', es:'Formularios y certificaciones de estudiantes revisados' },
-    { en:'Gear manifest printed / confirmed', es:'Manifiesto de equipo impreso / confirmado' },
-    { en:'Theory briefing materials ready', es:'Materiales de briefing teórico listos' },
-    { en:'Emergency procedures briefed to students', es:'Procedimientos de emergencia explicados a los estudiantes' },
-  ]},
-  { key: 'eod_deck', en: 'End of Day — Deck', es: 'Fin del Día — Cubierta', items: [
-    { en:'All tanks rinsed with fresh water and stored', es:'Todos los tanques enjuagados con agua dulce y guardados' },
-    { en:'BCDs rinsed and hung to dry', es:'BCD enjuagados y colgados para secar' },
-    { en:'Wetsuits rinsed and hung', es:'Trajes de neopreno enjuagados y colgados' },
-    { en:'Regulators rinsed and bagged', es:'Reguladores enjuagados y embolsados' },
-    { en:'Boat rinsed — salt off all surfaces', es:'Embarcación enjuagada — sal eliminada de todas las superficies' },
-    { en:'Bilge checked', es:'Sentina revisada' },
-    { en:'Lines secured and fenders in place', es:'Cabos asegurados y defensas en su lugar' },
-    { en:'Log book completed and signed', es:'Bitácora completada y firmada' },
-  ]},
-  { key: 'eod_instructor', en: 'End of Day — Instructor', es: 'Fin del Día — Instructor', items: [
-    { en:'Student progress logged', es:'Progreso de estudiantes registrado' },
-    { en:'Gear returns confirmed — nothing left on boat', es:'Devolución de equipo confirmada — nada quedó en la embarcación' },
-    { en:'Lost and found checked', es:'Objetos perdidos revisados' },
-    { en:'Next day student list reviewed', es:'Lista de estudiantes del día siguiente revisada' },
-    { en:'Equipment defects reported', es:'Defectos de equipo reportados' },
-  ]},
-];
-function DEPT_CHECKLISTS_get() {
+// One entry per department, each with up to four cadences (morning/eod/monthly/yearly).
+// `role` on each cadence is the exact string stored in checklist_completions.role, so
+// Logged Checklists can identify which routine a given sign-off belongs to. Captain's
+// morning cadence intentionally keeps the plain 'captain' role -- it's the old standalone
+// "Vessel Safety Check" tab merged in here, so its history stays continuous.
+const DEPARTMENT_ROUTINES_I18N = {
+  captain: {
+    label: { en: 'Captain', es: 'Capitán' },
+    cadences: {
+      morning: { role: 'captain', label: { en: 'Morning', es: 'Mañana' }, items: [
+        { en:'Engine started and warmed up — no unusual sounds or smoke', es:'Motor encendido y calentado — sin ruidos o humo inusual' },
+        { en:'Engine oil level checked', es:'Nivel de aceite del motor revisado' },
+        { en:'Fuel confirmed — sufficient for trip + 25% reserve', es:'Combustible confirmado — suficiente para la salida + 25% de reserva' },
+        { en:'Bilge pumped and dry', es:'Sentina bombeada y seca' },
+        { en:'Navigation lights tested (red port, green starboard, white stern)', es:'Luces de navegación probadas (roja babor, verde estribor, blanca popa)' },
+        { en:'VHF radio operational — channel 16 confirmed', es:'Radio VHF operativa — canal 16 confirmado' },
+        { en:'Life jackets aboard — count matches max POB', es:'Chalecos salvavidas a bordo — cantidad coincide con el máximo de personas a bordo' },
+        { en:'Fire extinguisher in place — pin intact, not expired', es:'Extintor en su lugar — pasador intacto, no vencido' },
+        { en:'First aid kit stocked and accessible', es:'Botiquín de primeros auxilios abastecido y accesible' },
+        { en:'Flares in date — count confirmed', es:'Bengalas vigentes — cantidad confirmada' },
+        { en:'Anchor and rode aboard', es:'Ancla y cabo de ancla a bordo' },
+        { en:'Mooring lines and fenders ready', es:'Cabos de amarre y defensas listos' },
+        { en:'Weather check completed — conditions acceptable', es:'Revisión del clima completada — condiciones aceptables' },
+        { en:'Float plan filed / shore contact notified', es:'Plan de navegación presentado / contacto en tierra notificado' },
+        { en:'Dive flag / alpha flag aboard (if applicable)', es:'Bandera de buceo / bandera alfa a bordo (si aplica)' },
+        { en:'Daily log book started', es:'Bitácora diaria iniciada' },
+      ]},
+      eod: { role: 'captain_eod', label: { en: 'End of Day', es: 'Fin del Día' }, items: [
+        { en:'Engine shut down properly — hours logged', es:'Motor apagado correctamente — horas registradas' },
+        { en:'Fuel topped up / level logged for tomorrow', es:'Combustible recargado / nivel registrado para mañana' },
+        { en:'Bilge checked and pumped dry before leaving', es:'Sentina revisada y bombeada seca antes de irse' },
+        { en:'Boat rinsed with fresh water — salt off all surfaces and hardware', es:'Embarcación enjuagada con agua dulce — sal eliminada de superficies y herrajes' },
+        { en:'Safety gear stowed and secured', es:'Equipo de seguridad guardado y asegurado' },
+        { en:'Batteries on charge (house + engine start)', es:'Baterías cargando (de casa y de arranque del motor)' },
+        { en:'Mooring lines and fenders set for overnight', es:'Cabos de amarre y defensas listos para pasar la noche' },
+        { en:'Daily log completed and signed — defects noted for maintenance', es:'Bitácora completada y firmada — defectos anotados para mantenimiento' },
+      ]},
+      monthly: { role: 'captain_monthly', label: { en: 'Monthly', es: 'Mensual' }, items: [
+        { en:'Fire extinguisher pressure gauge and service tag checked', es:'Manómetro del extintor y etiqueta de servicio revisados' },
+        { en:'Flares checked for expiry date', es:'Bengalas revisadas por fecha de vencimiento' },
+        { en:'Life raft service date confirmed still in date', es:'Fecha de servicio de la balsa salvavidas confirmada vigente' },
+        { en:'EPIRB battery and self-test performed', es:'Batería del EPIRB y autotest realizados' },
+        { en:'Life jackets inspected for wear/damage — count matches capacity', es:'Chalecos salvavidas revisados por desgaste/daño — cantidad coincide con la capacidad' },
+        { en:'Engine fluids checked (coolant, transmission, belts)', es:'Fluidos del motor revisados (refrigerante, transmisión, correas)' },
+        { en:'Hull below waterline inspected, if accessible', es:'Casco bajo la línea de flotación inspeccionado, si es accesible' },
+        { en:'First aid kit restocked and expiry dates checked', es:'Botiquín reabastecido y fechas de vencimiento revisadas' },
+      ]},
+      yearly: { role: 'captain_yearly', label: { en: 'Yearly', es: 'Anual' }, items: [
+        { en:'Vessel survey / haul-out completed (if due)', es:'Inspección de casco / varado completado (si corresponde)' },
+        { en:'Engine major service completed per manufacturer schedule', es:'Service mayor del motor completado según el fabricante' },
+        { en:'Safety equipment certifications renewed (flares, life raft, extinguishers)', es:'Certificaciones de equipo de seguridad renovadas (bengalas, balsa, extintores)' },
+        { en:'Radio license and vessel registration confirmed current', es:'Licencia de radio y matrícula de la embarcación confirmadas vigentes' },
+        { en:'Insurance policy reviewed and renewed', es:'Póliza de seguro revisada y renovada' },
+        { en:'Captain\'s own license/certification renewal checked', es:'Renovación de la licencia/certificación propia del capitán revisada' },
+      ]},
+    }
+  },
+  instructor: {
+    label: { en: 'Instructor / DM', es: 'Instructor / DM' },
+    cadences: {
+      morning: { role: 'instructor_morning', label: { en: 'Morning', es: 'Mañana' }, items: [
+        { en:'Student waivers and certs checked', es:'Formularios y certificaciones de estudiantes revisados' },
+        { en:'Gear manifest printed / confirmed', es:'Manifiesto de equipo impreso / confirmado' },
+        { en:'Theory briefing materials ready', es:'Materiales de briefing teórico listos' },
+        { en:'Emergency procedures briefed to students', es:'Procedimientos de emergencia explicados a los estudiantes' },
+      ]},
+      eod: { role: 'instructor_eod', label: { en: 'End of Day', es: 'Fin del Día' }, items: [
+        { en:'Student progress logged', es:'Progreso de estudiantes registrado' },
+        { en:'Gear returns confirmed — nothing left on boat', es:'Devolución de equipo confirmada — nada quedó en la embarcación' },
+        { en:'Lost and found checked', es:'Objetos perdidos revisados' },
+        { en:'Next day student list reviewed', es:'Lista de estudiantes del día siguiente revisada' },
+        { en:'Equipment defects reported', es:'Defectos de equipo reportados' },
+      ]},
+      monthly: { role: 'instructor_monthly', label: { en: 'Monthly', es: 'Mensual' }, items: [
+        { en:'Rental gear inventory counted and reconciled against the system', es:'Inventario de equipo de alquiler contado y conciliado contra el sistema' },
+        { en:'Dive computers checked — firmware and battery health', es:'Computadoras de buceo revisadas — firmware y estado de batería' },
+        { en:'First aid / oxygen provider certifications checked for expiry', es:'Certificaciones de primeros auxilios / oxígeno revisadas por vencimiento' },
+        { en:'Training materials and briefing slates reviewed for accuracy', es:'Materiales de entrenamiento y pizarras de briefing revisados' },
+        { en:'Damaged or retired gear logged and removed from rotation', es:'Equipo dañado o retirado registrado y sacado de circulación' },
+        { en:'Incident / near-miss log reviewed with team', es:'Registro de incidentes / cuasi-accidentes revisado con el equipo' },
+      ]},
+      yearly: { role: 'instructor_yearly', label: { en: 'Yearly', es: 'Anual' }, items: [
+        { en:'Instructor certifications and insurance renewed', es:'Certificaciones de instructor y seguro renovados' },
+        { en:'Emergency action plan reviewed and updated', es:'Plan de acción de emergencia revisado y actualizado' },
+        { en:'Oxygen provider / first aid course renewed', es:'Curso de proveedor de oxígeno / primeros auxilios renovado' },
+        { en:'Full gear fleet condition audit (regs serviced, BCDs inspected)', es:'Auditoría completa del estado del equipo (reguladores service, BCDs inspeccionados)' },
+        { en:'Student records archived per retention policy', es:'Registros de estudiantes archivados según política de retención' },
+      ]},
+    }
+  },
+  deck: {
+    label: { en: 'Deck', es: 'Cubierta' },
+    cadences: {
+      morning: { role: 'deck_morning', label: { en: 'Morning', es: 'Mañana' }, items: [
+        { en:'Deck cleared of loose items and trip hazards', es:'Cubierta despejada de objetos sueltos y riesgos de tropiezo' },
+        { en:'Cleaning supplies and rinse buckets stocked', es:'Insumos de limpieza y baldes de enjuague abastecidos' },
+        { en:'Deck safety equipment in place (throw ropes, boat hooks)', es:'Equipo de seguridad de cubierta en su lugar (cabos de rescate, bicheros)' },
+        { en:'Fenders and lines ready for departure', es:'Defensas y cabos listos para zarpar' },
+        { en:'Ice/coolers prepped, if used for guest drinks or catering', es:'Hielo/conservadoras preparados, si se usan para bebidas o catering' },
+        { en:'Boarding ladder / step checked and secure', es:'Escalera / escalón de embarque revisado y asegurado' },
+      ]},
+      eod: { role: 'deck_eod', label: { en: 'End of Day', es: 'Fin del Día' }, items: [
+        { en:'All tanks rinsed with fresh water and stored', es:'Todos los tanques enjuagados con agua dulce y guardados' },
+        { en:'BCDs rinsed and hung to dry', es:'BCD enjuagados y colgados para secar' },
+        { en:'Wetsuits rinsed and hung', es:'Trajes de neopreno enjuagados y colgados' },
+        { en:'Regulators rinsed and bagged', es:'Reguladores enjuagados y embolsados' },
+        { en:'Boat rinsed — salt off all surfaces', es:'Embarcación enjuagada — sal eliminada de todas las superficies' },
+        { en:'Bilge checked', es:'Sentina revisada' },
+        { en:'Lines secured and fenders in place', es:'Cabos asegurados y defensas en su lugar' },
+        { en:'Log book completed and signed', es:'Bitácora completada y firmada' },
+      ]},
+      monthly: { role: 'deck_monthly', label: { en: 'Monthly', es: 'Mensual' }, items: [
+        { en:'Non-slip deck surfaces checked for wear', es:'Superficies antideslizantes revisadas por desgaste' },
+        { en:'Storage lockers cleaned and organized', es:'Compartimentos de guardado limpiados y organizados' },
+        { en:'Canvas / bimini / shade covers inspected for damage', es:'Lonas / bimini / toldos revisados por daños' },
+        { en:'Deck hardware checked for corrosion or looseness (cleats, rails)', es:'Herrajes de cubierta revisados por corrosión o aflojamiento (cornamusas, barandas)' },
+        { en:'Trash / recycling systems checked and serviced', es:'Sistemas de basura / reciclaje revisados y mantenidos' },
+      ]},
+      yearly: { role: 'deck_yearly', label: { en: 'Yearly', es: 'Anual' }, items: [
+        { en:'Deck non-slip coating reapplied if needed', es:'Recubrimiento antideslizante de cubierta reaplicado si es necesario' },
+        { en:'Canvas / upholstery deep cleaned or replaced', es:'Lonas / tapizados limpiados a fondo o reemplazados' },
+        { en:'Deck hardware re-bedded / serviced as needed', es:'Herrajes de cubierta reasentados / mantenidos según necesidad' },
+        { en:'Full interior/exterior detail before high season', es:'Detallado completo interior/exterior antes de temporada alta' },
+      ]},
+    }
+  },
+};
+function departmentRoutinesGet() {
   const out = {};
-  DEPT_CHECKLISTS_I18N.forEach(dept => {
-    const label = currentLanguage === 'es' ? dept.es : dept.en;
-    out[dept.key] = { label, items: dept.items.map(i => currentLanguage === 'es' ? i.es : i.en) };
+  Object.entries(DEPARTMENT_ROUTINES_I18N).forEach(([deptKey, dept]) => {
+    out[deptKey] = { label: currentLanguage === 'es' ? dept.label.es : dept.label.en, cadences: {} };
+    Object.entries(dept.cadences).forEach(([cadKey, cad]) => {
+      out[deptKey].cadences[cadKey] = {
+        role: cad.role,
+        label: currentLanguage === 'es' ? cad.label.es : cad.label.en,
+        items: cad.items.map((i, idx) => ({ id: String(idx), text: currentLanguage === 'es' ? i.es : i.en }))
+      };
+    });
   });
   return out;
 }
+// Human label for a checklist_completions.role value, for Logged Checklists.
+// Covers both the department-routine keys above and the legacy trip-linked
+// 'instructor' role from Trip Prep's Gear Prep checklist.
+function checklistRoleLabel(role) {
+  const cadenceOf = { morning: 'cl_cadence_morning', eod: 'cl_cadence_eod', monthly: 'cl_cadence_monthly', yearly: 'cl_cadence_yearly' };
+  const map = {
+    captain: `${t('cl_dept_captain')} — ${t('cl_cadence_morning')}`,
+    captain_eod: `${t('cl_dept_captain')} — ${t('cl_cadence_eod')}`,
+    captain_monthly: `${t('cl_dept_captain')} — ${t('cl_cadence_monthly')}`,
+    captain_yearly: `${t('cl_dept_captain')} — ${t('cl_cadence_yearly')}`,
+    instructor_morning: `${t('cl_dept_instructor')} — ${t('cl_cadence_morning')}`,
+    instructor_eod: `${t('cl_dept_instructor')} — ${t('cl_cadence_eod')}`,
+    instructor_monthly: `${t('cl_dept_instructor')} — ${t('cl_cadence_monthly')}`,
+    instructor_yearly: `${t('cl_dept_instructor')} — ${t('cl_cadence_yearly')}`,
+    deck_morning: `${t('cl_dept_deck')} — ${t('cl_cadence_morning')}`,
+    deck_eod: `${t('cl_dept_deck')} — ${t('cl_cadence_eod')}`,
+    deck_monthly: `${t('cl_dept_deck')} — ${t('cl_cadence_monthly')}`,
+    deck_yearly: `${t('cl_dept_deck')} — ${t('cl_cadence_yearly')}`,
+    instructor: t('cl_instructor_dm'),
+  };
+  return map[role] || crewRoleLabel(role);
+}
 
 // State
-let captainChecks = {};
-let instructorChecks = {};
+let instructorChecksByTrip = {}; // { [tripId]: { [itemId]: bool } }
+let deptRoutineChecks = {}; // { [role]: { [itemId]: bool } }
+let currentDeptKey = 'captain';
+let currentCadenceKey = 'morning';
 let currentChecklistTripId = null;
 let currentUserRole = 'instructor';
 
@@ -10309,23 +10457,27 @@ async function initChecklists() {
     currentUserRole = s?.role || 'instructor';
   }
 
-  // Show/hide captain tab based on role
+  // Show/hide logged-checklists tab based on role
   const isLeader = ['owner','manager','captain'].includes(currentUserRole);
-  document.getElementById('cl-tab-captain').style.display = isLeader ? 'block' : 'none';
   document.getElementById('cl-captain-overview').style.display = isLeader ? 'block' : 'none';
+  document.getElementById('cl-tab-logged').style.display = isLeader ? 'block' : 'none';
 
   await loadTodaysTripList();
   initInstructorChecklist();
-  initCaptainChecklist();
   initDeptChecklists();
 }
+
+// Roles that actually get in the water and need their own tank, as opposed
+// to crew who stay aboard (captain, deckhand) -- so the tank count below
+// covers guests AND diving staff, not guests alone.
+const DIVING_CREW_ROLES = ['instructor', 'divemaster', 'dive_guide'];
 
 async function loadTodaysTripList() {
   if (!currentOrgId) return;
   const today = formatDate(new Date());
   const { data: trips } = await sb
     .from('trips')
-    .select('id, trip_name, trip_time, trip_type, trip_types(name, num_tanks, needs_tank_count), participants(id, gear)')
+    .select('id, trip_name, trip_time, trip_type, trip_types(name, num_tanks, needs_tank_count), participants(id, gear), trip_crew(staff(role))')
     .eq('org_id', currentOrgId)
     .eq('trip_date', today)
     .order('trip_time');
@@ -10342,19 +10494,26 @@ async function loadTodaysTripList() {
     const guests = tr.participants?.length || 0;
     const numTanks = tr.trip_types?.num_tanks || 1;
     const needsTanks = tr.trip_types?.needs_tank_count;
-    const tanks = needsTanks ? `${guests * numTanks} ${t('cl_tanks_needed')}` : '';
+    const divingCrewCount = (tr.trip_crew || []).filter(tc => DIVING_CREW_ROLES.includes(tc.staff?.role)).length;
+    // Guests + diving crew, plus 2 spares whenever tanks are needed at all --
+    // per Fran, never load out to the exact headcount with nothing in reserve.
+    const totalTankCount = needsTanks ? (guests + divingCrewCount) * numTanks + 2 : 0;
+    const tanks = needsTanks ? `${totalTankCount} ${t('cl_tanks_needed')}` : '';
     return `<div class="cl-trip-pill ${currentChecklistTripId===tr.id?'selected':''}"
-      onclick="selectChecklistTrip('${tr.id}',${JSON.stringify(tr.participants||[]).replace(/"/g,'&quot;')},${numTanks},${needsTanks?'true':'false'},'${name}','${time}')">
+      onclick="selectChecklistTrip('${tr.id}',${JSON.stringify(tr.participants||[]).replace(/"/g,'&quot;')},${numTanks},${needsTanks?'true':'false'},'${name}','${time}',${divingCrewCount})">
       <div style="font-weight:600;font-size:0.875rem;">${time ? time+' — ' : ''}${name}</div>
       <div style="font-size:0.75rem;color:var(--muted);">${guests} ${guests!==1?t('cl_guest_plural'):t('cl_guest_singular')}${tanks?' · '+tanks:''}</div>
     </div>`;
   }).join('');
 }
 
-function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripName, tripTime) {
+function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripName, tripTime, divingCrewCount) {
   currentChecklistTripId = tripId;
+  divingCrewCount = divingCrewCount || 0;
 
-  // Recalculate gear totals from participants
+  // Recalculate gear totals from participants -- broken down by exact size
+  // (not just a headline count), since that's what an instructor actually
+  // needs to know before loading the boat.
   const gearTotals = {};
   let totalTanks = 0;
   let totalWeight = 0;
@@ -10372,11 +10531,19 @@ function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripNam
     });
   });
 
+  // Diving crew assigned to this trip need their own tank too, and every
+  // load-out carries 2 spares -- neither comes from participant records,
+  // so both are added on top of the guest count.
+  if (needsTanks) totalTanks += divingCrewCount * numTanks;
+  const spareTanks = needsTanks ? 2 : 0;
+  totalTanks += spareTanks;
+
   // Build gear summary
   const lines = [];
   if (totalTanks > 0) {
     const tankBreakdown = Object.entries(tankSizes).map(([s,n])=>`${n}×${s}`).join(', ');
-    lines.push(`<strong>${totalTanks} ${t('cl_tanks_needed')}</strong>${tankBreakdown?' ('+tankBreakdown+')':''}`);
+    const sparesNote = spareTanks > 0 ? ` · ${t('cl_includes_spares').replace('{n}', spareTanks)}` : '';
+    lines.push(`<strong>${totalTanks} ${t('cl_tanks_needed')}</strong>${tankBreakdown?' ('+tankBreakdown+')':''}${sparesNote}`);
   }
   if (totalWeight > 0) lines.push(`<strong>${totalWeight} ${t('cl_kg_weights_total')}</strong>`);
   Object.entries(gearTotals).forEach(([key, sizes]) => {
@@ -10393,6 +10560,10 @@ function selectChecklistTrip(tripId, participants, numTanks, needsTanks, tripNam
   } else {
     summaryCard.style.display = 'none';
   }
+
+  // Each trip keeps its own checklist progress -- picking the afternoon
+  // trip must not carry over what was ticked for the morning trip.
+  renderInstructorChecklistForTrip(tripId);
 
   loadTodaysTripList();
 
@@ -10416,76 +10587,73 @@ async function loadCrewStatus(tripId) {
   container.innerHTML = signoffs.map(s => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
       <div>
-        <div style="font-weight:600;font-size:0.875rem;">${crewRoleLabel(s.role)}</div>
+        <div style="font-weight:600;font-size:0.875rem;">${checklistRoleLabel(s.role)}</div>
         <div style="font-size:0.75rem;color:var(--muted);">${t('cl_signed_by')}${s.signed_by} · ${new Date(s.signed_at).toLocaleTimeString()}</div>
       </div>
       <div class="cl-role-badge done">${s.completed_items}/${s.total_items} ✓</div>
     </div>`).join('');
 }
 
-// ─── CAPTAIN ───
-function initCaptainChecklist() {
-  captainChecks = {};
-  renderCheckItems('cl-captain-items', CAPTAIN_ITEMS_get(), captainChecks, 'toggleCaptain', 'cl-captain-progress');
-  const done = document.getElementById('cl-captain-done');
-  if (done) done.style.display = 'none';
-  const status = document.getElementById('cl-captain-status');
-  if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
-}
-
-function toggleCaptain(id) {
-  captainChecks[id] = !captainChecks[id];
-  renderCheckItems('cl-captain-items', CAPTAIN_ITEMS_get(), captainChecks, 'toggleCaptain', 'cl-captain-progress');
-}
-
-async function captainSignOff() {
-  const name = document.getElementById('cl-captain-name').value.trim();
-  const boat = document.getElementById('cl-captain-boat').value.trim();
-  const captainItems = CAPTAIN_ITEMS_get();
-  const done = captainItems.filter(i => captainChecks[i.id]).length;
-  if (!name) { await showAlertModal(t('cl_enter_captain_name')); return; }
-  if (done < captainItems.length && !(await showConfirmModal(`${captainItems.length - done}${t('cl_items_incomplete')}`))) return;
-  const ts = new Date().toLocaleString();
-  const doneBanner = document.getElementById('cl-captain-done');
-  doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong>${boat?' — '+boat:''} at ${ts}`;
-  doneBanner.style.display = 'block';
-  const status = document.getElementById('cl-captain-status');
-  if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
-  if (currentOrgId) {
-    const payload = {
-      org_id: currentOrgId, trip_id: currentChecklistTripId || null,
-      role: 'captain', signed_by: name, boat_name: boat,
-      completed_items: done, total_items: captainItems.length,
-      signed_at: new Date().toISOString()
-    };
-    if (isOffline) {
-      queueOfflineAction('checklist_completion', payload);
-      doneBanner.innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
-    } else {
-      await sb.from('checklist_completions').insert(payload);
-    }
-  }
-}
+// Captain's standalone Vessel Safety Check now lives inside Department
+// Routines as "Captain -- Morning" (same role='captain' in checklist_completions,
+// so its logged history stays continuous) -- see the generic engine below.
 
 // ─── INSTRUCTOR ───
+// Called once at page load, before any trip is picked -- just shows a
+// placeholder until "Today's Trips" gives it a trip to work with.
 function initInstructorChecklist() {
-  instructorChecks = {};
-  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), instructorChecks, 'toggleInstructor', null);
+  const el = document.getElementById('cl-instructor-items');
+  if (el) el.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('cl_select_trip_first')}</p>`;
   const done = document.getElementById('cl-instructor-done');
   if (done) done.style.display = 'none';
   const status = document.getElementById('cl-instructor-status');
   if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
 }
 
+function resetInstructorChecklist() {
+  if (!currentChecklistTripId) return;
+  instructorChecksByTrip[currentChecklistTripId] = {};
+  renderInstructorChecklistForTrip(currentChecklistTripId);
+}
+
 function toggleInstructor(id) {
-  instructorChecks[id] = !instructorChecks[id];
-  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), instructorChecks, 'toggleInstructor', null);
+  if (!currentChecklistTripId) return;
+  const checks = instructorChecksByTrip[currentChecklistTripId] = instructorChecksByTrip[currentChecklistTripId] || {};
+  checks[id] = !checks[id];
+  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), checks, 'toggleInstructor', null);
+}
+
+// Loads a fresh, trip-specific checklist -- each trip today keeps its own
+// progress instead of sharing one global checklist -- and reloads any
+// sign-off that already exists for this trip so switching back to a trip
+// someone already signed off doesn't show a misleading "Pending".
+async function renderInstructorChecklistForTrip(tripId) {
+  instructorChecksByTrip[tripId] = instructorChecksByTrip[tripId] || {};
+  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), instructorChecksByTrip[tripId], 'toggleInstructor', null);
+  const doneBanner = document.getElementById('cl-instructor-done');
+  doneBanner.style.display = 'none';
+  const status = document.getElementById('cl-instructor-status');
+  if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
+
+  if (!currentOrgId) return;
+  const { data: existing } = await sb.from('checklist_completions')
+    .select('signed_by, signed_at, completed_items, total_items')
+    .eq('trip_id', tripId).eq('role', 'instructor')
+    .order('signed_at', { ascending: false }).limit(1);
+  if (existing && existing.length) {
+    const s = existing[0];
+    if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
+    doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${s.signed_by}</strong> ${new Date(s.signed_at).toLocaleString()}`;
+    doneBanner.style.display = 'block';
+  }
 }
 
 async function instructorSignOff() {
+  if (!currentChecklistTripId) { await showAlertModal(t('cl_select_trip_first')); return; }
   const name = document.getElementById('cl-instructor-name').value.trim();
   const instructorItems = INSTRUCTOR_ITEMS_get();
-  const done = instructorItems.filter(i => instructorChecks[i.id]).length;
+  const checks = instructorChecksByTrip[currentChecklistTripId] || {};
+  const done = instructorItems.filter(i => checks[i.id]).length;
   if (!name) { await showAlertModal(t('cl_enter_your_name')); return; }
   if (done < instructorItems.length && !(await showConfirmModal(`${instructorItems.length - done}${t('cl_items_incomplete')}`))) return;
   const ts = new Date().toLocaleString();
@@ -10495,7 +10663,7 @@ async function instructorSignOff() {
   if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
   if (currentOrgId) {
     const payload = {
-      org_id: currentOrgId, trip_id: currentChecklistTripId || null,
+      org_id: currentOrgId, trip_id: currentChecklistTripId,
       role: 'instructor', signed_by: name,
       completed_items: done, total_items: instructorItems.length,
       signed_at: new Date().toISOString()
@@ -10505,7 +10673,7 @@ async function instructorSignOff() {
       document.getElementById('cl-instructor-done').innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
     } else {
       await sb.from('checklist_completions').insert(payload);
-      if (currentChecklistTripId && ['owner','manager','captain'].includes(currentUserRole)) {
+      if (['owner','manager','captain'].includes(currentUserRole)) {
         await loadCrewStatus(currentChecklistTripId);
       }
     }
@@ -10528,46 +10696,99 @@ function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
   }
 }
 
-// ─── DEPARTMENT ───
+// ─── DEPARTMENT ROUTINES (Captain / Instructor-DM / Deck × Morning / EOD / Monthly / Yearly) ───
 function initDeptChecklists() {
   const tabRow = document.getElementById('dept-tabs');
-  const depts = DEPT_CHECKLISTS_get();
+  const depts = departmentRoutinesGet();
   const deptKeys = Object.keys(depts);
   tabRow.innerHTML = deptKeys.map((key, i) =>
-    `<div class="cl-role-tab ${i===0?'active':''}" onclick="filterDeptList('${key}',this)">${depts[key].label}</div>`
+    `<div class="cl-role-tab ${key===currentDeptKey?'active':''}" onclick="selectDeptDepartment('${key}',this)">${depts[key].label}</div>`
   ).join('');
-  renderDeptList(deptKeys[0]);
+  renderDeptCadenceTabs();
+  renderDeptRoutine();
 }
 
-function filterDeptList(key, el) {
+function selectDeptDepartment(key, el) {
+  currentDeptKey = key;
+  currentCadenceKey = 'morning';
   document.querySelectorAll('#dept-tabs .cl-role-tab').forEach(tb => tb.classList.remove('active'));
   el.classList.add('active');
-  renderDeptList(key);
+  renderDeptCadenceTabs();
+  renderDeptRoutine();
 }
 
-function renderDeptList(key) {
-  const depts = DEPT_CHECKLISTS_get();
-  const items = depts[key]?.items || [];
-  const checks = {};
-  document.getElementById('dept-list').innerHTML = `
-    <div style="margin-top:16px;">
-      ${items.map((text, i) => `
-        <div class="cl-item" id="dept-item-${i}" onclick="toggleDept(${i})">
-          <div class="cl-checkbox"></div>
-          <div class="cl-item-text">${text}</div>
-        </div>`).join('')}
-      <div class="settings-actions" style="margin-top:16px;">
-        <button class="btn-cancel" onclick="renderDeptList('${key}')">${t('cl_reset')}</button>
-      </div>
-    </div>`;
+function renderDeptCadenceTabs() {
+  const depts = departmentRoutinesGet();
+  const cadences = depts[currentDeptKey].cadences;
+  document.getElementById('dept-cadence-tabs').innerHTML = Object.keys(cadences).map(cadKey =>
+    `<div class="cl-tab ${cadKey===currentCadenceKey?'active':''}" onclick="selectDeptCadence('${cadKey}',this)">${cadences[cadKey].label}</div>`
+  ).join('');
 }
 
-function toggleDept(idx) {
-  const item = document.getElementById(`dept-item-${idx}`);
-  const checked = item.classList.toggle('checked');
-  item.querySelector('.cl-checkbox').innerHTML = checked
-    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>'
-    : '';
+function selectDeptCadence(key, el) {
+  currentCadenceKey = key;
+  document.querySelectorAll('#dept-cadence-tabs .cl-tab').forEach(tb => tb.classList.remove('active'));
+  el.classList.add('active');
+  renderDeptRoutine();
+}
+
+function currentDeptRoutine() {
+  return departmentRoutinesGet()[currentDeptKey].cadences[currentCadenceKey];
+}
+
+function renderDeptRoutine() {
+  const routine = currentDeptRoutine();
+  const roleKey = routine.role;
+  deptRoutineChecks[roleKey] = deptRoutineChecks[roleKey] || {};
+  document.getElementById('dept-routine-title').textContent = routine.label;
+  document.getElementById('dept-routine-name').value = '';
+  const doneBanner = document.getElementById('dept-routine-done');
+  if (doneBanner) doneBanner.style.display = 'none';
+  const status = document.getElementById('dept-routine-status');
+  if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
+  renderCheckItems('dept-list', routine.items, deptRoutineChecks[roleKey], 'toggleDeptItem', 'dept-routine-progress');
+}
+
+function resetDeptRoutine() {
+  const routine = currentDeptRoutine();
+  deptRoutineChecks[routine.role] = {};
+  renderDeptRoutine();
+}
+
+function toggleDeptItem(id) {
+  const routine = currentDeptRoutine();
+  const checks = deptRoutineChecks[routine.role];
+  checks[id] = !checks[id];
+  renderCheckItems('dept-list', routine.items, checks, 'toggleDeptItem', 'dept-routine-progress');
+}
+
+async function deptRoutineSignOff() {
+  const routine = currentDeptRoutine();
+  const checks = deptRoutineChecks[routine.role] || {};
+  const name = document.getElementById('dept-routine-name').value.trim();
+  const done = routine.items.filter(i => checks[i.id]).length;
+  if (!name) { await showAlertModal(t('cl_enter_your_name')); return; }
+  if (done < routine.items.length && !(await showConfirmModal(`${routine.items.length - done}${t('cl_items_incomplete')}`))) return;
+  const ts = new Date().toLocaleString();
+  const doneBanner = document.getElementById('dept-routine-done');
+  doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
+  doneBanner.style.display = 'block';
+  const status = document.getElementById('dept-routine-status');
+  if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
+  if (currentOrgId) {
+    const payload = {
+      org_id: currentOrgId, trip_id: null,
+      role: routine.role, signed_by: name,
+      completed_items: done, total_items: routine.items.length,
+      signed_at: new Date().toISOString()
+    };
+    if (isOffline) {
+      queueOfflineAction('checklist_completion', payload);
+      doneBanner.innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
+    } else {
+      await sb.from('checklist_completions').insert(payload);
+    }
+  }
 }
 
 // ─── NAV ───
@@ -10576,7 +10797,71 @@ function showChecklistView(view, el) {
   document.querySelectorAll('.cl-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('cl-' + view).style.display = 'block';
   el.classList.add('active');
+  if (view === 'logged') loadLoggedChecklists();
 }
+
+// ─── LOGGED CHECKLISTS ───
+// Every instructor/captain sign-off ever recorded (checklist_completions),
+// grouped by day, most recent first. Owner/manager/captain only -- kept
+// out of Reports on purpose since Reports is revenue data and owner-only.
+// An optional date search jumps straight to one day.
+async function loadLoggedChecklists() {
+  if (!currentOrgId) return;
+  const list = document.getElementById('cl-logged-list');
+  list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('common_loading')}</p>`;
+
+  const searchDate = document.getElementById('cl-logged-date-search').value;
+
+  const { data: completions } = await sb.from('checklist_completions')
+    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trips(trip_name, trip_date, trip_time, trip_type)')
+    .eq('org_id', currentOrgId)
+    .order('signed_at', { ascending: false })
+    .limit(300);
+
+  let rows = completions || [];
+  // Group by the trip's own date when there's a linked trip (a captain's
+  // vessel check isn't tied to one specific trip, so it falls back to the
+  // date it was signed on instead).
+  const dayOf = (row) => row.trips?.trip_date || row.signed_at.split('T')[0];
+
+  if (searchDate) rows = rows.filter(r => dayOf(r) === searchDate);
+
+  if (!rows.length) {
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('cl_logged_none')}</p>`;
+    return;
+  }
+
+  const byDay = {};
+  rows.forEach(r => { const d = dayOf(r); (byDay[d] = byDay[d] || []).push(r); });
+  const days = Object.keys(byDay).sort((a, b) => b.localeCompare(a));
+
+  list.innerHTML = days.map(day => {
+    const dayLabel = new Date(day + 'T12:00:00').toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const rowsHtml = byDay[day].map(r => {
+      const tripLabel = r.trips
+        ? `${r.trips.trip_time ? r.trips.trip_time.slice(0,5) + ' — ' : ''}${trTypeName(r.trips.trip_type) || r.trips.trip_name || t('wv_trip_fallback')}`
+        : t('cl_logged_vessel_check');
+      const roleLabel = crewRoleLabel(r.role) || r.role;
+      return `<div class="cl-logged-row">
+        <div>
+          <div class="cl-logged-row-title">${tripLabel}${r.boat_name ? ' · ' + r.boat_name : ''}</div>
+          <div class="cl-logged-row-meta">${roleLabel} · ${t('cl_signed_by')}${r.signed_by} · ${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+        <div class="cl-role-badge done">${r.completed_items}/${r.total_items} ✓</div>
+      </div>`;
+    }).join('');
+    return `<div class="cl-logged-day-group">
+      <div class="cl-logged-day-heading">${dayLabel}</div>
+      ${rowsHtml}
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('cl-logged-date-search').addEventListener('change', loadLoggedChecklists);
+document.getElementById('cl-logged-clear-search').addEventListener('click', () => {
+  document.getElementById('cl-logged-date-search').value = '';
+  loadLoggedChecklists();
+});
 
 // ─── END CHECKLISTS ───
 
@@ -12918,8 +13203,11 @@ async function toggleRentalFees(tripTypeId) {
       ${ttgf.map(r => `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">
           <label style="font-size:0.85rem;">${r.gear_field_definitions?.label || r.gear_field_definitions?.field_key || t('set_field_fallback')}</label>
-          <input class="sf-input" type="number" min="0" style="max-width:110px;margin-bottom:0;" value="${r.rental_fee ?? ''}" placeholder="0"
-            onchange="updateGearFieldRentalFee('${r.id}', this.value, this)">
+          <div style="display:flex;align-items:center;gap:4px;max-width:110px;">
+            <span style="font-size:0.85rem;color:var(--muted);">$</span>
+            <input class="sf-input" type="number" min="0" step="0.01" style="margin-bottom:0;" value="${r.rental_fee != null ? parseFloat(r.rental_fee).toFixed(2) : ''}" placeholder="0.00"
+              onchange="updateGearFieldRentalFee('${r.id}', this.value, this)">
+          </div>
         </div>
       `).join('')}
     </div>
