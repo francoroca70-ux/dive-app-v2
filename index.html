@@ -3592,7 +3592,7 @@ const TRANSLATIONS = {
     cl_your_name: 'Your name', cl_sign_off_gear: 'Sign Off — Gear Ready', cl_reset: 'Reset',
     cl_sign_off_routine: 'Sign Off', cl_select_trip_first: 'Select a trip above first.',
     cl_includes_spares: 'includes {n} spares',
-    cl_dept_captain: 'Captain', cl_dept_instructor: 'Instructor / DM', cl_dept_deck: 'Deck',
+    cl_dept_captain: 'Captain', cl_dept_instructor: 'Instructor / DM / Dive Guide', cl_dept_deck: 'Deck', cl_dept_stewards: 'Stewards',
     cl_cadence_morning: 'Morning', cl_cadence_eod: 'End of Day', cl_cadence_monthly: 'Monthly', cl_cadence_yearly: 'Yearly',
     cl_crew_signoff_status: 'Crew Sign-Off Status', cl_vessel_safety_check: 'Vessel Safety Check',
     cl_complete_once_daily: 'Complete once per day before first departure. Independent of individual trips.',
@@ -4109,7 +4109,7 @@ const TRANSLATIONS = {
     cl_your_name: 'Tu nombre', cl_sign_off_gear: 'Confirmar — Equipo Listo', cl_reset: 'Reiniciar',
     cl_sign_off_routine: 'Confirmar', cl_select_trip_first: 'Primero seleccioná una salida arriba.',
     cl_includes_spares: 'incluye {n} de repuesto',
-    cl_dept_captain: 'Capitán', cl_dept_instructor: 'Instructor / DM', cl_dept_deck: 'Cubierta',
+    cl_dept_captain: 'Capitán', cl_dept_instructor: 'Instructor / DM / Guía de Buceo', cl_dept_deck: 'Cubierta', cl_dept_stewards: 'Camareros',
     cl_cadence_morning: 'Mañana', cl_cadence_eod: 'Fin del Día', cl_cadence_monthly: 'Mensual', cl_cadence_yearly: 'Anual',
     cl_crew_signoff_status: 'Estado de Confirmación de Tripulación', cl_vessel_safety_check: 'Revisión de Seguridad de la Embarcación',
     cl_complete_once_daily: 'Completar una vez al día antes de la primera salida. Independiente de las salidas individuales.',
@@ -10461,7 +10461,7 @@ const DEPARTMENT_ROUTINES_I18N = {
     }
   },
   instructor: {
-    label: { en: 'Instructor / DM', es: 'Instructor / DM' },
+    label: { en: 'Instructor / DM / Dive Guide', es: 'Instructor / DM / Guía de Buceo' },
     cadences: {
       morning: { role: 'instructor_morning', label: { en: 'Morning', es: 'Mañana' }, items: [
         { en:'Student waivers and certs checked', es:'Formularios y certificaciones de estudiantes revisados' },
@@ -10529,6 +10529,40 @@ const DEPARTMENT_ROUTINES_I18N = {
       ]},
     }
   },
+  stewards: {
+    label: { en: 'Stewards / Head Stewards', es: 'Camareros / Jefes de Camareros' },
+    cadences: {
+      morning: { role: 'stewards_morning', label: { en: 'Morning', es: 'Mañana' }, items: [
+        { en:'Guest cabins and common areas tidied and inspected', es:'Camarotes y áreas comunes de huéspedes ordenados e inspeccionados' },
+        { en:'Fresh towels and linens stocked', es:'Toallas y ropa de cama limpias abastecidas' },
+        { en:'Galley prepped and breakfast/refreshment service ready', es:'Cocina preparada y servicio de desayuno/refrigerio listo' },
+        { en:'Beverage station stocked (water, coffee, tea, juice)', es:'Estación de bebidas abastecida (agua, café, té, jugo)' },
+        { en:'Guest comfort amenities checked (sunscreen, seasickness tablets, spare towels)', es:'Amenities de confort para huéspedes revisados (protector solar, pastillas para el mareo, toallas de repuesto)' },
+        { en:'Trash bins emptied before departure', es:'Cestos de basura vaciados antes de zarpar' },
+      ]},
+      eod: { role: 'stewards_eod', label: { en: 'End of Day', es: 'Fin del Día' }, items: [
+        { en:'Galley cleaned and equipment stowed', es:'Cocina limpiada y equipo guardado' },
+        { en:'Dishes and glassware washed and put away', es:'Platos y vasos lavados y guardados' },
+        { en:'Used linens and towels collected for laundry', es:'Ropa de cama y toallas usadas recolectadas para lavado' },
+        { en:'Guest areas re-tidied and reset for tomorrow', es:'Áreas de huéspedes reordenadas y preparadas para mañana' },
+        { en:'Perishable food stock checked and rotated', es:'Stock de alimentos perecederos revisado y rotado' },
+        { en:'Trash and recycling taken ashore', es:'Basura y reciclaje llevados a tierra' },
+      ]},
+      monthly: { role: 'stewards_monthly', label: { en: 'Monthly', es: 'Mensual' }, items: [
+        { en:'Full galley deep clean (fridge, oven, all surfaces)', es:'Limpieza profunda de cocina (heladera, horno, todas las superficies)' },
+        { en:'Linen inventory counted and reconciled', es:'Inventario de ropa de cama contado y conciliado' },
+        { en:'Guest amenity stock reordered (sunscreen, seasickness meds, first aid comfort items)', es:'Stock de amenities reordenado (protector solar, medicación para el mareo, artículos de confort)' },
+        { en:'Cabin and upholstery inspected for wear, damage, or mildew', es:'Camarotes y tapizados inspeccionados por desgaste, daño u hongos' },
+        { en:'Food safety and expiry dates checked across all stock', es:'Fechas de vencimiento y seguridad alimentaria revisadas en todo el stock' },
+      ]},
+      yearly: { role: 'stewards_yearly', label: { en: 'Yearly', es: 'Anual' }, items: [
+        { en:'Galley equipment serviced (fridge, stove, water heater)', es:'Equipo de cocina revisado (heladera, cocina, calentador de agua)' },
+        { en:'Linen and soft furnishing replacement assessed', es:'Reemplazo de ropa de cama y tapizados evaluado' },
+        { en:'Food safety / hygiene certification renewed', es:'Certificación de seguridad alimentaria / higiene renovada' },
+        { en:'Deep clean and mold treatment of cabins and heads before high season', es:'Limpieza profunda y tratamiento antihongos de camarotes y baños antes de temporada alta' },
+      ]},
+    }
+  },
 };
 function departmentRoutinesGet() {
   const out = {};
@@ -10562,6 +10596,10 @@ function checklistRoleLabel(role) {
     deck_eod: `${t('cl_dept_deck')} — ${t('cl_cadence_eod')}`,
     deck_monthly: `${t('cl_dept_deck')} — ${t('cl_cadence_monthly')}`,
     deck_yearly: `${t('cl_dept_deck')} — ${t('cl_cadence_yearly')}`,
+    stewards_morning: `${t('cl_dept_stewards')} — ${t('cl_cadence_morning')}`,
+    stewards_eod: `${t('cl_dept_stewards')} — ${t('cl_cadence_eod')}`,
+    stewards_monthly: `${t('cl_dept_stewards')} — ${t('cl_cadence_monthly')}`,
+    stewards_yearly: `${t('cl_dept_stewards')} — ${t('cl_cadence_yearly')}`,
     instructor: t('cl_instructor_dm'),
   };
   return map[role] || crewRoleLabel(role);
