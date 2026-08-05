@@ -4104,7 +4104,7 @@ const TRANSLATIONS = {
     crew_role_manager: 'Gerente', crew_role_front_desk: 'Recepción', crew_role_captain: 'Capitán', crew_role_first_mate: 'Primer Oficial',
     crew_role_deckhand: 'Marinero', crew_role_bosun: 'Contramaestre', crew_role_engineer: 'Maquinista', crew_role_instructor: 'Instructor',
     crew_role_divemaster: 'Divemaster', crew_role_dive_guide: 'Guía de Buceo', crew_role_equipment_technician: 'Técnico de Equipos',
-    crew_role_head_steward: 'Jefe de Camareros', crew_role_steward: 'Camarero', crew_role_head_chef: 'Chef Principal', crew_role_chef: 'Chef',
+    crew_role_head_steward: 'Jefe/a de Azafatas', crew_role_steward: 'Azafato/a', crew_role_head_chef: 'Chef Principal', crew_role_chef: 'Chef',
     crew_role_photographer: 'Fotógrafo / Videógrafo', crew_role_custom: 'Personalizado', crew_role_owner: 'Propietario',
     crew_custom_role_title: 'Título de rol personalizado', crew_pending_requests: 'Solicitudes pendientes', crew_recent_decisions: 'Decisiones recientes',
     crew_request_dayoff: '+ Solicitar Día Libre', crew_request_dayoff_title: 'Solicitar Día Libre', crew_member: 'Miembro de la tripulación',
@@ -4141,7 +4141,7 @@ const TRANSLATIONS = {
     cl_your_name: 'Tu nombre', cl_sign_off_gear: 'Confirmar — Equipo Listo', cl_reset: 'Reiniciar',
     cl_sign_off_routine: 'Confirmar', cl_select_trip_first: 'Primero seleccioná una salida arriba.',
     cl_includes_spares: 'incluye {n} de repuesto',
-    cl_dept_captain: 'Capitán', cl_dept_instructor: 'Instructor / DM / Guía de Buceo', cl_dept_deck: 'Cubierta', cl_dept_stewards: 'Camareros',
+    cl_dept_captain: 'Capitán', cl_dept_instructor: 'Instructor / DM / Guía de Buceo', cl_dept_deck: 'Cubierta', cl_dept_stewards: 'Azafatas',
     cl_cadence_morning: 'Mañana', cl_cadence_eod: 'Fin del Día', cl_cadence_monthly: 'Mensual', cl_cadence_yearly: 'Anual',
     cl_crew_signoff_status: 'Estado de Confirmación de Tripulación', cl_vessel_safety_check: 'Revisión de Seguridad de la Embarcación',
     cl_complete_once_daily: 'Completar una vez al día antes de la primera salida. Independiente de las salidas individuales.',
@@ -4931,7 +4931,19 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
     body: { action: 'accept', token: pendingInvite.token, userId, fullName }
   });
   if (acceptErr || !acceptData?.success) {
-    errorEl.textContent = t('auth_link_error_prefix') + (acceptErr?.message || acceptData?.error || t('auth_unknown_error'));
+    let detail = acceptData?.error || acceptErr?.message || t('auth_unknown_error');
+    // supabase-js hides the Edge Function's actual JSON error body behind a
+    // generic "Edge Function returned a non-2xx status code" message on
+    // acceptErr.message, with the real body reachable only via
+    // acceptErr.context (the raw Response). Unwrap it so the message shown
+    // to the user -- and forwarded to Fran -- is the actual cause.
+    if (acceptErr?.context && typeof acceptErr.context.json === 'function') {
+      try {
+        const body = await acceptErr.context.clone().json();
+        if (body?.error) detail = body.error;
+      } catch (_) { /* body wasn't JSON -- keep the message we already have */ }
+    }
+    errorEl.textContent = t('auth_link_error_prefix') + detail;
     errorEl.classList.add('visible');
     btn.disabled = false; btn.textContent = t('auth_set_up_account');
     return;
@@ -10608,7 +10620,7 @@ const DEPARTMENT_ROUTINES_I18N = {
     }
   },
   stewards: {
-    label: { en: 'Stewards / Head Stewards', es: 'Camareros / Jefes de Camareros' },
+    label: { en: 'Stewards / Head Stewards', es: 'Azafatas / Jefes de Azafatas' },
     cadences: {
       morning: { role: 'stewards_morning', label: { en: 'Morning', es: 'Mañana' }, items: [
         { en:'Guest cabins and common areas tidied and inspected', es:'Camarotes y áreas comunes de huéspedes ordenados e inspeccionados' },
