@@ -3430,7 +3430,7 @@ const TRANSLATIONS = {
     gp_no_price_set: 'No price set', gp_partial_owed: 'Partial — {amount} owed', gp_nothing_paid_yet: 'Nothing paid yet',
     gp_amount_label: 'Amount', gp_total_amount_btn: 'Total Amount', gp_method_label: 'Method',
     gp_cash: 'Cash', gp_card: 'Card', gp_transfer: 'Transfer',
-    gp_note_required_label: "Note (required — this exceeds what's owed)", gp_confirm: 'Confirm', gp_no_payments_logged_yet: 'No payments logged yet.',
+    gp_note_required_label: "Note (optional)", gp_confirm: 'Confirm', gp_no_payments_logged_yet: 'No payments logged yet.',
     gp_log_payment_btn: '+ Log Payment', gp_per_person: 'person', gp_rental_gear: 'rental gear', gp_crew_hire: 'crew hire',
     gp_no_price_breakdown: '{count} {unit} added, but no price per person set yet — nothing will be charged until you add one above.',
 
@@ -3979,7 +3979,7 @@ const TRANSLATIONS = {
     gp_no_price_set: 'Sin precio establecido', gp_partial_owed: 'Parcial — se adeudan {amount}', gp_nothing_paid_yet: 'Aún no se ha pagado nada',
     gp_amount_label: 'Monto', gp_total_amount_btn: 'Monto Total', gp_method_label: 'Método',
     gp_cash: 'Efectivo', gp_card: 'Tarjeta', gp_transfer: 'Transferencia',
-    gp_note_required_label: 'Nota (obligatoria — esto excede lo adeudado)', gp_confirm: 'Confirmar', gp_no_payments_logged_yet: 'Aún no hay pagos registrados.',
+    gp_note_required_label: 'Nota (opcional)', gp_confirm: 'Confirmar', gp_no_payments_logged_yet: 'Aún no hay pagos registrados.',
     gp_log_payment_btn: '+ Registrar Pago', gp_per_person: 'persona', gp_rental_gear: 'equipo de alquiler', gp_crew_hire: 'contratación de tripulación',
     gp_no_price_breakdown: 'Se agregaron {count} {unit}, pero aún no se estableció un precio por persona — no se cobrará nada hasta que agregues uno arriba.',
 
@@ -10071,7 +10071,10 @@ async function checkGuestCapacity() {
   tripGroups_cache.forEach(g => { if (g.id) guests += (groupParticipants_cache[g.id] || []).length; });
   const seatsForGuests = capacity - crewCount;
   const remaining = seatsForGuests - guests;
-  hint.textContent = `${t('tt_boat_capacity')}${capacity}${t('tt_not_incl_captain')} · ${crewCount}${t('tt_crew_word')}${guests} ${guests!==1?t('cl_guest_plural'):t('cl_guest_singular')}${t('tt_booked')}${remaining}${remaining!==1?t('tt_seat_plural'):t('tt_seat_singular')}`;
+  // Fran: keep this hint to just the static boat capacity -- the crew/guest/seats-remaining
+  // breakdown was noisy to show at all times. That detail still appears in the warning below
+  // once guests actually exceed what's left after crew (see tt_too_many_guests_full).
+  hint.textContent = `${t('tt_boat_capacity')}${capacity}${t('tt_not_incl_captain')}`;
   if (guests > seatsForGuests) {
     warning.textContent = t('tt_too_many_guests_full').replace('{guests}', guests).replace('{seats}', seatsForGuests).replace('{crew}', crewCount);
     warning.style.display = 'block';
@@ -10193,8 +10196,9 @@ async function confirmLogPayment(groupId, total, paid) {
   const note = document.getElementById('new-payment-note-' + groupId).value.trim();
   if (!amount || amount <= 0) { feedback.textContent = t('cu_enter_valid_amount'); feedback.className = 'save-feedback error visible'; return; }
   if (!method) { feedback.textContent = t('gt_select_payment_method'); feedback.className = 'save-feedback error visible'; return; }
-  const wouldExceed = (paid + amount) > total;
-  if (wouldExceed && !note) { feedback.textContent = t('pay_exceeds_owed_note'); feedback.className = 'save-feedback error visible'; return; }
+  // A note used to be required whenever the payment exceeds what's owed
+  // (overpayment/tip) -- per Fran, that's an unnecessary blocker. The note
+  // field still appears as an optional way to explain the overage.
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('payments').insert({
     org_id: currentOrgId, location_id: currentLocationId, trip_id: currentTripId, group_id: groupId,
