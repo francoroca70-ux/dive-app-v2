@@ -7311,9 +7311,16 @@ async function onTripTypeChange() {
   const tripType = currentTripTypes.find(t => t.id === typeId);
   if (!tripType) return;
 
-  // Auto-fill price on the primary group, only before it's been saved/edited
-  if (!currentTripId && tripGroups_cache[0] && tripType.default_price && !tripGroups_cache[0].price_per_person) {
-    tripGroups_cache[0].price_per_person = tripType.default_price;
+  // Auto-fill price on the primary group so it always reflects the currently
+  // selected trip type's own configured price -- but only for a brand-new,
+  // unsaved trip, and only as long as the person hasn't typed their own price
+  // in by hand (tracked via _priceManuallySet, set in updateGroupField).
+  // Previously this only fired once (guarded on the price field being empty),
+  // so after the very first auto-fill it never updated again -- switching
+  // between trip types kept showing whichever type's price got auto-filled
+  // first, which is exactly the "always shows $500 no matter what I pick" bug.
+  if (!currentTripId && tripGroups_cache[0] && !tripGroups_cache[0]._priceManuallySet) {
+    tripGroups_cache[0].price_per_person = tripType.default_price || null;
     await renderGroupsPanel();
   }
 
@@ -7529,7 +7536,13 @@ function currentTripPricingQty(guestCount) {
       : 1;
     return Math.max(daysNow, 1);
   }
-  return Math.max(guestCount, 1);
+  // No artificial floor here anymore -- a group with 0 guests saved so far
+  // should price at $0 (plus any crew-hire), matching exactly what the
+  // calendar day-card shows for "owed". A forced minimum of 1 guest used to
+  // make this total (and the breakdown text below) show a phantom charge
+  // for a guest that doesn't exist yet, which is what caused the modal's
+  // total to disagree with the trip card's "Adeudado" figure.
+  return guestCount;
 }
 function currentTripPriceLabel() {
   const typeIdNow = document.getElementById('trip-type-select')?.value;
@@ -7644,7 +7657,7 @@ async function groupCardHTML(g, index) {
     <div class="sf-row">
       <div class="sf-group" style="max-width:160px;">
         <label class="sf-label">${priceLabel}</label>
-        <input class="sf-input" type="number" min="0" value="${g.price_per_person ?? ''}" placeholder="e.g. 100" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * ${qtyMultiplier} + ${rentalTotal} + ${crewHireTotal}).toFixed(2)">
+        <input class="sf-input" type="number" min="0" step="0.01" value="${g.price_per_person != null && g.price_per_person !== '' ? Number(g.price_per_person).toFixed(2) : ''}" placeholder="e.g. 100.00" onblur="updateGroupField('${key}','price_per_person', this.value)" oninput="document.getElementById('group-total-${key}').value = ((parseFloat(this.value)||0) * ${qtyMultiplier} + ${rentalTotal} + ${crewHireTotal}).toFixed(2)">
       </div>
       <div class="sf-group">
         <label class="sf-label">${t('tt_total')}</label>
@@ -7734,6 +7747,9 @@ async function updateGroupField(key, field, value) {
   if (!g) return;
   const val = field === 'price_per_person' ? (value === '' ? null : parseFloat(value)) : (typeof value === 'string' ? value.trim() : value);
   g[field] = val;
+  // Once the person has touched the price field themselves, stop
+  // auto-overwriting it from the trip type's default on later changes.
+  if (field === 'price_per_person') g._priceManuallySet = true;
   if (g.id) {
     await sb.from('trip_groups').update({ [field]: val }).eq('id', g.id);
     if (field === 'price_per_person') await refreshGroupPaymentSection(g.id);
@@ -7758,13 +7774,12 @@ async function updateGroupTripType(key, value) {
     await sb.from('trip_groups').update({ trip_type_id: g.trip_type_id }).eq('id', g.id);
   }
   // Same auto-fill courtesy as the trip-level default: only touches the
-  // price if the group hasn't had one set yet.
-  if (g.trip_type_id && !g.price_per_person) {
+  // price if the person hasn't manually set one themselves (see
+  // _priceManuallySet in updateGroupField).
+  if (g.trip_type_id && !g._priceManuallySet) {
     const overrideType = currentTripTypes.find(tt => tt.id === g.trip_type_id);
-    if (overrideType?.default_price) {
-      g.price_per_person = overrideType.default_price;
-      if (g.id) await sb.from('trip_groups').update({ price_per_person: g.price_per_person }).eq('id', g.id);
-    }
+    g.price_per_person = overrideType?.default_price || null;
+    if (g.id) await sb.from('trip_groups').update({ price_per_person: g.price_per_person }).eq('id', g.id);
   }
   await renderGroupsPanel();
 }
@@ -10088,7 +10103,7 @@ async function checkGuestCapacity() {
 async function groupPaymentHTML(g, participants) {
   const { data: payments } = await sb.from('payments').select('*').eq('group_id', g.id).order('payment_date');
   const perPerson = parseFloat(g.price_per_person) || 0;
-  const guests = Math.max(participants.length, 1);
+  const guests = participants.length;
   const isFlatCharterBooking = currentTripIsFlatCharterPricing();
   const qty = currentTripPricingQty(participants.length);
   const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
@@ -10102,7 +10117,7 @@ async function groupPaymentHTML(g, participants) {
     </div>
   `).join('');
   const noPriceSet = !g.price_per_person && participants.length > 0;
-  const guestUnit = guests > 1 ? t('cal_guests_suffix') : t('gt_guest_singular');
+  const guestUnit = guests !== 1 ? t('cal_guests_suffix') : t('gt_guest_singular');
   const statusLabel = noPriceSet ? t('gp_no_price_set') : balance <= 0 && total > 0 ? t('gt_paid_in_full') : paid > 0 ? t('gp_partial_owed').replace('{amount}', '$' + balance.toFixed(2)) : t('gp_nothing_paid_yet');
   const statusColor = noPriceSet ? 'var(--warning, #b7791f)' : balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
   const breakdownText = noPriceSet
@@ -13429,7 +13444,7 @@ async function renderTripTypesList() {
         <div class="trip-type-meta">${CATEGORY_LABELS[tt.category] || tt.category}${tt.needs_tank_count ? ' · ' + tt.num_tanks + (tt.num_tanks > 1 ? t('set_tanks_plural') : t('set_tank_singular')) : ''}${tt.can_be_private ? t('set_can_be_private') : ''}${tt.is_multi_day ? t('set_multi_day_suffix') : ''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <input class="trip-type-price-input" type="number" min="0" value="${tt.default_price || ''}" placeholder="0"
+        <input class="trip-type-price-input" type="number" min="0" step="0.01" value="${tt.default_price ? Number(tt.default_price).toFixed(2) : ''}" placeholder="0.00"
           onchange="updateTripTypePrice('${tt.id}', this.value, this)">
         <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleGearFieldsPanel('${tt.id}')">${t('set_gear_fields_btn')}</button>
         <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRentalFees('${tt.id}')">${t('set_rental_fees_btn')}</button>
