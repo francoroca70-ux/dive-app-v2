@@ -1989,38 +1989,62 @@ body { background: var(--navy); color: var(--text); }
                 </div>
               </div>
 
-              <div class="card-section-title" style="margin-top:20px;" data-i18n="tt_boat_section">Boat</div>
-              <div class="sf-group">
-                <label class="sf-label" data-i18n="tt_select_boat">Select boat</label>
-                <select class="sf-input" id="trip-boat"></select>
+              <!-- Boat & Crew -- collapsed to keep the modal short, especially on mobile.
+                   Open by default since a boat/crew assignment is normally required. -->
+              <div class="card-section-title expandable-title" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-boatcrew')">
+                <span data-i18n="tt_boat_crew_section">Boat & Crew</span>
+                <span id="trip-section-boatcrew-arrow" class="expand-caret" style="transform:rotate(90deg);">▸</span>
               </div>
-              <div class="warning-banner caution" id="boat-conflict-warning" style="display:none;"></div>
-
-              <!-- Dynamic tank/dive info -->
-              <div id="trip-tank-fields" style="display:none;">
+              <div id="trip-section-boatcrew" style="display:block;">
+                <div class="card-section-title" style="margin-top:0;" data-i18n="tt_boat_section">Boat</div>
                 <div class="sf-group">
-                  <label class="sf-label" data-i18n="tt_dive_sites">Dive sites (optional)</label>
-                  <input class="sf-input" type="text" id="trip-dive-sites" placeholder="e.g. Chumphon Pinnacle, Southwest">
+                  <label class="sf-label" data-i18n="tt_select_boat">Select boat</label>
+                  <select class="sf-input" id="trip-boat"></select>
+                </div>
+                <div class="warning-banner caution" id="boat-conflict-warning" style="display:none;"></div>
+
+                <!-- Dynamic tank/dive info -->
+                <div id="trip-tank-fields" style="display:none;">
+                  <div class="sf-group">
+                    <label class="sf-label" data-i18n="tt_dive_sites">Dive sites (optional)</label>
+                    <input class="sf-input" type="text" id="trip-dive-sites" placeholder="e.g. Chumphon Pinnacle, Southwest">
+                  </div>
+                </div>
+
+                <div class="card-section-title" style="margin-top:20px;" data-i18n="tt_crew_section">Crew</div>
+                <div id="trip-crew-fields"></div>
+
+                <div class="card-section-title" style="margin-top:20px;" data-i18n="tt_booking_mode">Booking Mode</div>
+                <div class="sf-group">
+                  <label class="sf-label" data-i18n="tt_mode_question">Is this boat private or shared?</label>
+                  <div class="radio-group">
+                    <div class="radio-btn selected" id="mode-private" onclick="setBookingMode('private')" data-i18n="tt_mode_private">Private boat</div>
+                    <div class="radio-btn" id="mode-shared" onclick="setBookingMode('shared')" data-i18n="tt_mode_shared">Shared boat</div>
+                  </div>
+                  <p id="booking-mode-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;">This boat will be exclusively reserved for this time slot.</p>
+                  <p id="guest-capacity-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></p>
                 </div>
               </div>
 
-              <div class="card-section-title" style="margin-top:20px;" data-i18n="tt_crew_section">Crew</div>
-              <div id="trip-crew-fields"></div>
-
-              <div class="card-section-title" style="margin-top:20px;" data-i18n="tt_booking_mode">Booking Mode</div>
-              <div class="sf-group">
-                <label class="sf-label" data-i18n="tt_mode_question">Is this boat private or shared?</label>
-                <div class="radio-group">
-                  <div class="radio-btn selected" id="mode-private" onclick="setBookingMode('private')" data-i18n="tt_mode_private">Private boat</div>
-                  <div class="radio-btn" id="mode-shared" onclick="setBookingMode('shared')" data-i18n="tt_mode_shared">Shared boat</div>
-                </div>
-                <p id="booking-mode-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;">This boat will be exclusively reserved for this time slot.</p>
-                <p id="guest-capacity-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></p>
+              <!-- Group & Guests -- open by default, this is what most bookings need to fill in. -->
+              <div class="card-section-title expandable-title" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-groups')">
+                <span id="groups-title" data-i18n="tt_group">Group</span>
+                <span id="trip-section-groups-arrow" class="expand-caret" style="transform:rotate(90deg);">▸</span>
+              </div>
+              <div id="trip-section-groups" style="display:block;">
+                <div id="groups-list"></div>
+                <button class="btn-cancel" id="btn-add-group" style="margin-top:4px;display:none;" data-i18n="tt_add_group">+ Add another group to this trip</button>
               </div>
 
-              <div class="card-section-title" style="margin-top:24px;" id="groups-title" data-i18n="tt_group">Group</div>
-              <div id="groups-list"></div>
-              <button class="btn-cancel" id="btn-add-group" style="margin-top:4px;display:none;" data-i18n="tt_add_group">+ Add another group to this trip</button>
+              <!-- Payment -- collapsed by default; least urgent when first opening a trip,
+                   and keeping it closed is most of what shortens the modal. -->
+              <div class="card-section-title expandable-title" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-payments')">
+                <span data-i18n="tt_payment_section">Payment</span>
+                <span id="trip-section-payments-arrow" class="expand-caret">▸</span>
+              </div>
+              <div id="trip-section-payments" style="display:none;">
+                <div id="payments-list"></div>
+              </div>
 
               <div class="warning-banner caution" id="guest-capacity-warning" style="display:none;margin-top:16px;"></div>
               <div class="warning-banner caution" id="save-conflict-warning" style="display:none;"></div>
@@ -3467,6 +3491,7 @@ const TRANSLATIONS = {
 
     tt_trip_type: 'Trip type', tt_date: 'Date', tt_end_date: 'End date', tt_departure: 'Departure', tt_arrival: 'Arrival',
     tt_boat_section: 'Boat', tt_select_boat: 'Select boat', tt_dive_sites: 'Dive sites (optional)', tt_crew_section: 'Crew',
+    tt_boat_crew_section: 'Boat & Crew', tt_payment_section: 'Payment', tt_guests_section: 'Group & Guests',
     tt_booking_mode: 'Booking Mode', tt_mode_question: 'Is this boat private or shared?', tt_mode_private: 'Private boat', tt_mode_shared: 'Shared boat',
     tt_group: 'Group', tt_add_group: '+ Add another group to this trip', tt_save_trip: 'Save trip', tt_update_trip: 'Update trip',
     tt_print_manifest: 'Print Manifest', tt_delete_trip: 'Delete trip', tt_new_trip_title: 'New trip',
@@ -4016,6 +4041,7 @@ const TRANSLATIONS = {
 
     tt_trip_type: 'Tipo de salida', tt_date: 'Fecha', tt_end_date: 'Fecha de fin', tt_departure: 'Salida', tt_arrival: 'Llegada',
     tt_boat_section: 'Embarcación', tt_select_boat: 'Seleccionar embarcación', tt_dive_sites: 'Sitios de buceo (opcional)', tt_crew_section: 'Tripulación',
+    tt_boat_crew_section: 'Embarcación y Tripulación', tt_payment_section: 'Pago', tt_guests_section: 'Grupo y Huéspedes',
     tt_booking_mode: 'Modo de Reserva', tt_mode_question: '¿Esta embarcación es privada o compartida?', tt_mode_private: 'Embarcación privada', tt_mode_shared: 'Embarcación compartida',
     tt_group: 'Grupo', tt_add_group: '+ Agregar otro grupo a esta salida', tt_save_trip: 'Guardar salida', tt_update_trip: 'Actualizar salida',
     tt_print_manifest: 'Imprimir Manifiesto', tt_delete_trip: 'Eliminar salida', tt_new_trip_title: 'Nueva salida',
@@ -7493,6 +7519,12 @@ async function renderGroupsPanel() {
   document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared' && currentTripId) ? 'inline-block' : 'none';
   const cardsHtml = await Promise.all(tripGroups_cache.map((g, i) => groupCardHTML(g, i)));
   list.innerHTML = cardsHtml.join('');
+
+  const paymentsList = document.getElementById('payments-list');
+  if (paymentsList) {
+    const paymentCardsHtml = await Promise.all(tripGroups_cache.map((g, i) => groupPaymentPanelHTML(g, i)));
+    paymentsList.innerHTML = paymentCardsHtml.join('');
+  }
 }
 
 async function buildTabOptionsHtml(selectedTabId) {
@@ -7585,26 +7617,16 @@ async function groupCardHTML(g, index) {
     ? `<button class="btn-icon danger group-card-remove" onclick="removeGroup('${g.id}')">✕</button>`
     : '';
 
-  let guestsHtml, paymentHtml, tabOptionsHtml, checkInHtml = '', guestCount = 0, rentalTotal = 0;
+  let guestsHtml, checkInHtml = '', guestCount = 0;
 
   if (isSaved) {
     const participants = groupParticipants_cache[g.id] || await loadGroupParticipants(g.id);
     guestCount = participants.length;
-    rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
     guestsHtml = renderGroupParticipantsBlock(g.id, participants);
-    tabOptionsHtml = await buildTabOptionsHtml(g.tab_id);
-    paymentHtml = await groupPaymentHTML(g, participants);
     checkInHtml = checkInButtonHTML(g.id, participants);
   } else {
     guestsHtml = `<p style="font-size:0.83rem;color:var(--muted);">${t('tt_save_add_guests')}</p>`;
-    tabOptionsHtml = `<option value="">${t('tt_no_tab')}</option>`;
-    paymentHtml = `<p style="font-size:0.83rem;color:var(--muted);">${t('tt_save_log_payments')}</p>`;
   }
-
-  const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
-  const qtyMultiplier = currentTripPricingQty(guestCount);
-  const priceLabel = currentTripPriceLabel();
-  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * qtyMultiplier + rentalTotal + crewHireTotal).toFixed(2);
 
   return `
   <div class="group-card" data-group-key="${key}">
@@ -7652,8 +7674,42 @@ async function groupCardHTML(g, index) {
       <label class="sf-label">${t('tt_notes')}</label>
       <input class="sf-input" type="text" autocomplete="off" value="${(g.notes||'').replace(/"/g,'&quot;')}" placeholder="Any additional info for this group" onblur="updateGroupField('${key}','notes', this.value)">
     </div>
+  </div>`;
+}
 
-    <div class="card-section-title" style="margin-top:20px;">${t('tt_payment')}</div>
+// Payment block for a single group, pulled out of groupCardHTML so it can
+// render into its own "Payment" collapsible section instead of making every
+// group card (contact + guests + payment all together) so tall -- Fran's
+// "the booking window is too long, especially on mobile" report. Renders
+// into #payments-list, one panel per group, in the same order as the group
+// cards above so it's still obvious which payment belongs to which group.
+async function groupPaymentPanelHTML(g, index) {
+  const key = gKey(g);
+  const isSaved = !!g.id;
+  let paymentHtml, tabOptionsHtml, guestCount = 0, rentalTotal = 0;
+
+  if (isSaved) {
+    const participants = groupParticipants_cache[g.id] || await loadGroupParticipants(g.id);
+    guestCount = participants.length;
+    rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
+    tabOptionsHtml = await buildTabOptionsHtml(g.tab_id);
+    paymentHtml = await groupPaymentHTML(g, participants);
+  } else {
+    tabOptionsHtml = `<option value="">${t('tt_no_tab')}</option>`;
+    paymentHtml = `<p style="font-size:0.83rem;color:var(--muted);">${t('tt_save_log_payments')}</p>`;
+  }
+
+  const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
+  const qtyMultiplier = currentTripPricingQty(guestCount);
+  const priceLabel = currentTripPriceLabel();
+  const totalDisplay = ((parseFloat(g.price_per_person) || 0) * qtyMultiplier + rentalTotal + crewHireTotal).toFixed(2);
+  const groupLabel = tripGroups_cache.length > 1
+    ? (g.contact_name || t('tt_group_contact').replace('{n}', index + 1))
+    : '';
+
+  return `
+  <div class="group-card" data-group-key="${key}" style="${index > 0 ? 'margin-top:16px;' : ''}">
+    ${groupLabel ? `<div class="card-section-title" style="margin-top:0;">${groupLabel}</div>` : ''}
     <div class="sf-row">
       <div class="sf-group" style="max-width:160px;">
         <label class="sf-label">${priceLabel}</label>
