@@ -5385,35 +5385,41 @@ async function renderHomeGettingStartedOrFinance() {
   const container = document.getElementById('home-dynamic-section');
   if (!container) return;
 
-  const [{ count: boatsCount }, { data: pricedTypes }, { count: staffCount }] = await Promise.all([
-    sb.from('boats').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('active', true),
-    sb.from('trip_types').select('id').eq('org_id', currentOrgId).eq('is_active', true).gt('default_price', 0).limit(1),
-    sb.from('staff').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId)
-  ]);
-
-  const hasBoat = (boatsCount || 0) > 0;
-  const hasPricedTrip = (pricedTypes || []).length > 0;
-  const hasCrew = (staffCount || 0) > 1;
-  const setupComplete = hasBoat && hasPricedTrip && hasCrew;
-
-  if (!setupComplete) {
-    container.innerHTML = `<div class="card">
-      <h2>${t('getting_started_title')}</h2>
-      <p class="card-desc" style="margin-bottom:14px;">${t('getting_started_sub')}</p>
-      <div class="onboard-checklist">
-        ${renderOnboardStep(hasBoat, t('onboard_step_boat'), 'fleet')}
-        ${renderOnboardStep(hasPricedTrip, t('onboard_step_prices'), 'settings')}
-        ${renderOnboardStep(hasCrew, t('onboard_step_crew'), 'crew')}
-      </div>
-    </div>`;
-    return;
-  }
-
   const { data: { user } } = await sb.auth.getUser();
   const myId = user && user.id;
   const blocks = [];
 
+  // The "finish setting up" checklist (boat added, a trip type priced, more
+  // than one staff member) is the owner's job, not the crew's -- a captain
+  // opening the app to check their assigned trip has nothing to do with
+  // whether the owner has finished configuring Settings yet. This used to
+  // gate the ENTIRE home screen for every role, so any crew member's trips
+  // and tasks silently never rendered at all while setup was incomplete.
   if (currentUserRole === 'owner') {
+    const [{ count: boatsCount }, { data: pricedTypes }, { count: staffCount }] = await Promise.all([
+      sb.from('boats').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('active', true),
+      sb.from('trip_types').select('id').eq('org_id', currentOrgId).eq('is_active', true).gt('default_price', 0).limit(1),
+      sb.from('staff').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId)
+    ]);
+
+    const hasBoat = (boatsCount || 0) > 0;
+    const hasPricedTrip = (pricedTypes || []).length > 0;
+    const hasCrew = (staffCount || 0) > 1;
+    const setupComplete = hasBoat && hasPricedTrip && hasCrew;
+
+    if (!setupComplete) {
+      container.innerHTML = `<div class="card">
+        <h2>${t('getting_started_title')}</h2>
+        <p class="card-desc" style="margin-bottom:14px;">${t('getting_started_sub')}</p>
+        <div class="onboard-checklist">
+          ${renderOnboardStep(hasBoat, t('onboard_step_boat'), 'fleet')}
+          ${renderOnboardStep(hasPricedTrip, t('onboard_step_prices'), 'settings')}
+          ${renderOnboardStep(hasCrew, t('onboard_step_crew'), 'crew')}
+        </div>
+      </div>`;
+      return;
+    }
+
     blocks.push(await buildFinanceCardHtml());
     blocks.push(await buildTripsTodayHtml('all'));
     blocks.push(await buildPhase2ChecklistHtml());
