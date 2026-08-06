@@ -7023,13 +7023,23 @@ async function fetchTripsForRange(start, end) {
   const startStr = formatDate(start), endStr = formatDate(end);
   let query = sb
     .from('trips')
-    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(price_per_person, crew_hire_total, participants(id, rental_surcharge))')
+    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(trip_type_id, price_per_person, crew_hire_total, participants(id, rental_surcharge))')
     .eq('org_id', currentOrgId)
     .lte('trip_date', endStr)
     .or(`end_date.gte.${startStr},and(end_date.is.null,trip_date.gte.${startStr})`)
     .order('trip_time');
   if (currentLocationId) query = query.eq('location_id', currentLocationId);
   const { data } = await query;
+  // Resolve category/is_multi_day per trip type so tripCard() can apply the
+  // same flat-charter-vs-per-guest pricing rule as the trip modal (see
+  // currentTripIsFlatCharterPricing) -- attached per-trip so tripCard doesn't
+  // need its own query.
+  if (data && data.length) {
+    const { data: types } = await sb.from('trip_types').select('id, category, is_multi_day').eq('org_id', currentOrgId);
+    const typeById = {};
+    (types || []).forEach(tt => { typeById[tt.id] = tt; });
+    data.forEach(tr => { tr._typeById = typeById; });
+  }
   return data || [];
 }
 
@@ -7055,12 +7065,15 @@ function tripCard(trip, paid) {
   const capacity = trip.boats?.capacity;
   const tanks = trip.num_dives ? guestCount * trip.num_dives : null;
   const isDive = ['fun_dive','discover_diving','dive_course','night_dive','snorkel'].includes(trip.trip_type);
-  // Private bookings (the whole boat) charge one trip price × days, not × headcount — see groupCardHTML.
-  const tripDays = trip.end_date ? tripDayCount(trip.trip_date, trip.end_date) : 1;
-  const tripIsPrivate = trip.booking_mode !== 'shared';
+  // Private bookings of a whole-boat CHARTER trip type (category 'charter_yacht')
+  // charge one flat price × days, not × headcount -- see groupPricingQty /
+  // currentTripIsFlatCharterPricing for the full reasoning. Per-participant
+  // activity types (diving, surf, freediving...) are always billed per guest,
+  // private or not.
+  const typeById = trip._typeById || {};
   const total = (trip.trip_groups || []).reduce((sum, g) => {
     const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
-    const qty = tripIsPrivate ? Math.max(tripDays, 1) : (g.participants?.length || 0);
+    const qty = groupPricingQty(g, trip, typeById, false);
     return sum + (parseFloat(g.price_per_person) || 0) * qty + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
   }, 0);
   const owed = total - (paid || 0);
@@ -7484,22 +7497,66 @@ async function buildTabOptionsHtml(selectedTabId) {
 // price regardless of headcount — multiplied by days for multi-day trips. Shared
 // bookings (multiple independent groups on the same boat) charge per person instead.
 // Shared by every place in the trip modal that displays or logs a group's total.
-function currentTripPricingQty(guestCount) {
+//
+// BUT that flat-total behavior should only kick in for whole-boat charter trip
+// types (Day Charter, Private Charter, Sunset Cruise, Island Hopping, Fishing
+// Trip, etc. -- category 'charter_yacht') where you're renting the vessel
+// itself. Per-participant activity types (1 Dive, 2 Dives, Discover Scuba,
+// Night Dive, Freediving Session, Surf Lesson...) are always billed per
+// diver/guest even when the boat happens to be privately/exclusively
+// reserved for that one group -- reserving the boat privately doesn't mean
+// each diver stops paying their own way. Without this check, a Private
+// single-dive booking with 5 divers billed the same flat total as 1 diver.
+function currentTripIsFlatCharterPricing() {
   const isPrivate = window.currentBookingMode !== 'shared';
   const typeIdNow = document.getElementById('trip-type-select')?.value;
   const tripTypeNow = (currentTripTypes || []).find(tt => tt.id === typeIdNow);
+  return isPrivate && tripTypeNow?.category === 'charter_yacht';
+}
+function currentTripPricingQty(guestCount) {
+  const typeIdNow = document.getElementById('trip-type-select')?.value;
+  const tripTypeNow = (currentTripTypes || []).find(tt => tt.id === typeIdNow);
   const isMultiDayNow = !!tripTypeNow?.is_multi_day;
-  const daysNow = isMultiDayNow
-    ? tripDayCount(document.getElementById('trip-date')?.value, document.getElementById('trip-end-date')?.value)
-    : 1;
-  return isPrivate ? Math.max(daysNow, 1) : Math.max(guestCount, 1);
+  if (currentTripIsFlatCharterPricing()) {
+    const daysNow = isMultiDayNow
+      ? tripDayCount(document.getElementById('trip-date')?.value, document.getElementById('trip-end-date')?.value)
+      : 1;
+    return Math.max(daysNow, 1);
+  }
+  return Math.max(guestCount, 1);
 }
 function currentTripPriceLabel() {
-  const isPrivate = window.currentBookingMode !== 'shared';
   const typeIdNow = document.getElementById('trip-type-select')?.value;
   const tripTypeNow = (currentTripTypes || []).find(tt => tt.id === typeIdNow);
   const isMultiDayNow = !!tripTypeNow?.is_multi_day;
-  return isPrivate ? (isMultiDayNow ? t('tt_price_per_day') : t('tt_trip_price')) : t('tt_price_per_person');
+  if (currentTripIsFlatCharterPricing()) {
+    return isMultiDayNow ? t('tt_price_per_day') : t('tt_trip_price');
+  }
+  return t('tt_price_per_person');
+}
+
+// Same flat-charter-vs-per-guest rule as currentTripIsFlatCharterPricing/
+// currentTripPricingQty above, but usable outside the open trip modal (no
+// DOM reads) -- for the calendar day cards and Guest Tabs, which price
+// groups from plain fetched rows. `typeById` is a { [trip_type_id]: {category,
+// is_multi_day} } lookup fetched once per screen (see fetchTripTypesById).
+// `minGuests` mirrors each call site's pre-existing minimum-quantity
+// behavior for the per-guest branch (some forced a minimum of 1, some didn't).
+function groupPricingQty(group, trip, typeById, minGuests) {
+  const effType = (typeById && (typeById[group.trip_type_id] || typeById[trip?.trip_type_id])) || null;
+  const isFlatCharter = trip?.booking_mode !== 'shared' && effType?.category === 'charter_yacht';
+  if (isFlatCharter) {
+    const days = (effType?.is_multi_day && trip?.end_date) ? tripDayCount(trip.trip_date, trip.end_date) : 1;
+    return Math.max(days, 1);
+  }
+  const guestCount = group.participants?.length || 0;
+  return minGuests ? Math.max(1, guestCount) : guestCount;
+}
+async function fetchTripTypesById() {
+  const { data: types } = await sb.from('trip_types').select('id, category, is_multi_day').eq('org_id', currentOrgId);
+  const typeById = {};
+  (types || []).forEach(tt => { typeById[tt.id] = tt; });
+  return typeById;
 }
 
 async function groupCardHTML(g, index) {
@@ -8161,8 +8218,9 @@ async function loadGuestTabs() {
     return;
   }
   const today = formatDate(new Date());
+  const typeById = await fetchTripTypesById();
   const rowsHtml = await Promise.all(tabs.map(async tab => {
-    const { data: linkedGroups } = await sb.from('trip_groups').select('id, price_per_person, crew_hire_total, participants(id, rental_surcharge), trips(trip_date, end_date, booking_mode)').eq('tab_id', tab.id);
+    const { data: linkedGroups } = await sb.from('trip_groups').select('id, trip_type_id, price_per_person, crew_hire_total, participants(id, rental_surcharge), trips(trip_type_id, trip_date, end_date, booking_mode)').eq('tab_id', tab.id);
     const groupIds = (linkedGroups || []).map(g => g.id);
     let paid = 0;
     if (groupIds.length) {
@@ -8171,8 +8229,7 @@ async function loadGuestTabs() {
     }
     const total = (linkedGroups || []).reduce((sum, g) => {
       const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
-      const gDays = g.trips?.end_date ? tripDayCount(g.trips.trip_date, g.trips.end_date) : 1;
-      const qty = g.trips?.booking_mode !== 'shared' ? Math.max(gDays, 1) : Math.max(1, g.participants?.length || 0);
+      const qty = groupPricingQty(g, g.trips, typeById, true);
       return sum + (parseFloat(g.price_per_person) || 0) * qty + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
     }, 0);
     const owed = total - paid - parseFloat(tab.deposit_amount || 0);
@@ -8263,9 +8320,10 @@ async function openTabDetail(tabId) {
   const { data: tab } = await sb.from('guest_tabs').select('*').eq('id', tabId).single();
   if (!tab) return;
   const { data: linkedGroups } = await sb.from('trip_groups')
-    .select('id, trip_id, contact_name, price_per_person, crew_hire_total, participants(id, rental_surcharge), trips(trip_type, trip_date, end_date, booking_mode)')
+    .select('id, trip_id, trip_type_id, contact_name, price_per_person, crew_hire_total, participants(id, rental_surcharge), trips(trip_type, trip_type_id, trip_date, end_date, booking_mode)')
     .eq('tab_id', tabId)
     .order('created_at');
+  const typeById = await fetchTripTypesById();
 
   let html = `
     <button class="btn-cancel" onclick="loadGuestTabs()" style="margin-bottom:16px;">${t('gt_back_to_tabs')}</button>
@@ -8286,8 +8344,7 @@ async function openTabDetail(tabId) {
     linkedGroups.forEach(g => {
       const perPerson = parseFloat(g.price_per_person) || 0;
       const guestCount = Math.max(1, g.participants?.length || 0);
-      const gDays = g.trips?.end_date ? tripDayCount(g.trips.trip_date, g.trips.end_date) : 1;
-      const qty = g.trips?.booking_mode !== 'shared' ? Math.max(gDays, 1) : guestCount;
+      const qty = groupPricingQty(g, g.trips, typeById, true);
       const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
       const total = perPerson * qty + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
       const paid = (allPayments || []).filter(p => p.group_id === g.id).reduce((sum, p) => sum + parseFloat(p.amount), 0);
@@ -8377,12 +8434,11 @@ async function confirmPayTabFull(tabId, unpaidGroups) {
 }
 async function closeGuestTab(tabId, linkedGroups) {
   const feedback = document.getElementById('close-tab-feedback');
+  const typeById = await fetchTripTypesById();
   let totalOwed = 0;
   for (const g of linkedGroups) {
     const perPerson = parseFloat(g.price_per_person) || 0;
-    const guestCount = Math.max(1, g.participants?.length || 0);
-    const gDays = g.trips?.end_date ? tripDayCount(g.trips.trip_date, g.trips.end_date) : 1;
-    const qty = g.trips?.booking_mode !== 'shared' ? Math.max(gDays, 1) : guestCount;
+    const qty = groupPricingQty(g, g.trips, typeById, true);
     const rentalTotal = (g.participants || []).reduce((s, p) => s + (parseFloat(p.rental_surcharge) || 0), 0);
     const total = perPerson * qty + rentalTotal + (parseFloat(g.crew_hire_total) || 0);
     const { data: payments } = await sb.from('payments').select('amount').eq('group_id', g.id);
@@ -10024,7 +10080,7 @@ async function groupPaymentHTML(g, participants) {
   const { data: payments } = await sb.from('payments').select('*').eq('group_id', g.id).order('payment_date');
   const perPerson = parseFloat(g.price_per_person) || 0;
   const guests = Math.max(participants.length, 1);
-  const isPrivateBooking = window.currentBookingMode !== 'shared';
+  const isFlatCharterBooking = currentTripIsFlatCharterPricing();
   const qty = currentTripPricingQty(participants.length);
   const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
   const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
@@ -10042,7 +10098,7 @@ async function groupPaymentHTML(g, participants) {
   const statusColor = noPriceSet ? 'var(--warning, #b7791f)' : balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
   const breakdownText = noPriceSet
     ? t('gp_no_price_breakdown').replace('{count}', guests).replace('{unit}', guestUnit)
-    : isPrivateBooking
+    : isFlatCharterBooking
       ? `$${perPerson.toFixed(2)}/${qty > 1 ? t('tt_day_plural') : t('tt_day_singular')} × ${qty} = $${(perPerson*qty).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`
       : `$${perPerson.toFixed(2)}/${t('gp_per_person')} × ${guests} ${guestUnit} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`;
   return `
