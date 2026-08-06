@@ -783,19 +783,21 @@ body { background: var(--navy); color: var(--text); }
 #offline-banner.syncing { background: var(--blue); color: #fff; }
 
 .lang-switcher { display: flex; gap: 4px; }
+/* Sits on dark backgrounds everywhere it appears (login/signup/invite screens,
+   and the app top nav right next to .btn-signout) -- unselected language
+   matches that same translucent-grey "sign out" chip, and the selected
+   language is a solid white pill so it actually reads as "active" against
+   the dark header instead of blending in. */
 .lang-btn {
-  background: var(--white); border: 1px solid var(--border);
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px; padding: 4px 10px;
-  font-size: 0.75rem; font-weight: 700; color: var(--muted);
+  font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.5);
   cursor: pointer; font-family: 'Inter', sans-serif;
   transition: all 0.15s;
 }
-/* Was navy-on-navy on the dark login/signup/invite screens -- the "selected"
-   state blended straight into the page background, so the unselected white
-   button looked more prominent than the actual active one. Matches the same
-   blue used for every other "selected tab" in the app (.cl-tab.active, e.g.
-   Crew -> Turnos) so the selected state reads consistently everywhere. */
-.lang-btn.active { background: var(--blue); color: var(--white); border-color: var(--blue); font-weight: 800; }
+.lang-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+.lang-btn.active { background: var(--white); color: var(--navy); border-color: var(--white); font-weight: 800; }
+.lang-btn.active:hover { background: var(--white); color: var(--navy); }
 
 
 .crew-member-tag-v2 {
