@@ -11,6 +11,8 @@
     "contentInset": "always"
   },
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "url": "https://dive-app-v2.onrender.com",
+    "cleartext": false
   }
 }

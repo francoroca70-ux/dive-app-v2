@@ -1848,8 +1848,9 @@ body { background: var(--navy); color: var(--text); }
         <span id="crew-notification-badge" style="display:none;position:absolute;left:16px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--error);border:1.5px solid var(--white);"></span>
       </div>
       <div class="nav-section-label" data-i18n="nav_section_dailyops">Daily Ops</div>
-      <div class="nav-item" data-page="checklists">
+      <div class="nav-item" data-page="checklists" style="position:relative;">
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span> <span data-i18n="nav_checklists">Checklists</span>
+        <span id="checklist-notification-badge" style="display:none;position:absolute;left:16px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--error);border:1.5px solid var(--white);"></span>
       </div>
       <div class="nav-item" data-page="tasks" style="position:relative;">
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span> <span data-i18n="nav_tasks">Tasks</span>
@@ -6135,6 +6136,34 @@ async function checkTasksNotifications() {
   const { count } = await sb.from('task_list_assignees').select('id', { count: 'exact', head: true }).eq('staff_id', user.id).is('seen_at', null);
   badge.style.display = (count && count > 0) ? 'block' : 'none';
 }
+// Orange dot on the Checklists nav item -- fires when the person has a trip
+// assigned to them (today, via trip_crew) that has no checklist_completions
+// row logged yet at all. Checklists are still pull-based/shared (anyone can
+// open any of today's trips), not per-staff assignments, so this is
+// deliberately a coarse "your trip today has no checklist activity yet"
+// signal rather than a precise per-role read-receipt -- matches what Fran
+// asked for ("cuando le lleguen checklist nuevas, porque tiene un viaje").
+async function checkChecklistNotifications() {
+  const badge = document.getElementById('checklist-notification-badge');
+  if (!badge) return;
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user || !currentOrgId) { badge.style.display = 'none'; return; }
+  const today = new Date().toISOString().split('T')[0];
+  const { data: assigned } = await sb.from('trip_crew')
+    .select('trip_id, trips!inner(trip_date, end_date, org_id, location_id)')
+    .eq('staff_id', user.id);
+  const myTripsToday = (assigned || [])
+    .map(r => r.trips ? { id: r.trip_id, ...r.trips } : null)
+    .filter(tr => tr && tr.org_id === currentOrgId
+      && (!currentLocationId || tr.location_id === currentLocationId)
+      && tr.trip_date <= today && (tr.end_date ? tr.end_date >= today : tr.trip_date === today));
+  if (!myTripsToday.length) { badge.style.display = 'none'; return; }
+  const tripIds = myTripsToday.map(tr => tr.id);
+  const { data: completions } = await sb.from('checklist_completions').select('trip_id').in('trip_id', tripIds);
+  const completedTripIds = new Set((completions || []).map(c => c.trip_id));
+  const hasPending = myTripsToday.some(tr => !completedTripIds.has(tr.id));
+  badge.style.display = hasPending ? 'block' : 'none';
+}
 async function checkCrewNotifications() {
   const badge = document.getElementById('crew-notification-badge');
   if (!badge || !currentOrgId) return;
@@ -6156,6 +6185,7 @@ async function initAuth() {
     document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
     await checkCrewNotifications();
     await checkTasksNotifications();
+    await checkChecklistNotifications();
     updateOfflineBanner();
     flushOfflineQueue();
     showScreen('app');
