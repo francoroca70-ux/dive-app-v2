@@ -3901,7 +3901,7 @@ const TRANSLATIONS = {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
     nav_home: 'Inicio', nav_calendar: 'Calendario', nav_fleet: 'Flota', nav_crew: 'Tripulación',
     nav_checklists: 'Checklists', nav_tasks: 'Tareas', nav_gear: 'Equipo y Material',
-    nav_waivers: 'Formularios', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
+    nav_waivers: 'Exenciones', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
     nav_help: 'Ayuda y Preguntas',
     signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
 
@@ -3928,7 +3928,7 @@ const TRANSLATIONS = {
     header_crew_title: 'Tripulación', header_crew_sub: 'Cuentas y roles del personal',
     header_checklists_title: 'Checklists', header_checklists_sub: 'Preparación de salidas, seguridad de la embarcación, rutinas por área',
     header_gear_title: 'Equipo y Material', header_gear_sub: 'Inventario y seguimiento de vida útil',
-    header_waivers_title: 'Formularios', header_waivers_sub: 'Recolección de firmas digitales de huéspedes',
+    header_waivers_title: 'Exenciones', header_waivers_sub: 'Recolección de firmas digitales de huéspedes',
     header_cashup_title: 'Arqueo de Caja Diario', header_cashup_sub: 'Conciliación de caja y cuentas de huéspedes',
     header_reports_title: 'Informes', header_reports_sub: 'Tendencias de ingresos y control de caja — solo propietario',
     header_tasks_title: 'Tareas', header_tasks_sub: 'Gestión de tareas de la tripulación',
@@ -3953,7 +3953,7 @@ const TRANSLATIONS = {
     tk_new_task_list_title: 'Nueva Lista de Tareas', tk_title: 'Título', tk_title_ph: 'ej. Preparación matutina del bote',
     tk_due_date: 'Fecha límite', tk_tasks_one_per_line: 'Tareas (una por línea)', tk_tasks_ph: 'Revisar niveles de combustible\nLimpiar los asientos\nReabastecer botiquín',
     tk_assign_to: 'Asignar a', tk_add_btn: '+ Agregar', tk_save_task_list: 'Guardar Lista de Tareas',
-    tk_note_for_manager: 'Nota para el encargado', tk_optional_ph: 'Opcional', tk_save_note: 'Guardar Nota',
+    tk_note_for_manager: 'Nota para el gerente', tk_optional_ph: 'Opcional', tk_save_note: 'Guardar Nota',
     tk_select_crew_member: 'Seleccionar miembro de tripulación', tk_fields_required: 'El título y al menos una tarea son obligatorios.',
     tk_no_tasks_assigned: 'No tienes tareas asignadas por ahora.', tk_complete: 'completado',
     tk_no_due_date: 'Sin fecha límite', tk_no_task_lists_yet: 'Aún no hay listas de tareas.', tk_unknown: 'Desconocido',
@@ -4280,8 +4280,8 @@ const TRANSLATIONS = {
     set_waivers_desc1: 'Esta es solo una herramienta de recolección de firmas digitales. Seven Seas no provee, verifica ni se responsabiliza por el contenido o la validez legal de las exenciones.',
     set_waivers_desc2a: 'La validez legal de las firmas digitales varía según el país y la jurisdicción.',
     set_waivers_desc2b: 'Consulta a un abogado local antes de confiar legalmente en estos documentos.',
-    set_waivers_desc2c: 'Al activar esta función confirmas que tu operación asume toda la responsabilidad por la validez legal de tus formularios.',
-    set_waivers_desc3: 'Las exenciones firmadas se almacenan de forma segura, pero recomendamos exportar las exenciones de cada día a tu propia computadora como respaldo local — usa la herramienta de exportación en la parte superior de la página de Formularios. Toma segundos y te da una copia a mano cuando la necesites.',
+    set_waivers_desc2c: 'Al activar esta función confirmas que tu operación asume toda la responsabilidad por la validez legal de tus exenciones.',
+    set_waivers_desc3: 'Las exenciones firmadas se almacenan de forma segura, pero recomendamos exportar las exenciones de cada día a tu propia computadora como respaldo local — usa la herramienta de exportación en la parte superior de la página de Exenciones. Toma segundos y te da una copia a mano cuando la necesites.',
     set_enable_waivers: 'Activar Exenciones para esta operación',
     set_waivers_owner_only_note: 'Solo el propietario de la cuenta puede cambiar esta configuración. Pídele a tu propietario o gerente que active las Exenciones si lo necesitas.',
     set_waiver_templates: 'Plantillas de Exenciones',
@@ -4361,7 +4361,7 @@ const TRANSLATIONS = {
     cu_remove_expense_confirm: 'Eliminar este gasto?', cu_saving: 'Guardando...',
     cu_select_location_tabs: 'Selecciona una ubicación arriba para ver las cuentas de huéspedes.',
 
-    wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Actívalos en Configuración para empezar a recolectar firmas digitales.',
+    wv_not_enabled: 'Las Exenciones aún no están activadas', wv_not_enabled_desc: 'Actívalas en Configuración para empezar a recolectar firmas digitales.',
     wv_go_to_settings: 'Ir a Configuración',
     wv_export_backup: 'Exportar / Respaldo', wv_export_backup_desc: 'Descarga todas las exenciones firmadas de un día como un solo archivo que puedes guardar en tu computadora.',
     wv_export_day: 'Exportar exenciones del día',
@@ -4648,14 +4648,14 @@ const HELP_CONTENT = [
     ]
   },
   {
-    title: { en: 'Waivers', es: 'Formularios' },
+    title: { en: 'Waivers', es: 'Exenciones' },
     items: [
       { q: { en: 'How do digital waivers work?', es: '¿Cómo funcionan los formularios digitales?' },
         a: { en: 'Guests sign on-screen (your phone, tablet, or a shared device); the signature and timestamp save automatically and can be exported as a PDF.', es: 'Los huéspedes firman en pantalla (tu teléfono, tablet, o un dispositivo compartido); la firma y la hora se guardan solas y se pueden exportar como PDF.' } },
       { q: { en: 'Why does a booking sometimes ask for date of birth and sometimes not?', es: '¿Por qué a veces una reserva pide fecha de nacimiento y a veces no?' },
         a: { en: 'Date of birth only appears when that trip type requires a minor/youth waiver. Set this per trip type in Settings → Trip Types → required waivers, by adding "Minor / Youth" to the list.', es: 'La fecha de nacimiento solo aparece cuando ese tipo de viaje requiere un formulario de menor. Se configura por tipo de viaje en Configuración → Tipos de Viaje → formularios requeridos, agregando "Menor / Joven" a la lista.' } },
       { q: { en: 'Where do I write the actual waiver wording?', es: '¿Dónde escribo el texto real del formulario?' },
-        a: { en: 'Settings → Waiver Templates — there\'s a tab per waiver type (Liability, Minor/Youth, Freediving, Snorkel/Charter, Medical, Other). A waiver type can\'t be signed by staff until it has a template written.', es: 'Configuración → Plantillas de Formularios — hay una pestaña por tipo (Responsabilidad, Menor/Joven, Buceo Libre, Snorkel/Charter, Médico, Otro). Un tipo de formulario no se puede firmar hasta que tenga una plantilla escrita.' } }
+        a: { en: 'Settings → Waiver Templates — there\'s a tab per waiver type (Liability, Minor/Youth, Freediving, Snorkel/Charter, Medical, Other). A waiver type can\'t be signed by staff until it has a template written.', es: 'Configuración → Plantillas de Exenciones — hay una pestaña por tipo (Responsabilidad, Menor/Joven, Buceo Libre, Snorkel/Charter, Médico, Otro). Un tipo de exención no se puede firmar hasta que tenga una plantilla escrita.' } }
     ]
   },
   {
