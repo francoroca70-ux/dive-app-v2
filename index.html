@@ -7362,21 +7362,28 @@ async function loadGearFieldsForType(tripTypeId) {
   return selectedTripTypeFields;
 }
 
-async function onTripTypeChange() {
+async function onTripTypeChange(fromInitialLoad) {
   const typeId = document.getElementById('trip-type-select').value;
   const tripType = currentTripTypes.find(t => t.id === typeId);
   if (!tripType) return;
 
   // Auto-fill price on the primary group so it always reflects the currently
-  // selected trip type's own configured price -- but only for a brand-new,
-  // unsaved trip, and only as long as the person hasn't typed their own price
-  // in by hand (tracked via _priceManuallySet, set in updateGroupField).
-  // Previously this only fired once (guarded on the price field being empty),
-  // so after the very first auto-fill it never updated again -- switching
-  // between trip types kept showing whichever type's price got auto-filled
-  // first, which is exactly the "always shows $500 no matter what I pick" bug.
-  if (!currentTripId && tripGroups_cache[0] && !tripGroups_cache[0]._priceManuallySet) {
+  // selected trip type's own configured price, as long as the person hasn't
+  // typed their own price in by hand (tracked via _priceManuallySet, set in
+  // updateGroupField). This has to run for an ALREADY-SAVED trip too, not
+  // just a brand-new one -- Fran's report was specifically that changing the
+  // trip type on an existing trip didn't re-price it. The one case this must
+  // NOT run is the initial programmatic call openTrip() makes right after
+  // loading an existing trip's own saved data -- fromInitialLoad is passed
+  // as `false` there specifically to skip this, otherwise simply opening a
+  // trip would immediately clobber its already-saved price with the type's
+  // default the moment the modal loads (real event objects from the actual
+  // <select> 'change' listener are truthy, so they never match here).
+  if (fromInitialLoad !== false && tripGroups_cache[0] && !tripGroups_cache[0]._priceManuallySet) {
     tripGroups_cache[0].price_per_person = tripType.default_price || null;
+    if (tripGroups_cache[0].id) {
+      await sb.from('trip_groups').update({ price_per_person: tripGroups_cache[0].price_per_person }).eq('id', tripGroups_cache[0].id);
+    }
     await renderGroupsPanel();
   }
 
@@ -7401,6 +7408,7 @@ document.getElementById('trip-type-select').addEventListener('change', onTripTyp
 // End date affects the day count used in private-booking totals and crew-hire cost,
 // so both need to re-render as soon as it changes (not just on the next unrelated update).
 document.getElementById('trip-end-date').addEventListener('change', () => {
+  recalcCrewHirePreview();
   renderGroupsPanel();
   renderTripCrewSection();
   checkBoatConflict();
@@ -7469,7 +7477,7 @@ async function openTrip(id) {
 
   document.getElementById('modal-trip-title').textContent = tripGroups_cache[0]?.contact_name || t('tt_trip_details');
   await populateTripTypeSelect(trip.trip_type_id);
-  await onTripTypeChange();
+  await onTripTypeChange(false);
 
   document.getElementById('trip-date').value = trip.trip_date || '';
   document.getElementById('trip-time').value = trip.trip_time?.slice(0,5) || '';
@@ -7729,7 +7737,10 @@ async function groupPaymentPanelHTML(g, index) {
     paymentHtml = `<p style="font-size:0.83rem;color:var(--muted);">${t('tt_save_log_payments')}</p>`;
   }
 
-  const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
+  // crew_hire_total on the group only gets persisted when the trip is saved
+  // -- _crewHirePreview (kept live by recalcCrewHirePreview as crew/dates
+  // change) is what makes the on-screen total react before that save.
+  const crewHireTotal = parseFloat(g._crewHirePreview ?? g.crew_hire_total) || 0;
   const qtyMultiplier = currentTripPricingQty(guestCount);
   const priceLabel = currentTripPriceLabel();
   const totalDisplay = ((parseFloat(g.price_per_person) || 0) * qtyMultiplier + rentalTotal + crewHireTotal).toFixed(2);
@@ -8066,6 +8077,7 @@ document.getElementById('trip-date').addEventListener('change', checkBoatConflic
 document.getElementById('trip-time').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-arrival').addEventListener('change', checkBoatConflict);
 document.getElementById('trip-date').addEventListener('change', renderTripCrewSection);
+document.getElementById('trip-date').addEventListener('change', () => { recalcCrewHirePreview(); renderGroupsPanel(); });
 document.getElementById('trip-time').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-arrival').addEventListener('change', renderTripCrewSection);
 document.getElementById('trip-boat').addEventListener('change', renderTripCrewSection);
@@ -10148,15 +10160,34 @@ function addSelectedTripCrew() {
   const rate = sel.options[sel.selectedIndex].dataset.rate;
   addTripCrewToCache(sel.value, name, rate);
 }
+// Crew hire cost only gets written to trip_groups.crew_hire_total when the
+// trip is saved (see the "Save trip" handler), so the Payment section's
+// totals need their own live recompute here too -- otherwise adding/removing
+// crew shows no price change at all until after you save and reopen. This
+// mirrors the same day-rate x day-count math the save handler uses, applied
+// to the primary group only (crew hire is billed against the trip as a
+// whole, same as it's stored).
+function recalcCrewHirePreview() {
+  if (!tripGroups_cache[0]) return;
+  const date = document.getElementById('trip-date')?.value;
+  const endDate = document.getElementById('trip-end-date')?.value || date;
+  const days = tripDayCount(date, endDate);
+  const crewHireTotal = tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * days, 0);
+  tripGroups_cache[0]._crewHirePreview = crewHireTotal;
+}
 function addTripCrewToCache(staffId, fullName, dayRate) {
   tripCrewCache.push({ staff_id: staffId, full_name: fullName, day_rate: parseFloat(dayRate) || 0 });
   renderTripCrewSection();
   checkGuestCapacity();
+  recalcCrewHirePreview();
+  renderGroupsPanel();
 }
 function removeTripCrewFromCache(staffId) {
   tripCrewCache = tripCrewCache.filter(c => c.staff_id !== staffId);
   renderTripCrewSection();
   checkGuestCapacity();
+  recalcCrewHirePreview();
+  renderGroupsPanel();
 }
 async function checkGuestCapacity() {
   const hint = document.getElementById('guest-capacity-hint');
@@ -10193,7 +10224,10 @@ async function groupPaymentHTML(g, participants) {
   const isFlatCharterBooking = currentTripIsFlatCharterPricing();
   const qty = currentTripPricingQty(participants.length);
   const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
-  const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
+  // crew_hire_total on the group only gets persisted when the trip is saved
+  // -- _crewHirePreview (kept live by recalcCrewHirePreview as crew/dates
+  // change) is what makes the on-screen total react before that save.
+  const crewHireTotal = parseFloat(g._crewHirePreview ?? g.crew_hire_total) || 0;
   const total = perPerson * qty + rentalTotal + crewHireTotal;
   const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
   const balance = total - paid;
@@ -10251,7 +10285,10 @@ async function refreshGroupPaymentSection(groupId) {
   if (!g) return;
   const participants = groupParticipants_cache[groupId] || await loadGroupParticipants(groupId);
   const rentalTotal = participants.reduce((sum, p) => sum + (parseFloat(p.rental_surcharge) || 0), 0);
-  const crewHireTotal = parseFloat(g.crew_hire_total) || 0;
+  // crew_hire_total on the group only gets persisted when the trip is saved
+  // -- _crewHirePreview (kept live by recalcCrewHirePreview as crew/dates
+  // change) is what makes the on-screen total react before that save.
+  const crewHireTotal = parseFloat(g._crewHirePreview ?? g.crew_hire_total) || 0;
   const html = await groupPaymentHTML(g, participants);
   const container = document.getElementById('group-payments-' + groupId);
   if (container) container.innerHTML = html;
