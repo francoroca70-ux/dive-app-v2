@@ -663,6 +663,24 @@ body { background: var(--navy); color: var(--text); }
 .expandable-title:hover { background: rgba(0,0,0,0.04); }
 .expandable-title .expand-count { color: var(--muted); font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 0.75rem; }
 .expandable-title .expand-caret { display: inline-block; transition: transform 0.2s; color: var(--muted); font-size: 0.7rem; }
+/* Trip modal's collapsible sections specifically: .expandable-title only shows
+   a background on :hover, which is invisible on a touchscreen with no hover
+   state -- so on mobile it just reads as plain text with no hint it's
+   tappable. Fran: "no se nota que es un botón". This variant keeps a subtle
+   background at rest, all the time, so it reads as a button/chip immediately.
+   Also sticky, so once you scroll down into a long open section you can tap
+   the header to collapse it (and open the next one) without scrolling back
+   up first -- it rides along at the top of the modal as you scroll. */
+.collapsible-bubble {
+  background: var(--foam, rgba(79,195,247,0.08));
+  border: 1px solid rgba(26,107,138,0.12);
+  padding: 12px 14px !important;
+  margin-left: 0 !important; margin-right: 0 !important;
+  border-radius: 10px;
+  position: sticky; top: 0; z-index: 3;
+}
+.collapsible-bubble:hover { background: rgba(79,195,247,0.16); }
+.collapsible-bubble .expand-caret { font-size: 0.85rem; color: var(--blue); }
 .settings-row {
   display: flex; align-items: center; gap: 16px;
   padding: 10px 0; border-bottom: 1px solid var(--border);
@@ -1991,8 +2009,12 @@ body { background: var(--navy); color: var(--text); }
               </div>
 
               <!-- Boat & Crew -- collapsed to keep the modal short, especially on mobile.
-                   Open by default since a boat/crew assignment is normally required. -->
-              <div class="card-section-title expandable-title" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-boatcrew')">
+                   Open by default since a boat/crew assignment is normally required.
+                   Header + content share one wrapper so the sticky header only sticks
+                   while THIS section is scrolling by, then rides away with it -- not
+                   for the rest of the modal. -->
+              <div class="collapsible-section-wrap">
+              <div class="card-section-title expandable-title collapsible-bubble" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-boatcrew')">
                 <span data-i18n="tt_boat_crew_section">Boat & Crew</span>
                 <span id="trip-section-boatcrew-arrow" class="expand-caret" style="transform:rotate(90deg);">▸</span>
               </div>
@@ -2026,9 +2048,11 @@ body { background: var(--navy); color: var(--text); }
                   <p id="guest-capacity-hint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></p>
                 </div>
               </div>
+              </div>
 
               <!-- Group & Guests -- open by default, this is what most bookings need to fill in. -->
-              <div class="card-section-title expandable-title" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-groups')">
+              <div class="collapsible-section-wrap">
+              <div class="card-section-title expandable-title collapsible-bubble" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-groups')">
                 <span id="groups-title" data-i18n="tt_group">Group</span>
                 <span id="trip-section-groups-arrow" class="expand-caret" style="transform:rotate(90deg);">▸</span>
               </div>
@@ -2036,15 +2060,18 @@ body { background: var(--navy); color: var(--text); }
                 <div id="groups-list"></div>
                 <button class="btn-cancel" id="btn-add-group" style="margin-top:4px;display:none;" data-i18n="tt_add_group">+ Add another group to this trip</button>
               </div>
+              </div>
 
               <!-- Payment -- collapsed by default; least urgent when first opening a trip,
                    and keeping it closed is most of what shortens the modal. -->
-              <div class="card-section-title expandable-title" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-payments')">
+              <div class="collapsible-section-wrap">
+              <div class="card-section-title expandable-title collapsible-bubble" style="margin-top:20px;" onclick="toggleExpandSection('trip-section-payments')">
                 <span data-i18n="tt_payment_section">Payment</span>
                 <span id="trip-section-payments-arrow" class="expand-caret">▸</span>
               </div>
               <div id="trip-section-payments" style="display:none;">
                 <div id="payments-list"></div>
+              </div>
               </div>
 
               <div class="warning-banner caution" id="guest-capacity-warning" style="display:none;margin-top:16px;"></div>
