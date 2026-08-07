@@ -7389,6 +7389,26 @@ async function loadGearFieldsForType(tripTypeId) {
   return selectedTripTypeFields;
 }
 
+// The modal header used to show just the bare guest name once a trip was
+// saved -- Fran: on its own that's ambiguous ("who is this guest, what am I
+// even looking at?") and doesn't read as a professional booking record.
+// Pairs the trip type with the contact name instead, e.g. "1 Dive — John
+// Smith", and falls back gracefully before either is known yet.
+function updateTripModalTitleFromForm() {
+  const titleEl = document.getElementById('modal-trip-title');
+  if (!titleEl) return;
+  const typeId = document.getElementById('trip-type-select')?.value;
+  const tripType = (currentTripTypes || []).find(tt => tt.id === typeId);
+  const typeName = tripType ? trTypeName(tripType.name) : '';
+  const contactName = (tripGroups_cache[0]?.contact_name || '').trim();
+  if (!contactName) {
+    // Brand-new, never-saved trip -- keep "New trip" rather than jumping to
+    // just the type name the moment a default type loads.
+    titleEl.textContent = !currentTripId ? t('tt_new_trip_title') : (typeName || t('tt_trip_details'));
+    return;
+  }
+  titleEl.textContent = typeName ? `${typeName} — ${contactName}` : contactName;
+}
 async function onTripTypeChange(fromInitialLoad) {
   const typeId = document.getElementById('trip-type-select').value;
   const tripType = currentTripTypes.find(t => t.id === typeId);
@@ -7429,6 +7449,8 @@ async function onTripTypeChange(fromInitialLoad) {
   // the trip's own DEFAULT type; a group with its own override loads its
   // fields separately, on demand, in showAddGuestForm).
   await loadGearFieldsForType(typeId);
+
+  updateTripModalTitleFromForm();
 }
 
 document.getElementById('trip-type-select').addEventListener('change', onTripTypeChange);
@@ -7502,7 +7524,6 @@ async function openTrip(id) {
   tripGroups_cache = (groups && groups.length) ? groups : [blankGroup()];
   groupParticipants_cache = {};
 
-  document.getElementById('modal-trip-title').textContent = tripGroups_cache[0]?.contact_name || t('tt_trip_details');
   await populateTripTypeSelect(trip.trip_type_id);
   await onTripTypeChange(false);
 
@@ -7878,7 +7899,7 @@ async function updateGroupField(key, field, value) {
     await sb.from('trip_groups').update({ [field]: val }).eq('id', g.id);
     if (field === 'price_per_person') await refreshGroupPaymentSection(g.id);
     if (field === 'contact_name' && tripGroups_cache[0]?.id === g.id) {
-      document.getElementById('modal-trip-title').textContent = val || t('tt_trip_details');
+      updateTripModalTitleFromForm();
     }
     if (field === 'contact_email' && val) {
       sendBookingConfirmationIfNeeded(g.id);
@@ -9204,7 +9225,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   btn.disabled = false; btn.textContent = t('tt_update_trip');
   document.getElementById('btn-delete-trip').style.display = 'inline-block';
   document.getElementById('btn-print-manifest').style.display = 'inline-block';
-  document.getElementById('modal-trip-title').textContent = primaryGroup.contact_name || t('tt_trip_details');
+  updateTripModalTitleFromForm();
   document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared') ? 'inline-block' : 'none';
 
   if (typeof refreshHomeStats === 'function') refreshHomeStats();
