@@ -113,6 +113,19 @@ jobs:
 
   build-ios:
     runs-on: macos-latest
+    # Same job-level env workaround as build-android above (secrets can't be read
+    # directly inside a step's `if:`) -- these three exist once Fran adds them under
+    # Settings -> Secrets and variables -> Actions (see App Store Connect API key,
+    # created under Users and Access -> Integrations -> API de App Store Connect).
+    # Until they exist, this job falls back to the old unsigned Simulator-only build
+    # so nothing breaks; once they exist, it builds a real signed archive and uploads
+    # it straight to TestFlight -- Xcode manages certificates/provisioning profiles on
+    # its own via the API key (-allowProvisioningUpdates), no manual .p12/.mobileprovision
+    # files to generate or store.
+    env:
+      APPSTORE_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+      APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+      APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -133,7 +146,9 @@ jobs:
       # Podfile, so a `pod install` step here would just fail. Xcode resolves the Swift
       # packages automatically as part of the build below.
 
-      - name: Build for iOS Simulator (unsigned — no Apple Developer account needed yet)
+      - name: Build for iOS Simulator (unsigned fallback — used until the App Store
+          Connect API key secrets below exist)
+        if: env.APPSTORE_KEY_ID == '' || env.APPSTORE_ISSUER_ID == '' || env.APPSTORE_PRIVATE_KEY == ''
         working-directory: ios/App
         run: |
           xcodebuild build \
@@ -142,3 +157,51 @@ jobs:
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Install App Store Connect API key
+        if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != ''
+        run: |
+          mkdir -p ~/private_keys
+          echo "$APPSTORE_PRIVATE_KEY" > ~/private_keys/AuthKey_${APPSTORE_KEY_ID}.p8
+
+      - name: Archive signed build for TestFlight
+        if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != ''
+        working-directory: ios/App
+        run: |
+          xcodebuild archive \
+            -project App.xcodeproj \
+            -scheme App \
+            -sdk iphoneos \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${APPSTORE_KEY_ID}.p8 \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
+
+      - name: Export .ipa
+        if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != ''
+        working-directory: ios/App
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${APPSTORE_KEY_ID}.p8 \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
+
+      - name: Upload to TestFlight
+        if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != ''
+        run: |
+          xcrun altool --upload-app \
+            -f "$RUNNER_TEMP/export/"*.ipa \
+            -t ios \
+            --apiKey "$APPSTORE_KEY_ID" \
+            --apiIssuer "$APPSTORE_ISSUER_ID"
+
+      - uses: actions/upload-artifact@v4
+        if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != ''
+        with:
+          name: seven-seas-ios-ipa
+          path: ${{ runner.temp }}/export/*.ipa
