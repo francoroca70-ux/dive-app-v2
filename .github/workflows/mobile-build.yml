@@ -171,7 +171,9 @@ jobs:
           xcodebuild archive \
             -project App.xcodeproj \
             -scheme App \
+            -configuration Release \
             -sdk iphoneos \
+            -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_${APPSTORE_KEY_ID}.p8 \
