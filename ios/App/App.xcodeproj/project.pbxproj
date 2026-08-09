@@ -107,6 +107,7 @@
 				LastUpgradeCheck = 0920;
 				TargetAttributes = {
 					504EC3031FED79650016851F = {
+						DevelopmentTeam = 7Y8G4Y5Y67;
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
@@ -317,7 +318,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7Y8G4Y5Y67;
 				CURRENT_PROJECT_VERSION = 1;
