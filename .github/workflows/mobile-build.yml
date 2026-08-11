@@ -176,8 +176,13 @@ jobs:
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
           security set-keychain-settings -t 3600 -u build.keychain
-          echo "$IOS_CERT_BASE64" | base64 --decode > $RUNNER_TEMP/distribution.p12
-          security import $RUNNER_TEMP/distribution.p12 -k build.keychain -P "$IOS_CERT_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          # Use `printf` (not `echo`, which can mangle backslashes/flags on some
+          # shells) and `openssl base64 -d -A` (not the platform `base64` tool,
+          # whose decode behavior differs between macOS/BSD and Linux/GNU) so
+          # decoding is identical regardless of runner OS.
+          printf '%s' "$IOS_CERT_BASE64" | openssl base64 -d -A -out "$RUNNER_TEMP/distribution.p12"
+          echo "Decoded cert size: $(wc -c < "$RUNNER_TEMP/distribution.p12") bytes (sha256: $(shasum -a 256 "$RUNNER_TEMP/distribution.p12" | cut -d' ' -f1))"
+          security import "$RUNNER_TEMP/distribution.p12" -k build.keychain -P "$IOS_CERT_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" build.keychain
           security list-keychains -d user -s build.keychain $(security list-keychains -d user | sed s/\"//g)
 
@@ -185,7 +190,8 @@ jobs:
         if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != '' && env.IOS_CERT_BASE64 != '' && env.IOS_CERT_PASSWORD != '' && env.IOS_PROFILE_BASE64 != ''
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "$IOS_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/SevenSeasOps.mobileprovision
+          printf '%s' "$IOS_PROFILE_BASE64" | openssl base64 -d -A -out ~/Library/MobileDevice/Provisioning\ Profiles/SevenSeasOps.mobileprovision
+          echo "Decoded profile size: $(wc -c < ~/Library/MobileDevice/Provisioning\ Profiles/SevenSeasOps.mobileprovision) bytes"
 
       - name: Archive signed build for TestFlight
         if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != '' && env.IOS_CERT_BASE64 != '' && env.IOS_CERT_PASSWORD != '' && env.IOS_PROFILE_BASE64 != ''
