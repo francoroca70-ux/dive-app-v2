@@ -42,5 +42,7 @@ release-upload-key.jks
 *.csr
 *.mobileprovision
 ios_distribution.key
-distribution_p12.txt
+distribution_p12*.txt
 profile.txt
+profile*.txt
+Archivos sensibles ios/
