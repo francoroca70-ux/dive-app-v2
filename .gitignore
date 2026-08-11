@@ -32,3 +32,15 @@ Thumbs.db
 *.jks
 *.keystore
 release-upload-key.jks
+
+# iOS distribution cert/profile working files (generated locally via openssl to
+# create the manual-signing GitHub secrets -- see .github/workflows/mobile-build.yml).
+# These must never be committed; only their base64 contents live in GitHub secrets.
+*.p12
+*.pem
+*.cer
+*.csr
+*.mobileprovision
+ios_distribution.key
+distribution_p12.txt
+profile.txt
