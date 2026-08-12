@@ -206,7 +206,7 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            "PROVISIONING_PROFILE_SPECIFIER=Seven Seas Ops App Store" \
+            PROVISIONING_PROFILE_SPECIFIER=c6f019bf-de75-48a0-b9a9-09d23af53da0 \
             DEVELOPMENT_TEAM=7Y8G4Y5Y67
 
       - name: Export .ipa

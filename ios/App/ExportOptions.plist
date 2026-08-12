@@ -21,7 +21,7 @@
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>com.sevenseasops.app</key>
-		<string>Seven Seas Ops App Store</string>
+		<string>c6f019bf-de75-48a0-b9a9-09d23af53da0</string>
 	</dict>
 	<key>uploadSymbols</key>
 	<true/>
