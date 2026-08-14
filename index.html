@@ -743,6 +743,15 @@ body { background: var(--navy); color: var(--text); }
   transition: background 0.2s;
 }
 .btn-danger-sm:hover { background: rgba(229,62,62,0.06); }
+.btn-danger-solid {
+  background: var(--error); border: none;
+  color: #fff; padding: 10px 18px; border-radius: 8px;
+  font-size: 0.85rem; font-weight: 700; cursor: pointer;
+  font-family: 'Inter', sans-serif; margin-top: 4px;
+  transition: opacity 0.2s;
+}
+.btn-danger-solid:hover { opacity: 0.85; }
+.btn-danger-solid:disabled { opacity: 0.5; cursor: default; }
 .save-feedback {
   font-size: 0.82rem; font-weight: 600;
   color: var(--success); opacity: 0; transition: opacity 0.3s;
@@ -3343,6 +3352,14 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
 
+        <!-- Danger Zone card -->
+        <div class="card" id="card-danger-zone" style="border-color:rgba(229,62,62,0.25);">
+          <div class="card-section-title" style="color:var(--error);" data-i18n="set_danger_zone">Danger Zone</div>
+          <p class="card-desc" data-i18n="set_delete_account_desc">Remove your access to this operation. Any checklists, waivers, trip records, or other entries you've completed stay on file — this only removes your login's access.</p>
+          <button class="btn-danger-solid" id="btn-delete-account" data-i18n="set_delete_account">Delete my account</button>
+          <span class="save-feedback" id="delete-account-feedback" style="color:var(--error);"></span>
+        </div>
+
       </div>
 
       <!-- Help / FAQ page -->
@@ -3779,6 +3796,15 @@ const TRANSLATIONS = {
     set_op_categories_desc: 'Add a category any time your operation grows — adding one creates a starter set of trip types you can edit. Owner only.',
     set_permissions: 'Permissions', set_permissions_desc: 'Control what different roles can do across your operation.',
     set_captain_elevated_label: 'Give captains manager-level permissions (invite/remove staff, edit banked days, manage day-off requests, edit task lists, export waivers)',
+    set_danger_zone: 'Danger Zone',
+    set_delete_account_desc: "Remove your access to this operation. Any checklists, waivers, trip records, or other entries you've completed stay on file — this only removes your login's access.",
+    set_delete_account: 'Delete my account',
+    set_delete_account_confirm: "This will remove your access to this operation. Your completed checklists, waivers, and trip records stay on file — you just won't be able to log in to this shop anymore. Continue?",
+    set_delete_account_confirm_ok: 'Yes, remove my access',
+    set_delete_account_success: "Done. You've been removed from this operation.",
+    set_delete_account_err_last_owner: "You're the only owner here, so you can't remove yourself. Add another owner first, or contact support.",
+    set_delete_account_err_not_staff: "We couldn't find your staff record — you may already be removed.",
+    set_delete_account_err_generic: 'Something went wrong. Please try again or contact support.',
     set_captain_elevated_hint: 'Off by default. Turn on if your captains carry management authority, common on charters and yachts.',
     set_waivers: 'Waivers', set_owner_only: 'Owner only',
     set_waivers_desc1: 'This is a digital signature collection tool only. Seven Seas does not provide, verify, or take responsibility for waiver content or legal validity.',
@@ -4330,6 +4356,15 @@ const TRANSLATIONS = {
     set_permissions: 'Permisos', set_permissions_desc: 'Controla lo que pueden hacer los distintos roles en tu operación.',
     set_captain_elevated_label: 'Dar a los capitanes permisos de nivel gerente (invitar/eliminar personal, editar días acumulados, gestionar solicitudes de días libres, editar listas de tareas, exportar exenciones)',
     set_captain_elevated_hint: 'Desactivado por defecto. Actívalo si tus capitanes tienen autoridad de gestión, algo común en charters y yates.',
+    set_danger_zone: 'Zona de Peligro',
+    set_delete_account_desc: 'Elimina tu acceso a esta operación. Los checklists, exenciones, registros de salidas u otras entradas que hayas completado quedan guardados — esto solo elimina el acceso de tu usuario.',
+    set_delete_account: 'Eliminar mi cuenta',
+    set_delete_account_confirm: 'Esto eliminará tu acceso a esta operación. Tus checklists, exenciones y registros de salidas completados quedan guardados — solo dejarás de poder iniciar sesión en este local. ¿Continuar?',
+    set_delete_account_confirm_ok: 'Sí, eliminar mi acceso',
+    set_delete_account_success: 'Listo. Fuiste eliminado de esta operación.',
+    set_delete_account_err_last_owner: 'Sos el único propietario acá, así que no podés eliminarte a vos mismo. Agregá otro propietario primero, o contactá a soporte.',
+    set_delete_account_err_not_staff: 'No encontramos tu registro de personal — es posible que ya hayas sido eliminado.',
+    set_delete_account_err_generic: 'Algo salió mal. Intentá de nuevo o contactá a soporte.',
     set_waivers: 'Exenciones', set_owner_only: 'Solo propietario',
     set_waivers_desc1: 'Esta es solo una herramienta de recolección de firmas digitales. Seven Seas no provee, verifica ni se responsabiliza por el contenido o la validez legal de las exenciones.',
     set_waivers_desc2a: 'La validez legal de las firmas digitales varía según el país y la jurisdicción.',
@@ -6457,6 +6492,53 @@ document.getElementById('btn-save-new-password').addEventListener('click', async
     document.getElementById('btn-change-password').style.display = 'inline-block';
     feedback.className = 'save-feedback';
   }, 2000);
+});
+
+document.getElementById('btn-delete-account').addEventListener('click', async () => {
+  const confirmed = await showConfirmModal(t('set_delete_account_confirm'), {
+    danger: true,
+    okText: t('set_delete_account_confirm_ok')
+  });
+  if (!confirmed) return;
+
+  const btn = document.getElementById('btn-delete-account');
+  const feedback = document.getElementById('delete-account-feedback');
+  btn.disabled = true;
+  feedback.className = 'save-feedback';
+  feedback.textContent = '';
+
+  try {
+    const { data, error } = await sb.functions.invoke('leave-org', {});
+    if (error) throw error;
+
+    if (data && data.error === 'last_owner') {
+      feedback.textContent = t('set_delete_account_err_last_owner');
+      feedback.className = 'save-feedback error visible';
+      btn.disabled = false;
+      return;
+    }
+    if (data && data.error === 'not_staff') {
+      feedback.textContent = t('set_delete_account_err_not_staff');
+      feedback.className = 'save-feedback error visible';
+      btn.disabled = false;
+      return;
+    }
+    if (data && data.error) {
+      feedback.textContent = data.error;
+      feedback.className = 'save-feedback error visible';
+      btn.disabled = false;
+      return;
+    }
+
+    feedback.textContent = t('set_delete_account_success');
+    feedback.className = 'save-feedback visible';
+    await sb.auth.signOut();
+    setTimeout(() => { window.location.reload(); }, 1200);
+  } catch (err) {
+    feedback.textContent = (err && err.message) ? err.message : t('set_delete_account_err_generic');
+    feedback.className = 'save-feedback error visible';
+    btn.disabled = false;
+  }
 });
 
 // ─── LISTEN FOR AUTH CHANGES ───
