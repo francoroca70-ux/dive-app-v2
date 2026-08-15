@@ -846,7 +846,28 @@ body { background: var(--navy); color: var(--text); }
 .account-switcher-menu {
   position: absolute; top: calc(100% + 10px); right: 0;
   background: var(--white); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.2);
-  min-width: 230px; max-width: 280px; padding: 6px; z-index: 200;
+  min-width: 260px; max-width: 300px; padding: 6px; z-index: 200;
+}
+/* Header -- the currently-active account, Google-style ("Hi, Franco" + email
+   + shop/role), not clickable. Separated visually from the switch-list below
+   so "who am I" and "who can I become" don't blur together. */
+.account-switcher-header { display: flex; gap: 10px; align-items: center; padding: 10px 8px; }
+.account-switcher-header-avatar {
+  width: 36px; height: 36px; font-size: 0.95rem;
+  border-radius: 50%; background: var(--teal); color: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; text-transform: uppercase; flex-shrink: 0;
+}
+.account-switcher-header-text { min-width: 0; flex: 1; }
+.account-switcher-header-greeting { font-size: 0.9rem; font-weight: 800; color: var(--text); }
+.account-switcher-header-email {
+  font-size: 0.76rem; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.account-switcher-header-org { font-size: 0.72rem; color: var(--muted); }
+.account-switcher-section-label {
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase;
+  color: var(--muted); padding: 8px 8px 2px; border-top: 1px solid var(--border); margin-top: 4px;
 }
 .account-switcher-row {
   display: flex; align-items: center; gap: 10px;
@@ -868,13 +889,16 @@ body { background: var(--navy); color: var(--text); }
   border-radius: 6px; flex-shrink: 0;
 }
 .account-switcher-row-remove:hover { color: var(--error); background: rgba(229,62,62,0.08); }
-.account-switcher-add {
-  width: 100%; text-align: left; background: none; border: none;
-  padding: 10px 8px; font-size: 0.82rem; color: var(--blue); font-weight: 700;
-  cursor: pointer; border-top: 1px solid var(--border); margin-top: 4px;
-  font-family: 'Inter', sans-serif;
+.account-switcher-actions { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 4px; }
+.account-switcher-add, .account-switcher-forget {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  padding: 9px 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  font-family: 'Inter', sans-serif; border-radius: 8px;
 }
+.account-switcher-add { color: var(--blue); }
 .account-switcher-add:hover { background: var(--foam); }
+.account-switcher-forget { color: var(--error); }
+.account-switcher-forget:hover { background: rgba(229,62,62,0.08); }
 .account-switcher-empty { font-size: 0.78rem; color: var(--muted); padding: 10px 8px; }
 
 
@@ -1908,8 +1932,13 @@ body { background: var(--navy); color: var(--text); }
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="account-switcher-menu" id="account-switcher-menu" style="display:none;">
+          <div class="account-switcher-header" id="account-switcher-header"></div>
+          <div class="account-switcher-section-label" id="account-switcher-section-label" data-i18n="switch_account_switch_section">Switch account</div>
           <div id="account-switcher-list"></div>
-          <button class="account-switcher-add" id="account-switcher-add" type="button" data-i18n="switch_account_add">+ Add another account</button>
+          <div class="account-switcher-actions">
+            <button class="account-switcher-add" id="account-switcher-add" type="button" data-i18n="switch_account_add">+ Add another account</button>
+            <button class="account-switcher-forget" id="account-switcher-forget" type="button" data-i18n="switch_account_forget_btn">Forget this account</button>
+          </div>
         </div>
       </div>
 
@@ -3525,6 +3554,8 @@ const TRANSLATIONS = {
     signed_in_as: 'Signed in as', sign_out: 'Sign out',
     switch_account_add: '+ Add another account', switch_account_none: 'No saved accounts yet.',
     switch_account_remove: 'Remove from this device', switch_account_expired: 'That saved session expired. Please sign in again.',
+    switch_account_hello: 'Hi, {name}', switch_account_switch_section: 'Switch account',
+    switch_account_forget_btn: 'Forget this account',
 
     login_title: 'Sign in to your account', login_tagline: 'Water operations platform',
     login_email_label: 'Email', login_password_label: 'Password', login_signin_btn: 'Sign in', login_remember_me: 'Remember me',
@@ -4104,6 +4135,8 @@ const TRANSLATIONS = {
     signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
     switch_account_add: '+ Agregar otra cuenta', switch_account_none: 'Todavía no hay cuentas guardadas.',
     switch_account_remove: 'Quitar de este dispositivo', switch_account_expired: 'Esa sesión guardada expiró. Por favor, iniciá sesión de nuevo.',
+    switch_account_hello: 'Hola, {name}', switch_account_switch_section: 'Cambiar cuenta',
+    switch_account_forget_btn: 'Olvidar esta cuenta',
 
     login_title: 'Inicia sesión en tu cuenta', login_tagline: 'Plataforma de operaciones marítimas',
     login_email_label: 'Correo electrónico', login_password_label: 'Contraseña', login_signin_btn: 'Iniciar sesión', login_remember_me: 'Recordarme',
@@ -6820,7 +6853,8 @@ function upsertSavedAccount(session, extra) {
     access_token: session.access_token,
     refresh_token: session.refresh_token,
     orgName: (extra && extra.orgName) || prev.orgName || '',
-    roleLabel: (extra && extra.roleLabel) || prev.roleLabel || ''
+    roleLabel: (extra && extra.roleLabel) || prev.roleLabel || '',
+    fullName: (extra && extra.fullName) || prev.fullName || ''
   };
   if (idx >= 0) list[idx] = entry; else list.push(entry);
   setSavedAccountsList(list);
@@ -6837,46 +6871,73 @@ function closeAccountSwitcherMenu() {
   if (menu) menu.style.display = 'none';
 }
 
-// Rebuilds both the avatar badge (current account) and the dropdown list --
-// called after every login, switch, add, or remove so the menu never shows
-// stale data. Safe to call before login too (empty list, blank avatar).
+// Rebuilds the avatar badge, the "Hi, {name}" header for the active account,
+// and the switch-list of every OTHER saved account -- called after every
+// login, switch, add, or remove so the menu never shows stale data. Google's
+// own chooser shape: current account gets its own header block, everything
+// else lives in a "Switch account" list below it. Safe to call before login
+// too (blank header, empty list).
 async function renderAccountSwitcherMenu() {
   const avatarEl = document.getElementById('account-switcher-avatar');
+  const headerEl = document.getElementById('account-switcher-header');
+  const sectionLabelEl = document.getElementById('account-switcher-section-label');
   const listEl = document.getElementById('account-switcher-list');
-  if (!avatarEl || !listEl) return;
+  if (!avatarEl || !headerEl || !listEl) return;
+
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   const { data: { user } } = await sb.auth.getUser();
   const currentUserId = user ? user.id : null;
   const accounts = getSavedAccounts();
-
   const currentAccount = accounts.find(a => a.userId === currentUserId);
-  avatarEl.textContent = ((currentAccount && currentAccount.email) || (user && user.email) || '?').charAt(0);
 
-  if (!accounts.length) {
-    listEl.innerHTML = `<div class="account-switcher-empty">${t('switch_account_none')}</div>`;
-    return;
+  const displayEmail = (currentAccount && currentAccount.email) || (user && user.email) || '';
+  const displayName = (currentAccount && currentAccount.fullName) || (displayEmail ? displayEmail.split('@')[0] : '');
+  avatarEl.textContent = (displayEmail || '?').charAt(0);
+
+  if (user) {
+    const subtitle = currentAccount ? [currentAccount.orgName, currentAccount.roleLabel].filter(Boolean).join(' · ') : '';
+    headerEl.innerHTML = `
+      <span class="account-switcher-header-avatar">${escapeHtml((displayEmail || '?').charAt(0))}</span>
+      <div class="account-switcher-header-text">
+        <div class="account-switcher-header-greeting">${t('switch_account_hello').replace('{name}', escapeHtml(displayName))}</div>
+        <div class="account-switcher-header-email">${escapeHtml(displayEmail)}</div>
+        ${subtitle ? `<div class="account-switcher-header-org">${escapeHtml(subtitle)}</div>` : ''}
+      </div>`;
+  } else {
+    headerEl.innerHTML = '';
   }
 
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // Everything below the header is OTHER accounts only -- the active one is
+  // already shown up top, repeating it in the switch list would be confusing
+  // ("why is my own account both the header and a menu item?").
+  const others = accounts.filter(a => a.userId !== currentUserId);
 
-  listEl.innerHTML = accounts.map(a => {
-    const isActive = a.userId === currentUserId;
-    const subtitle = [a.orgName, a.roleLabel].filter(Boolean).join(' · ');
-    return `
-      <div class="account-switcher-row${isActive ? ' active' : ''}" ${isActive ? '' : `onclick="switchToAccount('${a.userId}')"`}>
-        <span class="account-switcher-row-avatar">${escapeHtml((a.email || '?').charAt(0))}</span>
-        <div class="account-switcher-row-text">
-          <div class="account-switcher-row-email">${escapeHtml(a.email)}</div>
-          ${subtitle ? `<div class="account-switcher-row-org">${escapeHtml(subtitle)}</div>` : ''}
-        </div>
-        <span class="account-switcher-row-remove" title="${t('switch_account_remove')}" onclick="event.stopPropagation(); removeAccountFromSwitcher('${a.userId}')">&times;</span>
-      </div>`;
-  }).join('');
+  if (!others.length) {
+    sectionLabelEl.style.display = 'none';
+    listEl.innerHTML = '';
+  } else {
+    sectionLabelEl.style.display = 'block';
+    listEl.innerHTML = others.map(a => {
+      const subtitle = [a.orgName, a.roleLabel].filter(Boolean).join(' · ');
+      return `
+        <div class="account-switcher-row" onclick="switchToAccount('${a.userId}')">
+          <span class="account-switcher-row-avatar">${escapeHtml((a.email || '?').charAt(0))}</span>
+          <div class="account-switcher-row-text">
+            <div class="account-switcher-row-email">${escapeHtml(a.email)}</div>
+            ${subtitle ? `<div class="account-switcher-row-org">${escapeHtml(subtitle)}</div>` : ''}
+          </div>
+          <span class="account-switcher-row-remove" title="${t('switch_account_remove')}" onclick="event.stopPropagation(); removeAccountFromSwitcher('${a.userId}')">&times;</span>
+        </div>`;
+    }).join('');
+  }
 }
 
-// Removing the currently-active account from the switcher is really "sign
-// out" (same as btn-signout) -- routed through the same handler so both
-// paths behave identically instead of drifting apart over time.
+// Removing the currently-active account (the header's "Forget this account"
+// button, or a stray remove click on your own row) is really "sign out" --
+// routed through the existing Sign Out handler so both paths behave
+// identically instead of drifting apart over time. Removing anyone else just
+// drops their saved tokens from this device; they can always log back in.
 function removeAccountFromSwitcher(userId) {
   sb.auth.getUser().then(({ data: { user } }) => {
     if (user && user.id === userId) {
@@ -6954,6 +7015,16 @@ document.getElementById('account-switcher-add').addEventListener('click', () => 
   showScreen('login');
 });
 
+// Forgets the currently-active account -- same underlying action as the main
+// Sign Out button, just reachable from inside the switcher's header the way
+// Google's own account menu offers it.
+document.getElementById('account-switcher-forget').addEventListener('click', () => {
+  closeAccountSwitcherMenu();
+  sb.auth.getUser().then(({ data: { user } }) => {
+    if (user) removeAccountFromSwitcher(user.id);
+  });
+});
+
 
 // ─── SETTINGS ───
 let currentOrgId = null;
@@ -6965,7 +7036,7 @@ async function loadSettings(user) {
   // Try to load existing org for this user
   const { data: staffRow } = await sb
     .from('staff')
-    .select('org_id, role')
+    .select('org_id, role, full_name')
     .eq('id', user.id)
     .single();
 
@@ -7057,7 +7128,8 @@ async function loadSettings(user) {
     if (currentSession) {
       upsertSavedAccount(currentSession, {
         orgName: org?.name || '',
-        roleLabel: staffRow.role.charAt(0).toUpperCase() + staffRow.role.slice(1)
+        roleLabel: staffRow.role.charAt(0).toUpperCase() + staffRow.role.slice(1),
+        fullName: staffRow.full_name || ''
       });
     }
   } else {
