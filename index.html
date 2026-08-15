@@ -2680,6 +2680,24 @@ body { background: var(--navy); color: var(--text); }
           <h1 data-i18n="header_waivers_title">Waivers</h1>
           <p data-i18n="header_waivers_sub">Digital signature collection for guests</p>
         </div>
+
+        <!-- Export / Backup -- lives outside the enabled/disabled toggle below
+             so checklists and trip records can still be exported here even
+             for an org that doesn't use the waivers feature at all. -->
+        <div class="card" id="card-waiver-export">
+          <h2 data-i18n="wv_export_backup">Export / Backup</h2>
+          <p class="card-desc" data-i18n="wv_export_backup_desc">Download a day's waivers, checklists, or trip records as a file you can save to your own computer.</p>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+            <input class="sf-input" type="date" id="waiver-export-date" style="width:auto;">
+            <button class="btn-save" id="btn-export-waivers" data-i18n="wv_export_day">Export day's waivers</button>
+            <button class="btn-save" id="btn-export-checklists" data-i18n="wv_export_day_checklists">Export day's checklists</button>
+            <button class="btn-save" id="btn-export-trips" data-i18n="wv_export_day_trips">Export day's trip records</button>
+          </div>
+          <div style="margin-top:6px;"><span class="save-feedback" id="waiver-export-feedback"></span></div>
+          <p id="waiver-export-role-note" style="font-size:0.8rem;color:var(--muted);margin-top:8px;display:none;" data-i18n="wv_export_role_note">Only owners, managers and front desk can download records to a computer. Ask them if you need a copy.</p>
+          <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;" data-i18n="wv_export_safety_note">For safety, export and save a copy of each day's records to your own computer at the end of every day.</div>
+        </div>
+
         <div id="waivers-disabled-notice" style="display:none;">
           <div class="coming-soon">
             <div class="icon">📝</div>
@@ -2689,17 +2707,6 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
         <div id="waivers-main" style="display:none;">
-          <div class="card" id="card-waiver-export">
-            <h2 data-i18n="wv_export_backup">Export / Backup</h2>
-            <p class="card-desc" data-i18n="wv_export_backup_desc">Download all signed waivers for a day as a single file you can save to your own computer.</p>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-              <input class="sf-input" type="date" id="waiver-export-date" style="width:auto;">
-              <button class="btn-save" id="btn-export-waivers" data-i18n="wv_export_day">Export day's waivers</button>
-              <span class="save-feedback" id="waiver-export-feedback"></span>
-            </div>
-            <p id="waiver-export-role-note" style="font-size:0.8rem;color:var(--muted);margin-top:8px;display:none;" data-i18n="wv_export_role_note">Only owners, managers and front desk can download waivers to a computer. Ask them if you need a copy.</p>
-            <div class="warning-banner caution" style="margin-top:10px;font-size:0.78rem;display:block;" data-i18n="wv_export_safety_note">For safety, export and save a copy of each day's waivers to your own computer at the end of every day.</div>
-          </div>
           <div class="card" id="card-pending-waivers">
             <h2 data-i18n="wv_pending_today">Pending Signatures — Today</h2>
             <div id="pending-waivers-list"></div>
@@ -3893,10 +3900,12 @@ const TRANSLATIONS = {
 
     wv_not_enabled: "Waivers aren't enabled yet", wv_not_enabled_desc: 'Turn them on in Settings to start collecting digital signatures.',
     wv_go_to_settings: 'Go to Settings',
-    wv_export_backup: 'Export / Backup', wv_export_backup_desc: 'Download all signed waivers for a day as a single file you can save to your own computer.',
+    wv_export_backup: 'Export / Backup', wv_export_backup_desc: 'Download a day\'s waivers, checklists, or trip records as a file you can save to your own computer.',
     wv_export_day: "Export day's waivers",
-    wv_export_role_note: 'Only owners, managers and front desk can download waivers to a computer. Ask them if you need a copy.',
-    wv_export_safety_note: "For safety, export and save a copy of each day's waivers to your own computer at the end of every day.",
+    wv_export_day_checklists: "Export day's checklists",
+    wv_export_day_trips: "Export day's trip records",
+    wv_export_role_note: 'Only owners, managers and front desk can download records to a computer. Ask them if you need a copy.',
+    wv_export_safety_note: "For safety, export and save a copy of each day's records to your own computer at the end of every day.",
     wv_pending_today: 'Pending Signatures — Today', wv_waiver_log: 'Waiver Log', wv_daily: 'Daily', wv_weekly: 'Weekly',
     wv_search_guest_ph: 'Search by guest name...',
     wv_trip_fallback: 'Trip', wv_sign_waiver: 'Sign Waiver', wv_no_pending_guests: "No pending guests for today's trips.",
@@ -3908,6 +3917,7 @@ const TRANSLATIONS = {
     wv_remind_btn: 'Remind', wv_remind_sent: 'Sent', wv_remind_failed: 'Failed — try again', wv_remind_no_email: 'No contact email on file',
     wv_unknown_guest: 'Unknown guest', wv_paper: 'Paper', wv_digital: 'Digital',
     wv_no_waivers_week: 'No waivers signed this week.', wv_no_waivers_date: 'No waivers signed on this date.',
+    wv_no_records_date: 'Nothing found for that date.',
     wv_no_waivers_found: 'No waivers found for',
     wv_type_liability: 'Liability Waiver', wv_type_minor: 'Minor / Youth Waiver', wv_type_freediving: 'Freediving / Apnea Waiver',
     wv_type_snorkel: 'Snorkel / Charter Waiver', wv_type_medical: 'Medical', wv_type_custom: 'Other',
@@ -4452,10 +4462,12 @@ const TRANSLATIONS = {
 
     wv_not_enabled: 'Las Exenciones aún no están activadas', wv_not_enabled_desc: 'Actívalas en Configuración para empezar a recolectar firmas digitales.',
     wv_go_to_settings: 'Ir a Configuración',
-    wv_export_backup: 'Exportar / Respaldo', wv_export_backup_desc: 'Descarga todas las exenciones firmadas de un día como un solo archivo que puedes guardar en tu computadora.',
+    wv_export_backup: 'Exportar / Respaldo', wv_export_backup_desc: 'Descarga las exenciones, checklists o registros de salidas de un día como un archivo que puedes guardar en tu computadora.',
     wv_export_day: 'Exportar exenciones del día',
-    wv_export_role_note: 'Solo propietarios, gerentes y recepción pueden descargar exenciones a una computadora. Pídeles una copia si la necesitas.',
-    wv_export_safety_note: 'Por seguridad, exporta y guarda una copia de las exenciones de cada día en tu computadora al final de cada jornada.',
+    wv_export_day_checklists: 'Exportar checklists del día',
+    wv_export_day_trips: 'Exportar registros de salidas del día',
+    wv_export_role_note: 'Solo propietarios, gerentes y recepción pueden descargar registros a una computadora. Pídeles una copia si la necesitas.',
+    wv_export_safety_note: 'Por seguridad, exporta y guarda una copia de los registros de cada día en tu computadora al final de cada jornada.',
     wv_pending_today: 'Firmas Pendientes — Hoy', wv_waiver_log: 'Registro de Exenciones', wv_daily: 'Diario', wv_weekly: 'Semanal',
     wv_search_guest_ph: 'Buscar por nombre de huésped...',
     wv_trip_fallback: 'Salida', wv_sign_waiver: 'Firmar Exención', wv_no_pending_guests: 'No hay huéspedes pendientes para las salidas de hoy.',
@@ -4467,6 +4479,7 @@ const TRANSLATIONS = {
     wv_remind_btn: 'Recordar', wv_remind_sent: 'Enviado', wv_remind_failed: 'Falló — intentá de nuevo', wv_remind_no_email: 'No hay email de contacto registrado',
     wv_unknown_guest: 'Huésped desconocido', wv_paper: 'Papel', wv_digital: 'Digital',
     wv_no_waivers_week: 'No hay exenciones firmadas esta semana.', wv_no_waivers_date: 'No hay exenciones firmadas en esta fecha.',
+    wv_no_records_date: 'No se encontró nada para esa fecha.',
     wv_no_waivers_found: 'No se encontraron exenciones para',
     wv_type_liability: 'Exención de Responsabilidad', wv_type_minor: 'Exención de Menor / Joven', wv_type_freediving: 'Exención de Apnea',
     wv_type_snorkel: 'Exención de Esnórquel / Charter', wv_type_medical: 'Médico', wv_type_custom: 'Otro',
@@ -9465,9 +9478,31 @@ function buildWaiverTypeLabels() {
 }
 let waiverTypeLabels = buildWaiverTypeLabels();
 
+// Shared by all three "Export / Backup" buttons on the Waivers page (waivers,
+// checklists, trip records) -- same permission bar as waiver export always
+// had, kept as one gate so it's one clear rule for staff instead of three.
+function canExportShopRecords() {
+  return ['owner', 'manager', 'front_desk'].includes(currentUserRole) || (currentUserRole === 'captain' && window.currentCaptainElevated);
+}
+
 async function loadWaivers() {
   const disabledEl = document.getElementById('waivers-disabled-notice');
   const mainEl = document.getElementById('waivers-main');
+
+  // Export/Backup card lives outside the enabled/disabled toggle below, so
+  // its setup has to run unconditionally -- before the early return -- since
+  // checklists and trip records are exportable even for an org that doesn't
+  // use waivers at all.
+  const exportDateEl = document.getElementById('waiver-export-date');
+  if (exportDateEl && !exportDateEl.value) exportDateEl.value = new Date().toISOString().split('T')[0];
+
+  const canExport = canExportShopRecords();
+  document.getElementById('btn-export-waivers').disabled = !canExport;
+  document.getElementById('btn-export-checklists').disabled = !canExport;
+  document.getElementById('btn-export-trips').disabled = !canExport;
+  document.getElementById('waiver-export-role-note').style.display = canExport ? 'none' : 'block';
+  document.getElementById('card-waiver-export').style.opacity = canExport ? '1' : '0.6';
+
   if (!window.waiversEnabled) {
     disabledEl.style.display = 'block';
     mainEl.style.display = 'none';
@@ -9475,14 +9510,6 @@ async function loadWaivers() {
   }
   disabledEl.style.display = 'none';
   mainEl.style.display = 'block';
-
-  const exportDateEl = document.getElementById('waiver-export-date');
-  if (exportDateEl && !exportDateEl.value) exportDateEl.value = new Date().toISOString().split('T')[0];
-
-  const canExportWaivers = ['owner', 'manager', 'front_desk'].includes(currentUserRole) || (currentUserRole === 'captain' && window.currentCaptainElevated);
-  document.getElementById('btn-export-waivers').disabled = !canExportWaivers;
-  document.getElementById('waiver-export-role-note').style.display = canExportWaivers ? 'none' : 'block';
-  document.getElementById('card-waiver-export').style.opacity = canExportWaivers ? '1' : '0.6';
 
   if (!currentOrgId) return;
   const today = new Date().toISOString().split('T')[0];
@@ -10088,8 +10115,7 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
 });
 
 document.getElementById('btn-export-waivers').addEventListener('click', () => {
-  const canExport = ['owner', 'manager', 'front_desk'].includes(currentUserRole) || (currentUserRole === 'captain' && window.currentCaptainElevated);
-  if (!canExport) {
+  if (!canExportShopRecords()) {
     const feedback = document.getElementById('waiver-export-feedback');
     feedback.textContent = t('wv_export_no_permission');
     feedback.className = 'save-feedback error visible';
@@ -10097,6 +10123,28 @@ document.getElementById('btn-export-waivers').addEventListener('click', () => {
   }
   const date = document.getElementById('waiver-export-date').value || new Date().toISOString().split('T')[0];
   exportWaiversForDay(date);
+});
+
+document.getElementById('btn-export-checklists').addEventListener('click', () => {
+  if (!canExportShopRecords()) {
+    const feedback = document.getElementById('waiver-export-feedback');
+    feedback.textContent = t('wv_export_no_permission');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const date = document.getElementById('waiver-export-date').value || new Date().toISOString().split('T')[0];
+  exportChecklistsForDay(date);
+});
+
+document.getElementById('btn-export-trips').addEventListener('click', () => {
+  if (!canExportShopRecords()) {
+    const feedback = document.getElementById('waiver-export-feedback');
+    feedback.textContent = t('wv_export_no_permission');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  const date = document.getElementById('waiver-export-date').value || new Date().toISOString().split('T')[0];
+  exportTripRecordsForDay(date);
 });
 
 async function exportWaiversForDay(date) {
@@ -10172,6 +10220,173 @@ async function exportWaiversForDay(date) {
   <h1>Signed Waivers</h1>
   <div class="meta">${date} · ${data.length} waiver${data.length === 1 ? '' : 's'}</div>
   ${rowsHtml}
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    feedback.textContent = t('wv_allow_popups_export');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+  feedback.textContent = '';
+  feedback.className = 'save-feedback';
+}
+
+// Mirrors exportWaiversForDay's shape and print-to-PDF approach, one row per
+// checklist sign-off that day (department routines + trip-linked checklists
+// both live in checklist_completions, same as the Logged Checklists view).
+async function exportChecklistsForDay(date) {
+  const feedback = document.getElementById('waiver-export-feedback');
+  feedback.textContent = t('wv_preparing_export');
+  feedback.className = 'save-feedback visible';
+
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  const { data, error } = await sb.from('checklist_completions')
+    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trips(trip_name, trip_date, trip_time, trip_type)')
+    .eq('org_id', currentOrgId)
+    .gte('signed_at', date + 'T00:00:00')
+    .lte('signed_at', date + 'T23:59:59')
+    .order('signed_at');
+
+  if (error) {
+    feedback.textContent = t('wv_error_loading');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!data || !data.length) {
+    feedback.textContent = t('wv_no_records_date');
+    feedback.className = 'save-feedback visible';
+    return;
+  }
+
+  const rowsHtml = data.map(r => {
+    const tripLabel = r.trips
+      ? `${r.trips.trip_time ? r.trips.trip_time.slice(0, 5) + ' — ' : ''}${escapeHtml(trTypeName(r.trips.trip_type) || r.trips.trip_name || 'Trip')}`
+      : t('cl_logged_vessel_check');
+    const roleLabel = escapeHtml(crewRoleLabel(r.role) || r.role);
+    return `
+    <div class="cl-export-entry">
+      <div class="cl-export-entry-header">
+        <strong>${tripLabel}</strong>${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}
+        <span>${roleLabel}</span>
+        <span>${r.completed_items}/${r.total_items} items ✓</span>
+        <span>${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+      <div class="cl-export-entry-signee">Signed off by: ${escapeHtml(r.signed_by || '—')}</div>
+    </div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html><head><title>Checklists — ${date}</title>
+<style>
+  body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+  .cl-export-entry { border-bottom: 1px solid #ddd; padding: 14px 0; page-break-inside: avoid; }
+  .cl-export-entry-header { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; align-items:baseline; }
+  .cl-export-entry-signee { font-size: 12px; color: #444; margin: 4px 0 0; }
+  @media print { body { padding: 10px; } }
+</style>
+</head><body>
+  <h1>Logged Checklists</h1>
+  <div class="meta">${date} · ${data.length} sign-off${data.length === 1 ? '' : 's'}</div>
+  ${rowsHtml}
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    feedback.textContent = t('wv_allow_popups_export');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+  feedback.textContent = '';
+  feedback.className = 'save-feedback';
+}
+
+// Every trip that day, grouped, with each group's guests -- a lighter-weight
+// cousin of printManifest (which is built for one trip's gear/waiver-status
+// detail while it's open). This is the day's whole guest log for the record,
+// not a working document, so it skips gear columns and waiver-missing status.
+async function exportTripRecordsForDay(date) {
+  const feedback = document.getElementById('waiver-export-feedback');
+  feedback.textContent = t('wv_preparing_export');
+  feedback.className = 'save-feedback visible';
+
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  let query = sb.from('trips')
+    .select('id, trip_time, trip_type, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
+    .eq('org_id', currentOrgId)
+    .eq('trip_date', date)
+    .order('trip_time');
+  if (currentLocationId) query = query.eq('location_id', currentLocationId);
+  const { data, error } = await query;
+
+  if (error) {
+    feedback.textContent = t('wv_error_loading');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  if (!data || !data.length) {
+    feedback.textContent = t('wv_no_records_date');
+    feedback.className = 'save-feedback visible';
+    return;
+  }
+
+  const tripsHtml = data.map(trip => {
+    const groups = trip.trip_groups || [];
+    const totalGuests = groups.reduce((sum, g) => sum + (g.participants || []).length, 0);
+    const groupsHtml = groups.map(g => {
+      const guestsHtml = (g.participants || []).map(p => `
+        <div class="tr-export-guest">
+          <span>${escapeHtml(p.full_name || 'Unnamed guest')}</span>
+          ${p.is_certified === true ? '<span class="tr-cert">Certified</span>' : p.is_certified === false ? '<span class="tr-cert">Not certified</span>' : ''}
+        </div>`).join('');
+      return `
+      <div class="tr-export-group">
+        <div class="tr-export-group-header"><strong>${escapeHtml(g.contact_name || 'Unnamed group')}</strong></div>
+        ${guestsHtml || '<div class="tr-export-guest" style="color:#888;">No guests logged</div>'}
+      </div>`;
+    }).join('');
+
+    return `
+    <div class="tr-export-trip">
+      <div class="tr-export-trip-header">
+        <strong>${trip.trip_time ? trip.trip_time.slice(0, 5) + ' — ' : ''}${escapeHtml(trTypeName(trip.trip_type) || 'Trip')}</strong>
+        <span>${escapeHtml(trip.boats?.name || 'No boat')}</span>
+        <span>${totalGuests} guest${totalGuests === 1 ? '' : 's'}</span>
+      </div>
+      ${groupsHtml}
+    </div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html><head><title>Trip Records — ${date}</title>
+<style>
+  body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+  .tr-export-trip { border-bottom: 2px solid #ccc; padding: 16px 0; page-break-inside: avoid; }
+  .tr-export-trip-header { display:flex; gap:14px; flex-wrap:wrap; font-size:14px; align-items:baseline; margin-bottom: 8px; }
+  .tr-export-group { margin: 8px 0 0 12px; padding-bottom: 6px; }
+  .tr-export-group-header { font-size: 13px; margin-bottom: 4px; }
+  .tr-export-guest { font-size: 12px; color: #333; padding: 2px 0 2px 10px; display:flex; gap:10px; }
+  .tr-cert { color: #666; font-style: italic; }
+  @media print { body { padding: 10px; } }
+</style>
+</head><body>
+  <h1>Trip Records</h1>
+  <div class="meta">${date} · ${data.length} trip${data.length === 1 ? '' : 's'}</div>
+  ${tripsHtml}
 </body></html>`;
 
   const win = window.open('', '_blank');
