@@ -3367,6 +3367,32 @@ body { background: var(--navy); color: var(--text); }
           <span class="save-feedback" id="delete-account-feedback" style="color:var(--error);"></span>
         </div>
 
+        <!-- Close this shop's account -- owner only. Separate from the card
+             above on purpose: that one is "I leave, the shop keeps running";
+             this one is "the whole shop stops using Seven Seas Ops". Two-step:
+             (1) mandatory full export, (2) type the shop's name to confirm. -->
+        <div class="card" id="card-close-shop" style="display:none;border-color:rgba(229,62,62,0.25);">
+          <div class="card-section-title" style="color:var(--error);" data-i18n="close_shop_title">Close This Shop's Account</div>
+          <p class="card-desc" data-i18n="close_shop_desc">Ending your subscription? This closes the shop for every staff member — nobody will be able to log in anymore. Your records (waivers, checklists, trip history) are kept on file, not deleted, in case you ever need them for a legal or insurance matter. This cannot be undone by you once confirmed.</p>
+
+          <div style="margin-top:12px;">
+            <div class="card-section-title" style="font-size:0.9rem;" data-i18n="close_shop_step1">Step 1 — Download everything</div>
+            <p class="card-desc" data-i18n="close_shop_step1_desc">Get a full copy of every waiver, checklist, and trip record this shop has ever logged, before you go any further.</p>
+            <button class="btn-cancel" id="btn-close-shop-export" data-i18n="close_shop_export_btn">Download all shop records</button>
+          </div>
+
+          <div style="margin-top:18px;">
+            <div class="card-section-title" style="font-size:0.9rem;" data-i18n="close_shop_step2">Step 2 — Confirm</div>
+            <p class="card-desc" id="close-shop-step2-desc"></p>
+            <input class="sf-input" type="text" id="close-shop-confirm-input" style="max-width:280px;margin-top:8px;" autocomplete="off">
+            <div style="margin-top:10px;">
+              <button class="btn-danger-solid" id="btn-close-shop-confirm" disabled data-i18n="close_shop_confirm_btn">Close this shop's account</button>
+            </div>
+          </div>
+
+          <span class="save-feedback" id="close-shop-feedback" style="color:var(--error);display:block;margin-top:10px;"></span>
+        </div>
+
       </div>
 
       <!-- Help / FAQ page -->
@@ -3812,6 +3838,20 @@ const TRANSLATIONS = {
     set_delete_account_err_last_owner: "You're the only owner here, so you can't remove yourself. Add another owner first, or contact support.",
     set_delete_account_err_not_staff: "We couldn't find your staff record — you may already be removed.",
     set_delete_account_err_generic: 'Something went wrong. Please try again or contact support.',
+    close_shop_title: "Close This Shop's Account",
+    close_shop_desc: "Ending your subscription? This closes the shop for every staff member — nobody will be able to log in anymore. Your records (waivers, checklists, trip history) are kept on file, not deleted, in case you ever need them for a legal or insurance matter. This cannot be undone by you once confirmed.",
+    close_shop_step1: 'Step 1 — Download everything',
+    close_shop_step1_desc: 'Get a full copy of every waiver, checklist, and trip record this shop has ever logged, before you go any further.',
+    close_shop_export_btn: 'Download all shop records',
+    close_shop_export_done: "Downloaded. You can now confirm below.",
+    close_shop_step2: 'Step 2 — Confirm',
+    close_shop_step2_desc: 'Type "{name}" below to confirm you want to close this shop\'s account.',
+    close_shop_confirm_btn: "Close this shop's account",
+    close_shop_final_confirm: 'This will permanently close "{name}" — every staff member, including you, will be logged out and unable to sign back in. Your records stay on file. Continue?',
+    close_shop_final_confirm_ok: 'Yes, close this shop',
+    close_shop_success: "Done. This shop's account is now closed.",
+    close_shop_err_not_owner: 'Only the owner can close this shop\'s account.',
+    close_shop_err_generic: 'Something went wrong. Please try again or contact support.',
     set_captain_elevated_hint: 'Off by default. Turn on if your captains carry management authority, common on charters and yachts.',
     set_waivers: 'Waivers', set_owner_only: 'Owner only',
     set_waivers_desc1: 'This is a digital signature collection tool only. Seven Seas does not provide, verify, or take responsibility for waiver content or legal validity.',
@@ -3965,6 +4005,7 @@ const TRANSLATIONS = {
     auth_set_up_account: 'Set up account', auth_could_not_verify: 'Could not verify your account. If you just signed up, confirm your email first, then try this link again.',
     auth_link_error_prefix: 'Signed in, but could not finish linking your account to this operation. Send this to Fran: ', auth_unknown_error: 'unknown error',
     auth_enter_email_password: 'Enter your email and password.', auth_signing_in: 'Signing in...', auth_invalid_credentials: 'Email or password is incorrect.', auth_sign_in: 'Sign in',
+    org_closed_message: "This shop's account has been closed by its owner. If you think this is a mistake, contact them directly.",
     auth_enter_email: 'Enter your email address.', auth_sending: 'Sending...', auth_send_reset_link: 'Send reset link', auth_sent: 'Sent',
     auth_passwords_dont_match: "Passwords don't match.", auth_password_updated: 'Password updated.',
     common_saving: 'Saving...', common_error_saving: 'Error saving.', common_error_saving_retry: 'Error saving. Try again.', common_name_required: 'Name is required.',
@@ -4375,6 +4416,20 @@ const TRANSLATIONS = {
     set_delete_account_err_last_owner: 'Sos el único propietario acá, así que no podés eliminarte a vos mismo. Agregá otro propietario primero, o contactá a soporte.',
     set_delete_account_err_not_staff: 'No encontramos tu registro de personal — es posible que ya hayas sido eliminado.',
     set_delete_account_err_generic: 'Algo salió mal. Intentá de nuevo o contactá a soporte.',
+    close_shop_title: 'Cerrar la Cuenta de Este Local',
+    close_shop_desc: '¿Vas a dar de baja el servicio? Esto cierra el local para todo el personal — nadie va a poder volver a iniciar sesión. Tus registros (exenciones, checklists, historial de salidas) se guardan, no se borran, por si alguna vez los necesitás para un tema legal o de seguro. Esto no se puede deshacer vos mismo una vez confirmado.',
+    close_shop_step1: 'Paso 1 — Descargá todo',
+    close_shop_step1_desc: 'Obtené una copia completa de cada exención, checklist y registro de salida que este local haya registrado, antes de continuar.',
+    close_shop_export_btn: 'Descargar todos los registros del local',
+    close_shop_export_done: 'Descargado. Ya podés confirmar abajo.',
+    close_shop_step2: 'Paso 2 — Confirmar',
+    close_shop_step2_desc: 'Escribí "{name}" abajo para confirmar que querés cerrar la cuenta de este local.',
+    close_shop_confirm_btn: 'Cerrar la cuenta de este local',
+    close_shop_final_confirm: 'Esto va a cerrar "{name}" de forma permanente — todo el personal, incluido vos, va a quedar desconectado y sin poder volver a entrar. Tus registros se guardan. ¿Continuar?',
+    close_shop_final_confirm_ok: 'Sí, cerrar este local',
+    close_shop_success: 'Listo. La cuenta de este local ya está cerrada.',
+    close_shop_err_not_owner: 'Solo el propietario puede cerrar la cuenta de este local.',
+    close_shop_err_generic: 'Algo salió mal. Intentá de nuevo o contactá a soporte.',
     set_waivers: 'Exenciones', set_owner_only: 'Solo propietario',
     set_waivers_desc1: 'Esta es solo una herramienta de recolección de firmas digitales. Seven Seas no provee, verifica ni se responsabiliza por el contenido o la validez legal de las exenciones.',
     set_waivers_desc2a: 'La validez legal de las firmas digitales varía según el país y la jurisdicción.',
@@ -4527,6 +4582,7 @@ const TRANSLATIONS = {
     auth_set_up_account: 'Configurar cuenta', auth_could_not_verify: 'No pudimos verificar tu cuenta. Si acabás de registrarte, confirmá tu email primero y volvé a intentar este enlace.',
     auth_link_error_prefix: 'Sesión iniciada, pero no se pudo terminar de vincular tu cuenta a esta operación. Enviale esto a Fran: ', auth_unknown_error: 'error desconocido',
     auth_enter_email_password: 'Ingresá tu email y contraseña.', auth_signing_in: 'Iniciando sesión...', auth_invalid_credentials: 'El email o la contraseña son incorrectos.', auth_sign_in: 'Iniciar sesión',
+    org_closed_message: 'La cuenta de este local fue cerrada por su propietario. Si creés que es un error, contactalo directamente.',
     auth_enter_email: 'Ingresá tu dirección de email.', auth_sending: 'Enviando...', auth_send_reset_link: 'Enviar enlace de restablecimiento', auth_sent: 'Enviado',
     auth_passwords_dont_match: 'Las contraseñas no coinciden.', auth_password_updated: 'Contraseña actualizada.',
     common_saving: 'Guardando...', common_error_saving: 'Error al guardar.', common_error_saving_retry: 'Error al guardar. Intentá de nuevo.', common_name_required: 'El nombre es obligatorio.',
@@ -6252,7 +6308,8 @@ async function initAuth() {
 
   if (session) {
     initHome(session.user);
-    await loadSettings(session.user);
+    const settingsOk = await loadSettings(session.user);
+    if (settingsOk === false) { hideLoadingScreen(); return; }
     loadFleet();
     loadCrew();
     await renderCalendar();
@@ -6304,7 +6361,12 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   }
 
   initHome(data.user);
-  loadSettings(data.user);
+  const settingsOk = await loadSettings(data.user);
+  if (settingsOk === false) {
+    btn.disabled = false;
+    btn.textContent = t('auth_sign_in');
+    return;
+  }
   loadFleet();
   loadCrew();
   renderCalendar();
@@ -6392,7 +6454,8 @@ document.getElementById('btn-signup').addEventListener('click', async () => {
     // Email confirmation is off (or was auto-confirmed) -- go straight in,
     // same as a normal login.
     initHome(data.user);
-    await loadSettings(data.user);
+    const settingsOk = await loadSettings(data.user);
+    if (settingsOk === false) return;
     const ownerNameInput = document.getElementById('owner-full-name');
     if (ownerNameInput && !ownerNameInput.value) ownerNameInput.value = fullName;
     loadFleet();
@@ -6560,6 +6623,75 @@ document.getElementById('btn-delete-account').addEventListener('click', async ()
   }
 });
 
+// ─── CLOSE THIS SHOP'S ACCOUNT (owner only) ───
+document.getElementById('btn-close-shop-export').addEventListener('click', () => {
+  exportAllShopRecords();
+});
+
+// Step 2's confirm button only unlocks once BOTH gates are satisfied: the
+// export was actually run this visit (window._closeShopExported, set by
+// exportAllShopRecords) AND the typed text exactly matches the shop's name --
+// same "type the name to confirm" pattern most SaaS use for account deletion,
+// so a stray click can't close a shop by accident.
+document.getElementById('close-shop-confirm-input').addEventListener('input', function () {
+  const btn = document.getElementById('btn-close-shop-confirm');
+  const orgNameEl = document.getElementById('org-name');
+  const expected = (orgNameEl && orgNameEl.value || '').trim();
+  const typed = this.value.trim();
+  btn.disabled = !(window._closeShopExported && expected && typed === expected);
+});
+
+document.getElementById('btn-close-shop-confirm').addEventListener('click', async () => {
+  const feedback = document.getElementById('close-shop-feedback');
+  const orgNameEl = document.getElementById('org-name');
+  const shopName = (orgNameEl && orgNameEl.value) || '';
+
+  const confirmed = await showConfirmModal(t('close_shop_final_confirm').replace('{name}', shopName), {
+    danger: true,
+    okText: t('close_shop_final_confirm_ok')
+  });
+  if (!confirmed) return;
+
+  const btn = document.getElementById('btn-close-shop-confirm');
+  btn.disabled = true;
+  feedback.className = 'save-feedback';
+  feedback.textContent = '';
+
+  try {
+    const { data, error } = await sb.functions.invoke('close-shop', {});
+
+    if (error) {
+      // Same supabase-js quirk as leave-org: the real error code the function
+      // sent is on error.context (the raw Response), not error.message.
+      let code = null;
+      try {
+        if (error.context && typeof error.context.json === 'function') {
+          const body = await error.context.json();
+          code = body && body.error;
+        }
+      } catch (_) { /* not JSON -- fall through to generic message */ }
+
+      if (code === 'not_owner') {
+        feedback.textContent = t('close_shop_err_not_owner');
+      } else {
+        feedback.textContent = code || t('close_shop_err_generic');
+      }
+      feedback.className = 'save-feedback error visible';
+      btn.disabled = false;
+      return;
+    }
+
+    feedback.textContent = t('close_shop_success');
+    feedback.className = 'save-feedback visible';
+    await sb.auth.signOut();
+    setTimeout(() => { window.location.reload(); }, 1500);
+  } catch (err) {
+    feedback.textContent = (err && err.message) ? err.message : t('close_shop_err_generic');
+    feedback.className = 'save-feedback error visible';
+    btn.disabled = false;
+  }
+});
+
 // ─── LISTEN FOR AUTH CHANGES ───
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') showScreen('login');
@@ -6597,6 +6729,21 @@ async function loadSettings(user) {
       .eq('id', currentOrgId)
       .single();
 
+    // The owner closed this shop's account (see closeShopStep2Confirm) --
+    // block every entry point that funnels through here (fresh login, signup,
+    // and session restore via initAuth all call loadSettings) instead of
+    // letting a half-loaded app render for someone who no longer has access.
+    if (org && org.closed_at) {
+      await sb.auth.signOut();
+      showScreen('login');
+      const loginErrorEl = document.getElementById('login-error');
+      if (loginErrorEl) {
+        loginErrorEl.textContent = t('org_closed_message');
+        loginErrorEl.classList.add('visible');
+      }
+      return false;
+    }
+
     if (org) {
       document.getElementById('org-name').value = org.name || '';
       document.getElementById('org-country').value = org.country || '';
@@ -6613,6 +6760,24 @@ async function loadSettings(user) {
       updateWaiversStatusBadge();
       const isOwnerRole = staffRow.role === 'owner';
       applyWaiverGatingUI(isOwnerRole);
+
+      // Close-this-shop card is owner-only -- everyone else already has the
+      // plain "leave this shop" Danger Zone card above it.
+      const closeShopCard = document.getElementById('card-close-shop');
+      if (closeShopCard) {
+        closeShopCard.style.display = isOwnerRole ? 'block' : 'none';
+        if (isOwnerRole) {
+          const step2Desc = document.getElementById('close-shop-step2-desc');
+          if (step2Desc) step2Desc.textContent = t('close_shop_step2_desc').replace('{name}', org.name || '');
+          // Reset per-visit, so a stale "already exported" state from earlier
+          // in the session doesn't let someone skip straight to Step 2.
+          window._closeShopExported = false;
+          const confirmInput = document.getElementById('close-shop-confirm-input');
+          if (confirmInput) confirmInput.value = '';
+          const confirmBtn = document.getElementById('btn-close-shop-confirm');
+          if (confirmBtn) confirmBtn.disabled = true;
+        }
+      }
     }
 
     // Load locations
@@ -6635,6 +6800,7 @@ async function loadSettings(user) {
       localStorage.removeItem('ss_pending_owner_name');
     }
   }
+  return true;
 }
 
 async function loadLocations() {
@@ -10401,6 +10567,116 @@ async function exportTripRecordsForDay(date) {
   setTimeout(() => win.print(), 300);
   feedback.textContent = '';
   feedback.className = 'save-feedback';
+}
+
+// ─── CLOSE THIS SHOP'S ACCOUNT (owner only) ───
+// Full-history export of all three record types in one document, used as the
+// mandatory "download everything" step before an owner can close their shop's
+// account (see closeShopStep2Confirm). Deliberately one combined document
+// instead of three separate exports: three window.open() calls back-to-back
+// risk a popup blocker only allowing the first, and one archive file is a
+// more sensible thing to hand off to an accountant/lawyer anyway. No date
+// filter -- this is the shop's whole history, which is the point.
+async function exportAllShopRecords() {
+  const feedback = document.getElementById('close-shop-feedback');
+  feedback.textContent = t('wv_preparing_export');
+  feedback.className = 'save-feedback visible';
+
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  let waiversQuery = sb.from('waivers').select('*, participants(full_name)').eq('org_id', currentOrgId).order('signed_at');
+  if (currentLocationId) waiversQuery = waiversQuery.eq('location_id', currentLocationId);
+  const [{ data: waivers }, { data: completions }, { data: trips }] = await Promise.all([
+    waiversQuery,
+    sb.from('checklist_completions')
+      .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trips(trip_name, trip_date, trip_time, trip_type)')
+      .eq('org_id', currentOrgId).order('signed_at'),
+    (() => {
+      let q = sb.from('trips')
+        .select('id, trip_date, trip_time, trip_type, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
+        .eq('org_id', currentOrgId).order('trip_date').order('trip_time');
+      if (currentLocationId) q = q.eq('location_id', currentLocationId);
+      return q;
+    })()
+  ]);
+
+  const waiversHtml = (waivers || []).map(w => `
+    <div class="ex-entry">
+      <strong>${escapeHtml(w.participants?.full_name || 'Unknown guest')}</strong>
+      <span>${waiverTypeLabels[w.waiver_type] || escapeHtml(w.waiver_type)}</span>
+      <span>${w.signed_at ? new Date(w.signed_at).toLocaleString() : '—'}</span>
+      <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
+    </div>`).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
+
+  const checklistsHtml = (completions || []).map(r => {
+    const tripLabel = r.trips
+      ? `${r.trips.trip_date || ''} ${r.trips.trip_time ? r.trips.trip_time.slice(0, 5) : ''} — ${escapeHtml(trTypeName(r.trips.trip_type) || r.trips.trip_name || 'Trip')}`
+      : t('cl_logged_vessel_check');
+    return `
+    <div class="ex-entry">
+      <strong>${tripLabel}</strong>${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}
+      <span>${escapeHtml(crewRoleLabel(r.role) || r.role)}</span>
+      <span>${r.completed_items}/${r.total_items} ✓</span>
+      <span>${r.signed_at ? new Date(r.signed_at).toLocaleString() : '—'} — ${escapeHtml(r.signed_by || '—')}</span>
+    </div>`;
+  }).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
+
+  const tripsHtml = (trips || []).map(trip => {
+    const groups = trip.trip_groups || [];
+    const guestCount = groups.reduce((sum, g) => sum + (g.participants || []).length, 0);
+    const guestNames = groups.flatMap(g => (g.participants || []).map(p => p.full_name)).filter(Boolean).join(', ');
+    return `
+    <div class="ex-entry">
+      <strong>${trip.trip_date || ''} ${trip.trip_time ? trip.trip_time.slice(0, 5) : ''} — ${escapeHtml(trTypeName(trip.trip_type) || 'Trip')}</strong>
+      <span>${escapeHtml(trip.boats?.name || 'No boat')}</span>
+      <span>${guestCount} guest${guestCount === 1 ? '' : 's'}</span>
+      ${guestNames ? `<div class="ex-sub">${escapeHtml(guestNames)}</div>` : ''}
+    </div>`;
+  }).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
+
+  const orgNameEl = document.getElementById('org-name');
+  const shopName = escapeHtml((orgNameEl && orgNameEl.value) || 'Shop');
+  const generatedAt = new Date().toLocaleString();
+
+  const html = `<!DOCTYPE html>
+<html><head><title>${shopName} — Full Export</title>
+<style>
+  body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
+  h1 { font-size: 22px; margin-bottom: 2px; }
+  h2 { font-size: 16px; margin: 28px 0 8px; border-top: 2px solid #1a2b3c; padding-top: 14px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 10px; }
+  .ex-entry { border-bottom: 1px solid #ddd; padding: 8px 0; font-size: 12px; display:flex; gap:12px; flex-wrap:wrap; align-items:baseline; page-break-inside: avoid; }
+  .ex-sub { flex-basis: 100%; color: #555; }
+  .ex-empty { font-size: 12px; color: #888; }
+  @media print { body { padding: 10px; } h2 { page-break-before: always; } h2:first-of-type { page-break-before: avoid; } }
+</style>
+</head><body>
+  <h1>${shopName} — Full Data Export</h1>
+  <div class="meta">Generated ${generatedAt} · ${(waivers || []).length} waivers · ${(completions || []).length} checklist sign-offs · ${(trips || []).length} trips</div>
+  <h2>Waivers</h2>
+  ${waiversHtml}
+  <h2>Checklists</h2>
+  ${checklistsHtml}
+  <h2>Trip Records</h2>
+  ${tripsHtml}
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    feedback.textContent = t('wv_allow_popups_export');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+
+  feedback.textContent = t('close_shop_export_done');
+  feedback.className = 'save-feedback visible';
+  window._closeShopExported = true;
+  const confirmBtn = document.getElementById('btn-close-shop-confirm');
+  if (confirmBtn) confirmBtn.disabled = false;
 }
 
 // ─── TRIP CREW ───
