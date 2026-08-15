@@ -6509,22 +6509,28 @@ document.getElementById('btn-delete-account').addEventListener('click', async ()
 
   try {
     const { data, error } = await sb.functions.invoke('leave-org', {});
-    if (error) throw error;
 
-    if (data && data.error === 'last_owner') {
-      feedback.textContent = t('set_delete_account_err_last_owner');
-      feedback.className = 'save-feedback error visible';
-      btn.disabled = false;
-      return;
-    }
-    if (data && data.error === 'not_staff') {
-      feedback.textContent = t('set_delete_account_err_not_staff');
-      feedback.className = 'save-feedback error visible';
-      btn.disabled = false;
-      return;
-    }
-    if (data && data.error) {
-      feedback.textContent = data.error;
+    if (error) {
+      // supabase-js only fills `error` (not `data`) whenever the edge
+      // function responds with a non-2xx status -- the actual JSON body
+      // the function sent (e.g. {error:"last_owner"}) is NOT in error.message
+      // (that's always the generic "Edge Function returned a non-2xx status
+      // code"). The real body is on error.context, the raw fetch Response.
+      let code = null;
+      try {
+        if (error.context && typeof error.context.json === 'function') {
+          const body = await error.context.json();
+          code = body && body.error;
+        }
+      } catch (_) { /* context wasn't JSON -- fall through to generic message */ }
+
+      if (code === 'last_owner') {
+        feedback.textContent = t('set_delete_account_err_last_owner');
+      } else if (code === 'not_staff') {
+        feedback.textContent = t('set_delete_account_err_not_staff');
+      } else {
+        feedback.textContent = code || t('set_delete_account_err_generic');
+      }
       feedback.className = 'save-feedback error visible';
       btn.disabled = false;
       return;
