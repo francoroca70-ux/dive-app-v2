@@ -826,6 +826,57 @@ body { background: var(--navy); color: var(--text); }
 .lang-btn.active { background: var(--white); color: var(--navy); border-color: var(--white); font-weight: 800; }
 .lang-btn.active:hover { background: var(--white); color: var(--navy); }
 
+/* Account switcher -- sits on the same dark top nav as .btn-signout/.lang-btn,
+   popover menu below it is light (matches every other dropdown/modal in the app). */
+.account-switcher { position: relative; }
+.account-switcher-btn {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 3px 8px 3px 3px; cursor: pointer;
+  color: rgba(255,255,255,0.6); transition: background 0.2s;
+}
+.account-switcher-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); }
+.account-switcher-avatar, .account-switcher-row-avatar {
+  border-radius: 50%; background: var(--teal); color: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; text-transform: uppercase; flex-shrink: 0;
+}
+.account-switcher-avatar { width: 22px; height: 22px; font-size: 0.7rem; }
+.account-switcher-row-avatar { width: 26px; height: 26px; font-size: 0.72rem; }
+.account-switcher-menu {
+  position: absolute; top: calc(100% + 10px); right: 0;
+  background: var(--white); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+  min-width: 230px; max-width: 280px; padding: 6px; z-index: 200;
+}
+.account-switcher-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 8px; border-radius: 8px; cursor: pointer;
+}
+.account-switcher-row:hover { background: var(--foam); }
+.account-switcher-row.active { background: var(--foam); cursor: default; }
+.account-switcher-row-text { min-width: 0; flex: 1; }
+.account-switcher-row-email {
+  font-size: 0.82rem; font-weight: 700; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.account-switcher-row-org {
+  font-size: 0.72rem; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.account-switcher-row-remove {
+  font-size: 1rem; line-height: 1; color: #c5c5c5; padding: 4px 6px;
+  border-radius: 6px; flex-shrink: 0;
+}
+.account-switcher-row-remove:hover { color: var(--error); background: rgba(229,62,62,0.08); }
+.account-switcher-add {
+  width: 100%; text-align: left; background: none; border: none;
+  padding: 10px 8px; font-size: 0.82rem; color: var(--blue); font-weight: 700;
+  cursor: pointer; border-top: 1px solid var(--border); margin-top: 4px;
+  font-family: 'Inter', sans-serif;
+}
+.account-switcher-add:hover { background: var(--foam); }
+.account-switcher-empty { font-size: 0.78rem; color: var(--muted); padding: 10px 8px; }
+
 
 .crew-member-tag-v2 {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1847,6 +1898,21 @@ body { background: var(--navy); color: var(--text); }
         <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
       </div>
       <div class="nav-user"><span data-i18n="signed_in_as">Signed in as</span> <strong id="nav-username">—</strong></div>
+
+      <!-- Account switcher -- Google-style: every email that's ever logged in on
+           this device shows up here, and tapping one swaps the active session
+           instantly (no password) via sb.auth.setSession(). See buildAccountSwitcherMenu(). -->
+      <div class="account-switcher" id="account-switcher">
+        <button class="account-switcher-btn" id="account-switcher-btn" type="button">
+          <span class="account-switcher-avatar" id="account-switcher-avatar">—</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="account-switcher-menu" id="account-switcher-menu" style="display:none;">
+          <div id="account-switcher-list"></div>
+          <button class="account-switcher-add" id="account-switcher-add" type="button" data-i18n="switch_account_add">+ Add another account</button>
+        </div>
+      </div>
+
       <button class="btn-signout" id="btn-signout" data-i18n="sign_out">Sign out</button>
     </div>
   </nav>
@@ -3457,6 +3523,8 @@ const TRANSLATIONS = {
     nav_waivers: 'Waivers', nav_cashup: 'Daily Cash-Up', nav_reports: 'Reports', nav_settings: 'Settings',
     nav_help: 'Help & FAQ',
     signed_in_as: 'Signed in as', sign_out: 'Sign out',
+    switch_account_add: '+ Add another account', switch_account_none: 'No saved accounts yet.',
+    switch_account_remove: 'Remove from this device', switch_account_expired: 'That saved session expired. Please sign in again.',
 
     login_title: 'Sign in to your account', login_tagline: 'Water operations platform',
     login_email_label: 'Email', login_password_label: 'Password', login_signin_btn: 'Sign in', login_remember_me: 'Remember me',
@@ -4034,6 +4102,8 @@ const TRANSLATIONS = {
     nav_waivers: 'Exenciones', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
     nav_help: 'Ayuda y Preguntas',
     signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
+    switch_account_add: '+ Agregar otra cuenta', switch_account_none: 'Todavía no hay cuentas guardadas.',
+    switch_account_remove: 'Quitar de este dispositivo', switch_account_expired: 'Esa sesión guardada expiró. Por favor, iniciá sesión de nuevo.',
 
     login_title: 'Inicia sesión en tu cuenta', login_tagline: 'Plataforma de operaciones marítimas',
     login_email_label: 'Correo electrónico', login_password_label: 'Contraseña', login_signin_btn: 'Iniciar sesión', login_remember_me: 'Recordarme',
@@ -6506,6 +6576,11 @@ document.getElementById('btn-reset').addEventListener('click', async () => {
 
 // ─── SIGN OUT ───
 document.getElementById('btn-signout').addEventListener('click', async () => {
+  // A full sign-out revokes this session's refresh token server-side, so the
+  // copy sitting in ss_saved_accounts would fail next time the switcher tried
+  // to use it -- drop it from the list rather than leave a dead entry.
+  const { data: { user } } = await sb.auth.getUser();
+  if (user) removeSavedAccount(user.id);
   await sb.auth.signOut();
   showScreen('login');
   document.getElementById('login-email').value = '';
@@ -6695,6 +6770,188 @@ document.getElementById('btn-close-shop-confirm').addEventListener('click', asyn
 // ─── LISTEN FOR AUTH CHANGES ───
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') showScreen('login');
+  // Supabase rotates the refresh token on every refresh -- if the copy sitting
+  // in ss_saved_accounts isn't kept current, switching back to this account
+  // later fails with an invalid/expired token even though the person never
+  // actually signed out of it. Keeping this in sync here (rather than only at
+  // login) is what makes a long-lived saved session still switchable weeks later.
+  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+    upsertSavedAccount(session, {});
+  }
+});
+
+// ─── ACCOUNT SWITCHER (Google-style multi-session) ───
+// Every email that's ever logged in on this device gets an entry in
+// ss_saved_accounts (localStorage): { userId, email, access_token,
+// refresh_token, orgName, roleLabel }. Switching calls sb.auth.setSession()
+// with the stored tokens instead of asking for a password again -- same idea
+// as Google's account picker. This is a device-level convenience only:
+// staff.id is still exactly one auth user = one shop (see Task #34 history in
+// project notes) -- someone working two shops needs two emails (a Gmail
+// +alias works fine), this just makes swapping between them on one device
+// instant instead of a full logout/login each time.
+//
+// Deliberate trade-off, chosen explicitly over a safer "remember the email,
+// still ask for the password" alternative: on a shared shop tablet, anyone
+// who picks it up can switch straight into a saved teammate's account with no
+// password prompt. Accepted for now for speed/simplicity; a "shared device"
+// mode that forces a password on switch is a possible future addition.
+function getSavedAccounts() {
+  try {
+    const list = JSON.parse(localStorage.getItem('ss_saved_accounts') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function setSavedAccountsList(list) {
+  localStorage.setItem('ss_saved_accounts', JSON.stringify(list));
+}
+
+function upsertSavedAccount(session, extra) {
+  if (!session || !session.user) return;
+  const list = getSavedAccounts();
+  const idx = list.findIndex(a => a.userId === session.user.id);
+  const prev = idx >= 0 ? list[idx] : {};
+  const entry = {
+    userId: session.user.id,
+    email: session.user.email || prev.email || '',
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    orgName: (extra && extra.orgName) || prev.orgName || '',
+    roleLabel: (extra && extra.roleLabel) || prev.roleLabel || ''
+  };
+  if (idx >= 0) list[idx] = entry; else list.push(entry);
+  setSavedAccountsList(list);
+  renderAccountSwitcherMenu();
+}
+
+function removeSavedAccount(userId) {
+  setSavedAccountsList(getSavedAccounts().filter(a => a.userId !== userId));
+  renderAccountSwitcherMenu();
+}
+
+function closeAccountSwitcherMenu() {
+  const menu = document.getElementById('account-switcher-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+// Rebuilds both the avatar badge (current account) and the dropdown list --
+// called after every login, switch, add, or remove so the menu never shows
+// stale data. Safe to call before login too (empty list, blank avatar).
+async function renderAccountSwitcherMenu() {
+  const avatarEl = document.getElementById('account-switcher-avatar');
+  const listEl = document.getElementById('account-switcher-list');
+  if (!avatarEl || !listEl) return;
+
+  const { data: { user } } = await sb.auth.getUser();
+  const currentUserId = user ? user.id : null;
+  const accounts = getSavedAccounts();
+
+  const currentAccount = accounts.find(a => a.userId === currentUserId);
+  avatarEl.textContent = ((currentAccount && currentAccount.email) || (user && user.email) || '?').charAt(0);
+
+  if (!accounts.length) {
+    listEl.innerHTML = `<div class="account-switcher-empty">${t('switch_account_none')}</div>`;
+    return;
+  }
+
+  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  listEl.innerHTML = accounts.map(a => {
+    const isActive = a.userId === currentUserId;
+    const subtitle = [a.orgName, a.roleLabel].filter(Boolean).join(' · ');
+    return `
+      <div class="account-switcher-row${isActive ? ' active' : ''}" ${isActive ? '' : `onclick="switchToAccount('${a.userId}')"`}>
+        <span class="account-switcher-row-avatar">${escapeHtml((a.email || '?').charAt(0))}</span>
+        <div class="account-switcher-row-text">
+          <div class="account-switcher-row-email">${escapeHtml(a.email)}</div>
+          ${subtitle ? `<div class="account-switcher-row-org">${escapeHtml(subtitle)}</div>` : ''}
+        </div>
+        <span class="account-switcher-row-remove" title="${t('switch_account_remove')}" onclick="event.stopPropagation(); removeAccountFromSwitcher('${a.userId}')">&times;</span>
+      </div>`;
+  }).join('');
+}
+
+// Removing the currently-active account from the switcher is really "sign
+// out" (same as btn-signout) -- routed through the same handler so both
+// paths behave identically instead of drifting apart over time.
+function removeAccountFromSwitcher(userId) {
+  sb.auth.getUser().then(({ data: { user } }) => {
+    if (user && user.id === userId) {
+      document.getElementById('btn-signout').click();
+    } else {
+      removeSavedAccount(userId);
+    }
+  });
+}
+
+async function switchToAccount(userId) {
+  const account = getSavedAccounts().find(a => a.userId === userId);
+  if (!account) return;
+  closeAccountSwitcherMenu();
+
+  const { data, error } = await sb.auth.setSession({
+    access_token: account.access_token,
+    refresh_token: account.refresh_token
+  });
+
+  if (error || !data.session) {
+    // Saved refresh token expired or was revoked (e.g. a password change
+    // elsewhere) -- drop the dead entry and send them to a normal login for
+    // that email instead of failing silently.
+    removeSavedAccount(userId);
+    await sb.auth.signOut({ scope: 'local' }).catch(() => {});
+    showScreen('login');
+    document.getElementById('login-email').value = account.email || '';
+    const errorEl = document.getElementById('login-error');
+    if (errorEl) {
+      errorEl.textContent = t('switch_account_expired');
+      errorEl.classList.add('visible');
+    }
+    return;
+  }
+
+  initHome(data.user);
+  const settingsOk = await loadSettings(data.user);
+  if (settingsOk === false) return;
+  loadFleet();
+  loadCrew();
+  await renderCalendar();
+  await loadCurrentUserRole();
+  document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
+  await checkCrewNotifications();
+  await checkTasksNotifications();
+  await checkChecklistNotifications();
+  updateOfflineBanner();
+  flushOfflineQueue();
+  showScreen('app');
+}
+
+document.getElementById('account-switcher-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const menu = document.getElementById('account-switcher-menu');
+  const opening = menu.style.display === 'none';
+  if (opening) renderAccountSwitcherMenu();
+  menu.style.display = opening ? 'block' : 'none';
+});
+
+document.addEventListener('click', (e) => {
+  const switcher = document.getElementById('account-switcher');
+  if (switcher && !switcher.contains(e.target)) closeAccountSwitcherMenu();
+});
+
+// Keeps the current session parked (still valid, still in ss_saved_accounts)
+// instead of signing out -- signInWithPassword on the login screen simply
+// replaces the active client session with the new one once they submit it.
+document.getElementById('account-switcher-add').addEventListener('click', () => {
+  closeAccountSwitcherMenu();
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+  const errorEl = document.getElementById('login-error');
+  if (errorEl) errorEl.classList.remove('visible');
+  showScreen('login');
 });
 
 
@@ -6729,8 +6986,9 @@ async function loadSettings(user) {
       .eq('id', currentOrgId)
       .single();
 
-    // The owner closed this shop's account (see closeShopStep2Confirm) --
-    // block every entry point that funnels through here (fresh login, signup,
+    // The owner closed this shop's account (see the btn-close-shop-confirm
+    // handler and supabase/functions/close-shop) -- block every entry point
+    // that funnels through here (fresh login, signup,
     // and session restore via initAuth all call loadSettings) instead of
     // letting a half-loaded app render for someone who no longer has access.
     if (org && org.closed_at) {
@@ -6789,6 +7047,19 @@ async function loadSettings(user) {
     // hit Save to add it, uncheck one and Save to deactivate it).
     await syncCategoryCheckboxes();
     await renderTripTypesList();
+
+    // Keep the account switcher's saved copy of this session in sync,
+    // including a friendly org/role label for its dropdown -- this is the one
+    // place loadSettings already knows both, so every entry path (login,
+    // signup, session restore, and switchToAccount, which all call
+    // loadSettings) gets this for free without touching each of them.
+    const { data: { session: currentSession } } = await sb.auth.getSession();
+    if (currentSession) {
+      upsertSavedAccount(currentSession, {
+        orgName: org?.name || '',
+        roleLabel: staffRow.role.charAt(0).toUpperCase() + staffRow.role.slice(1)
+      });
+    }
   } else {
     // No staff row yet -- brand new signup (possibly via the email-confirm
     // path, so this may run on a later login, not just right after signup).
@@ -6799,6 +7070,8 @@ async function loadSettings(user) {
       if (ownerNameInput && !ownerNameInput.value) ownerNameInput.value = pendingName;
       localStorage.removeItem('ss_pending_owner_name');
     }
+    const { data: { session: currentSession } } = await sb.auth.getSession();
+    if (currentSession) upsertSavedAccount(currentSession, {});
   }
   return true;
 }
