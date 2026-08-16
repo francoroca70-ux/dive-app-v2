@@ -101,7 +101,18 @@ Deno.serve(async (req: Request) => {
           role: invite.role,
           custom_role_name: invite.role === "custom" ? (invite.custom_role_name || null) : null,
         });
-        if (staffErr) return json({ error: staffErr.message }, 500);
+        if (staffErr) {
+          // A foreign-key failure here means userId doesn't exist in
+          // auth.users -- the client sent a bad id (e.g. Supabase's
+          // anti-enumeration decoy user for an email that already has an
+          // account). Never leak the raw Postgres constraint name to the
+          // tester; give index.html a stable code it can show a real
+          // message for instead.
+          if (staffErr.code === "23503") {
+            return json({ error: "invalid_user_link" }, 400);
+          }
+          return json({ error: staffErr.message }, 500);
+        }
 
         if (invite.location_id) {
           await sb.from("staff_locations").insert({ staff_id: userId, location_id: invite.location_id });

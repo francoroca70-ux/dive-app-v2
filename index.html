@@ -5229,13 +5229,25 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
   let userId = null;
   const { data: signUpData, error: signUpErr } = await sb.auth.signUp({ email: pendingInvite.email, password });
 
-  if (!signUpErr && signUpData?.user) {
+  // Supabase's anti-enumeration behavior (active whenever "Confirm email" is
+  // on, which it is for this project): signUp() for an email that ALREADY
+  // has an account returns a fake "success" -- no error, but the user object
+  // is a decoy with an empty identities array, and its id does NOT exist in
+  // auth.users. Treating that id as real and handing it to invite-accept
+  // produced a raw Postgres foreign-key crash on the staff insert (a tester
+  // hit this directly). Detect the decoy the way Supabase's own docs
+  // recommend and route it through the same "already has an account" path
+  // used for the signUpErr case below, instead of trusting the fake id.
+  const isDecoyUser = !signUpErr && signUpData?.user &&
+    Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0;
+
+  if (!signUpErr && signUpData?.user && !isDecoyUser) {
     userId = signUpData.user.id;
     if (!signUpData.session) {
       const { data: signInData } = await sb.auth.signInWithPassword({ email: pendingInvite.email, password });
       if (signInData?.session) userId = signInData.user.id;
     }
-  } else if (signUpErr) {
+  } else if (signUpErr || isDecoyUser) {
     // Most likely: this email already has an account (e.g. they work at another shop too).
     const { data: signInData, error: signInErr } = await sb.auth.signInWithPassword({ email: pendingInvite.email, password });
     if (signInErr || !signInData?.user) {
@@ -5276,7 +5288,14 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
         if (body?.error) detail = body.error;
       } catch (_) { /* body wasn't JSON -- keep the message we already have */ }
     }
-    errorEl.textContent = t('auth_link_error_prefix') + detail;
+    // "invalid_user_link" is invite-accept's stable code for the FK case
+    // (userId didn't exist in auth.users) -- show the same "already has an
+    // account" message used elsewhere instead of a raw error code.
+    if (detail === 'invalid_user_link') {
+      errorEl.textContent = t('auth_account_exists');
+    } else {
+      errorEl.textContent = t('auth_link_error_prefix') + detail;
+    }
     errorEl.classList.add('visible');
     btn.disabled = false; btn.textContent = t('auth_set_up_account');
     return;
