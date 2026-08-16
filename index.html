@@ -2716,6 +2716,13 @@ body { background: var(--navy); color: var(--text); }
           <div id="inventory-no-location" style="display:none;">
             <p style="color:var(--muted);" data-i18n="gear_select_location_inventory">Select a location above to view inventory.</p>
           </div>
+          <!-- Plain stock category (e.g. "Spare Parts") -- deliberately separate
+               from Settings -> Operation Categories, which seeds trip types and
+               checklists too. This just adds an empty gear_categories row for
+               organizing inventory; see btn-add-gear-category's handler. -->
+          <div style="margin-bottom:14px;">
+            <button class="btn-add" id="btn-add-gear-category" data-i18n="gr_add_category_btn">+ Add category</button>
+          </div>
           <div id="inventory-categories"></div>
         </div>
 
@@ -3668,6 +3675,10 @@ const TRANSLATIONS = {
     gr_avail_btn: 'Avail', gr_available_btn: 'Available', gr_discard_btn: '✕ Discard',
     gr_no_categories_active: 'No gear categories active. Enable categories in Settings.',
     gr_add_item_btn: '+ Add item', gr_add_item_prompt: 'Add a new item to this category — enter its name and unit.',
+    gr_add_category_btn: '+ Add category',
+    gr_add_category_prompt: 'Name your new inventory category (e.g. "Spare Parts", "Cleaning Supplies").',
+    gr_add_category_placeholder: 'Category name',
+    gr_add_category_no_permission: 'Only owners and managers can add inventory categories.',
     gr_add_item_name_placeholder: 'Item name', gr_add_item_unit_placeholder: 'Unit (e.g. units, kg, sets)',
     gr_add_item_error: 'Error adding item.',
     gr_unit_units: 'units', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'bars', gr_unit_sets: 'sets',
@@ -4249,6 +4260,10 @@ const TRANSLATIONS = {
     gr_avail_btn: 'Disp.', gr_available_btn: 'Disponible', gr_discard_btn: '✕ Descartar',
     gr_no_categories_active: 'No hay categorías de equipo activas. Actívalas en Configuración.',
     gr_add_item_btn: '+ Agregar artículo', gr_add_item_prompt: 'Agrega un artículo nuevo a esta categoría — ingresa su nombre y unidad.',
+    gr_add_category_btn: '+ Agregar categoría',
+    gr_add_category_prompt: 'Nombra tu nueva categoría de inventario (ej. "Repuestos", "Insumos de limpieza").',
+    gr_add_category_placeholder: 'Nombre de la categoría',
+    gr_add_category_no_permission: 'Solo propietarios y gerentes pueden agregar categorías de inventario.',
     gr_add_item_name_placeholder: 'Nombre del artículo', gr_add_item_unit_placeholder: 'Unidad (ej. unidades, kg, juegos)',
     gr_add_item_error: 'Error al agregar el artículo.',
     gr_unit_units: 'unidades', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'barras', gr_unit_sets: 'juegos',
@@ -13709,6 +13724,40 @@ function showGearView(view, el) {
   if (view === 'inspection') loadInspectionChecklist();
   if (view === 'registry') loadGearRegistry();
 }
+
+// Adds a plain gear_categories row for organizing stock -- e.g. a mechanic's
+// "Spare Parts" category -- with NO relation to Settings -> Operation
+// Categories. That flow (set_add_category_btn) seeds trip types, an
+// inspection checklist, AND starter gear, all keyed off a fixed set of
+// business-type keys (scuba/surf/freediving/yacht/etc). This one is
+// deliberately the opposite: a random, never-colliding key so
+// CATEGORY_STARTER_GEAR/CATEGORY_STARTER_INSPECTION never match it, meaning
+// it never seeds anything and never affects trip types or checklists --
+// it's just an empty bucket the person then adds their own gear items to via
+// the existing "+ Add item" button on the category once it appears below.
+document.getElementById('btn-add-gear-category').addEventListener('click', async () => {
+  const canManage = ['owner', 'manager'].includes(currentUserRole);
+  if (!canManage) {
+    await showAlertModal(t('gr_add_category_no_permission'));
+    return;
+  }
+  const label = await showPromptModal(t('gr_add_category_prompt'), t('gr_add_category_placeholder'));
+  if (!label) return;
+
+  const key = 'custom_' + label.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents, e.g. "Repuestos" stays clean
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40)
+    + '_' + Date.now().toString(36).slice(-5);
+
+  const { error } = await sb.from('gear_categories').insert({
+    org_id: currentOrgId, key, label, active: true
+  });
+  if (error) {
+    await showAlertModal(error.message);
+    return;
+  }
+  await loadGearInventory();
+});
 
 async function loadGearInventory() {
   const noLocEl = document.getElementById('inventory-no-location');
