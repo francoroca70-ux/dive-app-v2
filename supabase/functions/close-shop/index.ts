@@ -1,13 +1,25 @@
 // Supabase Edge Function: close-shop
 // Powers the owner-only "Close This Shop's Account" flow in Settings (Danger
 // Zone, below the plain "leave this shop" button). This is deliberately NOT
-// a delete -- per Fran's call, closing a shop sets organizations.closed_at
-// instead of destroying anything. Waivers exist specifically for legal/
-// insurance protection, so permanently erasing a shop's whole history the
-// moment its subscription ends would defeat the product's own purpose if a
-// claim ever surfaces later. Blocking login is what actually matters here;
-// data retention afterward is a separate, more careful decision than a
-// single self-service button should make irreversibly.
+// a delete of the org's history -- per Fran's call, closing a shop sets
+// organizations.closed_at instead of destroying anything. Waivers exist
+// specifically for legal/insurance protection, so permanently erasing a
+// shop's whole history the moment its subscription ends would defeat the
+// product's own purpose if a claim ever surfaces later. Blocking login is
+// what actually matters here; data retention afterward is a separate, more
+// careful decision than a single self-service button should make
+// irreversibly.
+//
+// It DOES remove every staff row tied to this org (owner included), same as
+// leave-org already does for a single person -- necessary, not optional:
+// staff.id is one auth user = one org (see index.html's account-switcher
+// comment), so if we left the rows in place, every teammate's email would
+// stay permanently wedded to this now-closed, now-unloggable-into org and
+// could never be invited into a different shop later. This mirrors
+// removeStaff()'s existing behavior (already routinely deletes staff rows
+// without touching checklist_completions/waivers/trip_groups/cash_ups --
+// those tables don't cascade off staff_id), so no legal/audit history is
+// lost, only the login-linking rows.
 //
 // Requires organizations.closed_at (timestamptz, nullable) to exist -- run
 // once in the Supabase SQL Editor:
@@ -75,6 +87,23 @@ Deno.serve(async (req: Request) => {
       .eq("id", staffRow.org_id);
 
     if (updateErr) return json({ error: updateErr.message }, 500);
+
+    // Free every teammate's email, not just the owner's -- everyone at this
+    // org is about to be locked out by closed_at anyway, so leaving their
+    // staff rows in place would only trap their emails with no way to ever
+    // join a different shop. checklist_completions/waivers/trip_groups/
+    // cash_ups keep their own staff_id references untouched (same as a
+    // normal remove-crew today), so no history is lost here.
+    const { data: allStaff } = await sb
+      .from("staff")
+      .select("id")
+      .eq("org_id", staffRow.org_id);
+
+    const staffIds = (allStaff || []).map((s) => s.id);
+    if (staffIds.length) {
+      await sb.from("staff_locations").delete().in("staff_id", staffIds);
+      await sb.from("staff").delete().in("id", staffIds);
+    }
 
     return json({ success: true });
   } catch (err) {
