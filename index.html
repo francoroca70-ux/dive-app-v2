@@ -843,10 +843,16 @@ body { background: var(--navy); color: var(--text); }
 }
 .account-switcher-avatar { width: 22px; height: 22px; font-size: 0.7rem; }
 .account-switcher-row-avatar { width: 26px; height: 26px; font-size: 0.72rem; }
+/* Fixed (not absolute) on purpose -- #screen-app has overflow:hidden (it's
+   the app's fixed-height/scroll-clipped shell), which would clip an
+   absolutely-positioned dropdown the moment it extended past the 56px-tall
+   .app-nav. position:fixed escapes that entirely; top/right get set from
+   the button's actual screen position in JS when the menu opens (see the
+   account-switcher-btn click handler) so this is just a fallback. */
 .account-switcher-menu {
-  position: absolute; top: calc(100% + 10px); right: 0;
+  position: fixed; top: 66px; right: 20px;
   background: var(--white); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.2);
-  min-width: 260px; max-width: 300px; padding: 6px; z-index: 200;
+  min-width: 260px; max-width: 300px; padding: 6px; z-index: 9999;
 }
 /* Header -- the currently-active account, Google-style ("Hi, Franco" + email
    + shop/role), not clickable. Separated visually from the switch-list below
@@ -1941,8 +1947,6 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
       </div>
-
-      <button class="btn-signout" id="btn-signout" data-i18n="sign_out">Sign out</button>
     </div>
   </nav>
 
@@ -6608,7 +6612,13 @@ document.getElementById('btn-reset').addEventListener('click', async () => {
 });
 
 // ─── SIGN OUT ───
-document.getElementById('btn-signout').addEventListener('click', async () => {
+// No standalone "Sign out" button in the top nav anymore -- it did exactly
+// the same thing as the account switcher's "Forget this account", so having
+// both was redundant clutter (same call Google makes: no separate persistent
+// sign-out button outside the account menu). This function is the one real
+// implementation both the switcher's header button and per-row remove
+// (for the active account) call into.
+async function performSignOutCurrentAccount() {
   // A full sign-out revokes this session's refresh token server-side, so the
   // copy sitting in ss_saved_accounts would fail next time the switcher tried
   // to use it -- drop it from the list rather than leave a dead entry.
@@ -6618,7 +6628,7 @@ document.getElementById('btn-signout').addEventListener('click', async () => {
   showScreen('login');
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
-});
+}
 
 // ─── SETTINGS: CHANGE PASSWORD (while already signed in) ───
 // This used to be a dead button -- no click handler existed at all, so
@@ -6941,7 +6951,7 @@ async function renderAccountSwitcherMenu() {
 function removeAccountFromSwitcher(userId) {
   sb.auth.getUser().then(({ data: { user } }) => {
     if (user && user.id === userId) {
-      document.getElementById('btn-signout').click();
+      performSignOutCurrentAccount();
     } else {
       removeSavedAccount(userId);
     }
@@ -6994,7 +7004,16 @@ document.getElementById('account-switcher-btn').addEventListener('click', (e) =>
   e.stopPropagation();
   const menu = document.getElementById('account-switcher-menu');
   const opening = menu.style.display === 'none';
-  if (opening) renderAccountSwitcherMenu();
+  if (opening) {
+    renderAccountSwitcherMenu();
+    // .account-switcher-menu is position:fixed (see its CSS comment for why),
+    // so it needs real viewport coordinates instead of relying on the parent
+    // .account-switcher's position -- computed fresh on every open in case
+    // the window was resized since the last time.
+    const btnRect = document.getElementById('account-switcher-btn').getBoundingClientRect();
+    menu.style.top = Math.round(btnRect.bottom + 10) + 'px';
+    menu.style.right = Math.round(window.innerWidth - btnRect.right) + 'px';
+  }
   menu.style.display = opening ? 'block' : 'none';
 });
 
