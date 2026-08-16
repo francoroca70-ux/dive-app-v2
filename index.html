@@ -1794,6 +1794,30 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
+<!-- ─── "TAP TO CONTINUE" INTERSTITIAL (reached via the wrapped reset-password link) ───
+     Yahoo/Outlook/corporate mail security scanners auto-visit links inside
+     incoming emails to scan for phishing, before the real person ever clicks.
+     Supabase's actual reset link is a one-time-use token -- if the scanner's
+     bot hits it first, the token is burned and the real tester's click fails
+     silently or shows an expired-link error, even though "the email arrived
+     fine". The fix (Supabase's own recommended pattern): the email link no
+     longer points directly at Supabase's token-consuming URL -- it points
+     here with that URL tucked inside the #fragment, which scanners never
+     fetch because fragments never leave the browser. Only a real tap on the
+     button below actually navigates to (and consumes) the token. -->
+<div id="screen-confirm-reset" class="screen">
+  <div class="login-box">
+    <div class="login-logo-badge"><img src="assets/logo-full.png" alt="Seven Seas"></div>
+    <div class="login-tagline" data-i18n="login_tagline">Water operations platform</div>
+    <div class="login-card">
+      <h2 data-i18n="confirm_reset_title">Continue resetting your password</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:20px;" data-i18n="confirm_reset_subtitle">Tap below to continue. This extra step keeps your email provider's security scanner from using up the link before you do.</p>
+      <button class="btn-login" id="btn-confirm-reset-continue" data-i18n="confirm_reset_btn">Continue</button>
+      <div class="login-error" id="confirm-reset-error"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ─── SET NEW PASSWORD SCREEN (reached via the reset-password email link) ───
      Supabase's recovery link logs the browser in with a temporary session so
      updateUser({password}) can succeed, but that also means the normal boot
@@ -3608,6 +3632,7 @@ const TRANSLATIONS = {
     forgot_title: 'Reset your password', forgot_back: '← Back to sign in', forgot_email_label: 'Email',
     forgot_send_btn: 'Send reset link', forgot_success: 'Reset link sent — check your inbox.',
     reset_pw_title: 'Set a new password', reset_pw_subtitle: 'Choose a new password for your account.', reset_pw_success: 'Password updated — taking you in...',
+    confirm_reset_title: 'Continue resetting your password', confirm_reset_subtitle: "Tap below to continue. This extra step keeps your email provider's security scanner from using up the link before you do.", confirm_reset_btn: 'Continue',
 
     accept_invite_name_label: 'Full name', accept_invite_email_label: 'Email', accept_invite_password_label: 'Password',
     accept_invite_btn: 'Set up account',
@@ -4193,6 +4218,7 @@ const TRANSLATIONS = {
     forgot_title: 'Restablece tu contraseña', forgot_back: '← Volver a iniciar sesión', forgot_email_label: 'Correo electrónico',
     forgot_send_btn: 'Enviar enlace', forgot_success: 'Enlace enviado — revisa tu correo.',
     reset_pw_title: 'Elegí una nueva contraseña', reset_pw_subtitle: 'Elegí una nueva contraseña para tu cuenta.', reset_pw_success: 'Contraseña actualizada — entrando...',
+    confirm_reset_title: 'Continuá con el cambio de contraseña', confirm_reset_subtitle: 'Tocá el botón para continuar. Este paso extra evita que el escáner de seguridad de tu proveedor de mail use el link antes que vos.', confirm_reset_btn: 'Continuar',
 
     accept_invite_name_label: 'Nombre completo', accept_invite_email_label: 'Correo electrónico', accept_invite_password_label: 'Contraseña',
     accept_invite_btn: 'Configurar cuenta',
@@ -14912,7 +14938,30 @@ function checkForPasswordRecovery() {
   return true;
 }
 
+// Catches the wrapped reset-password link (see the email template change
+// below). The real, token-consuming Supabase URL is tucked after
+// "#confirm=" instead of being the link itself -- fragments never leave the
+// browser, so a mail scanner's auto-prefetch just loads this blank
+// interstitial and gives up. Only a real tap on the button navigates to the
+// actual confirmation URL, which is when the token actually gets consumed.
+function checkForWrappedConfirmLink() {
+  const hash = window.location.hash || '';
+  if (!hash.startsWith('#confirm=')) return false;
+  const wrappedUrl = hash.slice('#confirm='.length);
+  if (!wrappedUrl) return false;
+  showScreen('confirm-reset');
+  document.getElementById('btn-confirm-reset-continue').onclick = () => {
+    // decodeURIComponent is safe even if the template didn't encode it --
+    // a raw https:// URL has no % sequences for it to touch.
+    let target = wrappedUrl;
+    try { target = decodeURIComponent(wrappedUrl); } catch (e) { /* already raw, use as-is */ }
+    window.location.href = target;
+  };
+  return true;
+}
+
 (async () => {
+  if (checkForWrappedConfirmLink()) { hideLoadingScreen(); return; }
   if (checkForPasswordRecovery()) { hideLoadingScreen(); return; }
   const hasInvite = await checkForInviteToken();
   if (hasInvite) { hideLoadingScreen(); return; }
