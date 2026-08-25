@@ -71,7 +71,7 @@ html, body { height: 100%; font-family: 'Inter', sans-serif; overscroll-behavior
 body { background: var(--navy); color: var(--text); }
 
 /* ─── SCREENS ─── */
-.screen { display: none; min-height: 100vh; }
+.screen { display: none; min-height: 100vh; min-height: 100dvh; }
 .screen.active { display: flex; }
 
 /* ─── LOGIN SCREEN ─── */
@@ -204,6 +204,14 @@ body { background: var(--navy); color: var(--text); }
   flex-direction: column;
   background: var(--foam);
   height: 100vh;
+  /* iOS Safari/WKWebView's 100vh doesn't reliably match the true visible
+     viewport (it's inconsistent with the safe-area/home-indicator math),
+     which left a sliver of the navy <body> background exposed below this
+     box on the iPhone build -- the "wasted navy strip at the bottom" Fran
+     saw. 100dvh is the viewport unit that actually tracks the real visible
+     area; browsers that don't understand it just ignore this line and keep
+     the 100vh above. */
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -1425,7 +1433,19 @@ body { background: var(--navy); color: var(--text); }
      otherwise on a notched/Dynamic Island phone the sidebar starts a bit too
      high, tucked partly under the (now taller) nav bar instead of right below it. */
   .sidebar { display: none; position: fixed; z-index: 40; height: calc(100vh - 56px - env(safe-area-inset-top, 0px)); top: calc(56px + env(safe-area-inset-top, 0px)); }
-  .sidebar.open { display: flex; }
+  /* The sidebar's desktop width (64px, expanding to 220px only on :hover) is
+     a mouse-only interaction -- touch has no hover state, so opening it on
+     mobile was stuck at the narrow 64px icon rail with zero labels, floating
+     over/cutting into the page content instead of reading as a real menu.
+     Forces the expanded look (width + visible labels) whenever .open is set
+     on mobile, plus a dimmed backdrop behind it (tap outside to close) --
+     the standard off-canvas-drawer pattern this was missing. */
+  .sidebar.open { display: flex; width: min(78vw, 260px); box-shadow: 4px 0 24px rgba(10,22,40,0.28); }
+  .sidebar.open .nav-item { font-size: 0.845rem; }
+  .sidebar.open .nav-icon { font-size: 1rem; }
+  .sidebar.open .nav-section-label { opacity: 0.6; }
+  .sidebar-backdrop { display: none; position: fixed; z-index: 39; inset: 0; background: rgba(10,22,40,0.45); }
+  .sidebar-backdrop.open { display: block; }
   /* The bottom nav's "More" button now opens this same sidebar drawer, so
      the header hamburger is a redundant second control for the same action
      -- removed per Fran, now that there's a persistent way to reach it below. */
@@ -2071,6 +2091,11 @@ body { background: var(--navy); color: var(--text); }
   </div>
 
   <div class="app-body">
+
+    <!-- Dimmed backdrop behind the mobile drawer -- tapping it closes the sidebar,
+         same as tapping outside any standard off-canvas menu. Desktop never
+         shows this (sidebar is always visible there, never an overlay). -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
@@ -5739,7 +5764,7 @@ function showPage(id) {
   document.querySelectorAll('.nav-item, .bottom-nav .bnav-item[data-page]').forEach(n => {
     n.classList.toggle('active', n.dataset.page === id);
   });
-  document.getElementById('sidebar').classList.remove('open');
+  closeSidebar();
   // Home's "Getting started" checklist and its financial summary are only
   // computed once at login/settings-save (updateHomeBanner). Without this,
   // finishing a setup step (e.g. pricing a trip type) in Settings and then
@@ -5763,9 +5788,22 @@ document.querySelectorAll('.nav-item').forEach(item => {
 });
 
 // ─── SIDEBAR TOGGLE (mobile) ───
-document.getElementById('sidebar-toggle').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
+// Centralized here so every place that can open/close the drawer (the old
+// header hamburger, the bottom nav's "More", showPage() navigating away, and
+// tapping the dimmed backdrop) all stay in sync with each other automatically.
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-backdrop').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
+}
+document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
 
 // ─── BOTTOM NAV (mobile) ───
 // Home / Calendar / Checklists / Tasks route straight through the same
@@ -5776,9 +5814,7 @@ document.getElementById('sidebar-toggle').addEventListener('click', () => {
 document.querySelectorAll('.bottom-nav .bnav-item[data-page]').forEach(item => {
   item.addEventListener('click', () => showPage(item.dataset.page));
 });
-document.getElementById('bnav-more').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
+document.getElementById('bnav-more').addEventListener('click', toggleSidebar);
 
 // ─── HOME PAGE ───
 function initHome(user) {
