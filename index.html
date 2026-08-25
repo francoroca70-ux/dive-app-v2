@@ -1362,6 +1362,54 @@ body { background: var(--navy); color: var(--text); }
   font-size: 1.2rem;
 }
 
+/* Bottom nav bar (mobile only) -- floating rounded "bubble" bar, same idea as
+   Instagram/iOS's current tab-bar dock: the whole bar's corners are noticeably
+   softer/rounder than the small chip that highlights the active icon inside
+   it, so the active item still reads as its own distinct shape nested inside
+   the bigger pill. Hidden on desktop -- the sidebar already covers this. */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  left: 14px; right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  height: 64px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  box-shadow: 0 6px 24px rgba(10,22,40,0.16);
+  z-index: 45;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 6px;
+}
+.bnav-item {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px;
+  width: 54px; height: 48px;
+  border-radius: 16px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.bnav-item.active { background: var(--foam); color: var(--blue); }
+.bnav-item svg { display: block; }
+.bnav-badge {
+  display: none; position: absolute; top: 4px; right: 10px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--error); border: 1.5px solid var(--white);
+}
+
+@media (max-width: 768px) {
+  .bottom-nav { display: flex; }
+  /* Leaves room so the last card in any page doesn't end up hidden behind
+     the floating bar -- .app-main is the actual scroll container. */
+  .app-main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
+}
+
 @media (max-width: 768px) {
   /* top/height account for the same safe-area growth .app-nav gets above --
      otherwise on a notched/Dynamic Island phone the sidebar starts a bit too
@@ -2056,6 +2104,29 @@ body { background: var(--navy); color: var(--text); }
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> <span data-i18n="nav_help">Help &amp; FAQ</span>
       </div>
     </aside>
+
+    <!-- Bottom nav (mobile only) -- Home / Calendar / Checklists / Tasks / More.
+         "More" opens the same sidebar drawer as the header hamburger; the four
+         page buttons reuse showPage() so behavior stays identical to the sidebar. -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button type="button" class="bnav-item active" data-page="home" aria-label="Home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      </button>
+      <button type="button" class="bnav-item" data-page="calendar" aria-label="Calendar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </button>
+      <button type="button" class="bnav-item" data-page="checklists" aria-label="Checklists" style="position:relative;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span id="checklist-notification-badge-bnav" class="bnav-badge"></span>
+      </button>
+      <button type="button" class="bnav-item" data-page="tasks" aria-label="Tasks" style="position:relative;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span id="tasks-notification-badge-bnav" class="bnav-badge"></span>
+      </button>
+      <button type="button" class="bnav-item" id="bnav-more" aria-label="More">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </nav>
 
     <!-- Main content -->
     <main class="app-main">
@@ -5652,7 +5723,7 @@ function showScreen(id) {
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => {
+  document.querySelectorAll('.nav-item, .bottom-nav .bnav-item[data-page]').forEach(n => {
     n.classList.toggle('active', n.dataset.page === id);
   });
   document.getElementById('sidebar').classList.remove('open');
@@ -5680,6 +5751,19 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 // ─── SIDEBAR TOGGLE (mobile) ───
 document.getElementById('sidebar-toggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// ─── BOTTOM NAV (mobile) ───
+// Home / Calendar / Checklists / Tasks route straight through the same
+// showPage() the sidebar uses, so there's exactly one place that decides what
+// happens when a page is opened. "More" reuses the sidebar drawer instead of
+// duplicating the rest of the menu (Fleet, Crew, Gear, Waivers, Cash-Up,
+// Reports, Settings, Help) into a second nav surface.
+document.querySelectorAll('.bottom-nav .bnav-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => showPage(item.dataset.page));
+});
+document.getElementById('bnav-more').addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('open');
 });
 
@@ -6547,6 +6631,8 @@ async function checkTasksNotifications() {
   if (!user) { badge.style.display = 'none'; return; }
   const { count } = await sb.from('task_list_assignees').select('id', { count: 'exact', head: true }).eq('staff_id', user.id).is('seen_at', null);
   badge.style.display = (count && count > 0) ? 'block' : 'none';
+  const bnavBadge = document.getElementById('tasks-notification-badge-bnav');
+  if (bnavBadge) bnavBadge.style.display = badge.style.display;
 }
 // Orange dot on the Checklists nav item -- fires when the person has a trip
 // assigned to them (today, via trip_crew) that has no checklist_completions
@@ -6575,6 +6661,8 @@ async function checkChecklistNotifications() {
   const completedTripIds = new Set((completions || []).map(c => c.trip_id));
   const hasPending = myTripsToday.some(tr => !completedTripIds.has(tr.id));
   badge.style.display = hasPending ? 'block' : 'none';
+  const bnavBadge = document.getElementById('checklist-notification-badge-bnav');
+  if (bnavBadge) bnavBadge.style.display = badge.style.display;
 }
 async function checkCrewNotifications() {
   const badge = document.getElementById('crew-notification-badge');
