@@ -2651,8 +2651,42 @@ body { background: var(--navy); color: var(--text); }
              there's a single captain morning checklist, and it's still logged the same way. -->
         <div id="cl-department" class="cl-view" style="display:none;">
           <div class="card">
-            <div class="card-section-title" style="margin-bottom:4px;" data-i18n="cl_department_routines">Department Routines</div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px;">
+              <div class="card-section-title" style="margin-bottom:0;" data-i18n="cl_department_routines">Department Routines</div>
+              <button class="btn-icon" id="btn-show-new-checklist" style="white-space:nowrap;" data-i18n="cl_new_checklist_btn">+ New checklist</button>
+            </div>
             <p class="card-desc" style="margin-bottom:14px;" data-i18n="cl_reusable_routines_hint">Recurring routines per department, each signed off and logged.</p>
+
+            <div class="inline-form" id="form-new-checklist" style="display:none;margin-bottom:20px;">
+              <div class="card-section-title" style="margin-bottom:10px;" data-i18n="cl_new_checklist_title">New department checklist</div>
+              <div class="sf-group">
+                <label class="sf-label" data-i18n="cl_new_checklist_for_label">For role</label>
+                <select class="sf-input" id="new-checklist-role"></select>
+              </div>
+              <div class="sf-group">
+                <label class="sf-label" data-i18n="cl_new_checklist_title_label">Checklist title</label>
+                <input class="sf-input" type="text" id="new-checklist-title" data-i18n-placeholder="cl_new_checklist_title_ph" placeholder="e.g. Engine Room Morning Check">
+              </div>
+              <div class="sf-group">
+                <label class="sf-label" data-i18n="cl_new_checklist_cadence_label">Frequency</label>
+                <select class="sf-input" id="new-checklist-cadence">
+                  <option value="morning" data-i18n="cl_cadence_morning">Morning</option>
+                  <option value="eod" data-i18n="cl_cadence_eod">End of Day</option>
+                  <option value="monthly" data-i18n="cl_cadence_monthly">Monthly</option>
+                  <option value="yearly" data-i18n="cl_cadence_yearly">Yearly</option>
+                </select>
+              </div>
+              <div class="sf-group">
+                <label class="sf-label" data-i18n="cl_new_checklist_items_label">Items (one per line)</label>
+                <textarea class="sf-input" id="new-checklist-items" rows="5" data-i18n-placeholder="cl_new_checklist_items_ph" placeholder="One checklist item per line"></textarea>
+              </div>
+              <div id="new-checklist-error" style="color:var(--error);font-size:0.83rem;margin-bottom:8px;display:none;"></div>
+              <div class="settings-actions">
+                <button class="btn-save" id="btn-save-new-checklist" data-i18n="cl_new_checklist_save">Save checklist</button>
+                <button class="btn-cancel" id="btn-cancel-new-checklist" data-i18n="cl_new_checklist_cancel">Cancel</button>
+              </div>
+            </div>
+
             <div class="cl-role-tab-row" id="dept-tabs"></div>
             <div class="cl-tab-row" id="dept-cadence-tabs" style="margin-top:10px;"></div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0;">
@@ -2669,6 +2703,7 @@ body { background: var(--navy); color: var(--text); }
                 <button class="btn-cancel" onclick="resetDeptRoutine()" data-i18n="cl_reset">Reset</button>
               </div>
             </div>
+            <div id="dept-custom-list"></div>
           </div>
         </div>
 
@@ -3872,6 +3907,14 @@ const TRANSLATIONS = {
     cl_captain_signoff: 'Captain Sign-Off', cl_captain_name: 'Captain name', cl_boat_name: 'Boat name',
     cl_sign_off_depart: 'Sign Off — Clear to Depart', cl_department_routines: 'Department Checklists',
     cl_reusable_routines_hint: 'Recurring routines per department, each signed off and logged.',
+    cl_new_checklist_btn: '+ New checklist', cl_new_checklist_title: 'New department checklist',
+    cl_new_checklist_for_label: 'For role', cl_new_checklist_title_label: 'Checklist title',
+    cl_new_checklist_title_ph: 'e.g. Engine Room Morning Check', cl_new_checklist_cadence_label: 'Frequency',
+    cl_new_checklist_items_label: 'Items (one per line)', cl_new_checklist_items_ph: 'One checklist item per line',
+    cl_new_checklist_save: 'Save checklist', cl_new_checklist_cancel: 'Cancel',
+    cl_new_checklist_no_role: "Your role can't create department checklists.",
+    cl_new_checklist_need_title_items: 'Add a title and at least one item.',
+    cl_delete_checklist: 'Delete', cl_delete_checklist_confirm: "Delete this checklist? This can't be undone.",
     cl_complete_check: 'Complete ✓', cl_enter_captain_name: 'Enter captain name to sign off.', cl_enter_your_name: 'Enter your name to sign off.',
     cl_items_incomplete: ' items incomplete. Sign off anyway?', cl_signed_off_by: 'Signed off by ', cl_saved_offline_sync: ' (saved offline — will sync automatically)',
     cl_no_trips_today: 'No trips today. You can still use checklists independently.', cl_guest_singular: 'guest', cl_guest_plural: 'guests',
@@ -4460,6 +4503,14 @@ const TRANSLATIONS = {
     cl_captain_signoff: 'Confirmación del Capitán', cl_captain_name: 'Nombre del capitán', cl_boat_name: 'Nombre de la embarcación',
     cl_sign_off_depart: 'Confirmar — Listo para Zarpar', cl_department_routines: 'Checklists por Departamento',
     cl_reusable_routines_hint: 'Checklists recurrentes por departamento, cada una firmada y logueada.',
+    cl_new_checklist_btn: '+ Nueva checklist', cl_new_checklist_title: 'Nueva checklist de departamento',
+    cl_new_checklist_for_label: 'Para el rol', cl_new_checklist_title_label: 'Título de la checklist',
+    cl_new_checklist_title_ph: 'Ej: Revisión matutina de sala de máquinas', cl_new_checklist_cadence_label: 'Frecuencia',
+    cl_new_checklist_items_label: 'Ítems (uno por línea)', cl_new_checklist_items_ph: 'Un ítem de checklist por línea',
+    cl_new_checklist_save: 'Guardar checklist', cl_new_checklist_cancel: 'Cancelar',
+    cl_new_checklist_no_role: 'Tu rol no puede crear checklists de departamento.',
+    cl_new_checklist_need_title_items: 'Agregá un título y al menos un ítem.',
+    cl_delete_checklist: 'Eliminar', cl_delete_checklist_confirm: '¿Eliminar esta checklist? No se puede deshacer.',
     cl_complete_check: 'Completo ✓', cl_enter_captain_name: 'Ingresa el nombre del capitán para confirmar.', cl_enter_your_name: 'Ingresa tu nombre para confirmar.',
     cl_items_incomplete: ' elementos incompletos. ¿Confirmar de todos modos?', cl_signed_off_by: 'Confirmado por ', cl_saved_offline_sync: ' (guardado sin conexión — se sincronizará automáticamente)',
     cl_no_trips_today: 'No hay salidas hoy. Aún puedes usar las listas de verificación de forma independiente.', cl_guest_singular: 'huésped', cl_guest_plural: 'huéspedes',
@@ -12339,6 +12390,194 @@ function visibleDeptKeysForCurrentUser() {
   return (mapped && mapped.length) ? mapped.filter(k => allKeys.includes(k)) : allKeys;
 }
 
+// ─── CUSTOM DEPARTMENT CHECKLISTS ───
+// Lets a department "head" build their own checklist for their own crew,
+// instead of only owner/manager being able to add new checklist content.
+// Per Fran: where a real hierarchy already exists (head_steward > steward,
+// head_chef > chef) the head creates for the role they lead. Where roles are
+// peers with no head (deck: first_mate/deckhand/bosun/engineer; instructor:
+// instructor/divemaster/dive_guide/equipment_technician), each role creates
+// only for itself, since their day-to-day routines genuinely differ even
+// though they share a department tab today.
+const CHECKLIST_HEAD_OF = { head_steward: 'steward', head_chef: 'chef' };
+
+// Which Department Checklists tab a given specific role's custom checklists
+// should render under -- reuses the same grouping already established for
+// tab visibility, just read role-first instead of dept-first.
+function deptKeyForRole(role) {
+  for (const [deptKey, roles] of Object.entries({
+    captain: ['captain'],
+    deck: ['first_mate', 'deckhand', 'bosun', 'engineer'],
+    instructor: ['instructor', 'divemaster', 'dive_guide', 'equipment_technician'],
+    stewards: ['head_steward', 'steward', 'head_chef', 'chef'],
+  })) {
+    if (roles.includes(role)) return deptKey;
+  }
+  return null;
+}
+
+// Every concrete crew role that has a home department tab -- used both as
+// "which roles can owner/manager build a checklist for" and as the master
+// list checked against when a regular staff member's own role/headship is
+// resolved below.
+const ALL_CHECKLIST_ROLES = ['captain', 'first_mate', 'deckhand', 'bosun', 'engineer',
+  'instructor', 'divemaster', 'dive_guide', 'equipment_technician',
+  'head_steward', 'steward', 'head_chef', 'chef'];
+
+function myCreatableChecklistRoles() {
+  if (['owner', 'manager'].includes(currentUserRole)) return ALL_CHECKLIST_ROLES;
+  if (currentUserRole === 'captain' && window.currentCaptainElevated) return ALL_CHECKLIST_ROLES;
+  const mine = [currentUserRole];
+  if (CHECKLIST_HEAD_OF[currentUserRole]) mine.push(CHECKLIST_HEAD_OF[currentUserRole]);
+  return mine.filter(r => ALL_CHECKLIST_ROLES.includes(r));
+}
+
+let customChecklists = []; // rows from custom_checklists, current org
+let customChecklistChecks = {}; // { [checklistId]: { [itemIdx]: bool } }
+
+async function loadCustomChecklists() {
+  if (!currentOrgId) { customChecklists = []; return; }
+  const { data, error } = await sb.from('custom_checklists').select('*').eq('org_id', currentOrgId).order('created_at');
+  if (error) { console.error('loadCustomChecklists failed:', error); customChecklists = []; return; }
+  customChecklists = data || [];
+}
+
+function populateNewChecklistRoleSelect() {
+  const sel = document.getElementById('new-checklist-role');
+  const roles = myCreatableChecklistRoles();
+  sel.innerHTML = roles.map(r => `<option value="${r}">${crewRoleLabel(r)}</option>`).join('');
+}
+
+async function saveNewCustomChecklist() {
+  const errEl = document.getElementById('new-checklist-error');
+  errEl.style.display = 'none';
+  const roleScope = document.getElementById('new-checklist-role').value;
+  const cadence = document.getElementById('new-checklist-cadence').value;
+  const title = document.getElementById('new-checklist-title').value.trim();
+  const items = document.getElementById('new-checklist-items').value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!myCreatableChecklistRoles().includes(roleScope)) {
+    errEl.textContent = t('cl_new_checklist_no_role');
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!title || !items.length) {
+    errEl.textContent = t('cl_new_checklist_need_title_items');
+    errEl.style.display = 'block';
+    return;
+  }
+  const deptKey = deptKeyForRole(roleScope);
+  const { data: userData } = await sb.auth.getUser();
+  const { error } = await sb.from('custom_checklists').insert({
+    org_id: currentOrgId, dept_key: deptKey, role_scope: roleScope, cadence,
+    title, items, created_by: userData?.user?.id || null,
+  });
+  if (error) {
+    errEl.textContent = error.message || 'Error saving checklist.';
+    errEl.style.display = 'block';
+    return;
+  }
+  document.getElementById('form-new-checklist').style.display = 'none';
+  document.getElementById('new-checklist-title').value = '';
+  document.getElementById('new-checklist-items').value = '';
+  await loadCustomChecklists();
+  renderDeptRoutine();
+}
+
+async function deleteCustomChecklist(id) {
+  if (!(await showConfirmModal(t('cl_delete_checklist_confirm')))) return;
+  await sb.from('custom_checklists').delete().eq('id', id);
+  await loadCustomChecklists();
+  renderDeptRoutine();
+}
+
+function canDeleteCustomChecklist(cc, myUserId) {
+  return ['owner', 'manager'].includes(currentUserRole) || cc.created_by === myUserId;
+}
+
+function toggleCustomChecklistItem(checklistId, idx) {
+  const checks = customChecklistChecks[checklistId] = customChecklistChecks[checklistId] || {};
+  checks[idx] = !checks[idx];
+  renderCustomChecklistsForCurrentView();
+}
+
+async function customChecklistSignOff(checklistId) {
+  const cc = customChecklists.find(c => c.id === checklistId);
+  if (!cc) return;
+  const nameInput = document.getElementById(`custom-cl-name-${checklistId}`);
+  const name = (nameInput?.value || '').trim();
+  const checks = customChecklistChecks[checklistId] || {};
+  const done = cc.items.filter((_, idx) => checks[idx]).length;
+  if (!name) { await showAlertModal(t('cl_enter_your_name')); return; }
+  if (done < cc.items.length && !(await showConfirmModal(`${cc.items.length - done}${t('cl_items_incomplete')}`))) return;
+  const ts = new Date().toLocaleString();
+  const doneBanner = document.getElementById(`custom-cl-done-${checklistId}`);
+  if (doneBanner) {
+    doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
+    doneBanner.style.display = 'block';
+  }
+  if (currentOrgId) {
+    const payload = {
+      org_id: currentOrgId, trip_id: null,
+      role: `custom_${checklistId}`, signed_by: name,
+      completed_items: done, total_items: cc.items.length,
+      signed_at: new Date().toISOString()
+    };
+    if (isOffline) {
+      queueOfflineAction('checklist_completion', payload);
+    } else {
+      await sb.from('checklist_completions').insert(payload);
+    }
+  }
+}
+
+// Renders every custom checklist that belongs to the department tab + cadence
+// currently on screen, right below the built-in routine -- same check/sign-off
+// pattern as the built-ins, just one card per custom checklist.
+async function renderCustomChecklistsForCurrentView() {
+  const container = document.getElementById('dept-custom-list');
+  if (!container) return;
+  const { data: userData } = await sb.auth.getUser();
+  const myUserId = userData?.user?.id;
+  const matching = customChecklists.filter(cc => cc.dept_key === currentDeptKey && cc.cadence === currentCadenceKey);
+  container.innerHTML = matching.map(cc => {
+    const checks = customChecklistChecks[cc.id] = customChecklistChecks[cc.id] || {};
+    const done = cc.items.filter((_, idx) => checks[idx]).length;
+    const itemsHtml = cc.items.map((text, idx) => `
+      <div class="cl-item ${checks[idx] ? 'checked' : ''}" onclick="toggleCustomChecklistItem('${cc.id}','${idx}')">
+        <div class="cl-checkbox">${checks[idx] ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
+        <div class="cl-item-text">${text}</div>
+      </div>`).join('');
+    const delBtn = canDeleteCustomChecklist(cc, myUserId)
+      ? `<button class="btn-icon" onclick="deleteCustomChecklist('${cc.id}')" style="color:var(--error);">${t('cl_delete_checklist')}</button>` : '';
+    return `<div class="card" style="margin-top:16px;border:1px dashed var(--border);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="card-section-title" style="margin-bottom:0;">${cc.title} <span style="font-weight:400;color:var(--muted);font-size:0.8rem;">(${crewRoleLabel(cc.role_scope)})</span></div>
+        ${delBtn}
+      </div>
+      <div class="cl-progress-bar"><div class="cl-progress-fill" style="width:${cc.items.length ? (done / cc.items.length * 100) : 0}%;"></div></div>
+      ${itemsHtml}
+      <div class="cl-signoff">
+        <input class="sf-input" type="text" id="custom-cl-name-${cc.id}" placeholder="Your name" data-i18n-placeholder="cl_your_name">
+        <div class="cl-done-banner" id="custom-cl-done-${cc.id}" style="display:none;"></div>
+        <div class="settings-actions" style="margin-top:12px;">
+          <button class="btn-save" onclick="customChecklistSignOff('${cc.id}')">${t('cl_sign_off_routine')}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btn-show-new-checklist').addEventListener('click', () => {
+  const form = document.getElementById('form-new-checklist');
+  const isHidden = form.style.display === 'none';
+  if (isHidden) populateNewChecklistRoleSelect();
+  form.style.display = isHidden ? 'block' : 'none';
+});
+document.getElementById('btn-cancel-new-checklist').addEventListener('click', () => {
+  document.getElementById('form-new-checklist').style.display = 'none';
+});
+document.getElementById('btn-save-new-checklist').addEventListener('click', saveNewCustomChecklist);
+
 // ─── DEPARTMENT ROUTINES (Captain / Instructor-DM / Deck × Morning / EOD / Monthly / Yearly) ───
 function initDeptChecklists() {
   const tabRow = document.getElementById('dept-tabs');
@@ -12348,6 +12587,8 @@ function initDeptChecklists() {
   tabRow.innerHTML = visibleKeys.map((key, i) =>
     `<div class="cl-role-tab ${key===currentDeptKey?'active':''}" onclick="selectDeptDepartment('${key}',this)">${depts[key].label}</div>`
   ).join('');
+  document.getElementById('btn-show-new-checklist').style.display = myCreatableChecklistRoles().length ? 'inline-block' : 'none';
+  loadCustomChecklists().then(renderDeptRoutine);
   renderDeptCadenceTabs();
   renderDeptRoutine();
 }
@@ -12391,6 +12632,7 @@ function renderDeptRoutine() {
   const status = document.getElementById('dept-routine-status');
   if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
   renderCheckItems('dept-list', routine.items, deptRoutineChecks[roleKey], 'toggleDeptItem', 'dept-routine-progress');
+  renderCustomChecklistsForCurrentView();
 }
 
 function resetDeptRoutine() {
