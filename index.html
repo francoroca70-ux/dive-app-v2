@@ -70,6 +70,32 @@
 html, body { height: 100%; font-family: 'Inter', sans-serif; overscroll-behavior: none; overflow-x: hidden; }
 body { background: var(--navy); color: var(--text); }
 
+/* ─── NATIVE-APP-STYLE TAP FEEDBACK ───
+   Android/iOS both draw their own default gray "flash" rectangle on any tap
+   unless a page opts out -- most of this app never did, so every button, nav
+   item, and list row got that generic system box instead of an intentional
+   response. Removing it everywhere and replacing it with one consistent,
+   subtle press effect (dim on tap for rows/tabs/icons, a slight scale-down on
+   primary buttons) is the same trick Instagram/Facebook use so every tap
+   feels acknowledged without a jarring highlight box. */
+* { -webkit-tap-highlight-color: transparent; }
+.nav-item, .bnav-item, .cl-tab, .cl-role-tab, .cl-item, .gear-action-btn,
+.gear-action-btn-lg, .btn-icon, .cl-trip-pill, .boat-card, .group-card {
+  transition: opacity 0.1s ease, background 0.15s ease, color 0.15s ease;
+}
+.nav-item:active, .cl-tab:active, .cl-role-tab:active, .cl-item:active,
+.gear-action-btn:active, .gear-action-btn-lg:active, .btn-icon:active,
+.cl-trip-pill:active, .boat-card:active, .group-card:active {
+  opacity: 0.6;
+}
+.btn-save:active, .btn-cancel:active { transform: scale(0.97); }
+
+/* Subtle fade whenever a page becomes the active one (bottom nav / sidebar
+   navigation) instead of an instant, jarring swap -- small, but it's the
+   difference between screens "appearing" vs. just snapping into place. */
+@keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.page.active { animation: pageFadeIn 0.18s ease; }
+
 /* ─── SCREENS ─── */
 .screen { display: none; min-height: 100vh; min-height: 100dvh; }
 .screen.active { display: flex; }
@@ -1381,7 +1407,14 @@ body { background: var(--navy); color: var(--text); }
   left: 14px; right: 14px;
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   height: 64px;
-  background: var(--white);
+  /* Slightly translucent + blurred instead of flat opaque white -- the same
+     "frosted glass" treatment iOS's own tab bars use, so page content
+     scrolling underneath softly shows through instead of the bar looking
+     like a plain sticker glued on top of the screen. Falls back to the flat
+     white automatically wherever backdrop-filter isn't supported. */
+  background: rgba(255,255,255,0.82);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: 30px;
   box-shadow: 0 6px 24px rgba(10,22,40,0.16);
@@ -1795,7 +1828,7 @@ body { background: var(--navy); color: var(--text); }
       <h2 data-i18n="login_title">Sign in to your account</h2>
       <div class="form-group">
         <label data-i18n="login_email_label">Email</label>
-        <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+        <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false">
       </div>
       <div class="form-group">
         <label data-i18n="login_password_label">Password</label>
@@ -1837,7 +1870,7 @@ body { background: var(--navy); color: var(--text); }
       </div>
       <div class="form-group">
         <label data-i18n="login_email_label">Email</label>
-        <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+        <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false">
       </div>
       <div class="form-group">
         <label data-i18n="login_password_label">Password</label>
@@ -1864,7 +1897,7 @@ body { background: var(--navy); color: var(--text); }
       <h2 data-i18n="forgot_title">Reset your password</h2>
       <div class="form-group">
         <label data-i18n="forgot_email_label">Email</label>
-        <input type="email" id="forgot-email" placeholder="you@example.com">
+        <input type="email" id="forgot-email" placeholder="you@example.com" autocapitalize="none" autocorrect="off" spellcheck="false">
       </div>
       <button class="btn-login" id="btn-reset" data-i18n="forgot_send_btn">Send reset link</button>
       <div class="login-error" id="forgot-error"></div>
@@ -2571,7 +2604,7 @@ body { background: var(--navy); color: var(--text); }
           <div class="sf-row">
             <div class="sf-group">
               <label class="sf-label" data-i18n="crew_email_label">Email address</label>
-              <input class="sf-input" type="email" id="invite-email" placeholder="crew@example.com" autocomplete="off" data-lpignore="true" data-1p-ignore="true" name="invite-crew-email-noautofill" readonly onfocus="this.removeAttribute('readonly')">
+              <input class="sf-input" type="email" id="invite-email" placeholder="crew@example.com" autocomplete="off" data-lpignore="true" data-1p-ignore="true" name="invite-crew-email-noautofill" readonly onfocus="this.removeAttribute('readonly')" autocapitalize="none" autocorrect="off" spellcheck="false">
             </div>
             <div class="sf-group">
               <label class="sf-label" data-i18n="crew_name_label">Full name</label>
@@ -5812,7 +5845,16 @@ document.getElementById('sidebar-backdrop').addEventListener('click', closeSideb
 // duplicating the rest of the menu (Fleet, Crew, Gear, Waivers, Cash-Up,
 // Reports, Settings, Help) into a second nav surface.
 document.querySelectorAll('.bottom-nav .bnav-item[data-page]').forEach(item => {
-  item.addEventListener('click', () => showPage(item.dataset.page));
+  item.addEventListener('click', () => {
+    // Tapping the tab you're already on scrolls back to the top of that
+    // page instead of doing nothing -- same shortcut Instagram uses on its
+    // own bottom tabs, handy after scrolling deep into a long list.
+    if (item.classList.contains('active')) {
+      document.querySelector('.app-main')?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    showPage(item.dataset.page);
+  });
 });
 document.getElementById('bnav-more').addEventListener('click', toggleSidebar);
 
