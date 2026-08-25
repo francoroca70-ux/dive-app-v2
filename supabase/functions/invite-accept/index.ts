@@ -4,12 +4,22 @@
 // waiver-remote-signing: the anon key has no RLS access to the `invites`
 // table (an open anon SELECT policy would leak every pending invite --
 // email, role, org name -- across every operation using this app), so this
-// runs entirely on the service role key instead. Two actions:
+// runs entirely on the service role key instead. Three actions:
 //   - status: looks up the invite by token, returns the safe display fields
 //   - accept: called after the browser's own supabase.auth.signUp/signIn
 //     succeeds: creates the staff row + marks the invite accepted, using the
 //     already-known user id -- avoids needing a self-insert RLS policy on
 //     `staff` for brand-new accounts.
+//   - check_pending: called from the GENERAL "create your shop's account"
+//     signup form (not the invite link) -- catches the case of someone
+//     being told "download the app and sign up" by a manager who actually
+//     meant "use the invite I sent you". Without this, that person creates
+//     and becomes owner of their OWN new shop instead of joining the one
+//     they were hired at, which is confusing to unwind later (see the
+//     jota.de.fardo@gmail.com case this was built in response to). Returns
+//     only a boolean, not the org name/role -- enough to redirect someone to
+//     their own inbox without turning this into a second, email-keyed way to
+//     probe "who has a pending invite somewhere" beyond what's needed.
 //
 // Called from index.html via sb.functions.invoke('invite-accept', { body: {...} }).
 // No secrets need to be set manually -- SUPABASE_URL and
@@ -42,8 +52,28 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json();
     const { action, token } = body || {};
-    if (!action || !token) {
-      return json({ error: "Missing action or token" }, 400);
+    if (!action) {
+      return json({ error: "Missing action" }, 400);
+    }
+
+    // ─── action: check_pending ───
+    // Doesn't take a token -- runs off the email the person is about to
+    // sign up with, before any account is created.
+    if (action === "check_pending") {
+      const { email } = body || {};
+      if (!email) return json({ error: "Missing email" }, 400);
+      const { data: pending } = await sb
+        .from("invites")
+        .select("id")
+        .eq("email", email)
+        .or("accepted.eq.false,accepted.is.null")
+        .limit(1)
+        .maybeSingle();
+      return json({ hasPending: !!pending });
+    }
+
+    if (!token) {
+      return json({ error: "Missing token" }, 400);
     }
 
     // Every action starts by resolving the invite the same way -- must be

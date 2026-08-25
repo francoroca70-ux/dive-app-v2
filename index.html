@@ -2021,7 +2021,7 @@ body { background: var(--navy); color: var(--text); }
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <span data-i18n="nav_calendar">Calendar</span>
       </div>
       <div class="nav-item" data-page="fleet">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20l2-8h12l2 8"/><path d="M12 4v8M8 8h8"/><path d="M6 12L4 20M18 12l2 8"/></svg></span> <span data-i18n="nav_fleet">Fleet</span>
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16h16l-2 4H6z"/><line x1="9" y1="4" x2="9" y2="16"/><path d="M9 6l7 6H9"/></svg></span> <span data-i18n="nav_fleet">Fleet</span>
       </div>
       <div class="nav-item" data-page="crew" style="position:relative;">
         <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span> <span data-i18n="nav_crew">Crew</span>
@@ -2258,8 +2258,6 @@ body { background: var(--navy); color: var(--text); }
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn-save" id="btn-show-add-boat" data-i18n="fleet_add_boat">+ Add boat</button>
-            <button class="btn-save" id="btn-show-add-boat-engine" data-i18n="fleet_add_engine">+ Add engine</button>
-            <button class="btn-save" id="btn-show-add-boat-hours" data-i18n="fleet_log_hours">+ Log engine hours</button>
           </div>
         </div>
 
@@ -3633,6 +3631,7 @@ const TRANSLATIONS = {
     signup_check_email: 'Account created — check your email to confirm, then sign in.',
     signup_err_required: 'Fill in every field.', signup_err_password_length: 'Password must be at least 6 characters.',
     signup_err_password_match: "Passwords don't match.",
+    signup_err_has_pending_invite: "This email already has a pending invitation to join a shop. Check your inbox for the invite link instead of creating a new account here — if you can't find it, ask whoever invited you to resend it.",
 
     forgot_title: 'Reset your password', forgot_back: '← Back to sign in', forgot_email_label: 'Email',
     forgot_send_btn: 'Send reset link', forgot_success: 'Reset link sent — check your inbox.',
@@ -3857,7 +3856,7 @@ const TRANSLATIONS = {
     crew_assign_location: 'Assign location', crew_or_set_status: 'Or set status', crew_save_location: 'Save location',
     crew_remove_confirm: 'Remove {name} from your crew?', crew_cancel_invite_confirm: 'Cancel this invite?',
 
-    cl_tab_tripprep: 'Trip Prep', cl_tab_captain: 'Captain', cl_tab_department: 'Department Routines', cl_tab_logged: 'Logged Checklists',
+    cl_tab_tripprep: 'Trip Prep', cl_tab_captain: 'Captain', cl_tab_department: 'Department Checklists', cl_tab_logged: 'Logged Checklists',
     cl_logged_title: 'Logged Checklists', cl_logged_sub: 'Every gear and vessel sign-off, organized by day.',
     cl_logged_search_date: 'Search a date', cl_logged_clear: 'Clear', cl_logged_none: 'No checklists logged yet.',
     cl_logged_vessel_check: 'Vessel safety check',
@@ -3871,7 +3870,7 @@ const TRANSLATIONS = {
     cl_crew_signoff_status: 'Crew Sign-Off Status', cl_vessel_safety_check: 'Vessel Safety Check',
     cl_complete_once_daily: 'Complete once per day before first departure. Independent of individual trips.',
     cl_captain_signoff: 'Captain Sign-Off', cl_captain_name: 'Captain name', cl_boat_name: 'Boat name',
-    cl_sign_off_depart: 'Sign Off — Clear to Depart', cl_department_routines: 'Department Routines',
+    cl_sign_off_depart: 'Sign Off — Clear to Depart', cl_department_routines: 'Department Checklists',
     cl_reusable_routines_hint: 'Recurring routines per department, each signed off and logged.',
     cl_complete_check: 'Complete ✓', cl_enter_captain_name: 'Enter captain name to sign off.', cl_enter_your_name: 'Enter your name to sign off.',
     cl_items_incomplete: ' items incomplete. Sign off anyway?', cl_signed_off_by: 'Signed off by ', cl_saved_offline_sync: ' (saved offline — will sync automatically)',
@@ -4201,7 +4200,7 @@ const TRANSLATIONS = {
     nav_section_operations: 'Operaciones', nav_section_dailyops: 'Operativa Diaria', nav_section_manage: 'Gestión',
     nav_home: 'Inicio', nav_calendar: 'Calendario', nav_fleet: 'Flota', nav_crew: 'Tripulación',
     nav_checklists: 'Checklists', nav_tasks: 'Tareas', nav_gear: 'Equipo y Material',
-    nav_waivers: 'Exenciones', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
+    nav_waivers: 'Formularios', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
     nav_help: 'Ayuda y Preguntas',
     signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
     switch_account_add: '+ Agregar otra cuenta', switch_account_none: 'Todavía no hay cuentas guardadas.',
@@ -4220,6 +4219,7 @@ const TRANSLATIONS = {
     signup_check_email: 'Cuenta creada — revisá tu correo para confirmar, y después iniciá sesión.',
     signup_err_required: 'Completá todos los campos.', signup_err_password_length: 'La contraseña debe tener al menos 6 caracteres.',
     signup_err_password_match: 'Las contraseñas no coinciden.',
+    signup_err_has_pending_invite: 'Este email ya tiene una invitación pendiente para unirse a un local. Revisá tu bandeja de entrada y usá ese link en vez de crear una cuenta nueva acá — si no lo encontrás, pedile a quien te invitó que te lo reenvíe.',
 
     forgot_title: 'Restablece tu contraseña', forgot_back: '← Volver a iniciar sesión', forgot_email_label: 'Correo electrónico',
     forgot_send_btn: 'Enviar enlace', forgot_success: 'Enlace enviado — revisa tu correo.',
@@ -4233,7 +4233,7 @@ const TRANSLATIONS = {
     header_crew_title: 'Tripulación', header_crew_sub: 'Cuentas y roles del personal',
     header_checklists_title: 'Checklists', header_checklists_sub: 'Preparación de salidas, seguridad de la embarcación, rutinas por área',
     header_gear_title: 'Equipo y Material', header_gear_sub: 'Inventario y seguimiento de vida útil',
-    header_waivers_title: 'Exenciones', header_waivers_sub: 'Recolección de firmas digitales de huéspedes',
+    header_waivers_title: 'Formularios', header_waivers_sub: 'Recolección de firmas digitales de huéspedes',
     header_cashup_title: 'Arqueo de Caja Diario', header_cashup_sub: 'Conciliación de caja y cuentas de huéspedes',
     header_reports_title: 'Informes', header_reports_sub: 'Tendencias de ingresos y control de caja — solo propietario',
     header_tasks_title: 'Tareas', header_tasks_sub: 'Gestión de tareas de la tripulación',
@@ -4444,7 +4444,7 @@ const TRANSLATIONS = {
     crew_assign_location: 'Asignar ubicación', crew_or_set_status: 'O establecer estado', crew_save_location: 'Guardar ubicación',
     crew_remove_confirm: '¿Eliminar a {name} de tu tripulación?', crew_cancel_invite_confirm: '¿Cancelar esta invitación?',
 
-    cl_tab_tripprep: 'Preparación de Salida', cl_tab_captain: 'Capitán', cl_tab_department: 'Rutinas por Área', cl_tab_logged: 'Checklists Logueadas',
+    cl_tab_tripprep: 'Preparación de Salida', cl_tab_captain: 'Capitán', cl_tab_department: 'Checklists por Departamento', cl_tab_logged: 'Checklists Logueadas',
     cl_logged_title: 'Checklists Logueadas', cl_logged_sub: 'Cada confirmación de equipo y de embarcación, organizada por día.',
     cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
@@ -4458,8 +4458,8 @@ const TRANSLATIONS = {
     cl_crew_signoff_status: 'Estado de Confirmación de Tripulación', cl_vessel_safety_check: 'Revisión de Seguridad de la Embarcación',
     cl_complete_once_daily: 'Completar una vez al día antes de la primera salida. Independiente de las salidas individuales.',
     cl_captain_signoff: 'Confirmación del Capitán', cl_captain_name: 'Nombre del capitán', cl_boat_name: 'Nombre de la embarcación',
-    cl_sign_off_depart: 'Confirmar — Listo para Zarpar', cl_department_routines: 'Rutinas por Área',
-    cl_reusable_routines_hint: 'Rutinas recurrentes por departamento, cada una firmada y logueada.',
+    cl_sign_off_depart: 'Confirmar — Listo para Zarpar', cl_department_routines: 'Checklists por Departamento',
+    cl_reusable_routines_hint: 'Checklists recurrentes por departamento, cada una firmada y logueada.',
     cl_complete_check: 'Completo ✓', cl_enter_captain_name: 'Ingresa el nombre del capitán para confirmar.', cl_enter_your_name: 'Ingresa tu nombre para confirmar.',
     cl_items_incomplete: ' elementos incompletos. ¿Confirmar de todos modos?', cl_signed_off_by: 'Confirmado por ', cl_saved_offline_sync: ' (guardado sin conexión — se sincronizará automáticamente)',
     cl_no_trips_today: 'No hay salidas hoy. Aún puedes usar las listas de verificación de forma independiente.', cl_guest_singular: 'huésped', cl_guest_plural: 'huéspedes',
@@ -4584,21 +4584,21 @@ const TRANSLATIONS = {
     set_op_categories: 'Categorías de la Operación',
     set_op_categories_desc: 'Agrega una categoría cuando tu operación crezca — al agregar una se crea un conjunto inicial de tipos de salida que puedes editar. Solo el propietario.',
     set_permissions: 'Permisos', set_permissions_desc: 'Controla lo que pueden hacer los distintos roles en tu operación.',
-    set_captain_elevated_label: 'Dar a los capitanes permisos de nivel gerente (invitar/eliminar personal, editar días acumulados, gestionar solicitudes de días libres, editar listas de tareas, exportar exenciones)',
+    set_captain_elevated_label: 'Dar a los capitanes permisos de nivel gerente (invitar/eliminar personal, editar días acumulados, gestionar solicitudes de días libres, editar listas de tareas, exportar formularios)',
     set_captain_elevated_hint: 'Desactivado por defecto. Actívalo si tus capitanes tienen autoridad de gestión, algo común en charters y yates.',
     set_danger_zone: 'Zona de Peligro',
-    set_delete_account_desc: 'Elimina tu acceso a esta operación. Los checklists, exenciones, registros de salidas u otras entradas que hayas completado quedan guardados — esto solo elimina el acceso de tu usuario.',
+    set_delete_account_desc: 'Elimina tu acceso a esta operación. Los checklists, formularios, registros de salidas u otras entradas que hayas completado quedan guardados — esto solo elimina el acceso de tu usuario.',
     set_delete_account: 'Eliminar mi cuenta',
-    set_delete_account_confirm: 'Esto eliminará tu acceso a esta operación. Tus checklists, exenciones y registros de salidas completados quedan guardados — solo dejarás de poder iniciar sesión en este local. ¿Continuar?',
+    set_delete_account_confirm: 'Esto eliminará tu acceso a esta operación. Tus checklists, formularios y registros de salidas completados quedan guardados — solo dejarás de poder iniciar sesión en este local. ¿Continuar?',
     set_delete_account_confirm_ok: 'Sí, eliminar mi acceso',
     set_delete_account_success: 'Listo. Fuiste eliminado de esta operación.',
     set_delete_account_err_last_owner: 'Sos el único propietario acá, así que no podés eliminarte a vos mismo. Agregá otro propietario primero, o contactá a soporte.',
     set_delete_account_err_not_staff: 'No encontramos tu registro de personal — es posible que ya hayas sido eliminado.',
     set_delete_account_err_generic: 'Algo salió mal. Intentá de nuevo o contactá a soporte.',
     close_shop_title: 'Cerrar la Cuenta de Este Local',
-    close_shop_desc: '¿Vas a dar de baja el servicio? Esto cierra el local para todo el personal — nadie va a poder volver a iniciar sesión. Tus registros (exenciones, checklists, historial de salidas) se guardan, no se borran, por si alguna vez los necesitás para un tema legal o de seguro. Esto no se puede deshacer vos mismo una vez confirmado.',
+    close_shop_desc: '¿Vas a dar de baja el servicio? Esto cierra el local para todo el personal — nadie va a poder volver a iniciar sesión. Tus registros (formularios, checklists, historial de salidas) se guardan, no se borran, por si alguna vez los necesitás para un tema legal o de seguro. Esto no se puede deshacer vos mismo una vez confirmado.',
     close_shop_step1: 'Paso 1 — Descargá todo',
-    close_shop_step1_desc: 'Obtené una copia completa de cada exención, checklist y registro de salida que este local haya registrado, antes de continuar.',
+    close_shop_step1_desc: 'Obtené una copia completa de cada formulario, checklist y registro de salida que este local haya registrado, antes de continuar.',
     close_shop_export_btn: 'Descargar todos los registros del local',
     close_shop_export_done: 'Descargado. Ya podés confirmar abajo.',
     close_shop_step2: 'Paso 2 — Confirmar',
@@ -4609,19 +4609,19 @@ const TRANSLATIONS = {
     close_shop_success: 'Listo. La cuenta de este local ya está cerrada.',
     close_shop_err_not_owner: 'Solo el propietario puede cerrar la cuenta de este local.',
     close_shop_err_generic: 'Algo salió mal. Intentá de nuevo o contactá a soporte.',
-    set_waivers: 'Exenciones', set_owner_only: 'Solo propietario',
-    set_waivers_desc1: 'Esta es solo una herramienta de recolección de firmas digitales. Seven Seas no provee, verifica ni se responsabiliza por el contenido o la validez legal de las exenciones.',
+    set_waivers: 'Formularios', set_owner_only: 'Solo propietario',
+    set_waivers_desc1: 'Esta es solo una herramienta de recolección de firmas digitales. Seven Seas no provee, verifica ni se responsabiliza por el contenido o la validez legal de los formularios.',
     set_waivers_desc2a: 'La validez legal de las firmas digitales varía según el país y la jurisdicción.',
     set_waivers_desc2b: 'Consulta a un abogado local antes de confiar legalmente en estos documentos.',
-    set_waivers_desc2c: 'Al activar esta función confirmas que tu operación asume toda la responsabilidad por la validez legal de tus exenciones.',
-    set_waivers_desc3: 'Las exenciones firmadas se almacenan de forma segura, pero recomendamos exportar las exenciones de cada día a tu propia computadora como respaldo local — usa la herramienta de exportación en la parte superior de la página de Exenciones. Toma segundos y te da una copia a mano cuando la necesites.',
-    set_enable_waivers: 'Activar Exenciones para esta operación',
-    set_waivers_owner_only_note: 'Solo el propietario de la cuenta puede cambiar esta configuración. Pídele a tu propietario o gerente que active las Exenciones si lo necesitas.',
-    set_waiver_templates: 'Plantillas de Exenciones',
-    set_waiver_templates_desc: 'Escribe el texto real que los huéspedes leerán y firmarán para cada tipo de exención. Un tipo no puede ser firmado por el personal hasta que tenga una plantilla aquí.',
+    set_waivers_desc2c: 'Al activar esta función confirmas que tu operación asume toda la responsabilidad por la validez legal de tus formularios.',
+    set_waivers_desc3: 'Los formularios firmados se almacenan de forma segura, pero recomendamos exportar los formularios de cada día a tu propia computadora como respaldo local — usa la herramienta de exportación en la parte superior de la página de Formularios. Toma segundos y te da una copia a mano cuando la necesites.',
+    set_enable_waivers: 'Activar Formularios para esta operación',
+    set_waivers_owner_only_note: 'Solo el propietario de la cuenta puede cambiar esta configuración. Pídele a tu propietario o gerente que active los Formularios si lo necesitas.',
+    set_waiver_templates: 'Plantillas de Formularios',
+    set_waiver_templates_desc: 'Escribe el texto real que los huéspedes leerán y firmarán para cada tipo de formulario. Un tipo no puede ser firmado por el personal hasta que tenga una plantilla aquí.',
     wt_liability: 'Responsabilidad', wt_minor: 'Menor / Joven', wt_freediving: 'Apnea', wt_snorkel: 'Esnórquel / Charter', wt_other: 'Otro', wt_medical: 'Médico',
-    set_waiver_templates_owner_only_note: 'Solo el propietario de la cuenta puede editar las plantillas de exenciones.',
-    set_waiver_templates_disabled_note: 'Primero activá Exenciones arriba — las plantillas estarán disponibles una vez que Exenciones esté activado para esta operación.',
+    set_waiver_templates_owner_only_note: 'Solo el propietario de la cuenta puede editar las plantillas de formularios.',
+    set_waiver_templates_disabled_note: 'Primero activá Formularios arriba — las plantillas estarán disponibles una vez que Formularios esté activado para esta operación.',
     set_trip_types: 'Tipos de Salida', set_trip_types_desc: 'Configura precios y requisitos de equipo predeterminados por tipo de salida. Se completan automáticamente cuando el personal crea una reserva.',
     set_add_trip_type: '+ Agregar tipo de salida personalizado',
     set_locations: 'Ubicaciones', set_locations_desc: 'Cada ubicación tiene su propia flota, tripulación y calendario. Agrega primero tu local principal.',
@@ -4652,10 +4652,10 @@ const TRANSLATIONS = {
     set_only_owner_change: 'Solo el propietario de la cuenta puede cambiar esta configuración.',
     set_saved: 'Guardado',
     wt_template_on_file: 'Plantilla registrada', wt_no_template_yet: 'Aún no hay plantilla — este tipo no se puede firmar',
-    wt_title_label: 'Título (opcional)', wt_title_ph: 'ej. Exención de Responsabilidad',
-    wt_body_label: 'Texto de la exención', wt_body_ph: 'Escribe el texto completo de la exención que los huéspedes leerán antes de firmar...',
+    wt_title_label: 'Título (opcional)', wt_title_ph: 'ej. Formulario de Responsabilidad',
+    wt_body_label: 'Texto del formulario', wt_body_ph: 'Escribe el texto completo del formulario que los huéspedes leerán antes de firmar...',
     wt_save_template: 'Guardar plantilla', wt_last_updated: 'Última actualización',
-    wt_text_required: 'El texto de la exención es obligatorio.', common_error_prefix: 'Error: ',
+    wt_text_required: 'El texto del formulario es obligatorio.', common_error_prefix: 'Error: ',
     wt_question_singular: ' pregunta registrada', wt_questions_plural: ' preguntas registradas',
     wt_no_questions_yet: 'Aún no hay preguntas — Médico no se puede firmar',
     wt_medical_title_ph: 'ej. Declaración Médica de Buceo',
@@ -4694,47 +4694,47 @@ const TRANSLATIONS = {
     cu_remove_expense_confirm: 'Eliminar este gasto?', cu_saving: 'Guardando...',
     cu_select_location_tabs: 'Selecciona una ubicación arriba para ver las cuentas de huéspedes.',
 
-    wv_not_enabled: 'Las Exenciones aún no están activadas', wv_not_enabled_desc: 'Actívalas en Configuración para empezar a recolectar firmas digitales.',
+    wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Activalos en Configuración para empezar a recolectar firmas digitales.',
     wv_go_to_settings: 'Ir a Configuración',
-    wv_export_backup: 'Exportar / Respaldo', wv_export_backup_desc: 'Descarga las exenciones, checklists o registros de salidas de un día como un archivo que puedes guardar en tu computadora.',
-    wv_export_day: 'Exportar exenciones del día',
+    wv_export_backup: 'Exportar / Respaldo', wv_export_backup_desc: 'Descarga los formularios, checklists o registros de salidas de un día como un archivo que puedes guardar en tu computadora.',
+    wv_export_day: 'Exportar formularios del día',
     wv_export_day_checklists: 'Exportar checklists del día',
     wv_export_day_trips: 'Exportar registros de salidas del día',
     wv_export_role_note: 'Solo propietarios, gerentes y recepción pueden descargar registros a una computadora. Pídeles una copia si la necesitas.',
     wv_export_safety_note: 'Por seguridad, exporta y guarda una copia de los registros de cada día en tu computadora al final de cada jornada.',
-    wv_pending_today: 'Firmas Pendientes — Hoy', wv_waiver_log: 'Registro de Exenciones', wv_daily: 'Diario', wv_weekly: 'Semanal',
+    wv_pending_today: 'Firmas Pendientes — Hoy', wv_waiver_log: 'Registro de Formularios', wv_daily: 'Diario', wv_weekly: 'Semanal',
     wv_search_guest_ph: 'Buscar por nombre de huésped...',
-    wv_trip_fallback: 'Salida', wv_sign_waiver: 'Firmar Exención', wv_no_pending_guests: 'No hay huéspedes pendientes para las salidas de hoy.',
+    wv_trip_fallback: 'Salida', wv_sign_waiver: 'Firmar Formulario', wv_no_pending_guests: 'No hay huéspedes pendientes para las salidas de hoy.',
     wv_remote_status_title: 'Firma Remota — Reservas de Hoy',
     wv_remote_status_desc: 'Todos en un grupo de reserva comparten un mismo link — mirá quién firmó antes de llegar y a quién le falta algo.',
-    wv_copy_link: 'Copiar link', wv_copy_link_manual: 'Copia este link de firma de exención:',
+    wv_copy_link: 'Copiar link', wv_copy_link_manual: 'Copia este link de firma de formulario:',
     wv_group_missing_prefix: 'Falta:', wv_group_all_signed: 'Todos los huéspedes firmaron',
-    wv_show_qr: 'Mostrar QR', wv_qr_title: 'Código QR para firmar la exención', wv_qr_caption: 'Escaneá con la cámara del celular para abrir el link de firma — no hace falta app ni iniciar sesión.',
+    wv_show_qr: 'Mostrar QR', wv_qr_title: 'Código QR para firmar el formulario', wv_qr_caption: 'Escaneá con la cámara del celular para abrir el link de firma — no hace falta app ni iniciar sesión.',
     wv_remind_btn: 'Recordar', wv_remind_sent: 'Enviado', wv_remind_failed: 'Falló — intentá de nuevo', wv_remind_no_email: 'No hay email de contacto registrado',
     wv_unknown_guest: 'Huésped desconocido', wv_paper: 'Papel', wv_digital: 'Digital',
-    wv_no_waivers_week: 'No hay exenciones firmadas esta semana.', wv_no_waivers_date: 'No hay exenciones firmadas en esta fecha.',
+    wv_no_waivers_week: 'No hay formularios firmados esta semana.', wv_no_waivers_date: 'No hay formularios firmados en esta fecha.',
     wv_no_records_date: 'No se encontró nada para esa fecha.',
-    wv_no_waivers_found: 'No se encontraron exenciones para',
-    wv_type_liability: 'Exención de Responsabilidad', wv_type_minor: 'Exención de Menor / Joven', wv_type_freediving: 'Exención de Apnea',
-    wv_type_snorkel: 'Exención de Esnórquel / Charter', wv_type_medical: 'Médico', wv_type_custom: 'Otro',
-    wv_waiver_type: 'Tipo de exención', wv_sign_digitally: 'Firmar digitalmente', wv_logged_paper: 'Registrado en papel',
+    wv_no_waivers_found: 'No se encontraron formularios para',
+    wv_type_liability: 'Formulario de Responsabilidad', wv_type_minor: 'Formulario de Menor / Joven', wv_type_freediving: 'Formulario de Apnea',
+    wv_type_snorkel: 'Formulario de Esnórquel / Charter', wv_type_medical: 'Médico', wv_type_custom: 'Otro',
+    wv_waiver_type: 'Tipo de formulario', wv_sign_digitally: 'Firmar digitalmente', wv_logged_paper: 'Registrado en papel',
     wv_clear: 'Borrar', wv_notes_optional: 'Notas (opcional)', wv_notes_ph: 'ej. Copia en papel archivada en recepción',
     wv_sign_legal_note: 'La validez legal de las firmas digitales varía según el país y la jurisdicción. Consulta a un abogado local antes de confiar legalmente en estos documentos.',
-    wv_save_waiver: 'Guardar Exención', wv_loading_waiver: 'Cargando exención...',
-    wv_add_one_in: 'Agrega una en', wv_settings_waiver_templates_link: 'Configuración → Plantillas de Exenciones',
+    wv_save_waiver: 'Guardar Formulario', wv_loading_waiver: 'Cargando formulario...',
+    wv_add_one_in: 'Agrega una en', wv_settings_waiver_templates_link: 'Configuración → Plantillas de Formularios',
     wv_ask_owner_add_one: 'Pídele a tu propietario o gerente que agregue una en Configuración antes de poder firmar esto.',
-    wv_no_template_set_up: 'Aún no hay una plantilla de exención configurada para este tipo.',
+    wv_no_template_set_up: 'Aún no hay una plantilla de formulario configurada para este tipo.',
     wv_medical_questionnaire: 'Cuestionario médico', wv_tick_anything_applies: '— marca todo lo que aplique',
     wv_please_draw_signature: 'Por favor dibuja una firma, o cambia a "Registrado en papel".',
     rw_loading: 'Cargando tu reserva...', rw_link_invalid_title: 'Este link no es válido',
     rw_link_expired: 'Este link para firmar venció. Contactá al centro de buceo para que te envíen uno nuevo.',
     rw_link_not_found: 'No se reconoce este link. Contactá al centro de buceo para verificar tu reserva.',
     rw_signed: 'Firmado', rw_back: 'Volver',
-    rw_all_done: 'Todas las exenciones de esta reserva están firmadas — ¡nos vemos pronto!',
+    rw_all_done: 'Todos los formularios de esta reserva están firmados — ¡nos vemos pronto!',
     rw_ask_shop_to_set_up: 'Contactá directamente al centro de buceo para resolver esto antes de tu salida.',
-    wv_saved_offline: 'Guardado sin conexión — esta exención se sincronizará automáticamente cuando vuelva la conexión.',
-    wv_error_saving: 'Error al guardar la exención: ', wv_unknown_error: 'error desconocido',
-    wv_export_no_permission: 'Solo propietarios, gerentes, recepción y capitanes con permisos elevados pueden exportar exenciones.',
+    wv_saved_offline: 'Guardado sin conexión — este formulario se sincronizará automáticamente cuando vuelva la conexión.',
+    wv_error_saving: 'Error al guardar el formulario: ', wv_unknown_error: 'error desconocido',
+    wv_export_no_permission: 'Solo propietarios, gerentes, recepción y capitanes con permisos elevados pueden exportar formularios.',
     wv_preparing_export: 'Preparando exportación...',
     wv_participant_section: 'Participante', wv_printed_name: 'Nombre en letra de imprenta', wv_date: 'Fecha',
     wv_guardian_section: 'Padre/Madre / Tutor (el huésped es menor de edad)', wv_guardian_printed_name: 'Nombre del padre/madre o tutor en letra de imprenta',
@@ -4744,16 +4744,16 @@ const TRANSLATIONS = {
     wv_minor_badge: 'Menor', wv_cosigned_by: 'Co-firmado por padre/madre o tutor:',
     set_gear_fields_btn: 'Campos de equipo', set_gear_fields_header: 'Preguntas de equipo en el formulario de Agregar Huésped',
     set_gear_fields_desc: 'Marca qué campos de equipo aplican a este tipo de salida. Los campos sin marcar no aparecerán al agregar un huésped.',
-    set_required_waivers_btn: 'Exenciones requeridas',
-    set_required_waivers_header: 'Exenciones requeridas para este tipo de salida',
+    set_required_waivers_btn: 'Formularios requeridos',
+    set_required_waivers_header: 'Formularios requeridos para este tipo de salida',
     set_required_waivers_desc: 'Los huéspedes reservados en este tipo de salida deben firmar cada una de estas antes de su salida. Por defecto es Responsabilidad si no seleccionas ninguna.',
     guest_dob: 'Fecha de nacimiento',
-    guest_dob_hint: 'Se usa para mostrar una sección de firma de padre/madre o tutor en las exenciones de menores.',
+    guest_dob_hint: 'Se usa para mostrar una sección de firma de padre/madre o tutor en los formularios de menores.',
 
     // i18n audit pass -- generic feedback/warning/banner strings that were
     // previously hardcoded in English regardless of the selected language.
-    offline_banner_waiting: 'Estás sin conexión — {n} cambio{s} esperando para sincronizar. Checklists, tareas, firma de exenciones y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
-    offline_banner_no_changes: 'Estás sin conexión — checklists, tareas, firma de exenciones y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
+    offline_banner_waiting: 'Estás sin conexión — {n} cambio{s} esperando para sincronizar. Checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
+    offline_banner_no_changes: 'Estás sin conexión — checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
     offline_syncing_back: 'De vuelta en línea — sincronizando {n} cambio{s}...', offline_syncing: 'Sincronizando {n} cambio{s}...', offline_all_synced: 'Todos los cambios sincronizados ✓',
     auth_invite_desc: 'Fuiste invitado a unirte a {org} como {role}. Configurá una contraseña para terminar de crear tu cuenta.', auth_this_operation: 'esta operación',
     auth_enter_name: 'Ingresá tu nombre.', auth_password_min: 'La contraseña debe tener al menos 6 caracteres.', auth_setting_up: 'Configurando...',
@@ -4775,7 +4775,7 @@ const TRANSLATIONS = {
     tt_cannot_save_conflict: 'No se puede guardar: resolvé primero el conflicto de embarcación.', tt_cannot_save_crew_conflict: 'No se puede guardar: {names} ya está asignado a otra salida que se superpone.',
     tt_cannot_save_capacity: 'No se puede guardar: demasiados huéspedes para esta embarcación una vez contada la tripulación.', tt_error_saving_trip: 'Error al guardar la salida.', tt_groups_count: 'Grupos ({n})',
     checkin_offline: 'Estás sin conexión — el registro de llegada necesita conexión.',
-    wv_error_loading: 'Error al cargar las exenciones.', wv_allow_popups_export: 'Permití las ventanas emergentes para exportar.',
+    wv_error_loading: 'Error al cargar los formularios.', wv_allow_popups_export: 'Permití las ventanas emergentes para exportar.',
     pay_offline: 'Estás sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Intentá de nuevo cuando vuelvas a estar en línea.',
     pay_exceeds_owed_note: 'Esto excede lo adeudado — por favor agregá una nota explicando por qué.',
     guest_offline: 'Estás sin conexión — los cambios de huéspedes necesitan conexión. Intentá de nuevo cuando vuelvas a estar en línea.',
@@ -4986,14 +4986,14 @@ const HELP_CONTENT = [
     ]
   },
   {
-    title: { en: 'Waivers', es: 'Exenciones' },
+    title: { en: 'Waivers', es: 'Formularios' },
     items: [
       { q: { en: 'How do digital waivers work?', es: '¿Cómo funcionan los formularios digitales?' },
         a: { en: 'Guests sign on-screen (your phone, tablet, or a shared device); the signature and timestamp save automatically and can be exported as a PDF.', es: 'Los huéspedes firman en pantalla (tu teléfono, tablet, o un dispositivo compartido); la firma y la hora se guardan solas y se pueden exportar como PDF.' } },
       { q: { en: 'Why does a booking sometimes ask for date of birth and sometimes not?', es: '¿Por qué a veces una reserva pide fecha de nacimiento y a veces no?' },
         a: { en: 'Date of birth only appears when that trip type requires a minor/youth waiver. Set this per trip type in Settings → Trip Types → required waivers, by adding "Minor / Youth" to the list.', es: 'La fecha de nacimiento solo aparece cuando ese tipo de viaje requiere un formulario de menor. Se configura por tipo de viaje en Configuración → Tipos de Viaje → formularios requeridos, agregando "Menor / Joven" a la lista.' } },
       { q: { en: 'Where do I write the actual waiver wording?', es: '¿Dónde escribo el texto real del formulario?' },
-        a: { en: 'Settings → Waiver Templates — there\'s a tab per waiver type (Liability, Minor/Youth, Freediving, Snorkel/Charter, Medical, Other). A waiver type can\'t be signed by staff until it has a template written.', es: 'Configuración → Plantillas de Exenciones — hay una pestaña por tipo (Responsabilidad, Menor/Joven, Buceo Libre, Snorkel/Charter, Médico, Otro). Un tipo de exención no se puede firmar hasta que tenga una plantilla escrita.' } }
+        a: { en: 'Settings → Waiver Templates — there\'s a tab per waiver type (Liability, Minor/Youth, Freediving, Snorkel/Charter, Medical, Other). A waiver type can\'t be signed by staff until it has a template written.', es: 'Configuración → Plantillas de Formularios — hay una pestaña por tipo (Responsabilidad, Menor/Joven, Buceo Libre, Snorkel/Charter, Médico, Otro). Un tipo de formulario no se puede firmar hasta que tenga una plantilla escrita.' } }
     ]
   },
   {
@@ -6665,6 +6665,22 @@ document.getElementById('btn-signup').addEventListener('click', async () => {
 
   btn.disabled = true;
   btn.textContent = t('signup_creating') || 'Creating account...';
+
+  // Catches "manager said download the app and sign up" when they actually
+  // meant "use the invite link I sent you" -- without this check, that
+  // person would create and become owner of a brand-new shop of their own
+  // instead of joining the one that hired them. Checked here, not just left
+  // for them to discover after creating a whole extra org.
+  const { data: pendingCheck } = await sb.functions.invoke('invite-accept', {
+    body: { action: 'check_pending', email }
+  });
+  if (pendingCheck?.hasPending) {
+    errorEl.textContent = t('signup_err_has_pending_invite');
+    errorEl.classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = t('signup_create_btn');
+    return;
+  }
 
   const { data, error } = await sb.auth.signUp({ email, password });
 
@@ -11825,7 +11841,7 @@ const DEPARTMENT_ROUTINES_I18N = {
       morning: { role: 'captain', label: { en: 'Morning', es: 'Mañana' }, items: [
         { en:'Engine started and warmed up — no unusual sounds or smoke', es:'Motor encendido y calentado — sin ruidos o humo inusual' },
         { en:'Engine oil level checked', es:'Nivel de aceite del motor revisado' },
-        { en:'Fuel confirmed — sufficient for trip + 25% reserve', es:'Combustible confirmado — suficiente para la salida + 25% de reserva' },
+        { en:'Fuel confirmed — sufficient for trip + 50% reserve', es:'Combustible confirmado — suficiente para la salida + 50% de reserva' },
         { en:'Bilge pumped and dry', es:'Sentina bombeada y seca' },
         { en:'Navigation lights tested (red port, green starboard, white stern)', es:'Luces de navegación probadas (roja babor, verde estribor, blanca popa)' },
         { en:'VHF radio operational — channel 16 confirmed', es:'Radio VHF operativa — canal 16 confirmado' },
@@ -12301,12 +12317,35 @@ function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
   }
 }
 
+// Maps a specific staff role to which Department Checklists tab(s) they see
+// by default. Before this, every staff member saw all four department tabs
+// regardless of their own role -- a captain had to scroll past Instructor/DM,
+// Deck, and Stewards tabs to find their own. Owner/manager (and an elevated
+// captain, same "sees everything" pattern used for staff/banked-days/day-off
+// admin elsewhere in this file) still get every tab, since overseeing every
+// department is the point of those roles.
+const DEPT_ROUTINE_VISIBILITY_BY_ROLE = {
+  captain: ['captain'],
+  first_mate: ['deck'], deckhand: ['deck'], bosun: ['deck'], engineer: ['deck'],
+  instructor: ['instructor'], divemaster: ['instructor'], dive_guide: ['instructor'], equipment_technician: ['instructor'],
+  head_steward: ['stewards'], steward: ['stewards'], head_chef: ['stewards'], chef: ['stewards'],
+};
+function visibleDeptKeysForCurrentUser() {
+  const allKeys = Object.keys(departmentRoutinesGet());
+  const sees_everything = ['owner', 'manager'].includes(currentUserRole) ||
+    (currentUserRole === 'captain' && window.currentCaptainElevated);
+  if (sees_everything) return allKeys;
+  const mapped = DEPT_ROUTINE_VISIBILITY_BY_ROLE[currentUserRole];
+  return (mapped && mapped.length) ? mapped.filter(k => allKeys.includes(k)) : allKeys;
+}
+
 // ─── DEPARTMENT ROUTINES (Captain / Instructor-DM / Deck × Morning / EOD / Monthly / Yearly) ───
 function initDeptChecklists() {
   const tabRow = document.getElementById('dept-tabs');
   const depts = departmentRoutinesGet();
-  const deptKeys = Object.keys(depts);
-  tabRow.innerHTML = deptKeys.map((key, i) =>
+  const visibleKeys = visibleDeptKeysForCurrentUser();
+  if (!visibleKeys.includes(currentDeptKey)) currentDeptKey = visibleKeys[0];
+  tabRow.innerHTML = visibleKeys.map((key, i) =>
     `<div class="cl-role-tab ${key===currentDeptKey?'active':''}" onclick="selectDeptDepartment('${key}',this)">${depts[key].label}</div>`
   ).join('');
   renderDeptCadenceTabs();
@@ -12912,6 +12951,8 @@ async function loadFleet() {
       </div>
       <div class="boat-actions">
         <span class="boat-badge ${b.active ? 'active' : 'inactive'}">${b.active ? t('fleet_active') : t('fleet_inactive')}</span>
+        <button class="btn-icon" onclick="event.stopPropagation();openAddEngineFromCard('${b.id}')">${t('fleet_add_engine')}</button>
+        <button class="btn-icon" onclick="event.stopPropagation();openLogHoursFromCard('${b.id}')">${t('fleet_log_hours')}</button>
         <button class="btn-icon" onclick="event.stopPropagation();toggleBoat('${b.id}', ${b.active})">${b.active ? t('fleet_deactivate') : t('fleet_activate')}</button>
         <button class="btn-icon" onclick="event.stopPropagation();openBoatMaintenanceFromCard('${b.id}')">${t('fleet_log_maintenance')}</button>
         <button class="btn-icon danger" onclick="event.stopPropagation();deleteBoat('${b.id}')">${t('fleet_remove')}</button>
@@ -13088,16 +13129,25 @@ document.getElementById('btn-fleet-select-all').addEventListener('click', functi
   loadFleet();
 });
 
-document.getElementById('btn-show-add-boat-engine').addEventListener('click', () => {
-  if (!window.currentBoatDetailId) {
-    showAlertModal(t('fleet_choose_boat_first'));
-    document.getElementById('fleet-manage-boat-select').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
+// Reached from each boat card's own "+ Add engine" button -- a boat is
+// always already known here (it's that card's id), unlike the old header
+// button that could be clicked with nothing selected yet and just showed an
+// error telling you to pick a boat first. selectFleetBoat also handles
+// switching "Manage boat" to this boat if a different one was open.
+async function openAddEngineFromCard(boatId) {
+  await selectFleetBoat(boatId);
   document.getElementById('form-add-boat-hours').style.display = 'none';
   document.getElementById('form-add-boat-engine').style.display = 'block';
   document.getElementById('form-add-boat-engine').scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
+}
+
+async function openLogHoursFromCard(boatId) {
+  await selectFleetBoat(boatId);
+  document.getElementById('form-add-boat-engine').style.display = 'none';
+  document.getElementById('form-add-boat-hours').style.display = 'block';
+  document.getElementById('form-add-boat-hours').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 document.getElementById('btn-cancel-boat-engine').addEventListener('click', () => {
   document.getElementById('form-add-boat-engine').style.display = 'none';
 });
@@ -13132,16 +13182,6 @@ document.getElementById('btn-save-boat-engine').addEventListener('click', async 
   await loadFleet();
 });
 
-document.getElementById('btn-show-add-boat-hours').addEventListener('click', () => {
-  if (!window.currentBoatDetailId) {
-    showAlertModal(t('fleet_choose_boat_first'));
-    document.getElementById('fleet-manage-boat-select').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
-  document.getElementById('form-add-boat-engine').style.display = 'none';
-  document.getElementById('form-add-boat-hours').style.display = 'block';
-  document.getElementById('form-add-boat-hours').scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
 document.getElementById('btn-cancel-boat-hours').addEventListener('click', () => {
   document.getElementById('form-add-boat-hours').style.display = 'none';
 });
