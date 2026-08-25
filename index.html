@@ -1408,6 +1408,16 @@ body { background: var(--navy); color: var(--text); }
   /* Leaves room so the last card in any page doesn't end up hidden behind
      the floating bar -- .app-main is the actual scroll container. */
   .app-main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
+  /* iOS Safari/WKWebView auto-zooms the ENTIRE page in whenever a tapped
+     input/textarea/select has a font-size under 16px -- several of this
+     app's field classes (.sf-input at 0.9rem, .form-group input at 0.95rem,
+     .trip-type-price-input at 0.85rem, .help-search-input, .location-picker,
+     etc.) are all a bit under that. Rather than hunt every current and future
+     class one by one, this one rule puts a 16px floor under every text field
+     on mobile only -- desktop keeps its tighter sizing since this bug is
+     mobile-only to begin with. Fixes the "screen zooms in when I tap a box
+     to type" bug reported on the phone build. */
+  input, textarea, select { font-size: 16px !important; }
 }
 
 @media (max-width: 768px) {
