@@ -1426,7 +1426,10 @@ body { background: var(--navy); color: var(--text); }
      high, tucked partly under the (now taller) nav bar instead of right below it. */
   .sidebar { display: none; position: fixed; z-index: 40; height: calc(100vh - 56px - env(safe-area-inset-top, 0px)); top: calc(56px + env(safe-area-inset-top, 0px)); }
   .sidebar.open { display: flex; }
-  .sidebar-toggle { display: block; }
+  /* The bottom nav's "More" button now opens this same sidebar drawer, so
+     the header hamburger is a redundant second control for the same action
+     -- removed per Fran, now that there's a persistent way to reach it below. */
+  .sidebar-toggle { display: none; }
   .app-main { padding: 20px 16px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
   .setup-banner { flex-direction: column; }
   .login-card { padding: 28px 20px; }
