@@ -15,7 +15,7 @@
   },
   "ios": {
     "backgroundColor": "#0a1628",
-    "contentInset": "always"
+    "contentInset": "never"
   },
   "server": {
     "androidScheme": "https",
