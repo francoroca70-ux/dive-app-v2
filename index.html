@@ -15397,6 +15397,39 @@ function checkForWrappedConfirmLink() {
   return true;
 }
 
+// Makes the native status bar area match the app's own navy header instead
+// of whatever the OS defaults to. Without this, Android has no plugin telling
+// it what color/style to use up there, so on newer Android versions (which
+// force edge-to-edge layout regardless of what the app asks for) you get a
+// mismatched strip: the OS's own default-colored status bar PLUS this app's
+// CSS separately padding .app-nav for a safe-area inset that's now doubled
+// up on top of it -- the "wasted navy line" Fran saw on his test phone.
+// Setting overlaysWebView so the status bar draws OVER the web content (same
+// model iOS already uses here, per the black-translucent meta tag below)
+// means .app-nav's own env(safe-area-inset-top) padding is the only place
+// reserving that space -- nothing reserves it twice.
+// No-op on the plain web version (dive-app-v2.onrender.com in a browser) --
+// window.Capacitor only exists inside the native app shell.
+async function setUpNativeStatusBar() {
+  try {
+    if (!window.Capacitor?.isNativePlatform?.()) return;
+    // iOS already handles this correctly via capacitor.config.json's own
+    // ios.contentInset:"always" (a working, different, non-overlay model) --
+    // only Android is missing a status-bar plugin at all, which is the actual
+    // gap causing the mismatched strip. Scoped to Android so this doesn't
+    // introduce a NEW inconsistency on iOS that wasn't reported as broken.
+    if (window.Capacitor.getPlatform?.() !== 'android') return;
+    const { StatusBar } = window.Capacitor.Plugins || {};
+    if (!StatusBar) return;
+    await StatusBar.setOverlaysWebView({ overlay: true });
+    await StatusBar.setBackgroundColor({ color: '#0a1628' });
+    await StatusBar.setStyle({ style: 'DARK' }); // DARK = light/white icons, for our dark navy background
+  } catch (e) {
+    console.error('setUpNativeStatusBar failed:', e);
+  }
+}
+setUpNativeStatusBar();
+
 (async () => {
   if (checkForWrappedConfirmLink()) { hideLoadingScreen(); return; }
   if (checkForPasswordRecovery()) { hideLoadingScreen(); return; }
