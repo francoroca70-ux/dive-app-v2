@@ -14,7 +14,16 @@ android {
         // already uses) so CI can hand it the ever-increasing GitHub Actions
         // run number instead of a person needing to remember to bump it by
         // hand before every release. Falls back to 1 for local/manual builds.
-        versionCode (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInteger()
+        //
+        // IMPORTANT: this must be computed into a local variable first, not
+        // chained as `versionCode (...).toInteger()` -- Groovy parses that as
+        // "call versionCode(...), then call .toInteger() on ITS return value"
+        // (which is null, since versionCode is a setter), not "toInteger()
+        // the parenthesized env var expression, then pass that to
+        // versionCode". That parenthesization bug caused every build to fail
+        // with "Value is null" the first time this line actually ran in CI.
+        def resolvedVersionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInteger()
+        versionCode resolvedVersionCode
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
