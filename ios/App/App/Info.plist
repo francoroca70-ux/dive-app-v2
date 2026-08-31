@@ -47,5 +47,13 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- The app only talks to Supabase/Render over standard HTTPS/TLS, not any
+	     custom or proprietary encryption, which is exempt from U.S. export
+	     compliance review. Without this key, every single TestFlight upload
+	     lands in "Missing Compliance" and blocks testers until someone
+	     manually answers the same question in App Store Connect each time.
+	     Declaring it here means future uploads skip that question entirely. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
