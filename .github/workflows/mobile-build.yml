@@ -44,6 +44,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Re-running a failed workflow run keeps the SAME github.run_number --
+      # it does not hand out a new one. Using run_number alone worked for a
+      # brand new run but collided the moment a run was re-run after its
+      # first attempt had already gotten far enough to register that number
+      # with Apple/Google (exactly what happened on run #90's 2nd attempt).
+      # github.run_attempt increments on every re-run (1, 2, 3...), so
+      # combining both guarantees a strictly higher, never-repeated number
+      # for every single attempt, retries included.
+      - name: Compute unique build number
+        run: echo "BUILD_NUMBER=$(( ${{ github.run_number }} * 1000 + ${{ github.run_attempt }} ))" >> "$GITHUB_ENV"
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -67,7 +78,7 @@ jobs:
       - name: Build debug APK
         working-directory: android
         env:
-          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          ANDROID_VERSION_CODE: ${{ env.BUILD_NUMBER }}
         run: |
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
@@ -106,8 +117,10 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
           # Same fix as the iOS job's CURRENT_PROJECT_VERSION override --
           # Google Play refuses to accept a versionCode that's been uploaded
-          # before, so this can't stay hardcoded (see build.gradle).
-          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          # before, so this can't stay hardcoded (see build.gradle). Uses the
+          # run_number + run_attempt combo computed above, not run_number
+          # alone, so a re-run of a failed upload doesn't collide with itself.
+          ANDROID_VERSION_CODE: ${{ env.BUILD_NUMBER }}
         run: |
           ./gradlew bundleRelease --no-daemon
 
@@ -139,6 +152,13 @@ jobs:
       IOS_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
+
+      # Same reasoning as build-android's identical step: github.run_number
+      # alone doesn't change on a re-run, only github.run_attempt does --
+      # combining both is what keeps a retried upload from colliding with the
+      # attempt before it (this is exactly what failed on run #90's retry).
+      - name: Compute unique build number
+        run: echo "BUILD_NUMBER=$(( ${{ github.run_number }} * 1000 + ${{ github.run_attempt }} ))" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -224,7 +244,7 @@ jobs:
             CODE_SIGN_IDENTITY="Apple Distribution" \
             PROVISIONING_PROFILE_SPECIFIER=c6f019bf-de75-48a0-b9a9-09d23af53da0 \
             DEVELOPMENT_TEAM=7Y8G4Y5Y67 \
-            CURRENT_PROJECT_VERSION=${{ github.run_number }}
+            CURRENT_PROJECT_VERSION=${{ env.BUILD_NUMBER }}
 
       - name: Export .ipa
         if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != '' && env.IOS_CERT_BASE64 != '' && env.IOS_CERT_PASSWORD != '' && env.IOS_PROFILE_BASE64 != ''
