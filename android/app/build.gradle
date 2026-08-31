@@ -7,7 +7,14 @@ android {
         applicationId "com.sevenseasops.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Google Play rejects any upload whose versionCode was already used --
+        // this was hardcoded to 1 and never bumped, so every upload after the
+        // first one failed with "Ya se usó el código de la versión 1". Reads
+        // from an env var (same pattern the release signing config below
+        // already uses) so CI can hand it the ever-increasing GitHub Actions
+        // run number instead of a person needing to remember to bump it by
+        // hand before every release. Falls back to 1 for local/manual builds.
+        versionCode (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInteger()
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

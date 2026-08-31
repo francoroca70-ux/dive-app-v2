@@ -66,6 +66,8 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
+        env:
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
         run: |
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
@@ -102,6 +104,10 @@ jobs:
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          # Same fix as the iOS job's CURRENT_PROJECT_VERSION override --
+          # Google Play refuses to accept a versionCode that's been uploaded
+          # before, so this can't stay hardcoded (see build.gradle).
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
         run: |
           ./gradlew bundleRelease --no-daemon
 
