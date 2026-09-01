@@ -860,6 +860,21 @@ body { background: var(--navy); color: var(--text); }
 #offline-banner.offline { background: #92660a; color: #fff; }
 #offline-banner.syncing { background: var(--blue); color: #fff; }
 
+/* Free-trial status, same page-global treatment as #offline-banner above so
+   it's visible no matter which page is active. Two states: "ending" (still
+   a few days left, amber) and "expired" (past trial_ends_at, red) -- see
+   updateTrialBanner(). No hard block yet since there's no checkout to send
+   people to (Paddle billing phase 4) -- just a heads-up + a manual contact
+   link until that ships. */
+#trial-banner {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 16px; font-size: 0.82rem; font-weight: 600; text-align: center;
+  gap: 8px;
+}
+#trial-banner.ending { background: var(--warning); color: #fff; }
+#trial-banner.expired { background: var(--error); color: #fff; }
+#trial-banner a { color: #fff; text-decoration: underline; }
+
 .lang-switcher { display: flex; gap: 4px; }
 /* Sits on dark backgrounds everywhere it appears (login/signup/invite screens,
    and the app top nav right next to .btn-signout) -- unselected language
@@ -2121,6 +2136,11 @@ body { background: var(--navy); color: var(--text); }
   <!-- Offline / sync status banner -->
   <div id="offline-banner" style="display:none;">
     <span class="offline-banner-text"></span>
+  </div>
+
+  <!-- Free-trial status banner -- see updateTrialBanner() -->
+  <div id="trial-banner" style="display:none;">
+    <span class="trial-banner-text"></span>
   </div>
 
   <div class="app-body">
@@ -4352,6 +4372,8 @@ const TRANSLATIONS = {
     offline_banner_waiting: "You're offline — {n} change{s} waiting to sync. Checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.",
     offline_banner_no_changes: "You're offline — checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.",
     offline_syncing_back: 'Back online — syncing {n} change{s}...', offline_syncing: 'Syncing {n} change{s}...', offline_all_synced: 'All changes synced ✓',
+    trial_banner_ending: 'Your free trial ends in {n} day{s}. Email <a href="mailto:contact@sevenseasops.com">contact@sevenseasops.com</a> to keep using Seven Seas.',
+    trial_banner_expired: 'Your free trial has ended. Email <a href="mailto:contact@sevenseasops.com">contact@sevenseasops.com</a> to keep using Seven Seas.',
     auth_invite_desc: "You've been invited to join {org} as {role}. Set a password to finish creating your account.", auth_this_operation: 'this operation',
     auth_enter_name: 'Enter your name.', auth_password_min: 'Password must be at least 6 characters.', auth_setting_up: 'Setting up...',
     auth_account_exists: "This email already has a Seven Seas login. Enter its password above, or use the link below if you don't remember it.",
@@ -4948,6 +4970,8 @@ const TRANSLATIONS = {
     offline_banner_waiting: 'Estás sin conexión — {n} cambio{s} esperando para sincronizar. Checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
     offline_banner_no_changes: 'Estás sin conexión — checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
     offline_syncing_back: 'De vuelta en línea — sincronizando {n} cambio{s}...', offline_syncing: 'Sincronizando {n} cambio{s}...', offline_all_synced: 'Todos los cambios sincronizados ✓',
+    trial_banner_ending: 'Tu prueba gratis termina en {n} día{s}. Escribinos a <a href="mailto:contact@sevenseasops.com">contact@sevenseasops.com</a> para seguir usando Seven Seas.',
+    trial_banner_expired: 'Tu prueba gratis terminó. Escribinos a <a href="mailto:contact@sevenseasops.com">contact@sevenseasops.com</a> para seguir usando Seven Seas.',
     auth_invite_desc: 'Fuiste invitado a unirte a {org} como {role}. Configurá una contraseña para terminar de crear tu cuenta.', auth_this_operation: 'esta operación',
     auth_enter_name: 'Ingresá tu nombre.', auth_password_min: 'La contraseña debe tener al menos 6 caracteres.', auth_setting_up: 'Configurando...',
     auth_account_exists: "Este email ya tiene una cuenta de Seven Seas. Ingresá esa contraseña arriba, o usá el link de abajo si no te acordás.",
@@ -5269,6 +5293,41 @@ function queueOfflineAction(type, payload) {
   const queue = getOfflineQueue();
   queue.push({ id: crypto.randomUUID(), type, payload, createdAt: new Date().toISOString() });
   setOfflineQueue(queue);
+}
+
+// Free-trial status banner -- reads the two globals set whenever the current
+// org loads (loadSettings) or is first created (btn-save-org handler):
+// window.currentOrgSubscriptionStatus / window.currentOrgTrialEndsAt.
+// Orgs that predate the billing system are backfilled to 'active' in the
+// migration (see outputs/paddle-billing-phase3-migration.sql) so they never
+// see this -- it only ever applies to orgs still on the free trial.
+function updateTrialBanner() {
+  const banner = document.getElementById('trial-banner');
+  if (!banner) return;
+  const status = window.currentOrgSubscriptionStatus;
+  const trialEndsAt = window.currentOrgTrialEndsAt;
+  if (status !== 'trial' || !trialEndsAt) {
+    banner.style.display = 'none';
+    return;
+  }
+  const msRemaining = new Date(trialEndsAt).getTime() - Date.now();
+  const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
+  // Don't nag on day 1 of a 14-day trial -- only worth surfacing once it's
+  // genuinely close to running out.
+  if (daysRemaining > 3) {
+    banner.style.display = 'none';
+    return;
+  }
+  banner.style.display = 'flex';
+  const textEl = banner.querySelector('.trial-banner-text');
+  if (daysRemaining <= 0) {
+    banner.className = 'expired';
+    textEl.innerHTML = t('trial_banner_expired');
+  } else {
+    banner.className = 'ending';
+    textEl.innerHTML = t('trial_banner_ending')
+      .replace('{n}', daysRemaining).replace('{s}', daysRemaining > 1 ? 's' : '');
+  }
 }
 
 function updateOfflineBanner() {
@@ -7478,6 +7537,10 @@ async function loadSettings(user) {
       const isOwnerRole = staffRow.role === 'owner';
       applyWaiverGatingUI(isOwnerRole);
 
+      window.currentOrgSubscriptionStatus = org.subscription_status || 'active';
+      window.currentOrgTrialEndsAt = org.trial_ends_at || null;
+      updateTrialBanner();
+
       // Close-this-shop card is owner-only -- everyone else already has the
       // plain "leave this shop" Danger Zone card above it.
       const closeShopCard = document.getElementById('card-close-shop');
@@ -7822,7 +7885,15 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     // Create new org
     const { data: org, error: orgErr } = await sb
       .from('organizations')
-      .insert({ name, country, currency, email, captain_elevated_permissions: captainElevated })
+      .insert({
+        name, country, currency, email, captain_elevated_permissions: captainElevated,
+        // 14-day free trial, same length already promised on the signup
+        // screen ("Start your 14-day free trial"). subscription_status
+        // flips to 'active'/'past_due'/'canceled' via the paddle-webhook
+        // edge function once real billing (Paddle) is wired up.
+        subscription_status: 'trial',
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+      })
       .select()
       .single();
 
@@ -7856,6 +7927,10 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     currentUserRole = 'owner';
     window.waiversEnabled = false;
     applyWaiverGatingUI(true);
+
+    window.currentOrgSubscriptionStatus = org.subscription_status || 'trial';
+    window.currentOrgTrialEndsAt = org.trial_ends_at || null;
+    updateTrialBanner();
 
     document.getElementById('org-notice-new').style.display = 'none';
     await updateHomeBanner();
