@@ -2882,7 +2882,9 @@ body { background: var(--navy); color: var(--text); }
                 <input class="sf-input" type="date" id="cl-logged-date-search">
               </div>
               <button class="btn-cancel" id="cl-logged-clear-search" data-i18n="cl_logged_clear">Clear</button>
+              <button class="btn-save" id="btn-export-checklists" data-i18n="wv_export_day_checklists">Export day's checklists</button>
             </div>
+            <div style="margin-top:-8px;margin-bottom:12px;"><span class="save-feedback" id="cl-export-feedback"></span></div>
             <div id="cl-logged-list"></div>
           </div>
         </div>
@@ -3045,7 +3047,6 @@ body { background: var(--navy); color: var(--text); }
           <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
             <input class="sf-input" type="date" id="waiver-export-date" style="width:auto;">
             <button class="btn-save" id="btn-export-waivers" data-i18n="wv_export_day">Export day's waivers</button>
-            <button class="btn-save" id="btn-export-checklists" data-i18n="wv_export_day_checklists">Export day's checklists</button>
             <button class="btn-save" id="btn-export-trips" data-i18n="wv_export_day_trips">Export day's trip records</button>
           </div>
           <div style="margin-top:6px;"><span class="save-feedback" id="waiver-export-feedback"></span></div>
@@ -10162,9 +10163,21 @@ async function resolveTripLocationId(boatId) {
 document.getElementById('btn-save-trip').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save-trip');
   const feedback = document.getElementById('trip-save-feedback');
+  // Disable immediately, before any of the async checks below (boat conflict,
+  // crew conflict, capacity each round-trip to Supabase, which is what makes
+  // saving take 2-3s). Disabling only happened right before the insert used
+  // to leave that whole window open for a second click to sneak through every
+  // validation check and create a duplicate trip.
+  if (btn.disabled) return;
+  // Editing an existing trip shows "Update trip" on the button; a brand new
+  // one shows "Save trip" -- remember which, so every early-return below
+  // restores the correct label instead of always reverting to "Save trip".
+  const idleLabel = currentTripId ? t('tt_update_trip') : t('tt_save_trip');
+  btn.disabled = true; btn.textContent = t('common_saving');
   if (isOffline) {
     feedback.textContent = t('tt_offline_booking');
     feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = idleLabel;
     return;
   }
   const typeId = document.getElementById('trip-type-select').value;
@@ -10200,6 +10213,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   if (errors.length) {
     feedback.textContent = t('tt_missing_prefix') + errors.join(', ');
     feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = idleLabel;
     return;
   }
 
@@ -10207,6 +10221,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   if (window.currentBoatConflict) {
     feedback.textContent = t('tt_cannot_save_conflict');
     feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = idleLabel;
     return;
   }
   const { conflicted: crewConflicts } = await getEligibleCrewData();
@@ -10214,16 +10229,16 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   if (stillConflicted.length) {
     feedback.textContent = t('tt_cannot_save_crew_conflict').replace('{names}', stillConflicted.map(c => c.full_name).join(', '));
     feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = idleLabel;
     return;
   }
   await checkGuestCapacity();
   if (window.currentCapacityExceeded) {
     feedback.textContent = t('tt_cannot_save_capacity');
     feedback.className = 'save-feedback error visible';
+    btn.disabled = false; btn.textContent = idleLabel;
     return;
   }
-
-  btn.disabled = true; btn.textContent = t('common_saving');
 
   const payload = {
     org_id: currentOrgId,
@@ -10253,7 +10268,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     if (error) {
       feedback.textContent = t('tt_error_saving_trip');
       feedback.className = 'save-feedback error visible';
-      btn.disabled = false; btn.textContent = t('tt_save_trip');
+      btn.disabled = false; btn.textContent = idleLabel;
       return;
     }
     tripId = data.id;
@@ -11101,12 +11116,12 @@ document.getElementById('btn-export-waivers').addEventListener('click', () => {
 
 document.getElementById('btn-export-checklists').addEventListener('click', () => {
   if (!canExportShopRecords()) {
-    const feedback = document.getElementById('waiver-export-feedback');
+    const feedback = document.getElementById('cl-export-feedback');
     feedback.textContent = t('wv_export_no_permission');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const date = document.getElementById('waiver-export-date').value || new Date().toISOString().split('T')[0];
+  const date = document.getElementById('cl-logged-date-search').value || new Date().toISOString().split('T')[0];
   exportChecklistsForDay(date);
 });
 
@@ -11214,7 +11229,7 @@ async function exportWaiversForDay(date) {
 // checklist sign-off that day (department routines + trip-linked checklists
 // both live in checklist_completions, same as the Logged Checklists view).
 async function exportChecklistsForDay(date) {
-  const feedback = document.getElementById('waiver-export-feedback');
+  const feedback = document.getElementById('cl-export-feedback');
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
 
@@ -15169,7 +15184,18 @@ async function seedTripTypesForCategory(category) {
   const starters = CATEGORY_STARTER_TYPES[category] || [];
   if (!gearFieldCatalog.length) await loadGearFieldCatalog();
 
+  // Guard against seeding the same category twice for this org (e.g. a
+  // category getting unchecked/rechecked, or this function otherwise running
+  // more than once) -- same class of bug as the gear-categories duplication
+  // fixed earlier, and what produced "every activity showing twice" in the
+  // trip-type dropdown. Skip any starter type whose name already exists for
+  // this org+category instead of blindly inserting another copy.
+  const { data: existingTypes } = await sb.from('trip_types')
+    .select('name').eq('org_id', currentOrgId).eq('category', category);
+  const existingNames = new Set((existingTypes || []).map(et => et.name));
+
   for (const t of starters) {
+    if (existingNames.has(t.name)) continue;
     const { data: tripType, error } = await sb.from('trip_types').insert({
       org_id: currentOrgId,
       name: t.name,
