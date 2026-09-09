@@ -1846,10 +1846,11 @@ body { background: var(--navy); color: var(--text); }
   <div class="modal-box" style="max-width:720px;">
     <div class="modal-header">
       <h2 data-i18n="bp_modal_title">Choose your plan</h2>
-      <button class="modal-close" onclick="closeChoosePlanModal()">&times;</button>
+      <button class="modal-close" id="choose-plan-close-btn" onclick="closeChoosePlanModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div id="paddle-plans-step">
+        <p id="choose-plan-locked-message" style="display:none;font-size:0.9rem;font-weight:600;color:var(--error);margin-bottom:14px;"></p>
         <p style="font-size:0.9rem;color:var(--muted);margin-bottom:20px;" data-i18n="bp_modal_sub">Pick a plan to keep using Seven Seas. Change or cancel anytime.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
           <div style="text-align:center;padding:18px 14px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
@@ -3771,6 +3772,19 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
 
+        <!-- Billing card -- owner only. Shows current plan/status and links
+             out to Paddle's hosted customer portal (paddle-portal edge
+             function) so an owner can update card details, change plan, or
+             cancel without emailing us. -->
+        <div class="card" id="card-billing" style="display:none;">
+          <div class="card-section-title" data-i18n="set_billing">Billing</div>
+          <p class="card-desc" id="billing-status-line"></p>
+          <div class="settings-actions" style="margin-top:10px;">
+            <button class="btn-cancel" id="btn-manage-billing" onclick="openBillingPortal()" data-i18n="set_manage_billing">Manage billing</button>
+            <span class="save-feedback" id="billing-portal-feedback"></span>
+          </div>
+        </div>
+
         <!-- Danger Zone card -->
         <div class="card" id="card-danger-zone" style="border-color:rgba(229,62,62,0.25);">
           <div class="card-section-title" style="color:var(--error);" data-i18n="set_danger_zone">Danger Zone</div>
@@ -4441,6 +4455,18 @@ const TRANSLATIONS = {
     bp_redirecting: 'Opening secure checkout…',
     bp_checkout_error: 'Could not open checkout. Please try again or email contact@sevenseasops.com.',
     bp_back_to_plans: 'Back to plans',
+    bp_locked_trial_expired: 'Your free trial has ended. Choose a plan to keep using Seven Seas.',
+    bp_locked_canceled: 'Your subscription is no longer active. Choose a plan to keep using Seven Seas.',
+    bp_status_trial: 'Free trial',
+    bp_status_trialing: 'Free trial',
+    bp_status_active: 'Active',
+    bp_status_past_due: 'Payment issue — please update your card',
+    bp_status_paused: 'Paused',
+    bp_status_canceled: 'Canceled',
+    bp_portal_error: 'Could not open the billing portal. Please try again or email contact@sevenseasops.com.',
+    set_billing: 'Billing',
+    set_manage_billing: 'Manage billing',
+    set_billing_current_plan: 'Plan: {plan} · Status: {status}',
     auth_invite_desc: "You've been invited to join {org} as {role}. Set a password to finish creating your account.", auth_this_operation: 'this operation',
     auth_enter_name: 'Enter your name.', auth_password_min: 'Password must be at least 6 characters.', auth_setting_up: 'Setting up...',
     auth_account_exists: "This email already has a Seven Seas login. Enter its password above, or use the link below if you don't remember it.",
@@ -5049,6 +5075,18 @@ const TRANSLATIONS = {
     bp_redirecting: 'Abriendo pago seguro…',
     bp_checkout_error: 'No se pudo abrir el pago. Probá de nuevo o escribinos a contact@sevenseasops.com.',
     bp_back_to_plans: 'Volver a los planes',
+    bp_locked_trial_expired: 'Tu prueba gratis terminó. Elegí un plan para seguir usando Seven Seas.',
+    bp_locked_canceled: 'Tu suscripción ya no está activa. Elegí un plan para seguir usando Seven Seas.',
+    bp_status_trial: 'Prueba gratis',
+    bp_status_trialing: 'Prueba gratis',
+    bp_status_active: 'Activo',
+    bp_status_past_due: 'Problema con el pago — actualizá tu tarjeta',
+    bp_status_paused: 'Pausado',
+    bp_status_canceled: 'Cancelado',
+    bp_portal_error: 'No se pudo abrir el portal de pagos. Probá de nuevo o escribinos a contact@sevenseasops.com.',
+    set_billing: 'Facturación',
+    set_manage_billing: 'Gestionar facturación',
+    set_billing_current_plan: 'Plan: {plan} · Estado: {status}',
     auth_invite_desc: 'Fuiste invitado a unirte a {org} como {role}. Configurá una contraseña para terminar de crear tu cuenta.', auth_this_operation: 'esta operación',
     auth_enter_name: 'Ingresá tu nombre.', auth_password_min: 'La contraseña debe tener al menos 6 caracteres.', auth_setting_up: 'Configurando...',
     auth_account_exists: "Este email ya tiene una cuenta de Seven Seas. Ingresá esa contraseña arriba, o usá el link de abajo si no te acordás.",
@@ -5412,14 +5450,36 @@ function updateTrialBanner() {
 // has passed (or is about to). Deliberately NOT on the public landing page --
 // see HANDOVER.md: the no-card 14-day trial stays exactly as marketed, and
 // Paddle only enters the picture once that trial lapses.
-function openChoosePlanModal() {
+window._subscriptionLocked = false;
+
+// lockedReason: null for the normal, dismissable "choose a plan" flow
+// (reached from the trial banner link, still closable); 'trial_expired' or
+// 'subscription_canceled' for the hard-gate flow from enforceSubscriptionGate()
+// -- same modal, but the close button hides and it can't be dismissed until
+// a plan is actually selected and paid.
+function openChoosePlanModal(lockedReason) {
   const feedback = document.getElementById('choose-plan-feedback');
   feedback.textContent = '';
   feedback.className = 'save-feedback';
   backToPlanPicker();
+
+  window._subscriptionLocked = !!lockedReason;
+  const closeBtn = document.getElementById('choose-plan-close-btn');
+  const lockedMsgEl = document.getElementById('choose-plan-locked-message');
+  if (lockedReason) {
+    closeBtn.style.display = 'none';
+    lockedMsgEl.style.display = 'block';
+    lockedMsgEl.textContent = lockedReason === 'subscription_canceled'
+      ? t('bp_locked_canceled') : t('bp_locked_trial_expired');
+  } else {
+    closeBtn.style.display = '';
+    lockedMsgEl.style.display = 'none';
+  }
+
   document.getElementById('modal-choose-plan').style.display = 'flex';
 }
 function closeChoosePlanModal() {
+  if (window._subscriptionLocked) return;
   document.getElementById('modal-choose-plan').style.display = 'none';
   backToPlanPicker();
 }
@@ -5427,6 +5487,64 @@ function backToPlanPicker() {
   document.getElementById('paddle-plans-step').style.display = 'block';
   document.getElementById('paddle-checkout-step').style.display = 'none';
   document.getElementById('paddle-checkout-container').innerHTML = '';
+}
+
+// ─── PADDLE BILLING (phase 6: gating + billing portal) ───
+// Called after every org load (loadSettings) and right after a brand-new
+// org is created. Hard-blocks the app (via the same choose-plan modal,
+// non-dismissable) once a trial has genuinely lapsed or a subscription was
+// canceled/paused -- 'past_due' deliberately stays unblocked, matching
+// Paddle's own dunning retries, so a card hiccup doesn't lock someone out
+// mid-retry.
+function enforceSubscriptionGate(status, trialEndsAt) {
+  const isTrial = status === 'trial' || status === 'trialing';
+  const trialExpired = isTrial && trialEndsAt && new Date(trialEndsAt).getTime() < Date.now();
+  const canceled = status === 'canceled' || status === 'paused';
+
+  if (trialExpired || canceled) {
+    openChoosePlanModal(canceled ? 'subscription_canceled' : 'trial_expired');
+  } else if (window._subscriptionLocked) {
+    // Status flipped back to good standing (e.g. they just paid) while the
+    // lock screen was up -- release it.
+    window._subscriptionLocked = false;
+    closeChoosePlanModal();
+  }
+}
+
+function updateBillingCard(org) {
+  const card = document.getElementById('card-billing');
+  if (!card || !org) return;
+  const isOwnerRole = currentUserRole === 'owner';
+  card.style.display = isOwnerRole && org.paddle_customer_id ? 'block' : 'none';
+  if (!org.paddle_customer_id) return;
+
+  const statusLine = document.getElementById('billing-status-line');
+  const planLabel = org.plan_tier
+    ? org.plan_tier.charAt(0).toUpperCase() + org.plan_tier.slice(1) : '—';
+  const statusLabel = t('bp_status_' + (org.subscription_status || 'active')) ||
+    (org.subscription_status || 'active');
+  statusLine.textContent = t('set_billing_current_plan')
+    .replace('{plan}', planLabel).replace('{status}', statusLabel);
+}
+
+async function openBillingPortal() {
+  const btn = document.getElementById('btn-manage-billing');
+  const feedback = document.getElementById('billing-portal-feedback');
+  btn.disabled = true;
+  feedback.textContent = t('bp_redirecting');
+  feedback.className = 'save-feedback visible';
+  try {
+    const { data, error } = await sb.functions.invoke('paddle-portal', {});
+    if (error || !data?.url) throw error || new Error('no url');
+    window.open(data.url, '_blank');
+    feedback.textContent = '';
+    feedback.className = 'save-feedback';
+  } catch (err) {
+    feedback.textContent = t('bp_portal_error');
+    feedback.className = 'save-feedback error visible';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function openPaddleCheckout(tier) {
@@ -7674,6 +7792,8 @@ async function loadSettings(user) {
       window.currentOrgSubscriptionStatus = org.subscription_status || 'active';
       window.currentOrgTrialEndsAt = org.trial_ends_at || null;
       updateTrialBanner();
+      enforceSubscriptionGate(window.currentOrgSubscriptionStatus, window.currentOrgTrialEndsAt);
+      updateBillingCard(org);
 
       // Close-this-shop card is owner-only -- everyone else already has the
       // plain "leave this shop" Danger Zone card above it.
