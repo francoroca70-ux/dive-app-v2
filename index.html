@@ -1849,28 +1849,34 @@ body { background: var(--navy); color: var(--text); }
       <button class="modal-close" onclick="closeChoosePlanModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:0.9rem;color:var(--muted);margin-bottom:20px;" data-i18n="bp_modal_sub">Pick a plan to keep using Seven Seas. Change or cancel anytime.</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
-        <div style="text-align:center;padding:18px 14px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
-          <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Starter</div>
-          <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$49<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_starter_desc">Up to 2 boats · unlimited staff</div>
-          <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('starter')" data-i18n="bp_select_plan">Select</button>
+      <div id="paddle-plans-step">
+        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:20px;" data-i18n="bp_modal_sub">Pick a plan to keep using Seven Seas. Change or cancel anytime.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+          <div style="text-align:center;padding:18px 14px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
+            <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Starter</div>
+            <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$49<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_starter_desc">Up to 2 boats · unlimited staff</div>
+            <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('starter')" data-i18n="bp_select_plan">Select</button>
+          </div>
+          <div style="text-align:center;padding:18px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--foam);">
+            <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Growth</div>
+            <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$89<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_growth_desc">Up to 5 boats · unlimited staff</div>
+            <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('growth')" data-i18n="bp_select_plan">Select</button>
+          </div>
+          <div style="text-align:center;padding:18px 14px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
+            <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Pro</div>
+            <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$149<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_pro_desc">Up to 15 boats · unlimited staff</div>
+            <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('pro')" data-i18n="bp_select_plan">Select</button>
+          </div>
         </div>
-        <div style="text-align:center;padding:18px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--foam);">
-          <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Growth</div>
-          <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$89<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_growth_desc">Up to 5 boats · unlimited staff</div>
-          <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('growth')" data-i18n="bp_select_plan">Select</button>
-        </div>
-        <div style="text-align:center;padding:18px 14px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
-          <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Pro</div>
-          <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$149<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_pro_desc">Up to 15 boats · unlimited staff</div>
-          <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('pro')" data-i18n="bp_select_plan">Select</button>
-        </div>
+        <span class="save-feedback" id="choose-plan-feedback" style="display:block;margin-top:14px;text-align:center;"></span>
       </div>
-      <span class="save-feedback" id="choose-plan-feedback" style="display:block;margin-top:14px;text-align:center;"></span>
+      <div id="paddle-checkout-step" style="display:none;">
+        <button type="button" onclick="backToPlanPicker()" style="background:none;border:none;color:var(--blue);font-size:0.85rem;font-weight:600;cursor:pointer;margin-bottom:12px;padding:0;">&larr; <span data-i18n="bp_back_to_plans">Back to plans</span></button>
+        <div id="paddle-checkout-container"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -4434,6 +4440,7 @@ const TRANSLATIONS = {
     bp_select_plan: 'Select',
     bp_redirecting: 'Opening secure checkout…',
     bp_checkout_error: 'Could not open checkout. Please try again or email contact@sevenseasops.com.',
+    bp_back_to_plans: 'Back to plans',
     auth_invite_desc: "You've been invited to join {org} as {role}. Set a password to finish creating your account.", auth_this_operation: 'this operation',
     auth_enter_name: 'Enter your name.', auth_password_min: 'Password must be at least 6 characters.', auth_setting_up: 'Setting up...',
     auth_account_exists: "This email already has a Seven Seas login. Enter its password above, or use the link below if you don't remember it.",
@@ -5041,6 +5048,7 @@ const TRANSLATIONS = {
     bp_select_plan: 'Elegir',
     bp_redirecting: 'Abriendo pago seguro…',
     bp_checkout_error: 'No se pudo abrir el pago. Probá de nuevo o escribinos a contact@sevenseasops.com.',
+    bp_back_to_plans: 'Volver a los planes',
     auth_invite_desc: 'Fuiste invitado a unirte a {org} como {role}. Configurá una contraseña para terminar de crear tu cuenta.', auth_this_operation: 'esta operación',
     auth_enter_name: 'Ingresá tu nombre.', auth_password_min: 'La contraseña debe tener al menos 6 caracteres.', auth_setting_up: 'Configurando...',
     auth_account_exists: "Este email ya tiene una cuenta de Seven Seas. Ingresá esa contraseña arriba, o usá el link de abajo si no te acordás.",
@@ -5408,10 +5416,17 @@ function openChoosePlanModal() {
   const feedback = document.getElementById('choose-plan-feedback');
   feedback.textContent = '';
   feedback.className = 'save-feedback';
+  backToPlanPicker();
   document.getElementById('modal-choose-plan').style.display = 'flex';
 }
 function closeChoosePlanModal() {
   document.getElementById('modal-choose-plan').style.display = 'none';
+  backToPlanPicker();
+}
+function backToPlanPicker() {
+  document.getElementById('paddle-plans-step').style.display = 'block';
+  document.getElementById('paddle-checkout-step').style.display = 'none';
+  document.getElementById('paddle-checkout-container').innerHTML = '';
 }
 
 async function openPaddleCheckout(tier) {
@@ -5422,18 +5437,30 @@ async function openPaddleCheckout(tier) {
   feedback.className = 'save-feedback visible';
   try {
     const { data: { user } } = await sb.auth.getUser();
-    // customData carries org_id through to the webhook (phase 5) so a
-    // completed payment can be matched back to the right org directly,
-    // instead of having to look one up by customer email.
+    // Inline checkout (not overlay): renders branded directly into
+    // #paddle-checkout-container using the colors/fonts set in Paddle ->
+    // Checkout settings -> Inline tab, instead of Paddle's default green
+    // overlay popup. customData carries org_id through to the webhook
+    // (phase 5) so a completed payment can be matched back to the right
+    // org directly, instead of having to look one up by customer email.
+    document.getElementById('paddle-plans-step').style.display = 'none';
+    document.getElementById('paddle-checkout-step').style.display = 'block';
     Paddle.Checkout.open({
       items: [{ priceId, quantity: 1 }],
       customer: user?.email ? { email: user.email } : undefined,
-      customData: { org_id: currentOrgId || null, plan_tier: tier }
+      customData: { org_id: currentOrgId || null, plan_tier: tier },
+      settings: {
+        displayMode: 'inline',
+        frameTarget: 'paddle-checkout-container',
+        frameInitialHeight: 450,
+        frameStyle: 'width:100%; min-width:280px; background-color: transparent; border: none;'
+      }
     });
     feedback.className = 'save-feedback';
   } catch (err) {
     feedback.textContent = t('bp_checkout_error');
     feedback.className = 'save-feedback error visible';
+    backToPlanPicker();
   }
 }
 
