@@ -838,6 +838,15 @@ body { background: var(--navy); color: var(--text); }
   background: var(--foam); border-radius: 10px;
   border: 1px solid var(--border);
 }
+@media (max-width: 480px) {
+  /* Logged Checklists' search row (date field + Clear + Export buttons) --
+     on narrow phones, flex-wrap alone let the Clear/Export buttons sit
+     right up against (and visually overlap) the search box's border.
+     Force a clean vertical stack instead, full-width, so nothing crowds. */
+  #cl-logged-search-row { flex-direction: column; align-items: stretch; }
+  #cl-logged-search-row > .sf-group,
+  #cl-logged-search-row > button { max-width: none; width: 100%; flex: 1 1 auto; }
+}
 .location-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 0; border-bottom: 1px solid var(--border);
@@ -2906,8 +2915,16 @@ body { background: var(--navy); color: var(--text); }
               </div>
             </div>
 
-            <div class="cl-role-tab-row" id="dept-tabs"></div>
-            <div class="cl-tab-row" id="dept-cadence-tabs" style="margin-top:10px;"></div>
+            <div class="sf-row" style="margin-bottom:0;">
+              <div class="sf-group" style="max-width:260px;">
+                <label class="sf-label" data-i18n="cl_department_label">Department</label>
+                <select class="sf-input" id="dept-tabs" onchange="selectDeptDepartment(this.value)"></select>
+              </div>
+              <div class="sf-group" style="max-width:200px;">
+                <label class="sf-label" data-i18n="cl_cadence_label">Checklist</label>
+                <select class="sf-input" id="dept-cadence-tabs" onchange="selectDeptCadence(this.value)"></select>
+              </div>
+            </div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0;">
               <div class="card-section-title" style="margin-bottom:0;" id="dept-routine-title"></div>
               <div class="cl-role-badge" id="dept-routine-status" data-i18n="cl_pending">Pending</div>
@@ -2933,13 +2950,13 @@ body { background: var(--navy); color: var(--text); }
           <div class="card">
             <div class="card-section-title" style="margin-bottom:4px;" data-i18n="cl_logged_title">Logged Checklists</div>
             <p class="card-desc" style="margin-bottom:14px;" data-i18n="cl_logged_sub">Every gear and vessel sign-off, organized by day.</p>
-            <div class="inline-form" style="margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;">
+            <div class="inline-form" id="cl-logged-search-row" style="margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;">
               <div class="sf-group" style="max-width:220px;flex:1 1 160px;margin-bottom:0;">
                 <label class="sf-label" data-i18n="cl_logged_search_date">Search a date</label>
                 <input class="sf-input" type="date" id="cl-logged-date-search">
               </div>
-              <button class="btn-cancel" id="cl-logged-clear-search" data-i18n="cl_logged_clear">Clear</button>
-              <button class="btn-save" id="btn-export-checklists" data-i18n="wv_export_day_checklists">Export day's checklists</button>
+              <button class="btn-cancel" id="cl-logged-clear-search" style="flex:0 0 auto;" data-i18n="cl_logged_clear">Clear</button>
+              <button class="btn-save" id="btn-export-checklists" style="flex:0 0 auto;" data-i18n="wv_export_day_checklists">Export day's checklists</button>
             </div>
             <div style="margin-top:-8px;margin-bottom:12px;"><span class="save-feedback" id="cl-export-feedback"></span></div>
             <div id="cl-logged-list"></div>
@@ -4139,6 +4156,7 @@ const TRANSLATIONS = {
     cl_complete_once_daily: 'Complete once per day before first departure. Independent of individual trips.',
     cl_captain_signoff: 'Captain Sign-Off', cl_captain_name: 'Captain name', cl_boat_name: 'Boat name',
     cl_sign_off_depart: 'Sign Off — Clear to Depart', cl_department_routines: 'Department Checklists',
+    cl_department_label: 'Department', cl_cadence_label: 'Checklist',
     cl_reusable_routines_hint: 'Recurring routines per department, each signed off and logged.',
     cl_new_checklist_btn: '+ New checklist', cl_new_checklist_title: 'New department checklist',
     cl_new_checklist_for_label: 'For role', cl_new_checklist_title_label: 'Checklist title',
@@ -4488,6 +4506,7 @@ const TRANSLATIONS = {
     tt_cannot_save_capacity: 'Cannot save: too many guests for this boat once crew is accounted for.', tt_error_saving_trip: 'Error saving trip.', tt_groups_count: 'Groups ({n})',
     checkin_offline: "You're offline — check-in needs a live connection.",
     wv_error_loading: 'Error loading waivers.', wv_allow_popups_export: 'Please allow pop-ups to export.',
+    cl_error_loading: 'Error loading checklists.',
     pay_offline: "You're offline — payments need a live connection so nothing gets logged twice or lost. Try again once you're back online.",
     pay_exceeds_owed_note: "This exceeds what's owed — please add a note explaining why.",
     guest_offline: "You're offline — guest changes need a live connection. Try again once you're back online.",
@@ -4759,6 +4778,7 @@ const TRANSLATIONS = {
     cl_complete_once_daily: 'Completar una vez al día antes de la primera salida. Independiente de las salidas individuales.',
     cl_captain_signoff: 'Confirmación del Capitán', cl_captain_name: 'Nombre del capitán', cl_boat_name: 'Nombre de la embarcación',
     cl_sign_off_depart: 'Confirmar — Listo para Zarpar', cl_department_routines: 'Checklists por Departamento',
+    cl_department_label: 'Departamento', cl_cadence_label: 'Checklist',
     cl_reusable_routines_hint: 'Checklists recurrentes por departamento, cada una firmada y logueada.',
     cl_new_checklist_btn: '+ Nueva checklist', cl_new_checklist_title: 'Nueva checklist de departamento',
     cl_new_checklist_for_label: 'Para el rol', cl_new_checklist_title_label: 'Título de la checklist',
@@ -5108,6 +5128,7 @@ const TRANSLATIONS = {
     tt_cannot_save_capacity: 'No se puede guardar: demasiados huéspedes para esta embarcación una vez contada la tripulación.', tt_error_saving_trip: 'Error al guardar la salida.', tt_groups_count: 'Grupos ({n})',
     checkin_offline: 'Estás sin conexión — el registro de llegada necesita conexión.',
     wv_error_loading: 'Error al cargar los formularios.', wv_allow_popups_export: 'Permití las ventanas emergentes para exportar.',
+    cl_error_loading: 'Error al cargar los checklists.',
     pay_offline: 'Estás sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Intentá de nuevo cuando vuelvas a estar en línea.',
     pay_exceeds_owed_note: 'Esto excede lo adeudado — por favor agregá una nota explicando por qué.',
     guest_offline: 'Estás sin conexión — los cambios de huéspedes necesitan conexión. Intentá de nuevo cuando vuelvas a estar en línea.',
@@ -11496,7 +11517,7 @@ async function exportChecklistsForDay(date) {
     .order('signed_at');
 
   if (error) {
-    feedback.textContent = t('wv_error_loading');
+    feedback.textContent = t('cl_error_loading');
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -13106,8 +13127,10 @@ function initDeptChecklists() {
   const depts = departmentRoutinesGet();
   const visibleKeys = visibleDeptKeysForCurrentUser();
   if (!visibleKeys.includes(currentDeptKey)) currentDeptKey = visibleKeys[0];
-  tabRow.innerHTML = visibleKeys.map((key, i) =>
-    `<div class="cl-role-tab ${key===currentDeptKey?'active':''}" onclick="selectDeptDepartment('${key}',this)">${depts[key].label}</div>`
+  // Dropdowns instead of a pill row per department/cadence -- much less
+  // vertical/horizontal space on mobile once a shop has several departments.
+  tabRow.innerHTML = visibleKeys.map(key =>
+    `<option value="${key}" ${key===currentDeptKey?'selected':''}>${depts[key].label}</option>`
   ).join('');
   document.getElementById('btn-show-new-checklist').style.display = myCreatableChecklistRoles().length ? 'inline-block' : 'none';
   loadCustomChecklists().then(renderDeptRoutine);
@@ -13115,11 +13138,9 @@ function initDeptChecklists() {
   renderDeptRoutine();
 }
 
-function selectDeptDepartment(key, el) {
+function selectDeptDepartment(key) {
   currentDeptKey = key;
   currentCadenceKey = 'morning';
-  document.querySelectorAll('#dept-tabs .cl-role-tab').forEach(tb => tb.classList.remove('active'));
-  el.classList.add('active');
   renderDeptCadenceTabs();
   renderDeptRoutine();
 }
@@ -13128,14 +13149,12 @@ function renderDeptCadenceTabs() {
   const depts = departmentRoutinesGet();
   const cadences = depts[currentDeptKey].cadences;
   document.getElementById('dept-cadence-tabs').innerHTML = Object.keys(cadences).map(cadKey =>
-    `<div class="cl-tab ${cadKey===currentCadenceKey?'active':''}" onclick="selectDeptCadence('${cadKey}',this)">${cadences[cadKey].label}</div>`
+    `<option value="${cadKey}" ${cadKey===currentCadenceKey?'selected':''}>${cadences[cadKey].label}</option>`
   ).join('');
 }
 
-function selectDeptCadence(key, el) {
+function selectDeptCadence(key) {
   currentCadenceKey = key;
-  document.querySelectorAll('#dept-cadence-tabs .cl-tab').forEach(tb => tb.classList.remove('active'));
-  el.classList.add('active');
   renderDeptRoutine();
 }
 
@@ -13143,7 +13162,27 @@ function currentDeptRoutine() {
   return departmentRoutinesGet()[currentDeptKey].cadences[currentCadenceKey];
 }
 
-function renderDeptRoutine() {
+// Daily cadences (morning/eod) check "already done today"; monthly/yearly
+// check the current calendar month/year instead, matching how often that
+// cadence is actually meant to be repeated.
+function deptRoutinePeriodRange(cadenceKey) {
+  const now = new Date();
+  let start;
+  if (cadenceKey === 'monthly') {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (cadenceKey === 'yearly') {
+    start = new Date(now.getFullYear(), 0, 1);
+  } else {
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+  return { start: start.toISOString(), end: new Date().toISOString() };
+}
+
+// Reloads any sign-off already on file for the current department + cadence
+// period, so switching to (or reopening) an already-completed routine shows
+// its real "done" status instead of a misleading blank "Pending" every time
+// -- same pattern as renderInstructorChecklistForTrip's per-trip check.
+async function renderDeptRoutine() {
   const routine = currentDeptRoutine();
   const roleKey = routine.role;
   deptRoutineChecks[roleKey] = deptRoutineChecks[roleKey] || {};
@@ -13155,6 +13194,25 @@ function renderDeptRoutine() {
   if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
   renderCheckItems('dept-list', routine.items, deptRoutineChecks[roleKey], 'toggleDeptItem', 'dept-routine-progress');
   renderCustomChecklistsForCurrentView();
+
+  if (!currentOrgId) return;
+  const period = deptRoutinePeriodRange(currentCadenceKey);
+  const { data: existing } = await sb.from('checklist_completions')
+    .select('signed_by, signed_at, completed_items, total_items')
+    .eq('org_id', currentOrgId).eq('role', roleKey)
+    .gte('signed_at', period.start).lte('signed_at', period.end)
+    .order('signed_at', { ascending: false }).limit(1);
+  // Guard against a stale response landing after the user already switched
+  // to a different department/cadence tab while this was in flight.
+  if (roleKey !== currentDeptRoutine().role) return;
+  if (existing && existing.length) {
+    const s = existing[0];
+    if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
+    if (doneBanner) {
+      doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${s.signed_by}</strong> ${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
+      doneBanner.style.display = 'block';
+    }
+  }
 }
 
 function resetDeptRoutine() {
