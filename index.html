@@ -1613,6 +1613,20 @@ body { background: var(--navy); color: var(--text); }
     min-height: 40px;
     display: inline-flex; align-items: center; justify-content: center;
   }
+  /* Every modal's × shared one class and measured 21x25 -- under a third of
+     the recommended tap area, on the one control you reach for to get out of
+     a form, often in a hurry with a boat to load. It sits at the far end of a
+     space-between flex header, so growing it just claims empty space. */
+  .modal-close {
+    min-width: 44px; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0;
+  }
+  /* Private boat / Shared boat -- a primary either/or in the booking flow. */
+  .radio-btn {
+    min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
   /* Deliberately NOT touched: .expandable-title (the Settings accordion
      headers). They measure only 23-27px tall but run the full 306px width of
      the card, so they are already easy to hit, and padding them out would
