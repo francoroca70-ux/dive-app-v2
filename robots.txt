@@ -1,0 +1,15 @@
+# Seven Seas — https://www.sevenseasops.com
+# Both robots.txt and sitemap.xml were returning 404, so search engines had no
+# entry point and no crawl guidance at all.
+
+User-agent: *
+Allow: /
+
+# The app itself is behind a login and its deep links carry one-time tokens
+# (?waiver=..., ?invite=...). Nothing there is useful in a search result, and
+# tokenised URLs should never end up in an index.
+Disallow: /index.html
+Disallow: /*?waiver=
+Disallow: /*?invite=
+
+Sitemap: https://www.sevenseasops.com/sitemap.xml
