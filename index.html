@@ -4508,6 +4508,7 @@ const TRANSLATIONS = {
     checkin_offline: "You're offline — check-in needs a live connection.",
     wv_error_loading: 'Error loading waivers.', wv_allow_popups_export: 'Please allow pop-ups to export.',
     cl_error_loading: 'Error loading checklists.',
+    bp_use_web_for_billing: 'Please open sevenseasops.com in a web browser (Safari, Chrome) to choose a plan or manage billing.',
     pay_offline: "You're offline — payments need a live connection so nothing gets logged twice or lost. Try again once you're back online.",
     pay_exceeds_owed_note: "This exceeds what's owed — please add a note explaining why.",
     guest_offline: "You're offline — guest changes need a live connection. Try again once you're back online.",
@@ -5131,6 +5132,7 @@ const TRANSLATIONS = {
     checkin_offline: 'Estás sin conexión — el registro de llegada necesita conexión.',
     wv_error_loading: 'Error al cargar los formularios.', wv_allow_popups_export: 'Permití las ventanas emergentes para exportar.',
     cl_error_loading: 'Error al cargar los checklists.',
+    bp_use_web_for_billing: 'Abrí sevenseasops.com desde un navegador (Safari, Chrome) para elegir un plan o gestionar la facturación.',
     pay_offline: 'Estás sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Intentá de nuevo cuando vuelvas a estar en línea.',
     pay_exceeds_owed_note: 'Esto excede lo adeudado — por favor agregá una nota explicando por qué.',
     guest_offline: 'Estás sin conexión — los cambios de huéspedes necesitan conexión. Intentá de nuevo cuando vuelvas a estar en línea.',
@@ -5553,6 +5555,11 @@ function updateBillingCard(org) {
 async function openBillingPortal() {
   const btn = document.getElementById('btn-manage-billing');
   const feedback = document.getElementById('billing-portal-feedback');
+  if (isNativeAppShell()) {
+    feedback.innerHTML = t('bp_use_web_for_billing');
+    feedback.className = 'save-feedback visible';
+    return;
+  }
   btn.disabled = true;
   feedback.textContent = t('bp_redirecting');
   feedback.className = 'save-feedback visible';
@@ -5570,10 +5577,28 @@ async function openBillingPortal() {
   }
 }
 
+// Apple (Guideline 3.1.1) and Google Play's Payments policy both require
+// digital subscriptions purchased *inside* a native app shell to go through
+// their own in-app billing, not a third-party processor like Paddle --
+// opening Paddle's checkout inside the iOS/Android app would put Seven Seas
+// at real risk of App Store/Play rejection or removal. The web app (used
+// directly in a browser, not wrapped by Capacitor) is unaffected and keeps
+// using Paddle checkout normally -- this only redirects native-app users to
+// manage billing there instead.
+function isNativeAppShell() {
+  return !!(window.Capacitor && typeof window.Capacitor.getPlatform === 'function' &&
+    ['ios', 'android'].includes(window.Capacitor.getPlatform()));
+}
+
 async function openPaddleCheckout(tier) {
   const priceId = PADDLE_PRICE_IDS[tier];
   const feedback = document.getElementById('choose-plan-feedback');
   if (!priceId) return;
+  if (isNativeAppShell()) {
+    feedback.innerHTML = t('bp_use_web_for_billing');
+    feedback.className = 'save-feedback visible';
+    return;
+  }
   feedback.textContent = t('bp_redirecting');
   feedback.className = 'save-feedback visible';
   try {
