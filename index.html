@@ -4047,6 +4047,7 @@ const TRANSLATIONS = {
     tt_link_tab: 'Link to guest tab (optional)', tt_check_in: 'Check In',
     tt_group_contact: 'Group {n} — Contact', tt_booked_by_placeholder: 'Staff member name', tt_save_add_guests: 'Save the trip to add guests.',
     tt_activity_type: 'Activity type', tt_same_as_trip: 'Same as trip', tt_activity_override_badge: 'Different activity',
+    tt_different_activity_prompt: 'Is this group doing a different activity?',
     tt_save_log_payments: 'Save the trip to log payments.', tt_no_tab: 'No tab — pay per trip', tt_checked_in: 'Checked In', tt_checkin_disabled_title: 'Add guests first',
     tt_confirm_checkin: 'Confirm check-in', tt_verify_against: 'Verify against: ', tt_already_checked_in: '(already checked in)',
     tt_confirm_checkin_btn: 'Confirm Check-In', tt_cancel: 'Cancel', tt_no_crew_yet: 'No crew assigned yet.', tt_select_crew_member: 'Select crew member',
@@ -4669,6 +4670,7 @@ const TRANSLATIONS = {
     tt_link_tab: 'Vincular a cuenta de huésped (opcional)', tt_check_in: 'Registrar Llegada',
     tt_group_contact: 'Grupo {n} — Contacto', tt_booked_by_placeholder: 'Nombre del miembro del personal', tt_save_add_guests: 'Guarda la salida para agregar huéspedes.',
     tt_activity_type: 'Tipo de actividad', tt_same_as_trip: 'Igual que la salida', tt_activity_override_badge: 'Actividad diferente',
+    tt_different_activity_prompt: '¿Este grupo hace una actividad diferente?',
     tt_save_log_payments: 'Guarda la salida para registrar pagos.', tt_no_tab: 'Sin cuenta — pagar por salida', tt_checked_in: 'Registrado', tt_checkin_disabled_title: 'Agrega huéspedes primero',
     tt_confirm_checkin: 'Confirmar llegada', tt_verify_against: 'Verificar contra: ', tt_already_checked_in: '(ya registrado)',
     tt_confirm_checkin_btn: 'Confirmar Llegada', tt_cancel: 'Cancelar', tt_no_crew_yet: 'Aún no hay tripulación asignada.', tt_select_crew_member: 'Seleccionar miembro de la tripulación',
@@ -6135,7 +6137,7 @@ function showPage(id) {
   // finishing a setup step (e.g. pricing a trip type) in Settings and then
   // clicking back to Home shows stale, already-outdated checklist state.
   if (id === 'home') { refreshHomeStats(); renderHomeGettingStartedOrFinance(); }
-  if (id === 'calendar') renderCalendar();
+  if (id === 'calendar') { renderCalendar(); checkDoubleBookings(); }
   if (id === 'checklists') initChecklists();
   if (id === 'fleet') loadFleet();
   if (id === 'gear') loadCompressors();
@@ -6593,7 +6595,7 @@ function refreshCurrentView() {
   const activePage = document.querySelector('.page.active');
   const pageId = activePage ? activePage.id : '';
 
-  if (pageId === 'page-calendar' && typeof renderCalendar === 'function') renderCalendar();
+  if (pageId === 'page-calendar' && typeof renderCalendar === 'function') { renderCalendar(); checkDoubleBookings(); }
   if (pageId === 'page-fleet' && typeof loadFleet === 'function') loadFleet();
   if (pageId === 'page-crew' && typeof loadCrew === 'function') loadCrew();
   if (pageId === 'page-checklists') {
@@ -8373,7 +8375,14 @@ async function renderCalendar() {
   if (calView === 'day') await renderDayView();
   else if (calView === 'week') await renderWeekView();
   else await renderMonthView();
-  checkDoubleBookings();
+  // checkDoubleBookings() deliberately does NOT run here -- it was firing on
+  // every day/week/month toggle and every prev/next/"today" click, each time
+  // re-fetching a 104-day window with nested boat/crew joins and running an
+  // O(n^2) overlap scan. On a slow connection (reported: 3-10s per view
+  // switch on tablet Safari) that made simple navigation feel broken. It
+  // only needs to re-run when the underlying trip data could have actually
+  // changed -- see the explicit calls at calendar page-open and trip
+  // modal-close/delete instead.
 }
 
 // Scans a rolling window of trips for two bookings sharing the same boat or the same
@@ -8922,13 +8931,15 @@ document.getElementById('btn-delete-trip').addEventListener('click', async () =>
   document.getElementById('modal-trip').style.display = 'none';
   currentTripId = null;
   renderCalendar();
+  checkDoubleBookings();
 });
 document.getElementById('modal-trip-close').addEventListener('click', () => {
   document.getElementById('modal-trip').style.display = 'none';
   renderCalendar();
+  checkDoubleBookings();
 });
 document.getElementById('modal-trip').addEventListener('click', function(e) {
-  if (e.target === this) { this.style.display = 'none'; renderCalendar(); }
+  if (e.target === this) { this.style.display = 'none'; renderCalendar(); checkDoubleBookings(); }
 });
 
 window.currentBookingMode = 'private';
@@ -9089,6 +9100,7 @@ async function groupCardHTML(g, index) {
       </div>
     </div>
     <div class="sf-row">
+      ${(g.trip_type_id || groupActivityPickerOpen[key]) ? `
       <div class="sf-group">
         <label class="sf-label">${t('tt_activity_type')}</label>
         <select class="sf-input" onchange="updateGroupTripType('${key}', this.value)">
@@ -9097,6 +9109,11 @@ async function groupCardHTML(g, index) {
         </select>
       </div>
       ${g.trip_type_id ? `<div class="sf-group" style="display:flex;align-items:flex-end;padding-bottom:9px;"><span class="group-activity-override-badge">${t('tt_activity_override_badge')}</span></div>` : ''}
+      ` : `
+      <div class="sf-group">
+        <button type="button" class="btn-cancel" style="font-size:0.82rem;" onclick="showGroupActivityPicker('${key}')">${t('tt_different_activity_prompt')}</button>
+      </div>
+      `}
     </div>
     ${checkInHtml ? `<div style="margin-top:14px;">${checkInHtml}</div><div id="checkin-panel-${g.id}" style="display:none;margin-top:10px;"></div>` : ''}
 
@@ -9255,6 +9272,17 @@ async function updateGroupField(key, field, value) {
       sendBookingConfirmationIfNeeded(g.id);
     }
   }
+}
+
+// Which groups have had their "Activity type" picker manually opened this
+// session -- keeps the dropdown hidden behind a button by default (it was
+// confusing next to the group's own trip-level activity, since most groups
+// never need it), while still showing it outright once a group actually has
+// an override set (g.trip_type_id), so an existing override is never hidden.
+let groupActivityPickerOpen = {};
+function showGroupActivityPicker(key) {
+  groupActivityPickerOpen[key] = true;
+  renderGroupsPanel();
 }
 
 // A group's activity-type override (dive vs. snorkel riding the same boat
@@ -11880,9 +11908,17 @@ async function renderTripCrewSection() {
 function addSelectedTripCrew() {
   const sel = document.getElementById('trip-crew-select');
   if (!sel.value) return;
+  const staffId = sel.value;
   const name = sel.options[sel.selectedIndex].dataset.name;
   const rate = sel.options[sel.selectedIndex].dataset.rate;
-  addTripCrewToCache(sel.value, name, rate);
+  // The dropdown's re-render (renderTripCrewSection, which re-queries
+  // availability/conflicts) is async and can take several seconds on a
+  // slow connection -- until it completes, the <select> still shows this
+  // same person as an option. Reset it to blank immediately so a second
+  // tap on "Add" before the refresh lands has nothing to resubmit, instead
+  // of assigning the same crew member two or three times.
+  sel.value = '';
+  addTripCrewToCache(staffId, name, rate);
 }
 // Crew hire cost only gets written to trip_groups.crew_hire_total when the
 // trip is saved (see the "Save trip" handler), so the Payment section's
@@ -11900,6 +11936,10 @@ function recalcCrewHirePreview() {
   tripGroups_cache[0]._crewHirePreview = crewHireTotal;
 }
 function addTripCrewToCache(staffId, fullName, dayRate) {
+  // Belt-and-suspenders against the same crew member landing twice --
+  // the dropdown itself should already exclude anyone assigned, but its
+  // refresh is async, so this catches a double-tap that beat that refresh.
+  if (tripCrewCache.some(c => c.staff_id === staffId)) return;
   tripCrewCache.push({ staff_id: staffId, full_name: fullName, day_rate: parseFloat(dayRate) || 0 });
   renderTripCrewSection();
   checkGuestCapacity();
