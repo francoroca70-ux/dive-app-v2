@@ -755,7 +755,13 @@ body { background: var(--navy); color: var(--text); }
 }
 .settings-row:last-of-type { border-bottom: none; }
 .settings-label { color: var(--muted); width: 140px; flex-shrink: 0; font-weight: 500; }
-.settings-value { color: var(--navy); font-weight: 600; }
+/* min-width:0 is the important bit: a flex item defaults to min-width:auto,
+   which refuses to shrink below its content, and an email address has no
+   natural break opportunity. On a 375px phone the fixed 140px label + 16px
+   gap left ~150px for a ~183px address, so it pushed 5px off the right edge
+   of the screen (caught on the Settings page with demo@sevenseasops.com).
+   overflow-wrap:anywhere then lets it actually wrap instead of just clipping. */
+.settings-value { color: var(--navy); font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .settings-notice {
   background: rgba(79,195,247,0.08); border: 1px solid rgba(79,195,247,0.2);
   border-radius: 8px; padding: 10px 14px;
@@ -1581,6 +1587,36 @@ body { background: var(--navy); color: var(--text); }
    dropdowns at visibly different widths, stacked. */
 @media (max-width: 768px) {
   .dept-picker-row > .sf-group { max-width: none !important; }
+}
+
+/* ─── TAP TARGETS ON PHONES ───
+   Measured every control on every page at 375px: the calendar arrows came
+   out 29px wide, "Today" 23px tall, the Day/Week/Month toggles 29px, the
+   in-page tab pills 34px, and the in-card actions ("Copy link", "Show QR",
+   "Sign Waiver", the report ranges) 28-29px. Apple's guidance is 44pt.
+   That matters more here than in a normal web app: this gets used one-handed,
+   on a moving boat, with wet or gloved hands. Raising min-height only ever
+   grows a control, so nothing that was already big enough changes.
+   44px for the calendar cluster and the tab pills -- primary navigation,
+   tapped constantly, and each already sits in its own row so growing them
+   costs no layout elsewhere. 40px for the generic button classes, which also
+   appear inside dense list rows where a full 44 would pad the lists out more
+   than it helps. inline-flex keeps the label optically centred in the taller
+   box instead of stuck to the top. */
+@media (max-width: 768px) {
+  .cal-nav-btn, .cal-today-btn, .cal-view-btn, .cl-tab {
+    min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .cal-nav-btn { min-width: 44px; }
+  .btn-save, .btn-cancel, .btn-icon, .btn-danger-sm, .location-delete {
+    min-height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  /* Deliberately NOT touched: .expandable-title (the Settings accordion
+     headers). They measure only 23-27px tall but run the full 306px width of
+     the card, so they are already easy to hit, and padding them out would
+     stretch the Settings page a long way down for no real gain. */
 }
 
 /* ─── HELP / FAQ ─── */
