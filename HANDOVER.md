@@ -5,6 +5,12 @@ session should be able to read this file and pick up exactly where things left o
 
 Last updated: 2026-07-20
 
+> **→ Leer primero `NEXT-SESSION.md`** (escrito 12 sep 2026). Tiene la lista
+> priorizada con la que arranca la próxima sesión, y el análisis ya hecho del
+> problema de routing de la raíz del dominio — incluido por qué NO se puede
+> resolver dando vuelta los archivos mientras el build de iOS esté en revisión.
+> Este HANDOVER está desactualizado desde julio; `NEXT-SESSION.md` manda.
+
 ---
 
 ## Session opener — roadmap visualization
