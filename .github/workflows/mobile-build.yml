@@ -189,6 +189,51 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
 
+      # Fran has no Mac (Windows only), so there's no way to open the iPad
+      # Simulator locally to satisfy App Store Connect's "must upload a 13-inch
+      # iPad screenshot" requirement. This step always runs (regardless of the
+      # signing secrets above, unlike the fallback build right above it) and
+      # boots an iPad Pro 13" simulator on this macOS runner instead, installs
+      # the app (it loads the live site from capacitor.config.json's
+      # server.url, so it renders the real app, not a stale bundled copy),
+      # and screenshots it. Download the resulting artifact from this run's
+      # summary page and upload that PNG directly into App Store Connect.
+      - name: Build for iOS Simulator (for App Store screenshot)
+        working-directory: ios/App
+        run: |
+          xcodebuild build \
+            -project App.xcodeproj \
+            -scheme App \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Capture iPad 13" App Store screenshot
+        run: |
+          set -e
+          RUNTIME_ID=$(xcrun simctl list runtimes | grep -i "iOS " | tail -1 | grep -oE 'com\.apple\.CoreSimulator\.SimRuntime\.iOS[A-Za-z0-9-]+')
+          DEVICE_TYPE_ID=$(xcrun simctl list devicetypes | grep -i "iPad Pro 13-inch" | tail -1 | grep -oE 'com\.apple\.CoreSimulator\.SimDeviceType\.[A-Za-z0-9-]+')
+          echo "Using runtime: $RUNTIME_ID"
+          echo "Using device type: $DEVICE_TYPE_ID"
+          UDID=$(xcrun simctl create ScreenshotIPad "$DEVICE_TYPE_ID" "$RUNTIME_ID")
+          echo "Simulator UDID: $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "App.app" -path "*iphonesimulator*" | head -1)
+          echo "App bundle: $APP_PATH"
+          xcrun simctl install "$UDID" "$APP_PATH"
+          xcrun simctl launch "$UDID" com.sevenseasops.app
+          echo "Waiting for the app to load the live site over the network..."
+          sleep 15
+          mkdir -p "$RUNNER_TEMP/screenshots"
+          xcrun simctl io "$UDID" screenshot "$RUNNER_TEMP/screenshots/ipad-13-screenshot.png"
+          xcrun simctl shutdown "$UDID" || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seven-seas-ipad-13-screenshot
+          path: ${{ runner.temp }}/screenshots/ipad-13-screenshot.png
+
       - name: Install App Store Connect API key (used for TestFlight upload only)
         if: env.APPSTORE_KEY_ID != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_PRIVATE_KEY != '' && env.IOS_CERT_BASE64 != '' && env.IOS_CERT_PASSWORD != '' && env.IOS_PROFILE_BASE64 != ''
         run: |
