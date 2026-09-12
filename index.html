@@ -1575,6 +1575,14 @@ body { background: var(--navy); color: var(--text); }
   .compressor-log-row { grid-template-columns: 1fr 1fr 1fr !important; }
 }
 
+/* The Department / Checklist pickers are capped at 260px and 200px so they
+   sit tidily side by side on a wide screen. Once .sf-row collapses to a
+   single column on a phone those caps stop helping and just leave the two
+   dropdowns at visibly different widths, stacked. */
+@media (max-width: 768px) {
+  .dept-picker-row > .sf-group { max-width: none !important; }
+}
+
 /* ─── HELP / FAQ ─── */
 .help-search-wrap { margin-bottom: 20px; }
 .help-search-input {
@@ -2922,7 +2930,7 @@ body { background: var(--navy); color: var(--text); }
               </div>
             </div>
 
-            <div class="sf-row" style="margin-bottom:0;">
+            <div class="sf-row dept-picker-row" style="margin-bottom:0;">
               <div class="sf-group" style="max-width:260px;">
                 <label class="sf-label" data-i18n="cl_department_label">Department</label>
                 <select class="sf-input" id="dept-tabs" onchange="selectDeptDepartment(this.value)"></select>
@@ -6157,12 +6165,41 @@ function showScreen(id) {
   document.getElementById('screen-' + id).classList.add('active');
 }
 
+// Safety net for the whole .cl-view tab pattern: if a page arrives with every
+// one of its sub-views hidden, nothing at all renders and the page looks
+// broken. That state should no longer be reachable now that every tab handler
+// is scoped to its own page, but a page whose default view carries no inline
+// display style is one stray global selector away from blanking out again --
+// and a blank Cash-Up or Crew page is an expensive thing for a shop to hit
+// mid-service. So on every navigation, if no sub-view is visible, fall back to
+// the first one and mark its tab active. A tab the user already chose is left
+// alone, since in that case something IS visible.
+function ensurePageViewVisible(pageId) {
+  const page = document.getElementById(pageId);
+  if (!page) return;
+  const views = page.querySelectorAll(':scope > .cl-view');
+  if (!views.length) return;
+  const anyVisible = Array.from(views).some(v => v.style.display !== 'none');
+  if (anyVisible) return;
+  views[0].style.display = 'block';
+  // Only the page's OWN top tab row -- Crew keeps a second set of .cl-tab
+  // elements nested inside one of its sub-views, and those must not have
+  // their active state stolen from under them. Fleet has no tab row at all,
+  // hence the length guard.
+  const tabs = page.querySelectorAll(':scope > .cl-tab-row .cl-tab');
+  if (tabs.length) {
+    tabs.forEach(t => t.classList.remove('active'));
+    tabs[0].classList.add('active');
+  }
+}
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   document.querySelectorAll('.nav-item, .bottom-nav .bnav-item[data-page]').forEach(n => {
     n.classList.toggle('active', n.dataset.page === id);
   });
+  ensurePageViewVisible('page-' + id);
   closeSidebar();
   // Home's "Getting started" checklist and its financial summary are only
   // computed once at login/settings-save (updateHomeBanner). Without this,
@@ -13347,9 +13384,16 @@ async function deptRoutineSignOff() {
 }
 
 // ─── NAV ───
+// Both selectors below MUST stay scoped to #page-checklists. They used to be
+// document-wide, and since Fleet, Crew, Gear, Cash-Up and Tasks all use the
+// same .cl-view / .cl-tab class names, switching a tab here wrote
+// style="display:none" onto those five pages' default views and stripped
+// their active tab -- so after touching the Checklists tabs, all five opened
+// completely blank with no tab selected until you clicked one manually.
+// (Found on Daily Cash-Up: both sub-views hidden, neither tab active.)
 function showChecklistView(view, el) {
-  document.querySelectorAll('.cl-view').forEach(v => v.style.display = 'none');
-  document.querySelectorAll('.cl-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#page-checklists .cl-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('#page-checklists .cl-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('cl-' + view).style.display = 'block';
   el.classList.add('active');
   if (view === 'logged') loadLoggedChecklists();
