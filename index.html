@@ -1568,6 +1568,13 @@ body { background: var(--navy); color: var(--text); }
   .inline-form, .group-card, .card { overflow: hidden; }
 }
 
+/* Compressor Log "log a fill" row: keep who/start/stop on one row on
+   tablets and up, even though the generic .sf-row rule above forces
+   every .sf-row to a single column at <=768px (phones). */
+@media (min-width: 500px) {
+  .compressor-log-row { grid-template-columns: 1fr 1fr 1fr !important; }
+}
+
 /* ─── HELP / FAQ ─── */
 .help-search-wrap { margin-bottom: 20px; }
 .help-search-input {
@@ -9985,12 +9992,15 @@ function selectTabPaymentMethod(method) {
 }
 async function confirmPayTabFull(tabId, unpaidGroups) {
   const feedback = document.getElementById('pay-tab-feedback');
+  const btn = document.getElementById('btn-confirm-pay-tab-full');
+  if (btn && btn.disabled) return;
   const method = window.currentTabPaymentMethod;
   if (!method) {
     feedback.textContent = t('gt_select_payment_method');
     feedback.className = 'save-feedback error visible';
     return;
   }
+  if (btn) btn.disabled = true;
   const { data: { user } } = await sb.auth.getUser();
   const today = new Date().toISOString().split('T')[0];
   for (const g of unpaidGroups) {
@@ -12062,7 +12072,7 @@ async function groupPaymentHTML(g, participants) {
         <input class="sf-input" type="text" autocomplete="off" id="new-payment-note-${g.id}" placeholder="e.g. Includes $10 tip">
       </div>
       <div class="settings-actions">
-        <button class="btn-save" onclick="confirmLogPayment('${g.id}', ${total}, ${paid})">${t('gp_confirm')}</button>
+        <button class="btn-save" id="log-payment-confirm-btn-${g.id}" onclick="confirmLogPayment('${g.id}', ${total}, ${paid})">${t('gp_confirm')}</button>
         <button class="btn-cancel" onclick="cancelLogPayment('${g.id}')">${t('tt_cancel')}</button>
       </div>
       <span class="save-feedback" id="log-payment-feedback-${g.id}"></span>
@@ -12113,6 +12123,8 @@ function cancelLogPayment(groupId) {
 }
 async function confirmLogPayment(groupId, total, paid) {
   const feedback = document.getElementById('log-payment-feedback-' + groupId);
+  const btn = document.getElementById('log-payment-confirm-btn-' + groupId);
+  if (btn && btn.disabled) return;
   if (isOffline) {
     feedback.textContent = t('pay_offline');
     feedback.className = 'save-feedback error visible';
@@ -12123,6 +12135,7 @@ async function confirmLogPayment(groupId, total, paid) {
   const note = document.getElementById('new-payment-note-' + groupId).value.trim();
   if (!amount || amount <= 0) { feedback.textContent = t('cu_enter_valid_amount'); feedback.className = 'save-feedback error visible'; return; }
   if (!method) { feedback.textContent = t('gt_select_payment_method'); feedback.className = 'save-feedback error visible'; return; }
+  if (btn) btn.disabled = true;
   // A note used to be required whenever the payment exceeds what's owed
   // (overpayment/tip) -- per Fran, that's an unnecessary blocker. The note
   // field still appears as an optional way to explain the overage.
@@ -12381,7 +12394,15 @@ function cancelAddGuest(groupId) {
 
 async function saveGroupParticipant(groupId) {
   const feedback = document.getElementById('p-save-feedback-' + groupId);
+  const btn = document.getElementById('p-save-btn-' + groupId);
+  // Guards against the exact bug reported: on a slow connection, tapping
+  // "Save" more than once before the first request lands used to insert the
+  // same guest two or three times. Disable immediately, and always restore
+  // it (success or failure) further down.
+  if (btn && btn.disabled) return;
+  if (btn) btn.disabled = true;
   if (isOffline) {
+    if (btn) btn.disabled = false;
     feedback.textContent = t('guest_offline');
     feedback.className = 'save-feedback error visible';
     return;
@@ -12389,6 +12410,7 @@ async function saveGroupParticipant(groupId) {
   const name = document.getElementById('p-name-' + groupId).value.trim();
 
   if (!name) {
+    if (btn) btn.disabled = false;
     feedback.textContent = t('tt_name_required');
     feedback.className = 'save-feedback error visible';
     return;
@@ -12402,6 +12424,7 @@ async function saveGroupParticipant(groupId) {
   const isDiving = tripType?.category === 'diving';
   const certStatus = window.currentGuestCertStatus[groupId];
   if (isDiving && (certStatus === null || certStatus === undefined)) {
+    if (btn) btn.disabled = false;
     feedback.textContent = t('guest_cert_required');
     feedback.className = 'save-feedback error visible';
     return;
@@ -12437,6 +12460,7 @@ async function saveGroupParticipant(groupId) {
     : await sb.from('participants').insert({ trip_id: currentTripId, group_id: groupId, ...payload });
 
   if (error) {
+    if (btn) btn.disabled = false;
     feedback.textContent = t('common_error_saving');
     feedback.className = 'save-feedback error visible';
     return;
@@ -15081,7 +15105,7 @@ function renderCompressorCard(c, logs) {
     ${warn ? `<div class="warning-banner caution" style="margin-top:12px;">${t('gear_filter_due_soon')}${remaining}${t('gear_hours_remaining_plan')}</div>` : ''}
     <div class="cl-progress-bar" style="margin-top:12px;"><div class="cl-progress-fill" style="width:${pct}%;background:${warn?'var(--error)':'var(--blue)'};"></div></div>
     <div class="card-section-title" style="margin-top:16px;">${t('gear_log_a_fill')}</div>
-    <div class="sf-row" style="grid-template-columns:1fr 1fr 1fr;">
+    <div class="sf-row compressor-log-row" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="sf-group">
         <label class="sf-label">${t('gear_who_filled')}</label>
         <input class="sf-input" type="text" id="comp-logby-${c.id}" placeholder="Name">
