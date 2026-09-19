@@ -82,10 +82,20 @@
 <script>
   const PADDLE_ENV = 'sandbox';
   const PADDLE_TOKEN = 'test_72490ade5a4569aaeec5660413d';
+  // Un price ID de Paddle por plan Y por ciclo de facturación: Paddle trata
+  // mensual y anual como precios distintos del mismo producto.
+  //
+  // PENDIENTE: los IDs de abajo son los de los planes viejos
+  // (starter/growth/pro), reutilizados como marcador de posición para que el
+  // checkout no reviente mientras tanto. Hay que crear los ocho precios
+  // nuevos en Paddle y reemplazarlos. Ver outputs/paddle-setup-precios.md.
+  //
+  // Enterprise no figura acá a propósito: se negocia por llamada, no tiene
+  // checkout propio.
   const PADDLE_PRICE_IDS = {
-    starter: 'pri_01m22zecwqxhn6j19e11tm9s80',
-    growth: 'pri_01m22zcf8fqpf15fy6j9zwxxrb',
-    pro: 'pri_01m22z9gtywcb25g8h4cbx62fh'
+    crew:   { monthly: 'pri_01m22zecwqxhn6j19e11tm9s80', annual: null },
+    fleet:  { monthly: 'pri_01m22zcf8fqpf15fy6j9zwxxrb', annual: null },
+    armada: { monthly: 'pri_01m22z9gtywcb25g8h4cbx62fh', annual: null }
   };
   Paddle.Environment.set(PADDLE_ENV);
   Paddle.Initialize({ token: PADDLE_TOKEN });
@@ -967,6 +977,16 @@ body { background: var(--navy); color: var(--text); }
   gap: 8px; background: var(--warning); color: #fff;
 }
 #plan-overage-banner a { color: #fff; text-decoration: underline; }
+
+/* Monthly / annual switch in the plan picker. */
+.cycle-btn {
+  border: 1px solid var(--border); background: var(--white);
+  color: var(--muted); font-family: inherit; font-size: 0.8rem; font-weight: 600;
+  padding: 9px 16px; cursor: pointer; min-height: 40px;
+}
+.cycle-btn:first-child { border-radius: 8px 0 0 8px; }
+.cycle-btn:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+.cycle-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 
 .lang-switcher { display: flex; gap: 4px; }
 /* Sits on dark backgrounds everywhere it appears (login/signup/invite screens,
@@ -1988,26 +2008,14 @@ body { background: var(--navy); color: var(--text); }
       <div id="paddle-plans-step">
         <p id="choose-plan-locked-message" style="display:none;font-size:0.9rem;font-weight:600;color:var(--error);margin-bottom:14px;"></p>
         <p style="font-size:0.9rem;color:var(--muted);margin-bottom:20px;" data-i18n="bp_modal_sub">Pick a plan to keep using Seven Seas. Change or cancel anytime.</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
-          <div style="text-align:center;padding:18px 14px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
-            <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Starter</div>
-            <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$49<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
-            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_starter_desc">Up to 2 boats · unlimited staff</div>
-            <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('starter')" data-i18n="bp_select_plan">Select</button>
-          </div>
-          <div style="text-align:center;padding:18px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--foam);">
-            <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Growth</div>
-            <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$89<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
-            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_growth_desc">Up to 5 boats · unlimited staff</div>
-            <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('growth')" data-i18n="bp_select_plan">Select</button>
-          </div>
-          <div style="text-align:center;padding:18px 14px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
-            <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Pro</div>
-            <div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:4px;">$149<span style="font-size:0.85rem;font-weight:600;color:var(--muted);" data-i18n="bp_per_month">/mo</span></div>
-            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;" data-i18n="bp_pro_desc">Up to 15 boats · unlimited staff</div>
-            <button class="btn-save" style="width:100%;" onclick="openPaddleCheckout('pro')" data-i18n="bp_select_plan">Select</button>
-          </div>
+        <div id="plan-cycle-toggle" style="display:flex;justify-content:center;gap:0;margin-bottom:18px;">
+          <button type="button" id="cycle-btn-monthly" class="cycle-btn active" onclick="setPlanCycle('monthly')" data-i18n="bp_cycle_monthly">Monthly</button>
+          <button type="button" id="cycle-btn-annual" class="cycle-btn" onclick="setPlanCycle('annual')" data-i18n="bp_cycle_annual">Annual · 2 months free</button>
         </div>
+        <!-- Rendered by renderPlanCards() so the prices, the bands and the
+             monthly/annual switch all read from one object instead of being
+             duplicated across four hardcoded cards. -->
+        <div id="plan-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;"></div>
         <span class="save-feedback" id="choose-plan-feedback" style="display:block;margin-top:14px;text-align:center;"></span>
       </div>
       <div id="paddle-checkout-step" style="display:none;">
@@ -2071,7 +2079,7 @@ body { background: var(--navy); color: var(--text); }
     <div class="login-card">
       <button class="back-link" id="btn-back-signup-to-login" data-i18n="signup_back">← Back to sign in</button>
       <h2 data-i18n="signup_title">Create your shop's account</h2>
-      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;" data-i18n="signup_subtitle">Start your 14-day free trial — no card required. You'll set up your shop's details next.</p>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;" data-i18n="signup_subtitle">Start your 30-day free trial — no card required. You'll set up your shop's details next.</p>
       <div class="form-group">
         <label data-i18n="signup_name_label">Your full name</label>
         <input type="text" id="signup-name" placeholder="Jane Smith" autocomplete="name">
@@ -4046,7 +4054,7 @@ const TRANSLATIONS = {
     login_forgot_link: 'Forgot password?', login_new_operation: 'New operation?', login_request_access: 'Request access',
 
     signup_back: '← Back to sign in', signup_title: "Create your shop's account",
-    signup_subtitle: "Start your 14-day free trial — no card required. You'll set up your shop's details next.",
+    signup_subtitle: "Start your 30-day free trial — no card required. You'll set up your shop's details next.",
     signup_name_label: 'Your full name', signup_confirm_password_label: 'Confirm password',
     signup_create_btn: 'Create account', signup_creating: 'Creating account...',
     signup_check_email: 'Account created — check your email to confirm, then sign in.',
@@ -4602,10 +4610,15 @@ const TRANSLATIONS = {
     trial_banner_expired: 'Your free trial has ended. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
     bp_modal_title: 'Choose your plan',
     bp_modal_sub: 'Pick a plan to keep using Seven Seas. Change or cancel anytime.',
-    bp_starter_desc: 'Up to 2 boats · unlimited staff',
-    bp_growth_desc: 'Up to 5 boats · unlimited staff',
-    bp_pro_desc: 'Up to 15 boats · unlimited staff',
+    bp_boats_unlimited_staff: 'boats · unlimited staff',
+    bp_per_boat: 'per boat',
     bp_per_month: '/mo',
+    bp_per_year: '/yr',
+    bp_cycle_monthly: 'Monthly',
+    bp_cycle_annual: 'Annual · 2 months free',
+    bp_cycle_unavailable: 'Annual billing isn\'t set up yet — pick monthly, or email contact@sevenseasops.com.',
+    bp_enterprise_price: 'Let\'s talk',
+    bp_enterprise_cta: 'Contact us',
     bp_select_plan: 'Select',
     bp_redirecting: 'Opening secure checkout…',
     bp_checkout_error: 'Could not open checkout. Please try again or email contact@sevenseasops.com.',
@@ -4676,7 +4689,7 @@ const TRANSLATIONS = {
     login_forgot_link: '¿Olvidaste tu contraseña?', login_new_operation: '¿Nueva operación?', login_request_access: 'Solicitar acceso',
 
     signup_back: '← Volver a iniciar sesión', signup_title: 'Creá la cuenta de tu comercio',
-    signup_subtitle: 'Empezá tu prueba gratis de 14 días — sin tarjeta. Después vas a configurar los datos de tu comercio.',
+    signup_subtitle: 'Empezá tu prueba gratis de 30 días — sin tarjeta. Después vas a configurar los datos de tu comercio.',
     signup_name_label: 'Tu nombre completo', signup_confirm_password_label: 'Confirmar contraseña',
     signup_create_btn: 'Crear cuenta', signup_creating: 'Creando cuenta...',
     signup_check_email: 'Cuenta creada — revisá tu correo para confirmar, y después iniciá sesión.',
@@ -5232,10 +5245,15 @@ const TRANSLATIONS = {
     trial_banner_expired: 'Tu prueba gratis terminó. <a href="#" onclick="openChoosePlanModal();return false;">Elegí un plan</a> para seguir usando Seven Seas.',
     bp_modal_title: 'Elegí tu plan',
     bp_modal_sub: 'Elegí un plan para seguir usando Seven Seas. Cambialo o cancelalo cuando quieras.',
-    bp_starter_desc: 'Hasta 2 botes · personal ilimitado',
-    bp_growth_desc: 'Hasta 5 botes · personal ilimitado',
-    bp_pro_desc: 'Hasta 15 botes · personal ilimitado',
+    bp_boats_unlimited_staff: 'botes · personal ilimitado',
+    bp_per_boat: 'por bote',
     bp_per_month: '/mes',
+    bp_per_year: '/año',
+    bp_cycle_monthly: 'Mensual',
+    bp_cycle_annual: 'Anual · 2 meses gratis',
+    bp_cycle_unavailable: 'El pago anual todavía no está habilitado — elegí mensual, o escribinos a contact@sevenseasops.com.',
+    bp_enterprise_price: 'Hablemos',
+    bp_enterprise_cta: 'Contactanos',
     bp_select_plan: 'Elegir',
     bp_redirecting: 'Abriendo pago seguro…',
     bp_checkout_error: 'No se pudo abrir el pago. Probá de nuevo o escribinos a contact@sevenseasops.com.',
@@ -5600,7 +5618,7 @@ function updateTrialBanner() {
   }
   const msRemaining = new Date(trialEndsAt).getTime() - Date.now();
   const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
-  // Don't nag on day 1 of a 14-day trial -- only worth surfacing once it's
+  // Don't nag on day 1 of a 30-day trial -- only worth surfacing once it's
   // genuinely close to running out.
   if (daysRemaining > 3) {
     banner.style.display = 'none';
@@ -5621,11 +5639,13 @@ function updateTrialBanner() {
 // ─── PLAN LIMITS ───
 // What each paid tier is actually allowed, taken straight off the pricing page.
 //
-// Only what the pricing page PROMISES gets enforced: boats per tier, and
-// "Multiple locations" being the thing you move to Growth for. No invented
-// caps -- enforcing a limit that was never advertised is worse than enforcing
-// nothing, because the first person it hits is a paying customer who was never
-// told about it.
+// Only what the pricing page PROMISES gets enforced, and since the Sept 2026
+// repricing that is ONE axis: how many boats you run. Locations used to be
+// capped on the entry plan because the old page sold "multiple locations" as
+// the reason to upgrade; the new pricing dropped that, so the cap went with
+// it. No invented caps -- enforcing a limit that was never advertised is
+// worse than enforcing nothing, because the first person it hits is a paying
+// customer who was never told about it.
 //
 // Trials are deliberately uncapped. A four-boat shop that can only add two
 // during its 14 days can't evaluate this against its real operation, so it
@@ -5637,11 +5657,12 @@ function updateTrialBanner() {
 // anon key is in the page source, so anyone can POST straight to the REST API.
 // A check that lives only in this file is a suggestion, not a limit.
 const PLAN_LIMITS = {
-  starter: { boats: 2,  locations: 1 },
-  growth:  { boats: 5,  locations: Infinity },
-  pro:     { boats: 15, locations: Infinity }
+  crew:       { boats: 3 },
+  fleet:      { boats: 8 },
+  armada:     { boats: 17 },
+  enterprise: { boats: Infinity }   // se negocia por llamada
 };
-const PLAN_ORDER = ['starter', 'growth', 'pro'];
+const PLAN_ORDER = ['crew', 'fleet', 'armada', 'enterprise'];
 
 function currentPlanLimits() {
   const status = window.currentOrgSubscriptionStatus;
@@ -5729,7 +5750,7 @@ function planLimitFromDbError(error) {
 // ─── PADDLE BILLING (phase 4: checkout) ───
 // Reached from the trial banner's "Choose a plan" link once trial_ends_at
 // has passed (or is about to). Deliberately NOT on the public landing page --
-// see HANDOVER.md: the no-card 14-day trial stays exactly as marketed, and
+// see HANDOVER.md: the no-card 30-day trial stays exactly as marketed, and
 // Paddle only enters the picture once that trial lapses.
 window._subscriptionLocked = false;
 
@@ -5757,6 +5778,7 @@ function openChoosePlanModal(lockedReason) {
     lockedMsgEl.style.display = 'none';
   }
 
+  renderPlanCards();
   document.getElementById('modal-choose-plan').style.display = 'flex';
 }
 function closeChoosePlanModal() {
@@ -5768,6 +5790,67 @@ function backToPlanPicker() {
   document.getElementById('paddle-plans-step').style.display = 'block';
   document.getElementById('paddle-checkout-step').style.display = 'none';
   document.getElementById('paddle-checkout-container').innerHTML = '';
+  renderPlanCards();
+}
+
+// ─── PLAN PRICING (sept 2026) ───
+// Un solo lugar del que salen las tarjetas del modal. Las bandas de barcos
+// tienen que coincidir con PLAN_LIMITS y con plan_limit_for() en la base:
+// crew 3, fleet 8, armada 17.
+//
+// El precio por barco se muestra como RANGO, no como "desde". Un operador de
+// 4 barcos en Fleet paga $42 por barco, no $21 -- publicar solo el piso y que
+// le dé el doble al hacer la cuenta es un mal primer paso en un producto cuyo
+// argumento es la confianza. Aun en el extremo caro, todos los números siguen
+// ganándole a los ~$88/barco de Seahub.
+const PLAN_PRICING = {
+  crew:   { monthly: 79,  annual: 790,  boats: '1–3',  perBoat: '26–79' },
+  fleet:  { monthly: 169, annual: 1690, boats: '4–8',  perBoat: '21–42', featured: true },
+  armada: { monthly: 329, annual: 3290, boats: '9–17', perBoat: '19–37' }
+};
+window._planCycle = 'monthly';
+
+function setPlanCycle(cycle) {
+  window._planCycle = cycle;
+  document.getElementById('cycle-btn-monthly').classList.toggle('active', cycle === 'monthly');
+  document.getElementById('cycle-btn-annual').classList.toggle('active', cycle === 'annual');
+  renderPlanCards();
+}
+
+function renderPlanCards() {
+  const grid = document.getElementById('plan-cards-grid');
+  if (!grid) return;
+  const cycle = window._planCycle || 'monthly';
+  const perLabel = cycle === 'annual' ? t('bp_per_year') : t('bp_per_month');
+
+  let html = Object.keys(PLAN_PRICING).map(function (tier) {
+    const p = PLAN_PRICING[tier];
+    const border = p.featured ? '2px solid var(--blue)' : '1px solid var(--border)';
+    const name = tier.charAt(0).toUpperCase() + tier.slice(1);
+    return '<div style="text-align:center;padding:18px 14px;border:' + border + ';border-radius:10px;background:var(--foam);">' +
+      '<div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">' + name + '</div>' +
+      '<div style="font-size:1.6rem;font-weight:800;color:var(--blue);margin-bottom:2px;">$' + p[cycle] +
+        '<span style="font-size:0.85rem;font-weight:600;color:var(--muted);">' + perLabel + '</span></div>' +
+      '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;">$' + p.perBoat + ' ' + t('bp_per_boat') + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">' +
+        p.boats + ' ' + t('bp_boats_unlimited_staff') + '</div>' +
+      '<button class="btn-save" style="width:100%;" onclick="openPaddleCheckout(\'' + tier + '\')">' +
+        t('bp_select_plan') + '</button>' +
+    '</div>';
+  }).join('');
+
+  // Enterprise no tiene checkout: se negocia por llamada. Va como tarjeta para
+  // que el tramo de arriba no parezca el techo.
+  html += '<div style="text-align:center;padding:18px 14px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">' +
+    '<div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:4px;">Enterprise</div>' +
+    '<div style="font-size:1.1rem;font-weight:800;color:var(--blue);margin-bottom:2px;margin-top:8px;">' + t('bp_enterprise_price') + '</div>' +
+    '<div style="font-size:0.78rem;color:var(--muted);margin:8px 0 14px;">18+ ' + t('bp_boats_unlimited_staff') + '</div>' +
+    '<a class="btn-save" style="width:100%;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;" ' +
+      'href="mailto:contact@sevenseasops.com?subject=Enterprise%20plan%20%E2%80%94%20Seven%20Seas">' +
+      t('bp_enterprise_cta') + '</a>' +
+  '</div>';
+
+  grid.innerHTML = html;
 }
 
 // ─── PADDLE BILLING (phase 6: gating + billing portal) ───
@@ -5846,10 +5929,18 @@ function isNativeAppShell() {
     ['ios', 'android'].includes(window.Capacitor.getPlatform()));
 }
 
-async function openPaddleCheckout(tier) {
-  const priceId = PADDLE_PRICE_IDS[tier];
+// cycle: 'monthly' | 'annual'. Defaults to whatever the toggle is showing.
+async function openPaddleCheckout(tier, cycle) {
   const feedback = document.getElementById('choose-plan-feedback');
-  if (!priceId) return;
+  cycle = cycle || window._planCycle || 'monthly';
+  const priceId = (PADDLE_PRICE_IDS[tier] || {})[cycle];
+  // Annual price IDs don't exist in Paddle yet. Say so plainly rather than
+  // opening a checkout that would fail, or silently charging monthly.
+  if (!priceId) {
+    feedback.textContent = t('bp_cycle_unavailable');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
   if (isNativeAppShell()) {
     feedback.innerHTML = t('bp_use_web_for_billing');
     feedback.className = 'save-feedback visible';
@@ -5870,7 +5961,7 @@ async function openPaddleCheckout(tier) {
     Paddle.Checkout.open({
       items: [{ priceId, quantity: 1 }],
       customer: user?.email ? { email: user.email } : undefined,
-      customData: { org_id: currentOrgId || null, plan_tier: tier },
+      customData: { org_id: currentOrgId || null, plan_tier: tier, billing_cycle: cycle },
       settings: {
         displayMode: 'inline',
         frameTarget: 'paddle-checkout-container',
@@ -8476,12 +8567,15 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
       .from('organizations')
       .insert({
         name, country, currency, email, captain_elevated_permissions: captainElevated,
-        // 14-day free trial, same length already promised on the signup
-        // screen ("Start your 14-day free trial"). subscription_status
+        // 30-day free trial, same length already promised on the signup
+        // screen ("Start your 30-day free trial"). The clamp trigger in the
+        // database overrides whatever is sent here anyway -- both had to
+        // change together or the app would keep handing out 14 days.
+        // subscription_status
         // flips to 'active'/'past_due'/'canceled' via the paddle-webhook
         // edge function once real billing (Paddle) is wired up.
         subscription_status: 'trial',
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       })
       .select()
       .single();
@@ -8616,15 +8710,9 @@ document.getElementById('btn-save-location').addEventListener('click', async () 
     return;
   }
 
-  // "Multiple locations" is the headline reason to move from Starter to
-  // Growth, so Starter is capped at one. Growth and Pro are uncapped: the
-  // pricing page never promised a number there, and inventing one now would
-  // hit a paying customer who was never told.
-  const locLimitBlock = await planLimitBlocks('locations', 'locations');
-  if (locLimitBlock) {
-    showPlanLimitMessage(feedback, 'locations', locLimitBlock);
-    return;
-  }
+  // Locations are no longer capped by plan -- the Sept 2026 pricing runs on a
+  // single axis (boats), so charging for locations would be charging for
+  // something that isn't sold.
 
   btn.disabled = true; btn.textContent = t('common_saving');
 
