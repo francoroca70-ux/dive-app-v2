@@ -4574,6 +4574,11 @@ const TRANSLATIONS = {
     wv_error_loading: 'Error loading waivers.', wv_allow_popups_export: 'Please allow pop-ups to export.',
     cl_error_loading: 'Error loading checklists.',
     bp_use_web_for_billing: 'Please open sevenseasops.com in a web browser (Safari, Chrome) to choose a plan or manage billing.',
+    plan_limit_boats: 'Your plan covers up to {max} boats, and all of them are in use.',
+    plan_limit_locations: 'Your plan covers a single location.',
+    plan_limit_upgrade_to: '{plan} covers what you need.',
+    plan_limit_contact: 'For larger fleets, get in touch at contact@sevenseasops.com.',
+    plan_limit_see_plans: 'See plans',
     pay_offline: "You're offline — payments need a live connection so nothing gets logged twice or lost. Try again once you're back online.",
     pay_exceeds_owed_note: "This exceeds what's owed — please add a note explaining why.",
     guest_offline: "You're offline — guest changes need a live connection. Try again once you're back online.",
@@ -5198,6 +5203,11 @@ const TRANSLATIONS = {
     wv_error_loading: 'Error al cargar los formularios.', wv_allow_popups_export: 'Permití las ventanas emergentes para exportar.',
     cl_error_loading: 'Error al cargar los checklists.',
     bp_use_web_for_billing: 'Abrí sevenseasops.com desde un navegador (Safari, Chrome) para elegir un plan o gestionar la facturación.',
+    plan_limit_boats: 'Tu plan cubre hasta {max} botes, y ya los estás usando todos.',
+    plan_limit_locations: 'Tu plan cubre un solo local.',
+    plan_limit_upgrade_to: '{plan} cubre lo que necesitás.',
+    plan_limit_contact: 'Para flotas más grandes, escribinos a contact@sevenseasops.com.',
+    plan_limit_see_plans: 'Ver planes',
     pay_offline: 'Estás sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Intentá de nuevo cuando vuelvas a estar en línea.',
     pay_exceeds_owed_note: 'Esto excede lo adeudado — por favor agregá una nota explicando por qué.',
     guest_offline: 'Estás sin conexión — los cambios de huéspedes necesitan conexión. Intentá de nuevo cuando vuelvas a estar en línea.',
@@ -5533,6 +5543,83 @@ function updateTrialBanner() {
     textEl.innerHTML = t('trial_banner_ending')
       .replace('{n}', daysRemaining).replace('{s}', daysRemaining > 1 ? 's' : '');
   }
+}
+
+// ─── PLAN LIMITS ───
+// What each paid tier is actually allowed, taken straight off the pricing page.
+//
+// Only what the pricing page PROMISES gets enforced: boats per tier, and
+// "Multiple locations" being the thing you move to Growth for. No invented
+// caps -- enforcing a limit that was never advertised is worse than enforcing
+// nothing, because the first person it hits is a paying customer who was never
+// told about it.
+//
+// Trials are deliberately uncapped. A four-boat shop that can only add two
+// during its 14 days can't evaluate this against its real operation, so it
+// leaves. The cap bites the moment they pick a plan, and the message names the
+// plan their fleet actually needs instead of just saying no.
+//
+// This is only the friendly half. The half that actually holds is the
+// enforce_boat_limit / enforce_location_limit triggers in the database: the
+// anon key is in the page source, so anyone can POST straight to the REST API.
+// A check that lives only in this file is a suggestion, not a limit.
+const PLAN_LIMITS = {
+  starter: { boats: 2,  locations: 1 },
+  growth:  { boats: 5,  locations: Infinity },
+  pro:     { boats: 15, locations: Infinity }
+};
+const PLAN_ORDER = ['starter', 'growth', 'pro'];
+
+function currentPlanLimits() {
+  const status = window.currentOrgSubscriptionStatus;
+  if (status === 'trial' || status === 'trialing') return null;
+  return PLAN_LIMITS[window.currentOrgPlanTier] || null;
+}
+
+// Smallest tier that would fit n of this resource -- powers "Growth covers
+// what you need" rather than a dead end.
+function smallestPlanFor(resource, n) {
+  return PLAN_ORDER.find(tier => PLAN_LIMITS[tier][resource] >= n) || null;
+}
+
+// Returns null when the action is allowed, or {used, max, needs} when it isn't.
+async function planLimitBlocks(resource, table) {
+  const limits = currentPlanLimits();
+  if (!limits) return null;
+  const max = limits[resource];
+  if (!isFinite(max)) return null;
+  let q = sb.from(table).select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId);
+  // `active IS NOT FALSE` rather than `= true`: a null active still occupies a
+  // slot, and must be counted the same way the database trigger counts it.
+  if (table === 'boats') q = q.not('active', 'is', false);
+  const { count, error } = await q;
+  if (error) return null;
+  const used = count || 0;
+  if (used < max) return null;
+  return { used, max, needs: smallestPlanFor(resource, used + 1) };
+}
+
+function showPlanLimitMessage(feedbackEl, resource, block) {
+  const key = resource === 'boats' ? 'plan_limit_boats' : 'plan_limit_locations';
+  let msg = t(key).replace('{max}', block.max);
+  msg += ' ' + (block.needs
+    ? t('plan_limit_upgrade_to').replace('{plan}',
+        block.needs.charAt(0).toUpperCase() + block.needs.slice(1))
+    : t('plan_limit_contact'));
+  feedbackEl.innerHTML = msg +
+    ` <a href="#" onclick="openChoosePlanModal(); return false;">${t('plan_limit_see_plans')}</a>`;
+  feedbackEl.className = 'save-feedback error visible';
+}
+
+// The database raises 'boat_limit_reached:<tier>:<max>' / 'location_limit_...'.
+// Catch it so a race (two tabs adding the last boat at once) still shows the
+// real message instead of a generic "error saving".
+function planLimitFromDbError(error) {
+  const m = /(boat|location)_limit_reached:([a-z]+):(\d+)/.exec(error?.message || '');
+  if (!m) return null;
+  const resource = m[1] === 'boat' ? 'boats' : 'locations';
+  const max = parseInt(m[3], 10);
+  return { resource, block: { used: max, max, needs: smallestPlanFor(resource, max + 1) } };
 }
 
 // ─── PADDLE BILLING (phase 4: checkout) ───
@@ -7933,6 +8020,7 @@ async function loadSettings(user) {
 
       window.currentOrgSubscriptionStatus = org.subscription_status || 'active';
       window.currentOrgTrialEndsAt = org.trial_ends_at || null;
+      window.currentOrgPlanTier = org.plan_tier || null;
       updateTrialBanner();
       enforceSubscriptionGate(window.currentOrgSubscriptionStatus, window.currentOrgTrialEndsAt);
       updateBillingCard(org);
@@ -8326,6 +8414,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
 
     window.currentOrgSubscriptionStatus = org.subscription_status || 'trial';
     window.currentOrgTrialEndsAt = org.trial_ends_at || null;
+    window.currentOrgPlanTier = org.plan_tier || null;
     updateTrialBanner();
 
     document.getElementById('org-notice-new').style.display = 'none';
@@ -8422,6 +8511,16 @@ document.getElementById('btn-save-location').addEventListener('click', async () 
     return;
   }
 
+  // "Multiple locations" is the headline reason to move from Starter to
+  // Growth, so Starter is capped at one. Growth and Pro are uncapped: the
+  // pricing page never promised a number there, and inventing one now would
+  // hit a paying customer who was never told.
+  const locLimitBlock = await planLimitBlocks('locations', 'locations');
+  if (locLimitBlock) {
+    showPlanLimitMessage(feedback, 'locations', locLimitBlock);
+    return;
+  }
+
   btn.disabled = true; btn.textContent = t('common_saving');
 
   const { error } = await sb.from('locations').insert({
@@ -8429,8 +8528,12 @@ document.getElementById('btn-save-location').addEventListener('click', async () 
   });
 
   if (error) {
-    feedback.textContent = t('common_error_saving');
-    feedback.className = 'save-feedback error visible';
+    const fromDb = planLimitFromDbError(error);
+    if (fromDb) showPlanLimitMessage(feedback, fromDb.resource, fromDb.block);
+    else {
+      feedback.textContent = t('common_error_saving');
+      feedback.className = 'save-feedback error visible';
+    }
     btn.disabled = false; btn.textContent = t('set_save_location');
     return;
   }
@@ -14027,6 +14130,15 @@ document.getElementById('btn-save-boat').addEventListener('click', async () => {
     return;
   }
 
+  // Plan cap, checked before the insert so the shop gets a useful message
+  // naming the plan they need instead of a database error. The trigger behind
+  // this is what actually enforces it -- see PLAN_LIMITS.
+  const limitBlock = await planLimitBlocks('boats', 'boats');
+  if (limitBlock) {
+    showPlanLimitMessage(feedback, 'boats', limitBlock);
+    return;
+  }
+
   btn.disabled = true; btn.textContent = t('fleet_saving');
 
   const { error } = await sb.from('boats').insert({
@@ -14042,8 +14154,12 @@ document.getElementById('btn-save-boat').addEventListener('click', async () => {
   });
 
   if (error) {
-    feedback.textContent = t('fleet_error_saving');
-    feedback.className = 'save-feedback error visible';
+    const fromDb = planLimitFromDbError(error);
+    if (fromDb) showPlanLimitMessage(feedback, fromDb.resource, fromDb.block);
+    else {
+      feedback.textContent = t('fleet_error_saving');
+      feedback.className = 'save-feedback error visible';
+    }
     btn.disabled = false; btn.textContent = t('fleet_save_boat');
     return;
   }
