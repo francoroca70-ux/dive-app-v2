@@ -4,6 +4,61 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Seven Seas</title>
+<!-- This is the private app behind a login. Nothing here belongs in a search
+     result, and its deep links carry one-time tokens. -->
+<meta name="robots" content="noindex, nofollow">
+
+<!-- ─── ROOT ROUTING ───────────────────────────────────────────────────────
+     sevenseasops.com used to serve this file, so anyone typing the domain,
+     clicking a link in an outreach email, or arriving from Google hit a bare
+     "Sign in" box with no idea what the product was. Send those visitors to
+     the landing page instead.
+
+     Runs first thing in <head>, before any rendering, so nobody sees a flash
+     of the login screen on the way out.
+
+     Deliberately keyed off the HOSTNAME rather than the Capacitor bridge:
+     capacitor.config.json points the native iOS/Android shells at
+     dive-app-v2.onrender.com, so restricting the redirect to the public
+     marketing domain leaves the native apps untouched without depending on
+     window.Capacitor having been injected this early in the page's life.
+     That timing is not guaranteed, and getting it wrong would bounce the
+     native app to a marketing page on launch. -->
+<script>
+(function () {
+  var PUBLIC_HOSTS = ['sevenseasops.com', 'www.sevenseasops.com'];
+  if (PUBLIC_HOSTS.indexOf(location.hostname) === -1) return;
+
+  // Only the bare root gets redirected. /index.html is how the landing page's
+  // "Log in" links reach the app, so asking for it by name is treated as
+  // deliberate -- that keeps staff on the branded domain instead of bouncing
+  // them to dive-app-v2.onrender.com.
+  if (location.pathname !== '/') return;
+
+  // Deep links that have to reach the app, not the sales page.
+  if (/[?&](waiver|invite)=/.test(location.search || '')) return;
+  // Supabase password-recovery links put the token in the HASH, not the query
+  // string -- miss this and anyone resetting a password lands on the landing
+  // page and silently loses the flow.
+  if (/access_token=|type=recovery/.test(location.hash || '')) return;
+
+  // Already signed in? Then this is staff opening their own tool, not a
+  // prospect. Read the stored session straight out of localStorage rather
+  // than waiting for the Supabase client to boot, which would be too late to
+  // avoid a visible flash. Matching on the key suffix keeps this working if
+  // the project ref ever changes.
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('-auth-token') !== -1 && localStorage.getItem(k)) return;
+    }
+  } catch (e) {
+    return;  // storage blocked (private mode, embedded webview) -> show the app
+  }
+
+  location.replace('/landing.html');
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1628">
 <meta name="mobile-web-app-capable" content="yes">
