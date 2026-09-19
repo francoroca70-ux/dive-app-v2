@@ -906,6 +906,13 @@ body { background: var(--navy); color: var(--text); }
 #trial-banner.expired { background: var(--error); color: #fff; }
 #trial-banner a { color: #fff; text-decoration: underline; }
 
+#plan-overage-banner {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 16px; font-size: 0.82rem; font-weight: 600; text-align: center;
+  gap: 8px; background: var(--warning); color: #fff;
+}
+#plan-overage-banner a { color: #fff; text-decoration: underline; }
+
 .lang-switcher { display: flex; gap: 4px; }
 /* Sits on dark backgrounds everywhere it appears (login/signup/invite screens,
    and the app top nav right next to .btn-signout) -- unselected language
@@ -2272,6 +2279,15 @@ body { background: var(--navy); color: var(--text); }
   <!-- Free-trial status banner -- see updateTrialBanner() -->
   <div id="trial-banner" style="display:none;">
     <span class="trial-banner-text"></span>
+  </div>
+
+  <!-- Shown when a shop is over its plan's boat limit, which the triggers
+       can't prevent: downgrading from Growth to Starter in the Paddle portal
+       leaves five boats on a two-boat plan. Deactivating someone's boats for
+       them would break the trips that reference them, so this tells them
+       instead. Separate from #trial-banner so both can show at once. -->
+  <div id="plan-overage-banner" style="display:none;">
+    <span class="plan-overage-text"></span>
   </div>
 
   <div class="app-body">
@@ -4579,6 +4595,7 @@ const TRANSLATIONS = {
     plan_limit_upgrade_to: '{plan} covers what you need.',
     plan_limit_contact: 'For larger fleets, get in touch at contact@sevenseasops.com.',
     plan_limit_see_plans: 'See plans',
+    plan_overage_boats: 'You have {used} active boats and your plan covers {max}.',
     pay_offline: "You're offline — payments need a live connection so nothing gets logged twice or lost. Try again once you're back online.",
     pay_exceeds_owed_note: "This exceeds what's owed — please add a note explaining why.",
     guest_offline: "You're offline — guest changes need a live connection. Try again once you're back online.",
@@ -5208,6 +5225,7 @@ const TRANSLATIONS = {
     plan_limit_upgrade_to: '{plan} cubre lo que necesitás.',
     plan_limit_contact: 'Para flotas más grandes, escribinos a contact@sevenseasops.com.',
     plan_limit_see_plans: 'Ver planes',
+    plan_overage_boats: 'Tenés {used} botes activos y tu plan cubre {max}.',
     pay_offline: 'Estás sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Intentá de nuevo cuando vuelvas a estar en línea.',
     pay_exceeds_owed_note: 'Esto excede lo adeudado — por favor agregá una nota explicando por qué.',
     guest_offline: 'Estás sin conexión — los cambios de huéspedes necesitan conexión. Intentá de nuevo cuando vuelvas a estar en línea.',
@@ -5597,6 +5615,37 @@ async function planLimitBlocks(resource, table) {
   const used = count || 0;
   if (used < max) return null;
   return { used, max, needs: smallestPlanFor(resource, used + 1) };
+}
+
+// A shop can end up OVER its limit without ever hitting the triggers: downgrade
+// from Growth to Starter in the Paddle portal and five boats are suddenly on a
+// two-boat plan. Auto-deactivating boats would break every trip that references
+// them, so the app says so plainly and leaves the choice to the owner. Called
+// after each settings load.
+async function updatePlanOverageBanner() {
+  const banner = document.getElementById('plan-overage-banner');
+  if (!banner) return;
+  const limits = currentPlanLimits();
+  if (!limits || !isFinite(limits.boats) || !currentOrgId) {
+    banner.style.display = 'none';
+    return;
+  }
+  const { count, error } = await sb.from('boats')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_id', currentOrgId).not('active', 'is', false);
+  if (error) { banner.style.display = 'none'; return; }
+  const used = count || 0;
+  if (used <= limits.boats) { banner.style.display = 'none'; return; }
+
+  const needs = smallestPlanFor('boats', used);
+  let msg = t('plan_overage_boats')
+    .replace('{used}', used).replace('{max}', limits.boats);
+  msg += ' ' + (needs
+    ? t('plan_limit_upgrade_to').replace('{plan}', needs.charAt(0).toUpperCase() + needs.slice(1))
+    : t('plan_limit_contact'));
+  banner.querySelector('.plan-overage-text').innerHTML = msg +
+    ` <a href="#" onclick="openChoosePlanModal(); return false;">${t('plan_limit_see_plans')}</a>`;
+  banner.style.display = 'flex';
 }
 
 function showPlanLimitMessage(feedbackEl, resource, block) {
@@ -8022,6 +8071,7 @@ async function loadSettings(user) {
       window.currentOrgTrialEndsAt = org.trial_ends_at || null;
       window.currentOrgPlanTier = org.plan_tier || null;
       updateTrialBanner();
+      updatePlanOverageBanner();
       enforceSubscriptionGate(window.currentOrgSubscriptionStatus, window.currentOrgTrialEndsAt);
       updateBillingCard(org);
 
