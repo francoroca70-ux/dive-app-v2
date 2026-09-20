@@ -1,5 +1,7 @@
 # Paddle — qué crear para los precios nuevos
-*19 sep 2026. El código ya está listo y esperando estos IDs.*
+*19 sep 2026. **HECHO el 20/09** — los seis precios existen en sandbox y están
+conectados en `index.html`. Se deja como registro de por qué los importes
+quedaron así. Para pasar a cobrar de verdad: `outputs/paddle-produccion.md`.*
 
 ---
 

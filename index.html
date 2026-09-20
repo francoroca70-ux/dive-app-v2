@@ -4,9 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Seven Seas</title>
-<!-- This is the private app behind a login. Nothing here belongs in a search
-     result, and its deep links carry one-time tokens. -->
-<meta name="robots" content="noindex, nofollow">
+<!-- This is the private app behind a login, but it is ALSO what gets served at
+     https://www.sevenseasops.com/ — the single most valuable URL we own. A bare
+     "noindex" here told Google not to index the domain itself, so the brand
+     search would only ever surface /landing.html and never the clean domain.
+     Instead we canonicalise to the landing page: any crawler that lands on the
+     app root (or on the raw Render URL) consolidates its ranking signals into
+     the landing page rather than hitting a dead end. The deep links that carry
+     one-time tokens are kept out of the index by robots.txt, which disallows
+     /index.html, ?waiver= and ?invite= explicitly. -->
+<link rel="canonical" href="https://www.sevenseasops.com/landing.html">
 
 <!-- ─── ROOT ROUTING ───────────────────────────────────────────────────────
      sevenseasops.com used to serve this file, so anyone typing the domain,
@@ -85,17 +92,18 @@
   // Un price ID de Paddle por plan Y por ciclo de facturación: Paddle trata
   // mensual y anual como precios distintos del mismo producto.
   //
-  // PENDIENTE: los IDs de abajo son los de los planes viejos
-  // (starter/growth/pro), reutilizados como marcador de posición para que el
-  // checkout no reviente mientras tanto. Hay que crear los ocho precios
-  // nuevos en Paddle y reemplazarlos. Ver outputs/paddle-setup-precios.md.
+  // Los `monthly` son los precios que ya existían en Paddle, con el importe
+  // actualizado a $79 / $169 / $329. Al no haber creado productos nuevos, el
+  // descuento FOUNDINGFLEET30 sigue apuntando a donde siempre apuntó.
+  // Los `annual` se crearon el 20/09/2026: $790 / $1.690 / $3.290 (dos meses
+  // gratis). Ver outputs/paddle-setup-precios.md.
   //
   // Enterprise no figura acá a propósito: se negocia por llamada, no tiene
   // checkout propio.
   const PADDLE_PRICE_IDS = {
-    starter: { monthly: 'pri_01m22zecwqxhn6j19e11tm9s80', annual: null },
-    growth:  { monthly: 'pri_01m22zcf8fqpf15fy6j9zwxxrb', annual: null },
-    pro:     { monthly: 'pri_01m22z9gtywcb25g8h4cbx62fh', annual: null }
+    starter: { monthly: 'pri_01m22zecwqxhn6j19e11tm9s80', annual: 'pri_01m2zpy0qa7e7z9fakzw0p32xp' },
+    growth:  { monthly: 'pri_01m22zcf8fqpf15fy6j9zwxxrb', annual: 'pri_01m2zpvcgh80gjmtxw3f52fbps' },
+    pro:     { monthly: 'pri_01m22z9gtywcb25g8h4cbx62fh', annual: 'pri_01m2zprk6jmerfjkeppgmvnn7q' }
   };
   Paddle.Environment.set(PADDLE_ENV);
   Paddle.Initialize({ token: PADDLE_TOKEN });
@@ -5932,8 +5940,9 @@ async function openPaddleCheckout(tier, cycle) {
   const feedback = document.getElementById('choose-plan-feedback');
   cycle = cycle || window._planCycle || 'monthly';
   const priceId = (PADDLE_PRICE_IDS[tier] || {})[cycle];
-  // Annual price IDs don't exist in Paddle yet. Say so plainly rather than
-  // opening a checkout that would fail, or silently charging monthly.
+  // Guard: if a tier/cycle combination has no price in Paddle, say so plainly
+  // rather than opening a checkout that would fail, or silently charging the
+  // other cycle. Reachable today only if a price is archived in Paddle.
   if (!priceId) {
     feedback.textContent = t('bp_cycle_unavailable');
     feedback.className = 'save-feedback error visible';
