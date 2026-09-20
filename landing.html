@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Seven Seas — Operations Software for Dive Shops &amp; Charters</title>
+<title>Seven Seas Ops — Operations Software for Dive Shops &amp; Charters</title>
 <!-- SEO + link previews. The page had NO description, canonical or og: tags at
      all, which meant two things: Google had no snippet to show for
      "Seven Seas Ops" (part of why it wasn't findable), and every time the link
@@ -17,15 +17,53 @@
 
 <meta content="website" property="og:type"/>
 <meta content="https://www.sevenseasops.com/landing.html" property="og:url"/>
-<meta content="Seven Seas — Operations Software for Dive Shops &amp; Charters" property="og:title"/>
+<meta content="Seven Seas Ops — Operations Software for Dive Shops &amp; Charters" property="og:title"/>
 <meta content="Run your dive operation, not your spreadsheets. Bookings, checklists, digital waivers, crew scheduling, gear tracking and daily cash-up — built by a dive instructor." property="og:description"/>
 <meta content="https://www.sevenseasops.com/assets/og-image.png" property="og:image"/>
 <meta content="1200" property="og:image:width"/>
 <meta content="630" property="og:image:height"/>
-<meta content="Seven Seas" property="og:site_name"/>
+<meta content="Seven Seas Ops" property="og:site_name"/>
 
 <meta content="summary_large_image" name="twitter:card"/>
-<meta content="Seven Seas — Operations Software for Dive Shops &amp; Charters" name="twitter:title"/>
+<meta content="Seven Seas Ops — Operations Software for Dive Shops &amp; Charters" name="twitter:title"/>
+
+<!-- Structured data. This is how Google learns that "Seven Seas Ops" is a
+     specific entity rather than a phrase about oceans, and it's the single
+     biggest lever on the brand query. alternateName covers the three ways
+     someone will actually type it.
+     Deliberately NO prices in here: they already live in two places
+     (LANDING_PRICING below, and PLAN_PRICING in index.html). A third copy
+     would go stale the next time they change, and stale prices in structured
+     data are worse than no structured data.
+     When the Instagram / LinkedIn accounts exist, add them under sameAs --
+     that's what locks a brand entity in for Google. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.sevenseasops.com/#organization",
+      "name": "Seven Seas Ops",
+      "alternateName": ["Seven Seas Operations", "sevenseasops", "Seven Seas"],
+      "url": "https://www.sevenseasops.com/",
+      "logo": "https://www.sevenseasops.com/assets/logo-full.png",
+      "email": "contact@sevenseasops.com",
+      "description": "Operations software for dive shops, charter operations, surf schools and liveaboards, built by a former dive instructor."
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Seven Seas Ops",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "url": "https://www.sevenseasops.com/landing.html",
+      "inLanguage": ["en", "es"],
+      "publisher": { "@id": "https://www.sevenseasops.com/#organization" },
+      "description": "Bookings and manifests, smart checklists, gear and equipment tracking, digital waivers, crew management and daily cash-up for water operations."
+    }
+  ]
+}
+</script>
 <meta content="Run your dive operation, not your spreadsheets. Built by a dive instructor, for dive operations." name="twitter:description"/>
 <meta content="https://www.sevenseasops.com/assets/og-image.png" name="twitter:image"/>
 
