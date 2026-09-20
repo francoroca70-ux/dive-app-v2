@@ -9,11 +9,16 @@
 tiene checkout), y **dos precios por producto** — Paddle trata mensual y anual
 como precios distintos del mismo producto.
 
-| Producto | Precio mensual | Precio anual |
-|---|---|---|
-| Seven Seas — Crew | $79 USD / mes | $790 USD / año |
-| Seven Seas — Fleet | $169 USD / mes | $1.690 USD / año |
-| Seven Seas — Armada | $329 USD / mes | $3.290 USD / año |
+| Producto | Barcos | Precio mensual | Precio anual |
+|---|---|---|---|
+| Seven Seas — Starter | 1–3 | $79 USD / mes | $790 USD / año |
+| Seven Seas — Growth | 4–8 | $169 USD / mes | $1.690 USD / año |
+| Seven Seas — Pro | 9–17 | $329 USD / mes | $3.290 USD / año |
+
+Los nombres de los planes siguen siendo **Starter / Growth / Pro /
+Enterprise**. Lo que cambió respecto de antes son las bandas de barcos
+(1–3 / 4–8 / 9–17 / 18+, antes 2 / 5 / 15) y los precios ($79 / $169 / $329,
+antes $49 / $89 / $149).
 
 El anual son **dos meses gratis** (~17% de descuento), que es el estándar del
 rubro.
@@ -27,9 +32,9 @@ Cuando los tengas, pasámelos y los pongo. Van en `index.html`, en el bloque
 
 ```js
 const PADDLE_PRICE_IDS = {
-  crew:   { monthly: 'pri_...', annual: 'pri_...' },
-  fleet:  { monthly: 'pri_...', annual: 'pri_...' },
-  armada: { monthly: 'pri_...', annual: 'pri_...' }
+  starter: { monthly: 'pri_...', annual: 'pri_...' },
+  growth:  { monthly: 'pri_...', annual: 'pri_...' },
+  pro:     { monthly: 'pri_...', annual: 'pri_...' }
 };
 ```
 
@@ -44,8 +49,8 @@ mensual sin avisar.
 ## ⚠️ Lo que se rompe en silencio si te lo salteás
 
 **El descuento Founding Fleet no cubre productos nuevos automáticamente.**
-`FOUNDINGFLEET30` está asociado a los tres productos viejos. Si creás Crew,
-Fleet y Armada como productos nuevos y no los agregás al alcance del
+`FOUNDINGFLEET30` está asociado a los productos que ya existen. Si creás
+productos nuevos en vez de editar los actuales y no los agregás al alcance del
 descuento, el código deja de funcionar y **nadie se entera hasta que un
 cliente lo intenta y le rebota**.
 
@@ -66,14 +71,14 @@ los tres anuales, y el descuento sigue apuntando a donde siempre apuntó.
 
 ## Lo que ya quedó hecho del lado del código
 
-- Base: tiers `crew` / `fleet` / `armada` / `enterprise`, con la restricción
-  actualizada. Sin esto el webhook fallaría al guardar un tier nuevo — el
-  cliente paga, Paddle cobra, y la app nunca se entera.
-- Topes de barcos por banda: Crew 3, Fleet 8, Armada 17, Enterprise sin tope.
-- Blue water migrada de `growth` a `fleet` (tiene 4 barcos).
-- Prueba de **30 días**, cambiada en los cuatro lugares donde vivía el 14
+- Base: tiers `starter` / `growth` / `pro` / `enterprise`, con la restricción
+  actualizada para incluir `enterprise`. Sin esto el webhook fallaría al
+  guardar ese tier — el cliente paga, Paddle cobra, y la app nunca se entera.
+- Topes de barcos por banda: Starter 3, Growth 8, Pro 17, Enterprise sin tope.
+- Blue water quedó en `growth` (tiene 4 barcos, banda 4–8).
+- Prueba de **15 días**, en los cuatro lugares donde vive ese número
   — incluido el trigger de la base, que es el que realmente manda y habría
-  seguido dando 14 días aunque la landing dijera 30.
+  seguido con otro valor aunque la landing dijera 15.
 - Tope de locales **eliminado**: el brief define un solo eje de precio
   (cantidad de barcos), así que limitar locales sería cobrar por algo que no
   se vende.
