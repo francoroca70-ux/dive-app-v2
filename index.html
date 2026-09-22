@@ -2033,6 +2033,24 @@ body { background: var(--navy); color: var(--text); }
   <div class="loading-logo-badge"><img src="assets/logo-icon.png" alt="Seven Seas"></div>
 </div>
 
+<!-- Pantalla de fallo de arranque. No se traduce a propósito: si el arranque
+     murió, el diccionario de idiomas puede ser justamente lo que no cargó. -->
+<div id="boot-error" style="display:none;position:fixed;inset:0;z-index:9999;background:#0a1628;color:#fff;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif;">
+  <div style="max-width:420px;text-align:center;">
+    <h2 style="font-size:1.2rem;font-weight:600;margin-bottom:10px;">Seven Seas couldn't start</h2>
+    <p style="font-size:0.9rem;opacity:0.75;margin-bottom:16px;line-height:1.5;">
+      No se pudo iniciar la app. Suele resolverse cerrando sesión y volviendo a entrar.
+    </p>
+    <p id="boot-error-detail" style="font-size:0.75rem;opacity:0.55;margin-bottom:20px;word-break:break-word;font-family:monospace;"></p>
+    <button onclick="bootErrorSignOut()" style="background:#4fc3f7;color:#0a1628;border:0;border-radius:8px;padding:11px 20px;font-size:0.9rem;font-weight:600;cursor:pointer;min-height:44px;">
+      Cerrar sesión y reintentar
+    </button>
+    <p style="font-size:0.75rem;opacity:0.5;margin-top:14px;">
+      Si vuelve a pasar: contact@sevenseasops.com
+    </p>
+  </div>
+</div>
+
 <!-- ─── LOGIN SCREEN ─── -->
 <div id="screen-login" class="screen">
   <div class="login-box">
@@ -7635,7 +7653,44 @@ async function checkCrewNotifications() {
   const { count } = await sb.from('day_off_requests').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('status', 'pending');
   badge.style.display = (count && count > 0) ? 'block' : 'none';
 }
+// Arranque. TODO lo de acá adentro corre antes de showScreen('app'), así que
+// cualquier paso que reviente dejaba la app en la pantalla de carga, sin un
+// solo mensaje: fondo navy y nada más, para siempre. Le pasó a Fran el 22/09 y
+// le habría pasado a un centro de buceo a las 7 de la mañana.
+//
+// Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
+  try {
+    await initAuthInner();
+  } catch (err) {
+    console.error('Boot failed:', err);
+    showBootError(err);
+  }
+}
+
+function showBootError(err) {
+  hideLoadingScreen();
+  const box = document.getElementById('boot-error');
+  if (!box) { alert('Seven Seas: ' + (err?.message || err)); return; }
+  document.getElementById('boot-error-detail').textContent = String(err?.message || err);
+  box.style.display = 'flex';
+}
+
+// Borra la sesión y recarga. Una sesión corrupta es la causa más común de que
+// el arranque muera, y sin esto el usuario no tiene forma de salir del pozo:
+// la pantalla que le permitiría cerrar sesión es justamente la que no cargó.
+async function bootErrorSignOut() {
+  try { await sb.auth.signOut(); } catch (e) { /* seguimos igual */ }
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('-auth-token') !== -1) localStorage.removeItem(k);
+    }
+  } catch (e) { /* modo privado */ }
+  location.reload();
+}
+
+async function initAuthInner() {
   const { data: { session } } = await sb.auth.getSession();
 
   if (session) {
@@ -11686,7 +11741,8 @@ function openSignWaiverModal(participantId, tripId, groupId, guestName, waiverTy
   feedback.textContent = '';
   feedback.className = 'save-feedback';
   document.getElementById('modal-signature').style.display = 'flex';
-  setTimeout(() => { initSignatureCanvas(); if (isMinor) initGuardianSignatureCanvas(); }, 50);
+  // Sin pads de firma acá: el staff sólo registra papel. La firma la captura
+  // el huésped, desde su link o desde el quiosco.
   loadSignTemplate(waiverType);
 }
 
@@ -11737,8 +11793,6 @@ function renderSignTemplateContent(type, template) {
       ? `${t('wv_add_one_in')} <a href="#" onclick="closeSignatureModal();showPage('settings');return false;">${t('wv_settings_waiver_templates_link')}</a>.`
       : t('wv_ask_owner_add_one');
     container.innerHTML = `<div class="warning-banner caution" style="font-size:0.82rem;">${t('wv_no_template_set_up')} ${ownerNote}</div>`;
-    const guardianCanvasWrap = document.getElementById('sig-guardian-canvas-wrap');
-    if (guardianCanvasWrap) guardianCanvasWrap.style.display = 'none';
     saveBtn.disabled = true;
     saveBtn.style.opacity = '0.5';
     return;
