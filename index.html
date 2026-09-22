@@ -1809,14 +1809,15 @@ body { background: var(--navy); color: var(--text); }
         <p id="sig-medical-history" style="font-size:0.78rem;color:var(--muted);margin-top:10px;"></p>
       </div>
 
+      <!-- El staff NO captura firmas. Un formulario firmado en el dispositivo
+           del propio centro, por su propia cuenta, vale poco como prueba: el
+           shop controla el aparato y la mano. El huésped firma en su teléfono
+           (link de la reserva) o en la tablet en modo quiosco.
+           Lo que queda acá es registrar que existe un formulario en papel: la
+           prueba es el papel físico y la app sólo lleva la cuenta. -->
       <div id="sig-signature-block">
-        <!-- Nudge toward the guest's own device before offering the pad. A
-             waiver signed on the shop's own tablet is worth less as evidence
-             than one signed by the guest on their phone, because the shop
-             controls both the device and the pen. The banner says so plainly
-             rather than leaving the staff member to guess. -->
-        <div class="warning-banner caution" id="sig-prefer-remote" style="margin-top:16px;font-size:0.8rem;display:none;">
-          <span data-i18n="wv_prefer_remote">A waiver the guest signs on their own phone is stronger evidence than one signed here. Send the link if they have their phone.</span>
+        <div class="warning-banner caution" style="margin-top:16px;font-size:0.8rem;">
+          <span data-i18n="wv_paper_only_note">Staff can only log a paper form here. For a digital signature, send the guest their booking link or hand them the tablet in kiosk mode — the guest signs, never the shop.</span>
         </div>
         <div class="card-section-title" style="margin-top:16px;" data-i18n="wv_participant_section">Participant</div>
         <div class="sf-row">
@@ -1828,16 +1829,6 @@ body { background: var(--navy); color: var(--text); }
             <label class="sf-label" data-i18n="wv_date">Date</label>
             <input class="sf-input" type="date" id="sig-date">
           </div>
-        </div>
-        <div class="radio-group" style="margin-top:6px;" id="sig-method-row">
-          <div class="radio-btn selected" id="sig-method-digital" onclick="setSignMethod('digital')" data-i18n="wv_sign_digitally">Sign digitally</div>
-          <div class="radio-btn" id="sig-method-paper" onclick="setSignMethod('paper')" data-i18n="wv_logged_paper">Logged on paper</div>
-        </div>
-        <div id="sig-canvas-wrap" style="margin-top:14px;">
-          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
-            <canvas id="signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
-          </div>
-          <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearSignatureCanvas()" data-i18n="wv_clear">Clear</button>
         </div>
       </div>
 
@@ -1853,13 +1844,6 @@ body { background: var(--navy); color: var(--text); }
             <input class="sf-input" type="date" id="sig-guardian-date">
           </div>
         </div>
-        <div id="sig-guardian-canvas-wrap" style="margin-top:6px;">
-          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
-            <canvas id="guardian-signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
-          </div>
-          <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearGuardianSignatureCanvas()" data-i18n="wv_clear">Clear</button>
-        </div>
-      </div>
 
       <div class="sf-group" style="margin-top:14px;">
         <label class="sf-label" data-i18n="wv_notes_optional">Notes (optional)</label>
@@ -2279,7 +2263,7 @@ body { background: var(--navy); color: var(--text); }
       <div id="rw-done-view" style="display:none;text-align:center;padding:32px 0;">
         <div style="font-size:2.4rem;line-height:1;margin-bottom:14px;">✓</div>
         <h2 style="margin-bottom:8px;" data-i18n="rw_done_title">All signed</h2>
-        <p style="font-size:0.9rem;color:var(--muted);" data-i18n="rw_done_body">Thanks — please hand the tablet back to the desk.</p>
+        <p id="rw-done-body" style="font-size:0.9rem;color:var(--muted);" data-i18n="rw_done_body">Thanks — please hand the tablet back to the desk.</p>
       </div>
 
       <div id="rw-sign-view" style="display:none;">
@@ -4639,6 +4623,10 @@ const TRANSLATIONS = {
     rw_link_not_found: "This link isn't recognized. Contact the shop to check your booking.",
     rw_signed: 'Signed', rw_back: 'Back',
     rw_all_done: 'All waivers for this booking are signed — see you soon!',
+    wv_open_kiosk: 'Kiosk',
+    wv_kiosk_no_link: "Couldn't open the kiosk — this booking has no signing link yet.",
+    wv_paper_only_note: 'Staff can only log a paper form here. For a digital signature, send the guest their booking link or hand them the tablet in kiosk mode — the guest signs, never the shop.',
+    rw_done_body_own: 'Thanks — see you soon!',
     rw_finish: "I'm done — hand the tablet back",
     rw_done_title: 'All signed',
     rw_done_body: 'Thanks — please hand the tablet back to the desk.',
@@ -5288,6 +5276,10 @@ const TRANSLATIONS = {
     rw_link_not_found: 'No se reconoce este link. Contactá al centro de buceo para verificar tu reserva.',
     rw_signed: 'Firmado', rw_back: 'Volver',
     rw_all_done: 'Todos los formularios de esta reserva están firmados — ¡nos vemos pronto!',
+    wv_open_kiosk: 'Quiosco',
+    wv_kiosk_no_link: 'No se pudo abrir el quiosco — esta reserva todavía no tiene link de firma.',
+    wv_paper_only_note: 'Desde acá el staff sólo registra un formulario en papel. Para una firma digital, mandále al huésped el link de su reserva o entregale la tablet en modo quiosco — firma el huésped, nunca el centro.',
+    rw_done_body_own: 'Gracias — nos vemos pronto!',
     rw_finish: 'Terminé — devolver la tablet',
     rw_done_title: 'Listo',
     rw_done_body: 'Gracias — devolvé la tablet al mostrador.',
@@ -6410,6 +6402,11 @@ async function checkForWaiverToken() {
   const token = params.get('waiver');
   if (!token) return false;
   window.rwToken = token;
+  // Modo quiosco: la tablet del mostrador, abierta por el staff desde su
+  // sesión. Cambia el texto de cierre ("devolvé la tablet" en vez de "nos
+  // vemos") y, sobre todo, deja explícito en el código que este aparato lo va
+  // a tener en la mano alguien que no es el dueño de la sesión.
+  window.rwKiosk = params.get('kiosk') === '1';
   showScreen('sign-waivers');
   await rwLoadStatus();
   return true;
@@ -6494,7 +6491,9 @@ function rwOpenSignForm(participantId, fullName, isMinor, waiverType) {
 // datos de la reserva y deja la pantalla de entrega. A partir de acá, quien
 // agarre la tablet no ve el nombre de nadie ni puede volver atrás.
 function rwFinishSession() {
+  const kiosk = !!window.rwKiosk;
   window.rwToken = null;
+  window.rwKiosk = false;
   window.rwData = null;
   window.rwCurrentTemplate = null;
   window.rwCurrentParticipant = null;
@@ -6507,6 +6506,9 @@ function rwFinishSession() {
   });
   const done = document.getElementById('rw-done-view');
   if (done) done.style.display = 'block';
+  // En el teléfono del huésped no hay tablet que devolver.
+  const body = document.getElementById('rw-done-body');
+  if (body) body.textContent = kiosk ? t('rw_done_body') : t('rw_done_body_own');
 }
 
 function rwBackToList() {
@@ -11460,6 +11462,7 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
           <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn-icon" style="font-size:0.78rem;" onclick="openWaiverKiosk('${g.id}', this)">${t('wv_open_kiosk')}</button>
           <button class="btn-icon" style="font-size:0.78rem;" onclick="showWaiverQrCode('${g.id}', this)">${t('wv_show_qr')}</button>
           <button class="btn-icon" style="font-size:0.78rem;" onclick="copyWaiverSigningLink('${g.id}', this)">${t('wv_copy_link')}</button>
         </div>
@@ -11497,6 +11500,35 @@ async function copyWaiverSigningLink(groupId, btnEl) {
 // on a boat/dock where copy-pasting a URL isn't practical. Renders client-side
 // via the qrcode CDN library (loaded alongside supabase-js in <head>), so no
 // new edge function or table is needed.
+// Abre el link de firma de esta reserva en una pestaña nueva, marcado como
+// quiosco. Es la puerta de entrada para la tablet del mostrador: el staff lo
+// abre desde su sesión, entrega el aparato, y el huésped firma.
+//
+// Va en pestaña nueva a propósito. La sesión del staff queda intacta detrás:
+// si abriéramos el quiosco en la misma pestaña, volver atrás devolvería la app
+// completa con reservas, caja y tripulación a la vista de quien tenga la
+// tablet en la mano.
+async function openWaiverKiosk(groupId, btnEl) {
+  const originalLabel = btnEl.textContent;
+  btnEl.textContent = '...';
+  let url = null;
+  try {
+    const { data: existing } = await sb.from('waiver_signing_links')
+      .select('token').eq('group_id', groupId).maybeSingle();
+    url = existing?.token
+      ? buildWaiverSigningUrl(existing.token)
+      : await getOrCreateWaiverSigningLink(groupId, null);
+  } catch (e) {
+    console.error('Kiosk link failed:', e);
+  }
+  btnEl.textContent = originalLabel;
+  if (!url) {
+    await showAlertModal(t('wv_kiosk_no_link'));
+    return;
+  }
+  window.open(url + (url.includes('?') ? '&' : '?') + 'kiosk=1', '_blank', 'noopener');
+}
+
 async function showWaiverQrCode(groupId, btnEl) {
   const originalLabel = btnEl.textContent;
   btnEl.textContent = '...';
@@ -11674,7 +11706,6 @@ async function searchWaiverLog(term) {
 }
 
 window.currentSignatureParticipant = null;
-window.currentSignMethod = 'digital';
 
 function calcAge(dob) {
   if (!dob) return null;
@@ -11699,7 +11730,6 @@ function openSignWaiverModal(participantId, tripId, groupId, guestName, waiverTy
   const feedback = document.getElementById('signature-save-feedback');
   feedback.textContent = '';
   feedback.className = 'save-feedback';
-  setSignMethod('digital');
   document.getElementById('modal-signature').style.display = 'flex';
   setTimeout(() => { initSignatureCanvas(); if (isMinor) initGuardianSignatureCanvas(); }, 50);
   loadSignTemplate(waiverType);
@@ -11729,7 +11759,6 @@ async function loadSignTemplate(type) {
 
 function renderSignTemplateContent(type, template) {
   const container = document.getElementById('sig-template-content');
-  const methodRow = document.getElementById('sig-method-row');
   const saveBtn = document.getElementById('btn-confirm-signature');
   const isMedical = type === 'medical';
 
@@ -11753,8 +11782,6 @@ function renderSignTemplateContent(type, template) {
       ? `${t('wv_add_one_in')} <a href="#" onclick="closeSignatureModal();showPage('settings');return false;">${t('wv_settings_waiver_templates_link')}</a>.`
       : t('wv_ask_owner_add_one');
     container.innerHTML = `<div class="warning-banner caution" style="font-size:0.82rem;">${t('wv_no_template_set_up')} ${ownerNote}</div>`;
-    methodRow.style.display = 'none';
-    document.getElementById('sig-canvas-wrap').style.display = 'none';
     const guardianCanvasWrap = document.getElementById('sig-guardian-canvas-wrap');
     if (guardianCanvasWrap) guardianCanvasWrap.style.display = 'none';
     saveBtn.disabled = true;
@@ -11764,13 +11791,11 @@ function renderSignTemplateContent(type, template) {
 
   saveBtn.disabled = false;
   saveBtn.style.opacity = '1';
-  methodRow.style.display = isMedical ? 'none' : 'flex';
 
   container.innerHTML = `
     ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
     <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
   `;
-  if (!isMedical) setSignMethod(window.currentSignMethod || 'digital');
 }
 
 // The clearance is a state of the paperwork, so any of the three can follow
@@ -11783,19 +11808,6 @@ function setMedicalStatus(status) {
   document.getElementById('sig-med-physician').classList.toggle('selected', status === 'physician_required');
 }
 
-function setSignMethod(method) {
-  window.currentSignMethod = method;
-  document.getElementById('sig-method-digital').classList.toggle('selected', method === 'digital');
-  document.getElementById('sig-method-paper').classList.toggle('selected', method === 'paper');
-  const showCanvas = (method === 'digital' && !window.currentSignBlocked);
-  document.getElementById('sig-canvas-wrap').style.display = showCanvas ? 'block' : 'none';
-  // El aviso sólo aparece cuando se va a capturar la firma acá. Si es papel,
-  // el documento físico es la prueba y el aviso no viene al caso.
-  const preferRemote = document.getElementById('sig-prefer-remote');
-  if (preferRemote) preferRemote.style.display = showCanvas ? 'block' : 'none';
-  const guardianCanvasWrap = document.getElementById('sig-guardian-canvas-wrap');
-  if (guardianCanvasWrap) guardianCanvasWrap.style.display = showCanvas ? 'block' : 'none';
-}
 
 function makeSignaturePad(canvasId) {
   const canvas = document.getElementById(canvasId);
@@ -11824,18 +11836,6 @@ function makeSignaturePad(canvasId) {
   return pad;
 }
 
-function initSignatureCanvas() { window._sigPad = makeSignaturePad('signature-canvas'); }
-function clearSignatureCanvas() {
-  if (!window._sigPad) return;
-  window._sigPad.ctx.clearRect(0, 0, window._sigPad.canvas.width, window._sigPad.canvas.height);
-  window._sigPad.hasStroke = false;
-}
-function initGuardianSignatureCanvas() { window._guardianSigPad = makeSignaturePad('guardian-signature-canvas'); }
-function clearGuardianSignatureCanvas() {
-  if (!window._guardianSigPad) return;
-  window._guardianSigPad.ctx.clearRect(0, 0, window._guardianSigPad.canvas.width, window._guardianSigPad.canvas.height);
-  window._guardianSigPad.hasStroke = false;
-}
 
 document.getElementById('btn-confirm-signature').addEventListener('click', async () => {
   const feedback = document.getElementById('signature-save-feedback');
@@ -11861,7 +11861,9 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     return;
   }
 
-  const method = window.currentSignMethod || 'digital';
+  // El staff sólo registra papel. La firma digital la hace el huésped, en su
+  // teléfono o en la tablet en modo quiosco, nunca desde esta sesión.
+  const method = 'paper';
   const printedName = document.getElementById('sig-printed-name').value.trim();
   const signedDate = document.getElementById('sig-date').value;
   if (!printedName) {
@@ -11874,12 +11876,6 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     feedback.className = 'save-feedback error visible';
     return;
   }
-  if (method === 'digital' && !(window._sigPad && window._sigPad.hasStroke)) {
-    feedback.textContent = t('wv_please_draw_signature');
-    feedback.className = 'save-feedback error visible';
-    return;
-  }
-
   let guardianName = null, guardianDate = null, guardianSignatureData = null;
   if (sp.is_minor) {
     guardianName = document.getElementById('sig-guardian-name').value.trim();
@@ -11894,12 +11890,6 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
       feedback.className = 'save-feedback error visible';
       return;
     }
-    if (method === 'digital' && !(window._guardianSigPad && window._guardianSigPad.hasStroke)) {
-      feedback.textContent = t('wv_guardian_signature_required');
-      feedback.className = 'save-feedback error visible';
-      return;
-    }
-    guardianSignatureData = method === 'digital' ? window._guardianSigPad.canvas.toDataURL('image/png') : null;
   }
 
   const { data: { user } } = await sb.auth.getUser();
@@ -11913,7 +11903,7 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     trip_id: sp.trip_id || null,
     waiver_type: type,
     method: method,
-    signature_data: method === 'digital' ? window._sigPad.canvas.toDataURL('image/png') : null,
+    signature_data: null,
     participant_printed_name: printedName,
     participant_signed_date: signedDate,
     guardian_printed_name: guardianName,
