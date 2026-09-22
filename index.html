@@ -3306,7 +3306,7 @@ body { background: var(--navy); color: var(--text); }
         </div>
         <div id="waivers-main" style="display:none;">
           <div class="card" id="card-pending-waivers">
-            <h2 data-i18n="wv_pending_today">Pending Signatures — Today</h2>
+            <h2 data-i18n="wv_pending_today">Not ready yet — Today</h2>
             <div id="pending-waivers-list"></div>
           </div>
           <div class="card" id="card-remote-waiver-status">
@@ -4572,6 +4572,8 @@ const TRANSLATIONS = {
     wv_not_enabled: "Waivers aren't enabled yet", wv_not_enabled_desc: 'Turn them on in Settings to start collecting digital signatures.',
     wv_go_to_settings: 'Go to Settings',
     wv_med_section: 'Dive clearance',
+    wv_med_not_checked: 'Medical not checked yet',
+    wv_all_ready_today: 'Everyone on today\'s trips is ready to dive.',
     wv_med_help: 'Record the outcome of the paper medical declaration. Seven Seas never stores the medical details themselves.',
     wv_med_cleared: 'Cleared to dive',
     wv_med_physician: 'Physician sign-off needed',
@@ -4583,7 +4585,7 @@ const TRANSLATIONS = {
     wv_export_day_trips: "Export day's trip records",
     wv_export_role_note: 'Only owners, managers and front desk can download records to a computer. Ask them if you need a copy.',
     wv_export_safety_note: "For safety, export and save a copy of each day's records to your own computer at the end of every day.",
-    wv_pending_today: 'Pending Signatures — Today', wv_waiver_log: 'Waiver Log', wv_daily: 'Daily', wv_weekly: 'Weekly',
+    wv_pending_today: 'Not ready yet — Today', wv_waiver_log: 'Waiver Log', wv_daily: 'Daily', wv_weekly: 'Weekly',
     wv_search_guest_ph: 'Search by guest name...',
     wv_trip_fallback: 'Trip', wv_sign_waiver: 'Sign Waiver', wv_no_pending_guests: "No pending guests for today's trips.",
     wv_remote_status_title: "Remote Signing — Today's Bookings",
@@ -5211,6 +5213,8 @@ const TRANSLATIONS = {
     wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Activalos en Configuración para empezar a recolectar firmas digitales.',
     wv_go_to_settings: 'Ir a Configuración',
     wv_med_section: 'Habilitación para bucear',
+    wv_med_not_checked: 'Falta controlar el médico',
+    wv_all_ready_today: 'Todos los huéspedes de hoy están listos para bucear.',
     wv_med_help: 'Registrá el resultado de la declaración médica en papel. Seven Seas nunca guarda el detalle médico.',
     wv_med_cleared: 'Habilitado para bucear',
     wv_med_physician: 'Falta firma médica',
@@ -5222,7 +5226,7 @@ const TRANSLATIONS = {
     wv_export_day_trips: 'Exportar registros de salidas del día',
     wv_export_role_note: 'Solo propietarios, gerentes y recepción pueden descargar registros a una computadora. Pídeles una copia si la necesitas.',
     wv_export_safety_note: 'Por seguridad, exporta y guarda una copia de los registros de cada día en tu computadora al final de cada jornada.',
-    wv_pending_today: 'Firmas Pendientes — Hoy', wv_waiver_log: 'Registro de Formularios', wv_daily: 'Diario', wv_weekly: 'Semanal',
+    wv_pending_today: 'Todavía no listos — Hoy', wv_waiver_log: 'Registro de Formularios', wv_daily: 'Diario', wv_weekly: 'Semanal',
     wv_search_guest_ph: 'Buscar por nombre de huésped...',
     wv_trip_fallback: 'Salida', wv_sign_waiver: 'Firmar Formulario', wv_no_pending_guests: 'No hay huéspedes pendientes para las salidas de hoy.',
     wv_remote_status_title: 'Firma Remota — Reservas de Hoy',
@@ -11248,39 +11252,87 @@ async function loadWaivers() {
 
   const participantIds = participants.map(p => p.id);
   const signedTypesByParticipant = {};
+  // Dive clearance rides along with the same query -- it's a column on the
+  // medical waiver row, so one extra field instead of a second round trip.
+  const medicalByParticipant = {};
   if (participantIds.length) {
-    const { data: signed } = await sb.from('waivers').select('participant_id, waiver_type').in('participant_id', participantIds);
+    const { data: signed } = await sb.from('waivers')
+      .select('participant_id, waiver_type, medical_status, medical_checked_at')
+      .in('participant_id', participantIds);
     (signed || []).forEach(s => {
       if (!s.participant_id) return;
       if (!signedTypesByParticipant[s.participant_id]) signedTypesByParticipant[s.participant_id] = new Set();
-      signedTypesByParticipant[s.participant_id].add(s.waiver_type);
+      // A medical row only counts as done once someone has actually recorded
+      // the clearance -- the row can exist with a null status.
+      if (s.waiver_type === 'medical') {
+        if (s.medical_status) {
+          medicalByParticipant[s.participant_id] = { status: s.medical_status, at: s.medical_checked_at };
+          signedTypesByParticipant[s.participant_id].add('medical');
+        }
+      } else {
+        signedTypesByParticipant[s.participant_id].add(s.waiver_type);
+      }
     });
   }
 
-  const pendingRows = [];
+  // Un huésped, una fila, un color. Antes había una fila por formulario
+  // faltante, así que alguien al que le faltaban dos aparecía dos veces --
+  // justo lo contrario de lo que sirve a las 7 de la mañana en el muelle.
+  const guestRows = [];
   participants.forEach(p => {
     const trip = tripById[p.trip_id];
     const effectiveTypeId = (p.group_id && groupTypeById[p.group_id]) || trip?.trip_type_id;
     const requiredTypes = requiredWaiversByTripTypeId[effectiveTypeId] || ['liability'];
     const signedTypes = signedTypesByParticipant[p.id] || new Set();
     const isMinor = calcAge(p.date_of_birth) !== null && calcAge(p.date_of_birth) < 18;
-    requiredTypes.forEach(type => {
-      if (!signedTypes.has(type)) pendingRows.push({ p, trip, type, isMinor });
-    });
+
+    const medicalRequired = requiredTypes.includes('medical');
+    const medical = medicalByParticipant[p.id] || null;
+    const pendingWaivers = requiredTypes.filter(type => type !== 'medical' && !signedTypes.has(type));
+
+    // Rojo sólo cuando falta la firma de un médico: es un trámite pendiente
+    // concreto, no un juicio sobre la salud de nadie. Ámbar es "todavía nadie
+    // lo miró", que es el estado por defecto y el más común de la mañana.
+    let state = 'ready';
+    if (medicalRequired && medical?.status === 'physician_required') state = 'blocked';
+    else if (pendingWaivers.length || (medicalRequired && !medical)) state = 'waiting';
+
+    if (state === 'ready') return;
+    guestRows.push({ p, trip, isMinor, pendingWaivers, medicalRequired, medical, state });
   });
 
+  const STATE_COLOR = { ready: 'var(--success)', waiting: '#EF9F27', blocked: 'var(--error)' };
+
   const pendingListEl = document.getElementById('pending-waivers-list');
-  pendingListEl.innerHTML = pendingRows.length ? pendingRows.map(({ p, trip, type, isMinor }) => {
+  pendingListEl.innerHTML = guestRows.length ? guestRows.map(({ p, trip, isMinor, pendingWaivers, medicalRequired, medical, state }) => {
     const tripLabel = trip ? `${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
     const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
+    const bits = [];
+    if (pendingWaivers.length) bits.push(pendingWaivers.map(ty => waiverTypeLabels[ty] || ty).join(', '));
+    if (medicalRequired && !medical) bits.push(t('wv_med_not_checked'));
+    if (medicalRequired && medical?.status === 'physician_required') bits.push(t('wv_med_physician'));
+
+    const actions = pendingWaivers.map(ty =>
+      `<button class="btn-save" style="padding:6px 10px;font-size:0.78rem;" onclick="openSignWaiverModal('${p.id}','${p.trip_id}','${p.group_id || ''}','${nameEsc}','${ty}',${isMinor})">${waiverTypeLabels[ty] || ty}</button>`
+    ).join('');
+    // Un toque para habilitar, sin abrir el modal: es la acción que más se
+    // repite y la que más apurada se hace.
+    const medAction = medicalRequired && medical?.status !== 'cleared'
+      ? `<button class="btn-cancel" style="padding:6px 10px;font-size:0.78rem;" onclick="quickSetClearance('${p.id}','${p.trip_id}','${p.group_id || ''}','cleared')">${t('wv_med_cleared')}</button>`
+        + (medical?.status === 'physician_required' ? '' : `<button class="btn-cancel" style="padding:6px 10px;font-size:0.78rem;" onclick="quickSetClearance('${p.id}','${p.trip_id}','${p.group_id || ''}','physician_required')">${t('wv_med_physician')}</button>`)
+      : '';
+
     return `<div class="participant-row">
-      <div>
-        <div class="p-name">${p.full_name}${isMinor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
-        <div style="font-size:0.78rem;color:var(--muted);">${tripLabel} · ${waiverTypeLabels[type] || type}</div>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${STATE_COLOR[state]};flex:none;"></span>
+        <div style="min-width:0;">
+          <div class="p-name">${p.full_name}${isMinor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
+          <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}${bits.length ? ' · ' + bits.join(' · ') : ''}</div>
+        </div>
       </div>
-      <button class="btn-save" style="padding:6px 12px;font-size:0.82rem;" onclick="openSignWaiverModal('${p.id}','${p.trip_id}','${p.group_id || ''}','${nameEsc}','${type}',${isMinor})">${t('wv_sign_waiver')}</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${actions}${medAction}</div>
     </div>`;
-  }).join('') : `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_pending_guests')}</p>`;
+  }).join('') : `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_all_ready_today')}</p>`;
 
   await renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaiversByTripTypeId, participants, signedTypesByParticipant, todaysGroups);
   await renderWaiverLog();
@@ -11819,9 +11871,23 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     console.error('Waiver save error:', error);
     return;
   }
-  closeSignatureModal();
+  if (!skipModal) closeSignatureModal();
   await loadWaivers();
 });
+
+// One-tap clearance straight from the list, without opening the modal. Same
+// code path as the modal underneath, so the history is written either way.
+async function quickSetClearance(participantId, tripId, groupId, status) {
+  const feedback = document.getElementById('waiver-export-feedback')
+    || { textContent: '', className: '' };
+  window.currentSignTemplate = null;
+  await saveMedicalClearance(
+    { id: participantId, trip_id: tripId || null, group_id: groupId || null },
+    status,
+    feedback,
+    { skipModal: true }
+  );
+}
 
 // Records (or updates) a participant's dive clearance for this trip.
 //
@@ -11833,7 +11899,8 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
 //
 // Every change also appends a row to waiver_medical_events, which has no
 // UPDATE or DELETE policy. Nobody can rewrite who cleared a diver.
-async function saveMedicalClearance(sp, status, feedback) {
+async function saveMedicalClearance(sp, status, feedback, opts) {
+  const skipModal = !!(opts && opts.skipModal);
   if (isOffline) {
     feedback.textContent = t('wv_med_needs_connection');
     feedback.className = 'save-feedback error visible';
@@ -11875,7 +11942,7 @@ async function saveMedicalClearance(sp, status, feedback) {
       signed_by_name: staffRow?.full_name || null,
       template_id: window.currentSignTemplate?.id || null,
       body_snapshot: window.currentSignTemplate?.body_text || null,
-      notes: document.getElementById('sig-notes').value.trim() || null,
+      notes: skipModal ? null : (document.getElementById('sig-notes').value.trim() || null),
       ...fields
     }).select('id').single();
     error = insErr;
