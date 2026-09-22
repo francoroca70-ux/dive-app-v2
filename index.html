@@ -11863,7 +11863,13 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     queueOfflineAction('waiver_signature', payload);
     await showAlertModal(t('wv_saved_offline'));
   } else {
-    ({ error } = await sb.from('waivers').insert(payload));
+    // upsert, no insert: si alguien vuelve a firmar el mismo formulario —por
+    // una corrección, o porque tocó dos veces en una tablet con mala señal—
+    // se reemplaza el registro en lugar de crear un duplicado. Probando esto
+    // quedaron 12 exenciones de la misma participante antes de que existiera
+    // el índice único que respalda este onConflict.
+    ({ error } = await sb.from('waivers')
+      .upsert(payload, { onConflict: 'participant_id,waiver_type' }));
   }
   if (error) {
     feedback.textContent = t('wv_error_saving') + (error.message || t('wv_unknown_error'));
