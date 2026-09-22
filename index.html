@@ -1810,6 +1810,14 @@ body { background: var(--navy); color: var(--text); }
       </div>
 
       <div id="sig-signature-block">
+        <!-- Nudge toward the guest's own device before offering the pad. A
+             waiver signed on the shop's own tablet is worth less as evidence
+             than one signed by the guest on their phone, because the shop
+             controls both the device and the pen. The banner says so plainly
+             rather than leaving the staff member to guess. -->
+        <div class="warning-banner caution" id="sig-prefer-remote" style="margin-top:16px;font-size:0.8rem;display:none;">
+          <span data-i18n="wv_prefer_remote">A waiver the guest signs on their own phone is stronger evidence than one signed here. Send the link if they have their phone.</span>
+        </div>
         <div class="card-section-title" style="margin-top:16px;" data-i18n="wv_participant_section">Participant</div>
         <div class="sf-row">
           <div class="sf-group">
@@ -4572,6 +4580,10 @@ const TRANSLATIONS = {
     wv_not_enabled: "Waivers aren't enabled yet", wv_not_enabled_desc: 'Turn them on in Settings to start collecting digital signatures.',
     wv_go_to_settings: 'Go to Settings',
     wv_med_section: 'Dive clearance',
+    wv_prefer_remote: 'A waiver the guest signs on their own phone is stronger evidence than one signed here. Send the link if they have their phone.',
+    wv_prov_onsite: 'Signed on a shop device, with {staff} present.',
+    wv_prov_remote: 'Signed by the guest on their own device — {device}, IP {ip}.',
+    wv_prov_paper: 'Paper copy held by the shop, logged by {staff}.',
     wv_med_not_checked: 'Medical not checked yet',
     wv_all_ready_today: 'Everyone on today\'s trips is ready to dive.',
     wv_med_help: 'Record the outcome of the paper medical declaration. Seven Seas never stores the medical details themselves.',
@@ -5213,6 +5225,10 @@ const TRANSLATIONS = {
     wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Activalos en Configuración para empezar a recolectar firmas digitales.',
     wv_go_to_settings: 'Ir a Configuración',
     wv_med_section: 'Habilitación para bucear',
+    wv_prefer_remote: 'Un formulario que el huésped firma en su propio teléfono vale más como prueba que uno firmado acá. Mandá el link si tiene el teléfono a mano.',
+    wv_prov_onsite: 'Firmado en un dispositivo del centro, con {staff} presente.',
+    wv_prov_remote: 'Firmado por el huésped en su propio dispositivo — {device}, IP {ip}.',
+    wv_prov_paper: 'Copia en papel archivada en el centro, registrada por {staff}.',
     wv_med_not_checked: 'Falta controlar el médico',
     wv_all_ready_today: 'Todos los huéspedes de hoy están listos para bucear.',
     wv_med_help: 'Registrá el resultado de la declaración médica en papel. Seven Seas nunca guarda el detalle médico.',
@@ -11726,6 +11742,10 @@ function setSignMethod(method) {
   document.getElementById('sig-method-paper').classList.toggle('selected', method === 'paper');
   const showCanvas = (method === 'digital' && !window.currentSignBlocked);
   document.getElementById('sig-canvas-wrap').style.display = showCanvas ? 'block' : 'none';
+  // El aviso sólo aparece cuando se va a capturar la firma acá. Si es papel,
+  // el documento físico es la prueba y el aviso no viene al caso.
+  const preferRemote = document.getElementById('sig-prefer-remote');
+  if (preferRemote) preferRemote.style.display = showCanvas ? 'block' : 'none';
   const guardianCanvasWrap = document.getElementById('sig-guardian-canvas-wrap');
   if (guardianCanvasWrap) guardianCanvasWrap.style.display = showCanvas ? 'block' : 'none';
 }
@@ -12012,6 +12032,42 @@ document.getElementById('btn-export-trips').addEventListener('click', () => {
   exportTripRecordsForDay(date);
 });
 
+
+// Cómo se capturó la firma. El dato ya estaba en la base (signed_via, signer_ip,
+// signer_user_agent los escribe la edge function desde julio) pero no se mostraba
+// en ningún lado -- ni en la app ni en el PDF.
+//
+// Importa porque es la diferencia entre un documento que aguanta una pregunta y
+// uno que no. Una exención firmada en el mostrador del propio centro vale menos
+// que una firmada por el huésped desde su teléfono, y el registro tiene que
+// decir cuál de las dos es en vez de dejarlas indistinguibles.
+function waiverProvenanceLine(w) {
+  if (w.method === 'paper') {
+    return t('wv_prov_paper').replace('{staff}', escapeHtml(w.signed_by_name || '—'));
+  }
+  if (w.signed_via === 'remote') {
+    const device = shortUserAgent(w.signer_user_agent);
+    return t('wv_prov_remote')
+      .replace('{ip}', escapeHtml(w.signer_ip || '—'))
+      .replace('{device}', escapeHtml(device));
+  }
+  return t('wv_prov_onsite').replace('{staff}', escapeHtml(w.signed_by_name || '—'));
+}
+
+// El user agent completo no le dice nada a nadie. "iPhone · Safari" sí.
+function shortUserAgent(ua) {
+  if (!ua) return '—';
+  const os = /iPhone|iPad/.test(ua) ? (/iPad/.test(ua) ? 'iPad' : 'iPhone')
+    : /Android/.test(ua) ? 'Android'
+    : /Macintosh/.test(ua) ? 'Mac'
+    : /Windows/.test(ua) ? 'Windows' : null;
+  const browser = /Edg\//.test(ua) ? 'Edge'
+    : /Chrome\//.test(ua) ? 'Chrome'
+    : /Firefox\//.test(ua) ? 'Firefox'
+    : /Safari\//.test(ua) ? 'Safari' : null;
+  return [os, browser].filter(Boolean).join(' · ') || '—';
+}
+
 async function exportWaiversForDay(date) {
   const feedback = document.getElementById('waiver-export-feedback');
   feedback.textContent = t('wv_preparing_export');
@@ -12048,6 +12104,7 @@ async function exportWaiversForDay(date) {
         <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
       </div>
       <div class="waiver-entry-signee">Printed name: ${escapeHtml(w.participant_printed_name || w.participants?.full_name || '—')} &nbsp;·&nbsp; Date: ${w.participant_signed_date || '—'}</div>
+      <div class="waiver-entry-provenance">${waiverProvenanceLine(w)}</div>
       ${w.notes ? `<p class="waiver-entry-notes">${escapeHtml(w.notes)}</p>` : ''}
       ${w.waiver_type === 'medical' && w.medical_status ? `
         <div class="waiver-entry-medical">${w.medical_status === 'cleared'
@@ -12077,6 +12134,7 @@ async function exportWaiversForDay(date) {
   .waiver-entry-guardian { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc; }
   .waiver-entry-notes { font-size: 12px; color: #555; font-style: italic; margin: 4px 0 0; }
   .waiver-entry-medical { font-size: 12px; color: #333; margin: 6px 0 0; font-weight: 600; }
+  .waiver-entry-provenance { font-size: 11px; color: #666; margin: 3px 0 0; font-style: italic; }
   .waiver-entry-body { font-size: 12px; color: #333; white-space: pre-wrap; line-height: 1.5; margin: 6px 0 0; border-left: 2px solid #ddd; padding-left: 10px; }
   @media print { body { padding: 10px; } }
 </style>
