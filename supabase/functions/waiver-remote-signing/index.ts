@@ -83,6 +83,12 @@ Deno.serve(async (req: Request) => {
         const { data: tt } = await sb.from("trip_types").select("required_waiver_types").eq("id", tripTypeId).maybeSingle();
         if (tt?.required_waiver_types?.length) requiredTypes = tt.required_waiver_types;
       }
+      // 'medical' is deliberately never offered remotely. The medical
+      // declaration is a paper form the guest fills in at the shop, and the
+      // clearance that follows is recorded by staff who actually read it --
+      // letting a guest self-certify from their phone would defeat the point
+      // of the check, and we no longer store any medical content anyway.
+      requiredTypes = requiredTypes.filter((type) => type !== "medical");
 
       const { data: participants } = await sb
         .from("participants")
@@ -128,12 +134,13 @@ Deno.serve(async (req: Request) => {
     }
 
     // ─── action: template ───
-    // Fetches the actual wording (or medical questionnaire) for one waiver
-    // type, on demand -- kept out of `status` since most participants only
-    // end up opening one or two of these, not every type up front.
+    // Fetches the actual wording for one waiver type, on demand -- kept out of
+    // `status` since most participants only end up opening one or two of
+    // these, not every type up front.
     if (action === "template") {
       const { waiverType } = body || {};
       if (!waiverType) return json({ error: "Missing waiverType" }, 400);
+      if (waiverType === "medical") return json({ error: "Not signable remotely" }, 400);
 
       const { data: template } = await sb
         .from("waiver_templates")
@@ -142,17 +149,7 @@ Deno.serve(async (req: Request) => {
         .eq("waiver_type", waiverType)
         .maybeSingle();
 
-      let questions: unknown[] = [];
-      if (waiverType === "medical" && template) {
-        const { data: qs } = await sb
-          .from("waiver_template_questions")
-          .select("*")
-          .eq("template_id", template.id)
-          .order("sort_order");
-        questions = qs || [];
-      }
-
-      return json({ template: template || null, questions });
+      return json({ template: template || null });
     }
 
     // ─── action: sign ───
@@ -164,12 +161,15 @@ Deno.serve(async (req: Request) => {
       const {
         participantId, waiverType, printedName, signedDate, signatureData,
         guardianName, guardianDate, guardianSignatureData, notes,
-        templateId, bodySnapshot, responses,
+        templateId, bodySnapshot,
       } = body || {};
 
       if (!participantId || !waiverType || !printedName || !signedDate) {
         return json({ error: "Missing required fields" }, 400);
       }
+      // Belt and braces: the list action already filters medical out, so a
+      // request for one here means a hand-crafted payload.
+      if (waiverType === "medical") return json({ error: "Not signable remotely" }, 400);
 
       const { data: participant } = await sb
         .from("participants")
@@ -207,7 +207,6 @@ Deno.serve(async (req: Request) => {
         signed_by_name: null,
         template_id: templateId || null,
         body_snapshot: bodySnapshot || null,
-        responses: responses || null,
         signed_via: "remote",
         signer_ip: ip,
         signer_user_agent: userAgent,

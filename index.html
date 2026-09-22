@@ -1795,26 +1795,42 @@ body { background: var(--navy); color: var(--text); }
       <p id="signature-waiver-type-label" style="font-size:0.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;"></p>
       <div id="sig-template-content" style="margin-top:10px;"></div>
 
-      <div class="card-section-title" style="margin-top:16px;" data-i18n="wv_participant_section">Participant</div>
-      <div class="sf-row">
-        <div class="sf-group">
-          <label class="sf-label" data-i18n="wv_printed_name">Printed name</label>
-          <input class="sf-input" type="text" autocomplete="off" id="sig-printed-name">
+      <!-- Medical declarations don't get a guest signature: the guest fills the
+           paper form, a staff member reads it, and records the outcome. So the
+           whole signature block below is swapped out for this one when the
+           waiver type is 'medical'. -->
+      <div id="sig-medical-block" style="display:none;margin-top:16px;">
+        <div class="card-section-title" data-i18n="wv_med_section">Dive clearance</div>
+        <p class="card-desc" style="margin-bottom:10px;" data-i18n="wv_med_help">Record the outcome of the paper medical declaration. Seven Seas never stores the medical details themselves.</p>
+        <div class="radio-group">
+          <div class="radio-btn" id="sig-med-cleared" onclick="setMedicalStatus('cleared')" data-i18n="wv_med_cleared">Cleared to dive</div>
+          <div class="radio-btn" id="sig-med-physician" onclick="setMedicalStatus('physician_required')" data-i18n="wv_med_physician">Physician sign-off needed</div>
         </div>
-        <div class="sf-group">
-          <label class="sf-label" data-i18n="wv_date">Date</label>
-          <input class="sf-input" type="date" id="sig-date">
-        </div>
+        <p id="sig-medical-history" style="font-size:0.78rem;color:var(--muted);margin-top:10px;"></p>
       </div>
-      <div class="radio-group" style="margin-top:6px;" id="sig-method-row">
-        <div class="radio-btn selected" id="sig-method-digital" onclick="setSignMethod('digital')" data-i18n="wv_sign_digitally">Sign digitally</div>
-        <div class="radio-btn" id="sig-method-paper" onclick="setSignMethod('paper')" data-i18n="wv_logged_paper">Logged on paper</div>
-      </div>
-      <div id="sig-canvas-wrap" style="margin-top:14px;">
-        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
-          <canvas id="signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
+
+      <div id="sig-signature-block">
+        <div class="card-section-title" style="margin-top:16px;" data-i18n="wv_participant_section">Participant</div>
+        <div class="sf-row">
+          <div class="sf-group">
+            <label class="sf-label" data-i18n="wv_printed_name">Printed name</label>
+            <input class="sf-input" type="text" autocomplete="off" id="sig-printed-name">
+          </div>
+          <div class="sf-group">
+            <label class="sf-label" data-i18n="wv_date">Date</label>
+            <input class="sf-input" type="date" id="sig-date">
+          </div>
         </div>
-        <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearSignatureCanvas()" data-i18n="wv_clear">Clear</button>
+        <div class="radio-group" style="margin-top:6px;" id="sig-method-row">
+          <div class="radio-btn selected" id="sig-method-digital" onclick="setSignMethod('digital')" data-i18n="wv_sign_digitally">Sign digitally</div>
+          <div class="radio-btn" id="sig-method-paper" onclick="setSignMethod('paper')" data-i18n="wv_logged_paper">Logged on paper</div>
+        </div>
+        <div id="sig-canvas-wrap" style="margin-top:14px;">
+          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white);">
+            <canvas id="signature-canvas" width="460" height="180" style="display:block;width:100%;touch-action:none;cursor:crosshair;"></canvas>
+          </div>
+          <button class="btn-cancel" style="margin-top:8px;font-size:0.8rem;padding:6px 12px;" onclick="clearSignatureCanvas()" data-i18n="wv_clear">Clear</button>
+        </div>
       </div>
 
       <div id="sig-guardian-section" style="display:none;margin-top:18px;padding-top:14px;border-top:1px dashed var(--border);">
@@ -4523,14 +4539,6 @@ const TRANSLATIONS = {
     wt_body_label: 'Waiver text', wt_body_ph: 'Write the full waiver text guests will read before signing...',
     wt_save_template: 'Save template', wt_last_updated: 'Last updated',
     wt_text_required: 'Waiver text is required.', common_error_prefix: 'Error: ',
-    wt_question_singular: ' question on file', wt_questions_plural: ' questions on file',
-    wt_no_questions_yet: "No questions yet — Medical can't be signed",
-    wt_medical_title_ph: 'e.g. Dive Medical Statement',
-    wt_medical_title_label: 'Title', wt_medical_title_required: 'Title is required.',
-    wt_medical_instructions: 'List the conditions or questions guests must tick if they apply to them. Each one becomes a checkbox on the sign form.',
-    wt_add_question: '+ Add question', wt_no_questions_added: 'No questions added yet.',
-    wt_add_one_question: 'Add at least one question.',
-
     rep_setup_org_first: 'Set up your organisation in Settings first.',
     rep_viewing: 'Viewing', rep_all_shops_combined: 'All shops (combined)',
     rep_date_range: 'Date range', rep_7_days: '7 days', rep_30_days: '30 days', rep_90_days: '90 days', rep_1_year: '1 year',
@@ -4563,6 +4571,12 @@ const TRANSLATIONS = {
 
     wv_not_enabled: "Waivers aren't enabled yet", wv_not_enabled_desc: 'Turn them on in Settings to start collecting digital signatures.',
     wv_go_to_settings: 'Go to Settings',
+    wv_med_section: 'Dive clearance',
+    wv_med_help: 'Record the outcome of the paper medical declaration. Seven Seas never stores the medical details themselves.',
+    wv_med_cleared: 'Cleared to dive',
+    wv_med_physician: 'Physician sign-off needed',
+    wv_med_pick_one: 'Choose whether the guest is cleared to dive.',
+    wv_med_needs_connection: 'Dive clearance needs a connection — it affects who gets in the water, so it is never saved offline.',
     wv_export_backup: 'Export / Backup', wv_export_backup_desc: 'Download a day\'s waivers, checklists, or trip records as a file you can save to your own computer.',
     wv_export_day: "Export day's waivers",
     wv_export_day_checklists: "Export day's checklists",
@@ -4591,7 +4605,6 @@ const TRANSLATIONS = {
     wv_add_one_in: 'Add one in', wv_settings_waiver_templates_link: 'Settings → Waiver Templates',
     wv_ask_owner_add_one: 'Ask your owner or manager to add one in Settings before this can be signed.',
     wv_no_template_set_up: 'No waiver template is set up for this type yet.',
-    wv_medical_questionnaire: 'Medical questionnaire', wv_tick_anything_applies: '— tick anything that applies',
     wv_please_draw_signature: 'Please draw a signature, or switch to "Logged on paper".',
     rw_loading: 'Loading your booking...', rw_link_invalid_title: "This link isn't valid",
     rw_link_expired: 'This signing link has expired. Contact the shop for a new one.',
@@ -5165,14 +5178,6 @@ const TRANSLATIONS = {
     wt_body_label: 'Texto del formulario', wt_body_ph: 'Escribe el texto completo del formulario que los huéspedes leerán antes de firmar...',
     wt_save_template: 'Guardar plantilla', wt_last_updated: 'Última actualización',
     wt_text_required: 'El texto del formulario es obligatorio.', common_error_prefix: 'Error: ',
-    wt_question_singular: ' pregunta registrada', wt_questions_plural: ' preguntas registradas',
-    wt_no_questions_yet: 'Aún no hay preguntas — Médico no se puede firmar',
-    wt_medical_title_ph: 'ej. Declaración Médica de Buceo',
-    wt_medical_title_label: 'Título', wt_medical_title_required: 'El título es obligatorio.',
-    wt_medical_instructions: 'Enumera las condiciones o preguntas que los huéspedes deben marcar si les aplican. Cada una se convierte en una casilla en el formulario de firma.',
-    wt_add_question: '+ Agregar pregunta', wt_no_questions_added: 'Aún no se han agregado preguntas.',
-    wt_add_one_question: 'Agrega al menos una pregunta.',
-
     rep_setup_org_first: 'Configura tu organización en Configuración primero.',
     rep_viewing: 'Viendo', rep_all_shops_combined: 'Todos los locales (combinado)',
     rep_date_range: 'Rango de fechas', rep_7_days: '7 días', rep_30_days: '30 días', rep_90_days: '90 días', rep_1_year: '1 año',
@@ -5205,6 +5210,12 @@ const TRANSLATIONS = {
 
     wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Activalos en Configuración para empezar a recolectar firmas digitales.',
     wv_go_to_settings: 'Ir a Configuración',
+    wv_med_section: 'Habilitación para bucear',
+    wv_med_help: 'Registrá el resultado de la declaración médica en papel. Seven Seas nunca guarda el detalle médico.',
+    wv_med_cleared: 'Habilitado para bucear',
+    wv_med_physician: 'Falta firma médica',
+    wv_med_pick_one: 'Elegí si el huésped queda habilitado para bucear.',
+    wv_med_needs_connection: 'La habilitación necesita conexión — define quién entra al agua, así que nunca se guarda sin conexión.',
     wv_export_backup: 'Exportar / Respaldo', wv_export_backup_desc: 'Descarga los formularios, checklists o registros de salidas de un día como un archivo que puedes guardar en tu computadora.',
     wv_export_day: 'Exportar formularios del día',
     wv_export_day_checklists: 'Exportar checklists del día',
@@ -5233,7 +5244,6 @@ const TRANSLATIONS = {
     wv_add_one_in: 'Agrega una en', wv_settings_waiver_templates_link: 'Configuración → Plantillas de Formularios',
     wv_ask_owner_add_one: 'Pídele a tu propietario o gerente que agregue una en Configuración antes de poder firmar esto.',
     wv_no_template_set_up: 'Aún no hay una plantilla de formulario configurada para este tipo.',
-    wv_medical_questionnaire: 'Cuestionario médico', wv_tick_anything_applies: '— marca todo lo que aplique',
     wv_please_draw_signature: 'Por favor dibuja una firma, o cambia a "Registrado en papel".',
     rw_loading: 'Cargando tu reserva...', rw_link_invalid_title: 'Este link no es válido',
     rw_link_expired: 'Este link para firmar venció. Contactá al centro de buceo para que te envíen uno nuevo.',
@@ -6350,8 +6360,6 @@ window.rwToken = null;
 window.rwData = null;
 window.rwCurrentParticipant = null;
 window.rwCurrentTemplate = null;
-window.rwCurrentQuestions = [];
-window.rwResponses = {};
 window.rwBlocked = false;
 window.rwSigPad = null;
 window.rwGuardianSigPad = null;
@@ -6449,14 +6457,13 @@ async function rwLoadTemplate(type) {
   container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('wv_loading_waiver')}</p>`;
   const { data } = await sb.functions.invoke('waiver-remote-signing', { body: { action: 'template', token: window.rwToken, waiverType: type } });
   window.rwCurrentTemplate = data?.template || null;
-  window.rwCurrentQuestions = data?.questions || [];
-  rwRenderTemplateContent(type, window.rwCurrentTemplate, window.rwCurrentQuestions);
+  rwRenderTemplateContent(type, window.rwCurrentTemplate);
 }
 
-function rwRenderTemplateContent(type, template, questions) {
+function rwRenderTemplateContent(type, template) {
   const container = document.getElementById('rw-template-content');
   const saveBtn = document.getElementById('rw-btn-confirm');
-  const blocked = type === 'medical' ? !questions.length : !(template && template.body_text);
+  const blocked = !(template && template.body_text);
   window.rwBlocked = blocked;
 
   if (blocked) {
@@ -6475,27 +6482,10 @@ function rwRenderTemplateContent(type, template, questions) {
     document.getElementById('rw-guardian-canvas-wrap').style.display = 'block';
   }
 
-  window.rwResponses = {};
-  if (type === 'medical') {
-    container.innerHTML = `
-      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : t('wv_medical_questionnaire')}</p>
-      ${template.body_text ? `<div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:180px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;margin-bottom:10px;">${template.body_text}</div>` : ''}
-      <p class="sf-label" style="margin-bottom:6px;">${t('wv_tick_anything_applies')}</p>
-      <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto;background:var(--foam);">
-        ${questions.map(q => `
-          <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.85rem;padding:6px 0;cursor:pointer;">
-            <input type="checkbox" style="margin-top:2px;" onchange="window.rwResponses['${q.id}'] = this.checked">
-            <span>${q.question_text}</span>
-          </label>
-        `).join('')}
-      </div>
-    `;
-  } else {
-    container.innerHTML = `
-      ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
-      <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
-    `;
-  }
+  container.innerHTML = `
+    ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
+  `;
 }
 
 function rwClearCanvas() {
@@ -6558,7 +6548,6 @@ document.getElementById('rw-btn-confirm').addEventListener('click', async () => 
     guardianSignatureData = window.rwGuardianSigPad.canvas.toDataURL('image/png');
   }
 
-  const isMedical = sp.waiver_type === 'medical';
   const btn = document.getElementById('rw-btn-confirm');
   btn.disabled = true;
   const { data, error } = await sb.functions.invoke('waiver-remote-signing', {
@@ -6573,8 +6562,7 @@ document.getElementById('rw-btn-confirm').addEventListener('click', async () => 
       guardianName, guardianDate, guardianSignatureData,
       notes: null,
       templateId: window.rwCurrentTemplate?.id || null,
-      bodySnapshot: isMedical ? null : (window.rwCurrentTemplate?.body_text || null),
-      responses: isMedical ? window.rwCurrentQuestions.map(q => ({ question: q.question_text, checked: !!window.rwResponses[q.id] })) : null
+      bodySnapshot: window.rwCurrentTemplate?.body_text || null
     }
   });
   btn.disabled = false;
@@ -8480,16 +8468,11 @@ async function loadWaiverTemplateEditor(type) {
   if (!currentOrgId) return;
   const { data: template } = await sb.from('waiver_templates').select('*').eq('org_id', currentOrgId).eq('waiver_type', type).maybeSingle();
 
-  if (type === 'medical') {
-    let questions = [];
-    if (template) {
-      const { data: qs } = await sb.from('waiver_template_questions').select('*').eq('template_id', template.id).order('sort_order');
-      questions = qs || [];
-    }
-    renderMedicalTemplateEditor(template, questions);
-  } else {
-    renderTextTemplateEditor(type, template);
-  }
+  // El médico usa el mismo editor de texto que los demás. Ya no es un
+  // cuestionario: el centro escribe qué formulario en papel usa y qué tiene
+  // que hacer el staff con él. Ese texto es el recordatorio que ve quien
+  // registra la habilitación.
+  renderTextTemplateEditor(type, template);
 }
 
 function renderTextTemplateEditor(type, template) {
@@ -8540,96 +8523,6 @@ async function saveTextWaiverTemplate(type) {
   feedback.textContent = t('set_saved');
   feedback.className = 'save-feedback visible';
   await loadWaiverTemplateEditor(type);
-}
-
-function renderMedicalTemplateEditor(template, questions) {
-  const container = document.getElementById('waiver-template-editor');
-  const statusHtml = questions.length
-    ? `<span class="role-badge" style="background:rgba(47,133,90,0.12);color:var(--success);">${questions.length}${questions.length === 1 ? t('wt_question_singular') : t('wt_questions_plural')}</span>`
-    : `<span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);">${t('wt_no_questions_yet')}</span>`;
-  window._medicalQuestionsDraft = questions.map(q => q.question_text);
-  container.innerHTML = `
-    <div style="margin-bottom:10px;">${statusHtml}</div>
-    <div class="sf-group">
-      <label class="sf-label">${t('wt_medical_title_label')}</label>
-      <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="${t('wt_medical_title_ph')}">
-    </div>
-    <div class="sf-group">
-      <label class="sf-label">${t('wt_body_label')}</label>
-      <textarea class="sf-input" id="wt-body" rows="8" placeholder="${t('wt_body_ph')}">${template?.body_text || ''}</textarea>
-    </div>
-    <p class="card-desc" style="margin-bottom:8px;">${t('wt_medical_instructions')}</p>
-    <div id="medical-questions-list"></div>
-    <button class="btn-add" onclick="addMedicalQuestionRow()">${t('wt_add_question')}</button>
-    <div class="settings-actions" style="margin-top:14px;">
-      <button class="btn-save" onclick="saveMedicalWaiverTemplate()">${t('wt_save_template')}</button>
-      <span class="save-feedback" id="wt-save-feedback"></span>
-    </div>
-    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">${t('wt_last_updated')} ${new Date(template.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
-  `;
-  renderMedicalQuestionsDraft();
-}
-
-function renderMedicalQuestionsDraft() {
-  const list = document.getElementById('medical-questions-list');
-  const qs = window._medicalQuestionsDraft || [];
-  list.innerHTML = qs.length ? qs.map((q, i) => `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <input class="sf-input" type="text" value="${(q || '').replace(/"/g, '&quot;')}" oninput="window._medicalQuestionsDraft[${i}] = this.value">
-      <button class="btn-icon danger" onclick="removeMedicalQuestionRow(${i})">&times;</button>
-    </div>
-  `).join('') : `<p style="font-size:0.83rem;color:var(--muted);margin-bottom:8px;">${t('wt_no_questions_added')}</p>`;
-}
-
-function addMedicalQuestionRow() {
-  window._medicalQuestionsDraft = window._medicalQuestionsDraft || [];
-  window._medicalQuestionsDraft.push('');
-  renderMedicalQuestionsDraft();
-}
-
-function removeMedicalQuestionRow(i) {
-  window._medicalQuestionsDraft.splice(i, 1);
-  renderMedicalQuestionsDraft();
-}
-
-async function saveMedicalWaiverTemplate() {
-  const feedback = document.getElementById('wt-save-feedback');
-  const title = document.getElementById('wt-title').value.trim();
-  const body = document.getElementById('wt-body').value.trim();
-  const questions = (window._medicalQuestionsDraft || []).map(q => q.trim()).filter(Boolean);
-  if (!title) {
-    feedback.textContent = t('wt_medical_title_required');
-    feedback.className = 'save-feedback error visible';
-    return;
-  }
-  if (!body) {
-    feedback.textContent = t('wt_text_required');
-    feedback.className = 'save-feedback error visible';
-    return;
-  }
-  if (!questions.length) {
-    feedback.textContent = t('wt_add_one_question');
-    feedback.className = 'save-feedback error visible';
-    return;
-  }
-  const { data: template, error } = await sb.from('waiver_templates').upsert({
-    org_id: currentOrgId,
-    waiver_type: 'medical',
-    title: title,
-    body_text: body,
-    active: true,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'org_id,waiver_type' }).select().single();
-  if (error) {
-    feedback.textContent = t('common_error_prefix') + error.message;
-    feedback.className = 'save-feedback error visible';
-    return;
-  }
-  await sb.from('waiver_template_questions').delete().eq('template_id', template.id);
-  await sb.from('waiver_template_questions').insert(questions.map((q, i) => ({ template_id: template.id, question_text: q, sort_order: i })));
-  feedback.textContent = t('set_saved');
-  feedback.className = 'save-feedback visible';
-  await loadWaiverTemplateEditor('medical');
 }
 
 document.getElementById('btn-save-org').addEventListener('click', async () => {
@@ -11704,34 +11597,40 @@ function closeSignatureModal() {
 document.getElementById('modal-signature-close').addEventListener('click', closeSignatureModal);
 
 window.currentSignTemplate = null;
-window.currentSignQuestions = [];
-window.currentSignResponses = {};
 window.currentSignBlocked = false;
+// null until a staff member picks one. Not a diagnosis -- it's the state of
+// the paperwork: 'cleared' or 'physician_required'.
+window.currentMedicalStatus = null;
 
 async function loadSignTemplate(type) {
   const container = document.getElementById('sig-template-content');
   container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('wv_loading_waiver')}</p>`;
   window.currentSignTemplate = null;
-  window.currentSignQuestions = [];
 
   const { data: template } = await sb.from('waiver_templates').select('*').eq('org_id', currentOrgId).eq('waiver_type', type).maybeSingle();
   window.currentSignTemplate = template;
-
-  let questions = [];
-  if (type === 'medical' && template) {
-    const { data: qs } = await sb.from('waiver_template_questions').select('*').eq('template_id', template.id).order('sort_order');
-    questions = qs || [];
-  }
-  window.currentSignQuestions = questions;
-  renderSignTemplateContent(type, template, questions);
+  renderSignTemplateContent(type, template);
 }
 
-function renderSignTemplateContent(type, template, questions) {
+function renderSignTemplateContent(type, template) {
   const container = document.getElementById('sig-template-content');
   const methodRow = document.getElementById('sig-method-row');
   const saveBtn = document.getElementById('btn-confirm-signature');
+  const isMedical = type === 'medical';
 
-  const blocked = type === 'medical' ? !questions.length : !(template && template.body_text);
+  // Swap the whole bottom half of the modal: signature capture for a waiver,
+  // a two-way clearance choice for a medical declaration.
+  document.getElementById('sig-signature-block').style.display = isMedical ? 'none' : 'block';
+  document.getElementById('sig-medical-block').style.display = isMedical ? 'block' : 'none';
+  if (isMedical) {
+    document.getElementById('sig-guardian-section').style.display = 'none';
+    window.currentMedicalStatus = null;
+    document.getElementById('sig-med-cleared').classList.remove('selected');
+    document.getElementById('sig-med-physician').classList.remove('selected');
+    document.getElementById('sig-medical-history').textContent = '';
+  }
+
+  const blocked = !(template && template.body_text);
   window.currentSignBlocked = blocked;
 
   if (blocked) {
@@ -11750,30 +11649,23 @@ function renderSignTemplateContent(type, template, questions) {
 
   saveBtn.disabled = false;
   saveBtn.style.opacity = '1';
-  methodRow.style.display = 'flex';
+  methodRow.style.display = isMedical ? 'none' : 'flex';
 
-  if (type === 'medical') {
-    window.currentSignResponses = {};
-    container.innerHTML = `
-      <p class="sf-label" style="margin-bottom:6px;">${template.title ? template.title : t('wv_medical_questionnaire')}</p>
-      ${template.body_text ? `<div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:180px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;margin-bottom:10px;">${template.body_text}</div>` : ''}
-      <p class="sf-label" style="margin-bottom:6px;">${t('wv_tick_anything_applies')}</p>
-      <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto;background:var(--foam);">
-        ${questions.map(q => `
-          <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.85rem;padding:6px 0;cursor:pointer;">
-            <input type="checkbox" style="margin-top:2px;" onchange="window.currentSignResponses['${q.id}'] = this.checked">
-            <span>${q.question_text}</span>
-          </label>
-        `).join('')}
-      </div>
-    `;
-  } else {
-    container.innerHTML = `
-      ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
-      <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
-    `;
-  }
-  setSignMethod(window.currentSignMethod || 'digital');
+  container.innerHTML = `
+    ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
+  `;
+  if (!isMedical) setSignMethod(window.currentSignMethod || 'digital');
+}
+
+// The clearance is a state of the paperwork, so any of the three can follow
+// any other: a guest who needed a physician's note on Tuesday comes back with
+// it on Wednesday and dives. Every change is appended to waiver_medical_events
+// rather than overwriting the last one.
+function setMedicalStatus(status) {
+  window.currentMedicalStatus = status;
+  document.getElementById('sig-med-cleared').classList.toggle('selected', status === 'cleared');
+  document.getElementById('sig-med-physician').classList.toggle('selected', status === 'physician_required');
 }
 
 function setSignMethod(method) {
@@ -11836,6 +11728,20 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     return;
   }
   const type = sp.waiver_type;
+
+  // A medical declaration takes a different path entirely: no guest signature,
+  // no printed name, no guardian block. A staff member reads the paper form and
+  // records the outcome, and that's all that gets stored.
+  if (type === 'medical') {
+    if (!window.currentMedicalStatus) {
+      feedback.textContent = t('wv_med_pick_one');
+      feedback.className = 'save-feedback error visible';
+      return;
+    }
+    await saveMedicalClearance(sp, window.currentMedicalStatus, feedback);
+    return;
+  }
+
   const method = window.currentSignMethod || 'digital';
   const printedName = document.getElementById('sig-printed-name').value.trim();
   const signedDate = document.getElementById('sig-date').value;
@@ -11880,7 +11786,6 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
   const { data: { user } } = await sb.auth.getUser();
   const { data: staffRow } = await sb.from('staff').select('full_name').eq('id', user.id).single();
 
-  const isMedical = type === 'medical';
   const payload = {
     org_id: currentOrgId,
     location_id: currentLocationId || null,
@@ -11898,8 +11803,7 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     notes: document.getElementById('sig-notes').value.trim() || null,
     signed_by_name: staffRow?.full_name || null,
     template_id: window.currentSignTemplate?.id || null,
-    body_snapshot: isMedical ? null : (window.currentSignTemplate?.body_text || null),
-    responses: isMedical ? window.currentSignQuestions.map(q => ({ question: q.question_text, checked: !!window.currentSignResponses[q.id] })) : null
+    body_snapshot: window.currentSignTemplate?.body_text || null
   };
 
   let error = null;
@@ -11918,6 +11822,89 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
   closeSignatureModal();
   await loadWaivers();
 });
+
+// Records (or updates) a participant's dive clearance for this trip.
+//
+// The status lives on the waiver row, which is per trip, NOT on the
+// participant -- a guest who needed a physician's note in September starts
+// fresh in October rather than carrying a flag around forever. That's both how
+// medical declarations actually work and the reason this isn't long-term
+// health data about a person.
+//
+// Every change also appends a row to waiver_medical_events, which has no
+// UPDATE or DELETE policy. Nobody can rewrite who cleared a diver.
+async function saveMedicalClearance(sp, status, feedback) {
+  if (isOffline) {
+    feedback.textContent = t('wv_med_needs_connection');
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: staffRow } = await sb.from('staff').select('full_name').eq('id', user.id).single();
+  const now = new Date().toISOString();
+
+  const { data: existing } = await sb.from('waivers')
+    .select('id')
+    .eq('participant_id', sp.id)
+    .eq('waiver_type', 'medical')
+    .eq('org_id', currentOrgId)
+    .maybeSingle();
+
+  const fields = {
+    medical_status: status,
+    medical_checked_by: user.id,
+    medical_checked_at: now
+  };
+
+  let waiverId = existing?.id || null;
+  let error = null;
+
+  if (waiverId) {
+    ({ error } = await sb.from('waivers').update(fields).eq('id', waiverId));
+  } else {
+    const { data, error: insErr } = await sb.from('waivers').insert({
+      org_id: currentOrgId,
+      location_id: currentLocationId || null,
+      participant_id: sp.id,
+      group_id: sp.group_id || null,
+      trip_id: sp.trip_id || null,
+      waiver_type: 'medical',
+      method: 'paper',
+      signed_at: now,
+      signed_by_name: staffRow?.full_name || null,
+      template_id: window.currentSignTemplate?.id || null,
+      body_snapshot: window.currentSignTemplate?.body_text || null,
+      notes: document.getElementById('sig-notes').value.trim() || null,
+      ...fields
+    }).select('id').single();
+    error = insErr;
+    waiverId = data?.id || null;
+  }
+
+  if (error) {
+    feedback.textContent = t('wv_error_saving') + (error.message || t('wv_unknown_error'));
+    feedback.className = 'save-feedback error visible';
+    console.error('Medical clearance save error:', error);
+    return;
+  }
+
+  // The history is the point of the whole design, but a failure here shouldn't
+  // block the boat -- log it and carry on with the clearance already saved.
+  if (waiverId) {
+    const { error: evErr } = await sb.from('waiver_medical_events').insert({
+      waiver_id: waiverId,
+      org_id: currentOrgId,
+      status: status,
+      changed_by: user.id,
+      changed_by_name: staffRow?.full_name || null
+    });
+    if (evErr) console.error('Medical event log error:', evErr);
+  }
+
+  closeSignatureModal();
+  await loadWaivers();
+}
 
 document.getElementById('btn-export-waivers').addEventListener('click', () => {
   if (!canExportShopRecords()) {
@@ -11989,10 +11976,10 @@ async function exportWaiversForDay(date) {
       </div>
       <div class="waiver-entry-signee">Printed name: ${escapeHtml(w.participant_printed_name || w.participants?.full_name || '—')} &nbsp;·&nbsp; Date: ${w.participant_signed_date || '—'}</div>
       ${w.notes ? `<p class="waiver-entry-notes">${escapeHtml(w.notes)}</p>` : ''}
-      ${w.responses && w.responses.length ? `
-        <div class="waiver-entry-responses">
-          ${w.responses.map(r => `<div>${r.checked ? '☑' : '☐'} ${escapeHtml(r.question)}</div>`).join('')}
-        </div>
+      ${w.waiver_type === 'medical' && w.medical_status ? `
+        <div class="waiver-entry-medical">${w.medical_status === 'cleared'
+          ? 'Cleared to dive' : 'Physician sign-off needed'}${w.medical_checked_at
+          ? ' · ' + new Date(w.medical_checked_at).toLocaleString() : ''}</div>
       ` : ''}
       ${w.body_snapshot ? `<div class="waiver-entry-body">${escapeHtml(w.body_snapshot)}</div>` : ''}
       ${w.method === 'digital' && w.signature_data ? `<img src="${w.signature_data}" style="max-width:280px;border:1px solid #ccc;margin-top:6px;">` : '<p style="font-size:12px;color:#888;">Paper copy on file — no digital signature.</p>'}
@@ -12016,8 +12003,7 @@ async function exportWaiversForDay(date) {
   .waiver-entry-signee { font-size: 12px; color: #444; margin: 4px 0 0; }
   .waiver-entry-guardian { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc; }
   .waiver-entry-notes { font-size: 12px; color: #555; font-style: italic; margin: 4px 0 0; }
-  .waiver-entry-responses { font-size: 12px; color: #333; margin: 6px 0 0; }
-  .waiver-entry-responses div { padding: 1px 0; }
+  .waiver-entry-medical { font-size: 12px; color: #333; margin: 6px 0 0; font-weight: 600; }
   .waiver-entry-body { font-size: 12px; color: #333; white-space: pre-wrap; line-height: 1.5; margin: 6px 0 0; border-left: 2px solid #ddd; padding-left: 10px; }
   @media print { body { padding: 10px; } }
 </style>
