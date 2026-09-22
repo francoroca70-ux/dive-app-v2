@@ -4580,6 +4580,7 @@ const TRANSLATIONS = {
     wv_not_enabled: "Waivers aren't enabled yet", wv_not_enabled_desc: 'Turn them on in Settings to start collecting digital signatures.',
     wv_go_to_settings: 'Go to Settings',
     wv_med_section: 'Dive clearance',
+    wv_saved_list_stale: 'Saved — but the list on screen could not refresh. Reload the page to see it up to date.',
     wv_prefer_remote: 'A waiver the guest signs on their own phone is stronger evidence than one signed here. Send the link if they have their phone.',
     wv_prov_onsite: 'Signed on a shop device, with {staff} present.',
     wv_prov_remote: 'Signed by the guest on their own device — {device}, IP {ip}.',
@@ -5225,6 +5226,7 @@ const TRANSLATIONS = {
     wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Activalos en Configuración para empezar a recolectar firmas digitales.',
     wv_go_to_settings: 'Ir a Configuración',
     wv_med_section: 'Habilitación para bucear',
+    wv_saved_list_stale: 'Guardado — pero la lista en pantalla no se pudo actualizar. Recargá la página para verla al día.',
     wv_prefer_remote: 'Un formulario que el huésped firma en su propio teléfono vale más como prueba que uno firmado acá. Mandá el link si tiene el teléfono a mano.',
     wv_prov_onsite: 'Firmado en un dispositivo del centro, con {staff} presente.',
     wv_prov_remote: 'Firmado por el huésped en su propio dispositivo — {device}, IP {ip}.',
@@ -11897,8 +11899,16 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     console.error('Waiver save error:', error);
     return;
   }
-  if (!skipModal) closeSignatureModal();
-  await loadWaivers();
+  // El guardado ya salió bien acá. Si el refresco de la lista falla, antes no
+  // se veía nada: el modal quedaba abierto y parecía que no se había guardado,
+  // así que se volvía a firmar. Así quedaron 12 exenciones de la misma huésped.
+  closeSignatureModal();
+  try {
+    await loadWaivers();
+  } catch (e) {
+    console.error('Waiver list refresh failed after a successful save:', e);
+    await showAlertModal(t('wv_saved_list_stale'));
+  }
 });
 
 // One-tap clearance straight from the list, without opening the modal. Same
@@ -11995,8 +12005,13 @@ async function saveMedicalClearance(sp, status, feedback, opts) {
     if (evErr) console.error('Medical event log error:', evErr);
   }
 
-  closeSignatureModal();
-  await loadWaivers();
+  if (!skipModal) closeSignatureModal();
+  try {
+    await loadWaivers();
+  } catch (e) {
+    console.error('Waiver list refresh failed after a successful save:', e);
+    await showAlertModal(t('wv_saved_list_stale'));
+  }
 }
 
 document.getElementById('btn-export-waivers').addEventListener('click', () => {
