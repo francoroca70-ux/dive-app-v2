@@ -80,7 +80,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <!-- Paddle billing (phase 4) -- sandbox for now. Client-side tokens are
      meant to be public/exposed in frontend code (unlike API keys), so
      hardcoding this here is the pattern Paddle itself recommends. Swap
@@ -1954,19 +1953,6 @@ body { background: var(--navy); color: var(--text); }
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-waiver-qr" style="display:none;z-index:300;">
-  <div class="modal-box" style="max-width:340px;text-align:center;">
-    <div class="modal-header">
-      <h2 data-i18n="wv_qr_title">Waiver signing QR code</h2>
-      <button class="modal-close" id="modal-waiver-qr-close">&times;</button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-      <p id="wv-qr-guest-name" style="font-size:0.85rem;color:var(--muted);"></p>
-      <canvas id="wv-qr-canvas"></canvas>
-      <p style="font-size:0.8rem;color:var(--muted);" data-i18n="wv_qr_caption">Scan with a phone camera to open the signing link — no app or login needed.</p>
-    </div>
-  </div>
-</div>
 
 <div class="modal-overlay" id="modal-roster-cell" style="display:none;z-index:300;">
   <div class="modal-box" style="max-width:420px;">
@@ -4602,7 +4588,6 @@ const TRANSLATIONS = {
     wv_remote_status_desc: "Everyone in a booking group shares one link — see who's signed before arriving and who's still missing something.",
     wv_copy_link: 'Copy link', wv_copy_link_manual: 'Copy this waiver signing link:',
     wv_group_missing_prefix: 'Missing:', wv_group_all_signed: 'All guests signed',
-    wv_show_qr: 'Show QR', wv_qr_title: 'Waiver signing QR code', wv_qr_caption: 'Scan with a phone camera to open the signing link — no app or login needed.',
     wv_remind_btn: 'Remind', wv_remind_sent: 'Sent', wv_remind_failed: 'Failed — try again', wv_remind_no_email: 'No contact email on file',
     wv_unknown_guest: 'Unknown guest', wv_paper: 'Paper', wv_digital: 'Digital',
     wv_no_waivers_week: 'No waivers signed this week.', wv_no_waivers_date: 'No waivers signed on this date.',
@@ -5255,7 +5240,6 @@ const TRANSLATIONS = {
     wv_remote_status_desc: 'Todos en un grupo de reserva comparten un mismo link — mirá quién firmó antes de llegar y a quién le falta algo.',
     wv_copy_link: 'Copiar link', wv_copy_link_manual: 'Copia este link de firma de formulario:',
     wv_group_missing_prefix: 'Falta:', wv_group_all_signed: 'Todos los huéspedes firmaron',
-    wv_show_qr: 'Mostrar QR', wv_qr_title: 'Código QR para firmar el formulario', wv_qr_caption: 'Escaneá con la cámara del celular para abrir el link de firma — no hace falta app ni iniciar sesión.',
     wv_remind_btn: 'Recordar', wv_remind_sent: 'Enviado', wv_remind_failed: 'Falló — intentá de nuevo', wv_remind_no_email: 'No hay email de contacto registrado',
     wv_unknown_guest: 'Huésped desconocido', wv_paper: 'Papel', wv_digital: 'Digital',
     wv_no_waivers_week: 'No hay formularios firmados esta semana.', wv_no_waivers_date: 'No hay formularios firmados en esta fecha.',
@@ -11463,7 +11447,6 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
           <button class="btn-icon" style="font-size:0.78rem;" onclick="openWaiverKiosk('${g.id}', this)">${t('wv_open_kiosk')}</button>
-          <button class="btn-icon" style="font-size:0.78rem;" onclick="showWaiverQrCode('${g.id}', this)">${t('wv_show_qr')}</button>
           <button class="btn-icon" style="font-size:0.78rem;" onclick="copyWaiverSigningLink('${g.id}', this)">${t('wv_copy_link')}</button>
         </div>
       </div>
@@ -11528,34 +11511,6 @@ async function openWaiverKiosk(groupId, btnEl) {
   }
   window.open(url + (url.includes('?') ? '&' : '?') + 'kiosk=1', '_blank', 'noopener');
 }
-
-async function showWaiverQrCode(groupId, btnEl) {
-  const originalLabel = btnEl.textContent;
-  btnEl.textContent = '...';
-  let url;
-  try {
-    const { data: existing } = await sb.from('waiver_signing_links').select('token').eq('group_id', groupId).maybeSingle();
-    url = existing?.token ? buildWaiverSigningUrl(existing.token) : await getOrCreateWaiverSigningLink(groupId, null);
-  } catch (e) {
-    url = null;
-  }
-  btnEl.textContent = originalLabel;
-  if (!url) return;
-
-  document.getElementById('wv-qr-guest-name').textContent = url;
-  const canvas = document.getElementById('wv-qr-canvas');
-  try {
-    await QRCode.toCanvas(canvas, url, { width: 220, margin: 1 });
-  } catch (e) {
-    console.warn('QR code render failed:', e);
-    return;
-  }
-  document.getElementById('modal-waiver-qr').style.display = 'flex';
-}
-document.getElementById('modal-waiver-qr-close').addEventListener('click', () => {
-  document.getElementById('modal-waiver-qr').style.display = 'none';
-});
-
 // One-tap nudge for a single guest still missing a waiver. Seven Seas only
 // has one contact_email per booking group (not per guest, matching the
 // Smartwaiver/WaiverForever shared-link model), so this still emails the
