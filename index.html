@@ -2267,6 +2267,19 @@ body { background: var(--navy); color: var(--text); }
         <div id="rw-all-done" class="warning-banner" style="display:none;margin-top:16px;background:rgba(29,158,117,0.1);color:var(--success);border-color:rgba(29,158,117,0.3);">
           <span data-i18n="rw_all_done">All waivers for this booking are signed — see you soon!</span>
         </div>
+        <!-- Salida explícita para quien firmó lo suyo pero comparte la reserva
+             con alguien que todavía no. Sin esto, la única forma de cerrar la
+             sesión es que firme el último del grupo, y mientras tanto el
+             siguiente que agarre la tablet ve los nombres de los demás. -->
+        <button class="btn-cancel" id="rw-btn-finish" style="margin-top:16px;width:100%;" onclick="rwFinishSession()" data-i18n="rw_finish">I'm done — hand the tablet back</button>
+      </div>
+
+      <!-- Pantalla de entrega. Es el punto del quiosco: después de firmar no
+           puede quedar en pantalla el nombre de nadie. -->
+      <div id="rw-done-view" style="display:none;text-align:center;padding:32px 0;">
+        <div style="font-size:2.4rem;line-height:1;margin-bottom:14px;">✓</div>
+        <h2 style="margin-bottom:8px;" data-i18n="rw_done_title">All signed</h2>
+        <p style="font-size:0.9rem;color:var(--muted);" data-i18n="rw_done_body">Thanks — please hand the tablet back to the desk.</p>
       </div>
 
       <div id="rw-sign-view" style="display:none;">
@@ -4583,7 +4596,7 @@ const TRANSLATIONS = {
     wv_saved_list_stale: 'Saved — but the list on screen could not refresh. Reload the page to see it up to date.',
     wv_prefer_remote: 'A waiver the guest signs on their own phone is stronger evidence than one signed here. Send the link if they have their phone.',
     wv_prov_onsite: 'Signed on a shop device, with {staff} present.',
-    wv_prov_remote: 'Signed by the guest on their own device — {device}, IP {ip}.',
+    wv_prov_remote: 'Signed from the booking link — {device}, IP {ip}.',
     wv_prov_paper: 'Paper copy held by the shop, logged by {staff}.',
     wv_med_not_checked: 'Medical not checked yet',
     wv_all_ready_today: 'Everyone on today\'s trips is ready to dive.',
@@ -4626,6 +4639,9 @@ const TRANSLATIONS = {
     rw_link_not_found: "This link isn't recognized. Contact the shop to check your booking.",
     rw_signed: 'Signed', rw_back: 'Back',
     rw_all_done: 'All waivers for this booking are signed — see you soon!',
+    rw_finish: "I'm done — hand the tablet back",
+    rw_done_title: 'All signed',
+    rw_done_body: 'Thanks — please hand the tablet back to the desk.',
     rw_ask_shop_to_set_up: 'Contact the shop directly to get this sorted before your trip.',
     wv_saved_offline: 'Saved offline — this waiver will sync automatically once your connection is back.',
     wv_error_saving: 'Error saving waiver: ', wv_unknown_error: 'unknown error',
@@ -5229,7 +5245,7 @@ const TRANSLATIONS = {
     wv_saved_list_stale: 'Guardado — pero la lista en pantalla no se pudo actualizar. Recargá la página para verla al día.',
     wv_prefer_remote: 'Un formulario que el huésped firma en su propio teléfono vale más como prueba que uno firmado acá. Mandá el link si tiene el teléfono a mano.',
     wv_prov_onsite: 'Firmado en un dispositivo del centro, con {staff} presente.',
-    wv_prov_remote: 'Firmado por el huésped en su propio dispositivo — {device}, IP {ip}.',
+    wv_prov_remote: 'Firmado desde el link de la reserva — {device}, IP {ip}.',
     wv_prov_paper: 'Copia en papel archivada en el centro, registrada por {staff}.',
     wv_med_not_checked: 'Falta controlar el médico',
     wv_all_ready_today: 'Todos los huéspedes de hoy están listos para bucear.',
@@ -5272,6 +5288,9 @@ const TRANSLATIONS = {
     rw_link_not_found: 'No se reconoce este link. Contactá al centro de buceo para verificar tu reserva.',
     rw_signed: 'Firmado', rw_back: 'Volver',
     rw_all_done: 'Todos los formularios de esta reserva están firmados — ¡nos vemos pronto!',
+    rw_finish: 'Terminé — devolver la tablet',
+    rw_done_title: 'Listo',
+    rw_done_body: 'Gracias — devolvé la tablet al mostrador.',
     rw_ask_shop_to_set_up: 'Contactá directamente al centro de buceo para resolver esto antes de tu salida.',
     wv_saved_offline: 'Guardado sin conexión — este formulario se sincronizará automáticamente cuando vuelva la conexión.',
     wv_error_saving: 'Error al guardar el formulario: ', wv_unknown_error: 'error desconocido',
@@ -6446,6 +6465,8 @@ function rwRenderList() {
   }).join('');
 
   document.getElementById('rw-all-done').style.display = allSigned ? 'block' : 'none';
+  const finishBtn = document.getElementById('rw-btn-finish');
+  if (finishBtn) finishBtn.style.display = allSigned ? 'none' : 'block';
 }
 
 function rwOpenSignForm(participantId, fullName, isMinor, waiverType) {
@@ -6467,6 +6488,25 @@ function rwOpenSignForm(participantId, fullName, isMinor, waiverType) {
     if (isMinor) window.rwGuardianSigPad = makeSignaturePad('rw-guardian-signature-canvas');
   }, 50);
   rwLoadTemplate(waiverType);
+}
+
+// Cierra la sesión del link: borra el token de memoria y de la URL, tira los
+// datos de la reserva y deja la pantalla de entrega. A partir de acá, quien
+// agarre la tablet no ve el nombre de nadie ni puede volver atrás.
+function rwFinishSession() {
+  window.rwToken = null;
+  window.rwData = null;
+  window.rwCurrentTemplate = null;
+  window.rwCurrentParticipant = null;
+  try {
+    history.replaceState(null, '', window.location.pathname);
+  } catch (e) { /* navegador viejo: el token igual ya no está en memoria */ }
+  ['rw-list-view', 'rw-sign-view', 'rw-loading', 'rw-invalid'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const done = document.getElementById('rw-done-view');
+  if (done) done.style.display = 'block';
 }
 
 function rwBackToList() {
@@ -6594,7 +6634,12 @@ document.getElementById('rw-btn-confirm').addEventListener('click', async () => 
     return;
   }
   await rwLoadStatus();
-  rwBackToList();
+  // Si ya no queda nada pendiente en la reserva, se cierra sola. Es el punto
+  // del quiosco: que no dependa de que alguien se acuerde de salir.
+  const quedaPendiente = (window.rwData?.participants || [])
+    .some(p => (p.waivers || []).some(w => !w.signed));
+  if (quedaPendiente) rwBackToList();
+  else rwFinishSession();
 });
 
 // ─── SCREEN MANAGEMENT ───
@@ -12061,6 +12106,12 @@ function waiverProvenanceLine(w) {
     return t('wv_prov_paper').replace('{staff}', escapeHtml(w.signed_by_name || '—'));
   }
   if (w.signed_via === 'remote') {
+    // Ojo con lo que se afirma acá. signed_via='remote' significa que se usó el
+    // link de la reserva, NO que el dispositivo fuera del huésped: si abre su
+    // mail en la tablet del centro, el registro igual dice 'remote' y la IP es
+    // la del shop. Lo que el token prueba es que esa persona tuvo acceso al
+    // mail de la reserva. El dispositivo y la IP se muestran como dato, sin
+    // sacar conclusiones sobre de quién eran.
     const device = shortUserAgent(w.signer_user_agent);
     return t('wv_prov_remote')
       .replace('{ip}', escapeHtml(w.signer_ip || '—'))
