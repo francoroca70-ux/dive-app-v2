@@ -4589,6 +4589,10 @@ const TRANSLATIONS = {
     wv_prov_paper: 'Paper copy held by the shop, logged by {staff}.',
     wv_med_not_checked: 'Medical not checked yet',
     rd_ready: 'Ready',
+    cert_doc: 'Document', cert_seal: 'Content seal (SHA-256)',
+    cert_intact: 'verified intact at time of export',
+    cert_broken: 'DOES NOT MATCH — this record has been altered since signing',
+    cert_explain: 'The seal is a fingerprint of everything that was signed: the waiver text, the printed name, the date and the signature. If any of it changed, recalculating the seal gives a different result.',
     rd_header: 'Readiness',
     mf_title: 'Manifest', mf_h1: '{type} Manifest', mf_guest: 'Guest', mf_certification: 'Certification', mf_notes: 'Notes',
     mf_crew: 'Crew', mf_no_crew: 'No crew assigned', mf_no_boat: 'No boat',
@@ -5251,6 +5255,10 @@ const TRANSLATIONS = {
     wv_prov_paper: 'Copia en papel archivada en el centro, registrada por {staff}.',
     wv_med_not_checked: 'Falta controlar el médico',
     rd_ready: 'Listo',
+    cert_doc: 'Documento', cert_seal: 'Sello de contenido (SHA-256)',
+    cert_intact: 'verificado íntegro al momento de exportar',
+    cert_broken: 'NO COINCIDE — este registro fue alterado desde que se firmó',
+    cert_explain: 'El sello es una huella de todo lo que se firmó: el texto del formulario, el nombre, la fecha y la firma. Si algo de eso cambió, recalcular el sello da un resultado distinto.',
     rd_header: 'Habilitación',
     mf_title: 'Manifiesto', mf_h1: 'Manifiesto de {type}', mf_guest: 'Huésped', mf_certification: 'Certificación', mf_notes: 'Notas',
     mf_crew: 'Tripulación', mf_no_crew: 'Sin tripulación asignada', mf_no_boat: 'Sin embarcación',
@@ -7692,7 +7700,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-23d');
+  console.info('[Seven Seas] build 2026-09-23e');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -11790,9 +11798,10 @@ async function remindWaiverGuest(groupId, participantId, btnEl) {
 function waiverLogRowHtml(w) {
   return `<div class="participant-row">
     <div>
-      <div class="p-name">${w.participants?.full_name || t('wv_unknown_guest')}</div>
+      <div class="p-name">${escapeHtml(w.participants?.full_name) || t('wv_unknown_guest')}</div>
       <div style="font-size:0.78rem;color:var(--muted);">${waiverTypeLabels[w.waiver_type] || w.waiver_type} · ${w.method === 'paper' ? t('wv_paper') : t('wv_digital')} · ${new Date(w.signed_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + w.signed_by_name : ''}</div>
-      ${w.guardian_printed_name ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${t('wv_cosigned_by')} ${w.guardian_printed_name}</div>` : ''}
+      ${w.guardian_printed_name ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${t('wv_cosigned_by')} ${escapeHtml(w.guardian_printed_name)}</div>` : ''}
+      ${w.document_id ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:3px;font-family:ui-monospace,Menlo,Consolas,monospace;">${escapeHtml(w.document_id)}</div>` : ''}
     </div>
   </div>`;
 }
@@ -12284,6 +12293,51 @@ document.getElementById('btn-export-trips').addEventListener('click', () => {
 // uno que no. Una exención firmada en el mostrador del propio centro vale menos
 // que una firmada por el huésped desde su teléfono, y el registro tiene que
 // decir cuál de las dos es en vez de dejarlas indistinguibles.
+// ─── CERTIFICADO DE AUTENTICIDAD ───
+//
+// Dos datos que la base calcula al insertar el formulario y nunca recalcula:
+//
+//   document_id   SSO-20260924-A7F3C91B — número corto, dictable por teléfono
+//   content_hash  huella SHA-256 de todo lo que se firmó
+//
+// La huella se calcula en Postgres, no acá. Si la calculara el navegador, el
+// mismo que manda el formulario elegiría su propio sello, que es como firmar
+// tu propio certificado. Además así el camino de firma remota (edge function)
+// queda cubierto sin repetir la lógica en dos lados.
+//
+// En pantalla se muestra sólo el número: 64 caracteres de hexadecimal en una
+// lista no le sirven a nadie. La huella completa va en el documento que se
+// imprime, que es el que termina en manos de un abogado o una aseguradora.
+
+function waiverDocRef(w) {
+  return w && w.document_id
+    ? `<span class="doc-ref">${escapeHtml(w.document_id)}</span>` : '';
+}
+
+// `verified` viene de verify_waivers() y puede ser undefined si no se
+// verificó. Undefined y false NO son lo mismo: uno es "no se preguntó", el
+// otro es "se preguntó y no coincide". Se muestran distinto a propósito.
+function waiverCertificateHTML(w, verified) {
+  if (!w || !w.document_id || !w.content_hash) return '';
+  let estado = '';
+  if (verified === true) {
+    estado = `<span style="color:#1d9e75;font-weight:600;">✓ ${escapeHtml(t('cert_intact'))}</span>`;
+  } else if (verified === false) {
+    estado = `<span style="color:#c0392b;font-weight:700;">✗ ${escapeHtml(t('cert_broken'))}</span>`;
+  }
+  return `<div class="waiver-cert">
+    <div><strong>${escapeHtml(t('cert_doc'))}:</strong> ${escapeHtml(w.document_id)} ${estado}</div>
+    <div><strong>${escapeHtml(t('cert_seal'))}:</strong> <span class="cert-hash">${escapeHtml(w.content_hash)}</span></div>
+    <div class="cert-note">${escapeHtml(t('cert_explain'))}</div>
+  </div>`;
+}
+
+const CERT_CSS = `
+  .waiver-cert { font-size: 10px; color: #555; margin: 8px 0 0; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; background: #fafbfc; page-break-inside: avoid; }
+  .cert-hash { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; word-break: break-all; }
+  .cert-note { margin-top: 3px; font-style: italic; color: #777; }
+`;
+
 function waiverProvenanceLine(w) {
   if (w.method === 'paper') {
     return t('wv_prov_paper').replace('{staff}', escapeHtml(w.signed_by_name || '—'));
@@ -12342,6 +12396,17 @@ async function exportWaiversForDay(date) {
     return;
   }
 
+  // Se verifica al exportar, no al guardar: el documento que se entrega dice
+  // que a esta fecha y hora el sello seguía coincidiendo. Si la verificación
+  // falla por red, el certificado igual se imprime, sin el tilde.
+  const verifiedById = {};
+  try {
+    const { data: checks } = await sb.rpc('verify_waivers', { p_ids: data.map(w => w.id) });
+    (checks || []).forEach(c => { verifiedById[c.id] = c.intact; });
+  } catch (e) {
+    console.error('No se pudo verificar los sellos al exportar:', e);
+  }
+
   const rowsHtml = data.map(w => `
     <div class="waiver-entry">
       <div class="waiver-entry-header">
@@ -12353,6 +12418,7 @@ async function exportWaiversForDay(date) {
       </div>
       <div class="waiver-entry-signee">Printed name: ${escapeHtml(w.participant_printed_name || w.participants?.full_name || '—')} &nbsp;·&nbsp; Date: ${w.participant_signed_date || '—'}</div>
       <div class="waiver-entry-provenance">${waiverProvenanceLine(w)}</div>
+      ${waiverCertificateHTML(w, verifiedById[w.id])}
       ${w.notes ? `<p class="waiver-entry-notes">${escapeHtml(w.notes)}</p>` : ''}
       ${w.waiver_type === 'medical' && w.medical_status ? `
         <div class="waiver-entry-medical">${w.medical_status === 'cleared'
@@ -12384,6 +12450,7 @@ async function exportWaiversForDay(date) {
   .waiver-entry-medical { font-size: 12px; color: #333; margin: 6px 0 0; font-weight: 600; }
   .waiver-entry-provenance { font-size: 11px; color: #666; margin: 3px 0 0; font-style: italic; }
   .waiver-entry-body { font-size: 12px; color: #333; white-space: pre-wrap; line-height: 1.5; margin: 6px 0 0; border-left: 2px solid #ddd; padding-left: 10px; }
+  ${CERT_CSS}
   @media print { body { padding: 10px; } }
 </style>
 </head><body>
@@ -12607,6 +12674,7 @@ async function exportAllShopRecords() {
       <span>${waiverTypeLabels[w.waiver_type] || escapeHtml(w.waiver_type)}</span>
       <span>${w.signed_at ? new Date(w.signed_at).toLocaleString() : '—'}</span>
       <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
+      ${w.document_id ? `<div class="ex-sub" style="font-family:ui-monospace,Menlo,Consolas,monospace;">${escapeHtml(w.document_id)}</div>` : ''}
     </div>`).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
 
   const checklistsHtml = (completions || []).map(r => {
