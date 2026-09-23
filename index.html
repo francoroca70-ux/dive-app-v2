@@ -7660,10 +7660,22 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-23a');
+  console.info('[Seven Seas] build 2026-09-23b');
+  // Red de seguridad: si el arranque no termina en 15 segundos, se asume
+  // colgado y se muestra la pantalla de error. Sin esto, una petición que
+  // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
+  // indicio de qué pasó -- que es exactamente lo que estuvo pasando.
+  let terminado = false;
+  const reloj = setTimeout(() => {
+    if (!terminado) showBootError(new Error('El arranque no respondió en 15 segundos.'));
+  }, 15000);
   try {
     await initAuthInner();
+    terminado = true;
+    clearTimeout(reloj);
   } catch (err) {
+    terminado = true;
+    clearTimeout(reloj);
     console.error('Boot failed:', err);
     showBootError(err);
   }
@@ -7692,7 +7704,9 @@ async function bootErrorSignOut() {
 }
 
 async function initAuthInner() {
+  console.info('[boot] 1 pidiendo sesión…');
   const { data: { session } } = await sb.auth.getSession();
+  console.info('[boot] 2 sesión:', session ? 'sí' : 'no');
 
   if (session) {
     initHome(session.user);
@@ -7710,10 +7724,12 @@ async function initAuthInner() {
     flushOfflineQueue();
     showScreen('app');
   } else {
+    console.info('[boot] 3 mostrando login');
     showScreen('login');
   }
 
   hideLoadingScreen();
+  console.info('[boot] 4 listo');
 }
 
 // ─── LOGIN ───
@@ -16710,6 +16726,7 @@ async function setUpNativeStatusBar() {
 setUpNativeStatusBar();
 
 (async () => {
+  try {
   if (checkForWrappedConfirmLink()) { hideLoadingScreen(); return; }
   if (checkForPasswordRecovery()) { hideLoadingScreen(); return; }
   const hasInvite = await checkForInviteToken();
@@ -16717,6 +16734,11 @@ setUpNativeStatusBar();
   const hasWaiverLink = await checkForWaiverToken();
   if (hasWaiverLink) { hideLoadingScreen(); return; }
   await initAuth();
+  } catch (err) {
+    console.error('[boot] falló antes de initAuth:', err);
+    if (typeof showBootError === 'function') showBootError(err);
+    else { hideLoadingScreen(); alert('Seven Seas: ' + (err?.message || err)); }
+  }
 })();
 
 document.getElementById('btn-reset-pw-save').addEventListener('click', async () => {
