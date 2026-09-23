@@ -4588,6 +4588,12 @@ const TRANSLATIONS = {
     wv_prov_remote: 'Signed from the booking link — {device}, IP {ip}.',
     wv_prov_paper: 'Paper copy held by the shop, logged by {staff}.',
     wv_med_not_checked: 'Medical not checked yet',
+    rd_ready: 'Ready',
+    rd_header: 'Readiness',
+    rd_counter: '{n} of {total} ready',
+    rd_blocked_1: '1 blocked',
+    rd_blocked_n: '{n} blocked',
+    rd_legend: 'Readiness: ● ready · ○ paperwork pending · ■ physician sign-off needed',
     wv_all_ready_today: 'Everyone on today\'s trips is ready to dive.',
     wv_med_help: 'Record the outcome of the paper medical declaration. Seven Seas never stores the medical details themselves.',
     wv_med_cleared: 'Cleared to dive',
@@ -5240,6 +5246,12 @@ const TRANSLATIONS = {
     wv_prov_remote: 'Firmado desde el link de la reserva — {device}, IP {ip}.',
     wv_prov_paper: 'Copia en papel archivada en el centro, registrada por {staff}.',
     wv_med_not_checked: 'Falta controlar el médico',
+    rd_ready: 'Listo',
+    rd_header: 'Habilitación',
+    rd_counter: '{n} de {total} listos',
+    rd_blocked_1: '1 bloqueado',
+    rd_blocked_n: '{n} bloqueados',
+    rd_legend: 'Habilitación: ● listo · ○ falta papeleo · ■ falta firma médica',
     wv_all_ready_today: 'Todos los huéspedes de hoy están listos para bucear.',
     wv_med_help: 'Registrá el resultado de la declaración médica en papel. Seven Seas nunca guarda el detalle médico.',
     wv_med_cleared: 'Habilitado para bucear',
@@ -7661,7 +7673,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-23b');
+  console.info('[Seven Seas] build 2026-09-23c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9371,6 +9383,52 @@ document.getElementById('trip-end-date').addEventListener('change', () => {
 let tripGroups_cache = [];
 let groupParticipants_cache = {};
 
+// Habilitación de cada huésped del viaje abierto. Se carga al abrir el viaje
+// y se usa sólo para pintar el semáforo; el manifiesto vuelve a consultar por
+// su cuenta porque puede imprimirse bastante después de abrir la pantalla, y
+// un papel que sube al barco no puede salir de una caché de hace media hora.
+let tripReadiness_cache = {};
+
+async function loadTripReadiness(tripId) {
+  tripReadiness_cache = {};
+  if (!window.waiversEnabled || !tripId) return;
+  // Se consulta por trip_id en vez de leer groupParticipants_cache porque ese
+  // caché lo llena renderGroupsPanel(), que corre después de esto.
+  const { data: ps } = await sb.from('participants').select('id').eq('trip_id', tripId);
+  const ids = (ps || []).map(x => x.id);
+  if (!ids.length) return;
+  const { data: rows } = await sb.from('waivers')
+    .select('participant_id, waiver_type, medical_status')
+    .in('participant_id', ids);
+  const idx = indexWaiverRows(rows);
+  ids.forEach(id => {
+    tripReadiness_cache[id] = { signed: idx.signed[id] || new Set(), medical: idx.medical[id] || null };
+  });
+}
+
+// «7 de 9 listos» al lado del título de huéspedes del grupo. Vacío cuando los
+// formularios están apagados para el shop o cuando el grupo no tiene gente.
+function readinessBadgeHTML(groupId, participants) {
+  if (!window.waiversEnabled || !participants.length) return '';
+  const states = participants.map(p => participantReadiness(groupId, p.id)).filter(Boolean).map(r => r.state);
+  if (!states.length) return '';
+  const worst = states.includes('blocked') ? 'blocked' : (states.every(x => x === 'ready') ? 'ready' : 'waiting');
+  return ` <span class="role-badge" style="background:transparent;border:1px solid ${READINESS[worst].color};color:${READINESS[worst].color};font-size:0.68rem;font-weight:600;">${readinessCounterText(states)}</span>`;
+}
+
+// El estado de un huésped según los formularios que pide SU grupo (un grupo
+// puede correr otra actividad que el viaje, y pedir otros formularios).
+function participantReadiness(groupId, participantId) {
+  if (!window.waiversEnabled) return null;
+  const rec = tripReadiness_cache[participantId];
+  if (!rec) return null;
+  const g = tripGroups_cache.find(x => x.id === groupId);
+  const type = g ? effectiveTripTypeForGroup(g) : null;
+  const required = (type && type.required_waiver_types && type.required_waiver_types.length)
+    ? type.required_waiver_types : ['liability'];
+  return guestReadiness(required, rec.signed, rec.medical);
+}
+
 function blankGroup() {
   return { id: null, contact_name: '', contact_phone: '', contact_email: '', booked_by: '', price_per_person: '', tab_id: '', notes: '', _localKey: 'new' };
 }
@@ -9427,6 +9485,7 @@ async function openTrip(id) {
   const { data: groups } = await sb.from('trip_groups').select('*').eq('trip_id', id).order('created_at');
   tripGroups_cache = (groups && groups.length) ? groups : [blankGroup()];
   groupParticipants_cache = {};
+  await loadTripReadiness(id);
 
   await populateTripTypeSelect(trip.trip_type_id);
   await onTripTypeChange(false);
@@ -9663,7 +9722,7 @@ async function groupCardHTML(g, index) {
     ${checkInHtml ? `<div style="margin-top:14px;">${checkInHtml}</div><div id="checkin-panel-${g.id}" style="display:none;margin-top:10px;"></div>` : ''}
 
     <div class="card-section-title" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;">
-      <span>${t('tt_guests_label')}${guestCount ? ` (${guestCount})` : ''}</span>
+      <span>${t('tt_guests_label')}${guestCount ? ` (${guestCount})` : ''}${isSaved ? readinessBadgeHTML(g.id, groupParticipants_cache[g.id] || []) : ''}</span>
       ${isSaved ? `<button class="btn-save" style="font-size:0.8rem;padding:6px 12px;" onclick="showAddGuestForm('${g.id}')">${t('tt_add_guest')}</button>` : ''}
     </div>
     ${guestsHtml}
@@ -11158,6 +11217,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   }
 
   await renderTripCrewSection();
+  await loadTripReadiness(tripId);
   await renderGroupsPanel();
 
   feedback.textContent = t('set_saved');
@@ -11173,6 +11233,78 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
 });
 
 // ─── PRINT MANIFEST ───
+// ─── SEMÁFORO DE HABILITACIÓN ───
+// Una sola función decide el color, y las tres vistas (lista de waivers,
+// manifiesto impreso, pantalla del viaje) la llaman. La regla vivía suelta
+// dentro de loadWaivers(); llevarla a las otras dos copiándola habría dejado
+// tres versiones de la misma decisión, y tres copias se separan solas con el
+// tiempo. Que sea imposible que digan cosas distintas es el punto.
+//
+//   verde  — todo firmado, y la habilitación registrada si hace falta
+//   ámbar  — falta papeleo, o nadie miró todavía la habilitación
+//   rojo   — necesita firma de un médico. Es un trámite pendiente concreto,
+//            no un juicio sobre la salud de nadie.
+const READINESS = {
+  ready:   { color: 'var(--success)', print: '#1d9e75' },
+  waiting: { color: '#EF9F27',        print: '#b8760b' },
+  blocked: { color: 'var(--error)',   print: '#c0392b' }
+};
+
+function guestReadiness(requiredTypes, signedTypes, medicalRow) {
+  const required = (requiredTypes && requiredTypes.length) ? requiredTypes : ['liability'];
+  const signed = signedTypes || new Set();
+  const medicalRequired = required.includes('medical');
+  const medical = medicalRow || null;
+  const pendingWaivers = required.filter(type => type !== 'medical' && !signed.has(type));
+
+  let state = 'ready';
+  if (medicalRequired && medical && medical.status === 'physician_required') state = 'blocked';
+  else if (pendingWaivers.length || (medicalRequired && !medical)) state = 'waiting';
+
+  return { state, pendingWaivers, medicalRequired, medical };
+}
+
+// Por qué no está listo, en palabras. Mismo texto en pantalla y en el papel.
+function readinessReasons(r) {
+  const bits = [];
+  if (r.pendingWaivers.length) bits.push(r.pendingWaivers.map(ty => waiverTypeLabels[ty] || ty).join(', '));
+  if (r.medicalRequired && !r.medical) bits.push(t('wv_med_not_checked'));
+  if (r.medicalRequired && r.medical && r.medical.status === 'physician_required') bits.push(t('wv_med_physician'));
+  return bits;
+}
+
+// «7 de 9 listos · 1 bloqueado». Lo que alguien necesita saber de un vistazo
+// antes de largar, sin leer la lista entera.
+function readinessCounterText(states) {
+  const total = states.length;
+  const ready = states.filter(x => x === 'ready').length;
+  const blocked = states.filter(x => x === 'blocked').length;
+  let txt = t('rd_counter').replace('{n}', ready).replace('{total}', total);
+  if (blocked) txt += ' · ' + t(blocked === 1 ? 'rd_blocked_1' : 'rd_blocked_n').replace('{n}', blocked);
+  return txt;
+}
+
+// Agrupa filas de la tabla waivers por participante: qué tipos firmó y, si
+// existe, su habilitación médica. Lo usan el manifiesto y la vista de viaje.
+function indexWaiverRows(rows) {
+  const signed = {}, medical = {};
+  (rows || []).forEach(w => {
+    if (!w.participant_id) return;
+    if (!signed[w.participant_id]) signed[w.participant_id] = new Set();
+    if (w.waiver_type === 'medical') {
+      // Una fila médica sólo cuenta cuando alguien registró la habilitación:
+      // la fila puede existir con el estado en null.
+      if (w.medical_status) {
+        medical[w.participant_id] = { status: w.medical_status };
+        signed[w.participant_id].add('medical');
+      }
+    } else {
+      signed[w.participant_id].add(w.waiver_type);
+    }
+  });
+  return { signed, medical };
+}
+
 async function printManifest() {
   if (!currentTripId) return;
   const typeId = document.getElementById('trip-type-select').value;
@@ -11208,19 +11340,26 @@ async function printManifest() {
   // Waiver status per guest — only relevant if waivers are enabled for this org.
   // Pull every signed waiver across every group on this trip in one query so the
   // manifest can show, guest by guest, exactly who's missing exactly what.
+  //
+  // 23/09: el manifiesto es el papel que sube al barco, y hasta hoy no decía
+  // nada de la habilitación médica -- podía salir con un tilde verde en la
+  // columna de formularios un huésped que necesitaba firma de un médico.
+  // Ahora la fila lleva el mismo semáforo que la pantalla, calculado por la
+  // misma función.
   const showWaiverColumn = !!window.waiversEnabled;
-  const signedTypesByParticipant = {};
+  let signedTypesByParticipant = {}, medicalByParticipant = {};
   if (showWaiverColumn) {
     const allParticipantIds = tripGroups_cache.flatMap(g => (groupParticipants_cache[g.id] || []).map(p => p.id));
     if (allParticipantIds.length) {
-      const { data: signedRows } = await sb.from('waivers').select('participant_id, waiver_type').in('participant_id', allParticipantIds);
-      (signedRows || []).forEach(s => {
-        if (!s.participant_id) return;
-        if (!signedTypesByParticipant[s.participant_id]) signedTypesByParticipant[s.participant_id] = new Set();
-        signedTypesByParticipant[s.participant_id].add(s.waiver_type);
-      });
+      const { data: signedRows } = await sb.from('waivers')
+        .select('participant_id, waiver_type, medical_status')
+        .in('participant_id', allParticipantIds);
+      const idx = indexWaiverRows(signedRows);
+      signedTypesByParticipant = idx.signed;
+      medicalByParticipant = idx.medical;
     }
   }
+  const tripStates = [];
 
   const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -11233,26 +11372,32 @@ async function printManifest() {
     const activityNote = (g.trip_type_id && g.trip_type_id !== typeId && groupType)
       ? `<p class="manifest-group-notes" style="font-style:normal;font-weight:600;">Activity: ${escapeHtml(trTypeName(groupType.name))}</p>` : '';
     const participants = groupParticipants_cache[g.id] || [];
-    let missingCount = 0;
-    const missingList = [];
+    const groupStates = [];
+    const notReadyList = [];
     const rows = participants.map(p => {
       const gear = p.gear || {};
       const certCell = showCertColumn ? `<td>${escapeHtml(certDisplayString(p) || '—')}</td>` : '';
-      let waiverCell = '';
+      let waiverCell = '', dot = '';
       if (showWaiverColumn) {
-        const signedTypes = signedTypesByParticipant[p.id] || new Set();
-        const missingTypes = requiredWaiverTypes.filter(t => !signedTypes.has(t));
-        if (missingTypes.length) {
-          missingCount++;
-          const missingLabel = missingTypes.map(t => escapeHtml(waiverTypeLabels[t] || t)).join(', ');
-          missingList.push(`${escapeHtml(p.full_name)} (${missingLabel})`);
-          waiverCell = `<td style="color:#c0392b;font-weight:600;">Missing: ${missingLabel}</td>`;
+        const r = guestReadiness(requiredWaiverTypes, signedTypesByParticipant[p.id], medicalByParticipant[p.id]);
+        groupStates.push(r.state);
+        tripStates.push(r.state);
+        const ink = READINESS[r.state].print;
+        // Un círculo relleno (●/○) además del color: el manifiesto se imprime
+        // en blanco y negro la mayoría de las veces, y un semáforo que sólo
+        // existe en color no sirve en una impresora láser del muelle.
+        const glyph = r.state === 'ready' ? '●' : (r.state === 'blocked' ? '■' : '○');
+        dot = `<span style="color:${ink};font-weight:700;">${glyph}</span> `;
+        if (r.state === 'ready') {
+          waiverCell = `<td style="color:${ink};">${escapeHtml(t('rd_ready'))}</td>`;
         } else {
-          waiverCell = `<td style="color:#1d9e75;">Signed</td>`;
+          const reasons = readinessReasons(r).map(escapeHtml).join(' · ');
+          notReadyList.push(`${escapeHtml(p.full_name)} (${reasons})`);
+          waiverCell = `<td style="color:${ink};font-weight:600;">${reasons}</td>`;
         }
       }
       return `<tr>
-        <td>${escapeHtml(p.full_name)}${p.checked_in_at ? ' ✓' : ''}</td>
+        <td>${dot}${escapeHtml(p.full_name)}${p.checked_in_at ? ' ✓' : ''}</td>
         ${certCell}
         ${gearColumns.map(f => {
           const v = gear[f.field_key];
@@ -11263,10 +11408,11 @@ async function printManifest() {
         <td>${escapeHtml(p.notes)}</td>
       </tr>`;
     }).join('');
-    const waiverSummary = showWaiverColumn
-      ? (missingCount
-          ? `<p class="manifest-group-notes" style="color:#c0392b;font-style:normal;font-weight:600;">⚠ Waivers missing — ${missingList.join(' · ')}</p>`
-          : `<p class="manifest-group-notes" style="color:#1d9e75;font-style:normal;">✓ All guests' waivers signed</p>`)
+    const groupBlocked = groupStates.filter(x => x === 'blocked').length;
+    const waiverSummary = showWaiverColumn && groupStates.length
+      ? (notReadyList.length
+          ? `<p class="manifest-group-notes" style="color:${groupBlocked ? READINESS.blocked.print : READINESS.waiting.print};font-style:normal;font-weight:600;">⚠ ${escapeHtml(readinessCounterText(groupStates))} — ${notReadyList.join(' · ')}</p>`
+          : `<p class="manifest-group-notes" style="color:${READINESS.ready.print};font-style:normal;">✓ ${escapeHtml(readinessCounterText(groupStates))}</p>`)
       : '';
     return `
       <div class="manifest-group">
@@ -11275,7 +11421,7 @@ async function printManifest() {
         ${g.notes ? `<p class="manifest-group-notes">${escapeHtml(g.notes)}</p>` : ''}
         ${waiverSummary}
         <table>
-          <thead><tr><th>Guest</th>${showCertColumn ? '<th>Certification</th>' : ''}${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}${showWaiverColumn ? '<th>Waivers</th>' : ''}<th>Notes</th></tr></thead>
+          <thead><tr><th>Guest</th>${showCertColumn ? '<th>Certification</th>' : ''}${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}${showWaiverColumn ? `<th>${escapeHtml(t('rd_header'))}</th>` : ''}<th>Notes</th></tr></thead>
           <tbody>${rows || `<tr><td colspan="${gearColumns.length + (showCertColumn ? 1 : 0) + (showWaiverColumn ? 1 : 0) + 2}">No guests</td></tr>`}</tbody>
         </table>
       </div>
@@ -11292,6 +11438,8 @@ async function printManifest() {
   .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
   h3 { font-size: 15px; margin: 20px 0 4px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
   .manifest-group-notes { font-size: 13px; color: #555; margin: 4px 0 8px; font-style: italic; }
+  .readiness-banner { display:inline-block; border:2px solid #555; border-radius:6px; padding:6px 12px; font-size:14px; font-weight:700; margin-bottom:20px; }
+  .legend { font-size:11px; color:#666; margin-top:24px; border-top:1px solid #ddd; padding-top:8px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
   th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; text-align: left; }
   th { background: #f2f6fa; }
@@ -11300,7 +11448,9 @@ async function printManifest() {
 </head><body>
   <h1>${escapeHtml(tripType ? tripType.name : 'Trip')} Manifest</h1>
   <div class="meta">${date} · ${time ? time.slice(0,5) : ''}${arrival ? ' – ' + arrival.slice(0,5) : ''} · ${escapeHtml(boatName)} · Crew: ${escapeHtml(crewNames)}</div>
+  ${tripStates.length ? `<div class="readiness-banner" style="border-color:${tripStates.includes('blocked') ? READINESS.blocked.print : (tripStates.every(x => x === 'ready') ? READINESS.ready.print : READINESS.waiting.print)};color:${tripStates.includes('blocked') ? READINESS.blocked.print : (tripStates.every(x => x === 'ready') ? READINESS.ready.print : READINESS.waiting.print)};">${escapeHtml(readinessCounterText(tripStates))}</div>` : ''}
   ${groupsHtml || '<p>No groups on this trip.</p>'}
+  ${tripStates.length ? `<p class="legend">${escapeHtml(t('rd_legend'))}</p>` : ''}
 </body></html>`;
 
   const win = window.open('', '_blank');
@@ -11423,31 +11573,17 @@ async function loadWaivers() {
     const signedTypes = signedTypesByParticipant[p.id] || new Set();
     const isMinor = calcAge(p.date_of_birth) !== null && calcAge(p.date_of_birth) < 18;
 
-    const medicalRequired = requiredTypes.includes('medical');
-    const medical = medicalByParticipant[p.id] || null;
-    const pendingWaivers = requiredTypes.filter(type => type !== 'medical' && !signedTypes.has(type));
-
-    // Rojo sólo cuando falta la firma de un médico: es un trámite pendiente
-    // concreto, no un juicio sobre la salud de nadie. Ámbar es "todavía nadie
-    // lo miró", que es el estado por defecto y el más común de la mañana.
-    let state = 'ready';
-    if (medicalRequired && medical?.status === 'physician_required') state = 'blocked';
-    else if (pendingWaivers.length || (medicalRequired && !medical)) state = 'waiting';
-
-    if (state === 'ready') return;
-    guestRows.push({ p, trip, isMinor, pendingWaivers, medicalRequired, medical, state });
+    const r = guestReadiness(requiredTypes, signedTypes, medicalByParticipant[p.id]);
+    if (r.state === 'ready') return;
+    guestRows.push({ p, trip, isMinor, r,
+      pendingWaivers: r.pendingWaivers, medicalRequired: r.medicalRequired, medical: r.medical, state: r.state });
   });
-
-  const STATE_COLOR = { ready: 'var(--success)', waiting: '#EF9F27', blocked: 'var(--error)' };
 
   const pendingListEl = document.getElementById('pending-waivers-list');
   pendingListEl.innerHTML = guestRows.length ? guestRows.map(({ p, trip, isMinor, pendingWaivers, medicalRequired, medical, state }) => {
     const tripLabel = trip ? `${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
     const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
-    const bits = [];
-    if (pendingWaivers.length) bits.push(pendingWaivers.map(ty => waiverTypeLabels[ty] || ty).join(', '));
-    if (medicalRequired && !medical) bits.push(t('wv_med_not_checked'));
-    if (medicalRequired && medical?.status === 'physician_required') bits.push(t('wv_med_physician'));
+    const bits = readinessReasons({ pendingWaivers, medicalRequired, medical });
 
     const actions = pendingWaivers.map(ty =>
       `<button class="btn-save" style="padding:6px 10px;font-size:0.78rem;" onclick="openSignWaiverModal('${p.id}','${p.trip_id}','${p.group_id || ''}','${nameEsc}','${ty}',${isMinor})">${waiverTypeLabels[ty] || ty}</button>`
@@ -11461,7 +11597,7 @@ async function loadWaivers() {
 
     return `<div class="participant-row">
       <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-        <span style="width:10px;height:10px;border-radius:50%;background:${STATE_COLOR[state]};flex:none;"></span>
+        <span style="width:10px;height:10px;border-radius:50%;background:${READINESS[state].color};flex:none;"></span>
         <div style="min-width:0;">
           <div class="p-name">${p.full_name}${isMinor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
           <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}${bits.length ? ' · ' + bits.join(' · ') : ''}</div>
@@ -12874,10 +13010,20 @@ function renderGroupParticipantsBlock(groupId, participants) {
   const listHtml = participants.length ? participants.map(p => {
     const gearStr = gearDisplayString(p.gear);
     const certStr = certDisplayString(p);
+    // El mismo semáforo que la pantalla de waivers y que el manifiesto, para
+    // que el estado se vea donde se arma la salida y no sólo donde se
+    // gestionan los formularios.
+    const r = participantReadiness(groupId, p.id);
+    const dot = r
+      ? `<span title="${readinessReasons(r).join(' · ') || t('rd_ready')}" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${READINESS[r.state].color};margin-right:7px;flex:none;vertical-align:middle;"></span>`
+      : '';
+    const reasonLine = (r && r.state !== 'ready')
+      ? `<div class="p-meta" style="color:${READINESS[r.state].color};">${readinessReasons(r).join(' · ')}</div>` : '';
     return `
     <div class="participant-row">
       <div>
-        <div class="p-name">${p.full_name}${p.phone ? ' · ' + p.phone : ''}</div>
+        <div class="p-name">${dot}${p.full_name}${p.phone ? ' · ' + p.phone : ''}</div>
+        ${reasonLine}
         ${certStr ? `<div class="p-meta">${certStr}</div>` : ''}
         <div class="p-meta">${gearStr}</div>
         ${p.notes ? `<div class="p-meta">${p.notes}</div>` : ''}
