@@ -14,7 +14,7 @@
 // 23/09/2026: v2 -> v3. La v2 dejó a Fran dos días con una versión vieja de la
 // app sin forma de enterarse: pedía index.html y el service worker se lo servía
 // desde la caché. Arreglos desplegados que él nunca recibió.
-const CACHE_VERSION = 'seven-seas-v4';
+const CACHE_VERSION = 'seven-seas-v5';
 const APP_SHELL = [
   '/',
   '/index.html',

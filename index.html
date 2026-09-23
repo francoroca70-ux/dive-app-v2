@@ -4590,6 +4590,10 @@ const TRANSLATIONS = {
     wv_med_not_checked: 'Medical not checked yet',
     rd_ready: 'Ready',
     rd_header: 'Readiness',
+    mf_title: 'Manifest', mf_h1: '{type} Manifest', mf_guest: 'Guest', mf_certification: 'Certification', mf_notes: 'Notes',
+    mf_crew: 'Crew', mf_no_crew: 'No crew assigned', mf_no_boat: 'No boat',
+    mf_no_guests: 'No guests', mf_no_groups: 'No groups on this trip.',
+    mf_popup_blocked: 'Please allow pop-ups to print the manifest.',
     rd_counter: '{n} of {total} ready',
     rd_blocked_1: '1 blocked',
     rd_blocked_n: '{n} blocked',
@@ -5248,6 +5252,10 @@ const TRANSLATIONS = {
     wv_med_not_checked: 'Falta controlar el médico',
     rd_ready: 'Listo',
     rd_header: 'Habilitación',
+    mf_title: 'Manifiesto', mf_h1: 'Manifiesto de {type}', mf_guest: 'Huésped', mf_certification: 'Certificación', mf_notes: 'Notas',
+    mf_crew: 'Tripulación', mf_no_crew: 'Sin tripulación asignada', mf_no_boat: 'Sin embarcación',
+    mf_no_guests: 'Sin huéspedes', mf_no_groups: 'Este viaje no tiene grupos.',
+    mf_popup_blocked: 'Permití las ventanas emergentes para imprimir el manifiesto.',
     rd_counter: '{n} de {total} listos',
     rd_blocked_1: '1 bloqueado',
     rd_blocked_n: '{n} bloqueados',
@@ -5398,6 +5406,17 @@ const TRANSLATIONS = {
 };
 
 let currentLanguage = localStorage.getItem('sevenSeasLanguage') || 'en';
+
+// Escapar texto que viene de la base antes de meterlo en una plantilla.
+//
+// Vivía copiado en ocho funciones como const local. Ocho copias de una regla
+// es la misma trampa que tenía el semáforo: los lugares que se olvidan de
+// copiarla son justo donde aparece el agujero -- y acá el agujero era el
+// nombre del huésped, que lo escribe el staff y la app es multi-centro.
+// Una sola, global, y las ocho locales borradas.
+function escapeHtml(s) {
+  return (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
 
 function t(key) {
   return (TRANSLATIONS[currentLanguage] && TRANSLATIONS[currentLanguage][key]) || TRANSLATIONS.en[key] || key;
@@ -6466,7 +6485,7 @@ function rwRenderList() {
       const label = waiverTypeLabels[w.type] || w.type;
       return `<div class="participant-row">
         <div>
-          <div class="p-name">${p.full_name}${p.is_minor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
+          <div class="p-name">${escapeHtml(p.full_name)}${p.is_minor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
           <div style="font-size:0.78rem;color:var(--muted);">${label}</div>
         </div>
         ${w.signed
@@ -7673,7 +7692,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-23c');
+  console.info('[Seven Seas] build 2026-09-23d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -8235,7 +8254,6 @@ async function renderAccountSwitcherMenu() {
   const listEl = document.getElementById('account-switcher-list');
   if (!avatarEl || !headerEl || !listEl) return;
 
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   const { data: { user } } = await sb.auth.getUser();
   const currentUserId = user ? user.id : null;
@@ -9819,11 +9837,11 @@ function showCheckInPanel(groupId) {
   panel.innerHTML = `
     <div style="background:var(--foam);border-radius:10px;padding:14px;">
       <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">${t('tt_confirm_checkin')}</div>
-      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">${t('tt_verify_against')}<strong>${g?.contact_name || '—'}</strong>${g?.contact_phone ? ' · ' + g.contact_phone : ''}</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">${t('tt_verify_against')}<strong>${escapeHtml(g?.contact_name) || '—'}</strong>${g?.contact_phone ? ' · ' + escapeHtml(g.contact_phone) : ''}</div>
       ${participants.map(p => `
         <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-bottom:8px;">
           <input type="checkbox" class="checkin-box-${groupId}" data-pid="${p.id}" checked style="width:16px;height:16px;">
-          ${p.full_name}${p.checked_in_at ? ` <span style="color:var(--success);font-size:0.72rem;">${t('tt_already_checked_in')}</span>` : ''}
+          ${escapeHtml(p.full_name)}${p.checked_in_at ? ` <span style="color:var(--success);font-size:0.72rem;">${t('tt_already_checked_in')}</span>` : ''}
         </label>
       `).join('')}
       <div class="settings-actions" style="margin-top:8px;">
@@ -11313,7 +11331,7 @@ async function printManifest() {
   const time = document.getElementById('trip-time').value;
   const arrival = document.getElementById('trip-arrival').value;
   const boatSelect = document.getElementById('trip-boat');
-  const boatName = boatSelect.options[boatSelect.selectedIndex]?.text || 'No boat';
+  const boatName = boatSelect.options[boatSelect.selectedIndex]?.text || t('mf_no_boat');
 
   for (const g of tripGroups_cache) {
     if (g.id) await loadGroupParticipants(g.id);
@@ -11361,7 +11379,6 @@ async function printManifest() {
   }
   const tripStates = [];
 
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   const groupsHtml = (await Promise.all(tripGroups_cache.map(async (g, i) => {
     const groupType = effectiveTripTypeForGroup(g);
@@ -11421,17 +11438,17 @@ async function printManifest() {
         ${g.notes ? `<p class="manifest-group-notes">${escapeHtml(g.notes)}</p>` : ''}
         ${waiverSummary}
         <table>
-          <thead><tr><th>Guest</th>${showCertColumn ? '<th>Certification</th>' : ''}${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}${showWaiverColumn ? `<th>${escapeHtml(t('rd_header'))}</th>` : ''}<th>Notes</th></tr></thead>
-          <tbody>${rows || `<tr><td colspan="${gearColumns.length + (showCertColumn ? 1 : 0) + (showWaiverColumn ? 1 : 0) + 2}">No guests</td></tr>`}</tbody>
+          <thead><tr><th>${escapeHtml(t('mf_guest'))}</th>${showCertColumn ? `<th>${escapeHtml(t('mf_certification'))}</th>` : ''}${gearColumns.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}${showWaiverColumn ? `<th>${escapeHtml(t('rd_header'))}</th>` : ''}<th>${escapeHtml(t('mf_notes'))}</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="${gearColumns.length + (showCertColumn ? 1 : 0) + (showWaiverColumn ? 1 : 0) + 2}">${escapeHtml(t('mf_no_guests'))}</td></tr>`}</tbody>
         </table>
       </div>
     `;
   }))).join('');
 
-  const crewNames = tripCrewCache.map(c => c.full_name).join(', ') || 'No crew assigned';
+  const crewNames = tripCrewCache.map(c => c.full_name).join(', ') || t('mf_no_crew');
 
   const html = `<!DOCTYPE html>
-<html><head><title>Trip Manifest — ${date}</title>
+<html><head><title>${escapeHtml(t('mf_title'))} — ${date}</title>
 <style>
   body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
   h1 { font-size: 20px; margin-bottom: 4px; }
@@ -11446,15 +11463,15 @@ async function printManifest() {
   @media print { body { padding: 10px; } }
 </style>
 </head><body>
-  <h1>${escapeHtml(tripType ? tripType.name : 'Trip')} Manifest</h1>
-  <div class="meta">${date} · ${time ? time.slice(0,5) : ''}${arrival ? ' – ' + arrival.slice(0,5) : ''} · ${escapeHtml(boatName)} · Crew: ${escapeHtml(crewNames)}</div>
+  <h1>${escapeHtml(tripType ? t('mf_h1').replace('{type}', trTypeName(tripType.name)) : t('mf_title'))}</h1>
+  <div class="meta">${date} · ${time ? time.slice(0,5) : ''}${arrival ? ' – ' + arrival.slice(0,5) : ''} · ${escapeHtml(boatName)} · ${escapeHtml(t('mf_crew'))}: ${escapeHtml(crewNames)}</div>
   ${tripStates.length ? `<div class="readiness-banner" style="border-color:${tripStates.includes('blocked') ? READINESS.blocked.print : (tripStates.every(x => x === 'ready') ? READINESS.ready.print : READINESS.waiting.print)};color:${tripStates.includes('blocked') ? READINESS.blocked.print : (tripStates.every(x => x === 'ready') ? READINESS.ready.print : READINESS.waiting.print)};">${escapeHtml(readinessCounterText(tripStates))}</div>` : ''}
-  ${groupsHtml || '<p>No groups on this trip.</p>'}
+  ${groupsHtml || `<p>${escapeHtml(t('mf_no_groups'))}</p>`}
   ${tripStates.length ? `<p class="legend">${escapeHtml(t('rd_legend'))}</p>` : ''}
 </body></html>`;
 
   const win = window.open('', '_blank');
-  if (!win) { alert('Please allow pop-ups to print the manifest.'); return; }
+  if (!win) { alert(t('mf_popup_blocked')); return; }
   win.document.write(html);
   win.document.close();
   win.focus();
@@ -11599,7 +11616,7 @@ async function loadWaivers() {
       <div style="display:flex;align-items:center;gap:10px;min-width:0;">
         <span style="width:10px;height:10px;border-radius:50%;background:${READINESS[state].color};flex:none;"></span>
         <div style="min-width:0;">
-          <div class="p-name">${p.full_name}${isMinor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
+          <div class="p-name">${escapeHtml(p.full_name)}${isMinor ? ` <span class="role-badge" style="background:rgba(229,62,62,0.1);color:var(--error);font-size:0.68rem;">${t('wv_minor_badge')}</span>` : ''}</div>
           <div style="font-size:0.78rem;color:var(--muted);">${tripLabel}${bits.length ? ' · ' + bits.join(' · ') : ''}</div>
         </div>
       </div>
@@ -11637,7 +11654,6 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
     (participantsByGroup[p.group_id] = participantsByGroup[p.group_id] || []).push(p);
   });
 
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   listEl.innerHTML = groups.map(g => {
     const trip = tripById[g.trip_id];
@@ -11876,7 +11892,6 @@ async function searchWaiverLog(term) {
     .limit(50);
   if (currentLocationId) query = query.eq('location_id', currentLocationId);
   const { data: results } = await query;
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   if (!results || !results.length) {
     logListEl.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">${t('wv_no_waivers_found')} "${escapeHtml(term)}".</p>`;
     return;
@@ -12307,7 +12322,6 @@ async function exportWaiversForDay(date) {
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
 
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   let query = sb.from('waivers').select('*, participants(full_name)')
     .eq('org_id', currentOrgId)
@@ -12400,7 +12414,6 @@ async function exportChecklistsForDay(date) {
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
 
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   const { data, error } = await sb.from('checklist_completions')
     .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trips(trip_name, trip_date, trip_time, trip_type)')
@@ -12477,7 +12490,6 @@ async function exportTripRecordsForDay(date) {
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
 
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   let query = sb.from('trips')
     .select('id, trip_time, trip_type, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
@@ -12572,7 +12584,6 @@ async function exportAllShopRecords() {
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
 
-  const escapeHtml = (s) => (s || '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   let waiversQuery = sb.from('waivers').select('*, participants(full_name)').eq('org_id', currentOrgId).order('signed_at');
   if (currentLocationId) waiversQuery = waiversQuery.eq('location_id', currentLocationId);
@@ -13015,18 +13026,18 @@ function renderGroupParticipantsBlock(groupId, participants) {
     // gestionan los formularios.
     const r = participantReadiness(groupId, p.id);
     const dot = r
-      ? `<span title="${readinessReasons(r).join(' · ') || t('rd_ready')}" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${READINESS[r.state].color};margin-right:7px;flex:none;vertical-align:middle;"></span>`
+      ? `<span title="${escapeHtml(readinessReasons(r).join(' · ') || t('rd_ready'))}" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${READINESS[r.state].color};margin-right:7px;flex:none;vertical-align:middle;"></span>`
       : '';
     const reasonLine = (r && r.state !== 'ready')
       ? `<div class="p-meta" style="color:${READINESS[r.state].color};">${readinessReasons(r).join(' · ')}</div>` : '';
     return `
     <div class="participant-row">
       <div>
-        <div class="p-name">${dot}${p.full_name}${p.phone ? ' · ' + p.phone : ''}</div>
+        <div class="p-name">${dot}${escapeHtml(p.full_name)}${p.phone ? ' · ' + escapeHtml(p.phone) : ''}</div>
         ${reasonLine}
-        ${certStr ? `<div class="p-meta">${certStr}</div>` : ''}
-        <div class="p-meta">${gearStr}</div>
-        ${p.notes ? `<div class="p-meta">${p.notes}</div>` : ''}
+        ${certStr ? `<div class="p-meta">${escapeHtml(certStr)}</div>` : ''}
+        <div class="p-meta">${escapeHtml(gearStr)}</div>
+        ${p.notes ? `<div class="p-meta">${escapeHtml(p.notes)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button class="btn-icon" onclick="editGroupParticipant('${p.id}','${groupId}')" title="Edit">✎</button>
