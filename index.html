@@ -7660,6 +7660,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
+  console.info('[Seven Seas] build 2026-09-23a');
   try {
     await initAuthInner();
   } catch (err) {
@@ -7747,17 +7748,32 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     return;
   }
 
-  initHome(data.user);
-  const settingsOk = await loadSettings(data.user);
-  if (settingsOk === false) {
+  // Mismo guardián que initAuth. Este camino no tenía ninguno: si algo de acá
+  // abajo fallaba, el usuario quedaba mirando el fondo navy sin un mensaje y
+  // sin forma de salir. Los pasos se registran en consola para que un fallo
+  // diga EN CUÁL murió, en vez de dejar adivinando.
+  try {
+    console.info('[boot] login ok, cargando…');
+    initHome(data.user);
+    console.info('[boot] initHome ok');
+    const settingsOk = await loadSettings(data.user);
+    console.info('[boot] loadSettings ok:', settingsOk);
+    if (settingsOk === false) {
+      btn.disabled = false;
+      btn.textContent = t('auth_sign_in');
+      return;
+    }
+    loadFleet();
+    loadCrew();
+    renderCalendar();
+    showScreen('app');
+    console.info('[boot] app visible');
+  } catch (err) {
+    console.error('[boot] falló después del login:', err);
     btn.disabled = false;
     btn.textContent = t('auth_sign_in');
-    return;
+    showBootError(err);
   }
-  loadFleet();
-  loadCrew();
-  renderCalendar();
-  showScreen('app');
 });
 
 // Enter key on password field

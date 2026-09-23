@@ -7,7 +7,14 @@
 //
 // Bump CACHE_VERSION whenever you want returning users to pick up a fresh
 // app shell faster (old caches are cleaned up automatically on activate).
-const CACHE_VERSION = 'seven-seas-v2';
+// Subir esta versión en cada deploy que cambie index.html. Al activarse, el
+// service worker borra todas las cachés que no coincidan, así que una copia
+// vieja no puede sobrevivir a un deploy.
+//
+// 23/09/2026: v2 -> v3. La v2 dejó a Fran dos días con una versión vieja de la
+// app sin forma de enterarse: pedía index.html y el service worker se lo servía
+// desde la caché. Arreglos desplegados que él nunca recibió.
+const CACHE_VERSION = 'seven-seas-v3';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -75,7 +82,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets (icons, manifest) — rarely change.
+  // El HTML NUNCA sale de la caché mientras haya red, sea navegación o no.
+  //
+  // Antes, un fetch('/index.html') (o cualquier pedido del HTML que no fuera
+  // una navegación) caía en la rama de abajo, que es cache-first, y devolvía
+  // la copia guardada. En la app nativa, que vive dentro de un webview, eso
+  // puede dejar a un centro de buceo con una versión vieja durante días sin
+  // ninguna señal de que algo está desactualizado.
+  const url = new URL(req.url);
+  if (url.pathname.endsWith('.html') || url.pathname === '/') {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req).then((c) => c || caches.match('/index.html')))
+    );
+    return;
+  }
+
+  // Cache-first sólo para estáticos de verdad (íconos, manifest), que cambian
+  // de nombre cuando cambian de contenido.
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req))
   );
