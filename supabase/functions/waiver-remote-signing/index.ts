@@ -161,7 +161,7 @@ Deno.serve(async (req: Request) => {
       const {
         participantId, waiverType, printedName, signedDate, signatureData,
         guardianName, guardianDate, guardianSignatureData, notes,
-        templateId, bodySnapshot,
+        templateId, bodySnapshot, signedAt, offline,
       } = body || {};
 
       if (!participantId || !waiverType || !printedName || !signedDate) {
@@ -186,8 +186,44 @@ Deno.serve(async (req: Request) => {
         .single();
       const locationId = (group as any)?.trips?.location_id || null;
 
-      const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
-      const userAgent = req.headers.get("user-agent") || null;
+      // ─── Firma sin conexión (quiosco) ───
+      //
+      // Cuando la tablet del centro firma sin internet, la fila llega minutos
+      // u horas después. Dos cosas NO se pueden fingir en ese caso:
+      //
+      //   signed_at  — la hora real es la del dispositivo, no la del servidor.
+      //                Guardar la hora de sincronización sería registrar una
+      //                hora falsa en un documento legal.
+      //   IP y user agent — los del momento de sincronizar, que pueden ser de
+      //                otro aparato y otra red. Se guardan en null: un dato
+      //                que no significa lo que parece es peor que ninguno.
+      //
+      // Y se marca signed_via = 'kiosk_offline' para que la línea de
+      // procedencia pueda decir la verdad: que la hora la informó el
+      // dispositivo y nadie la verificó de forma independiente.
+      const isOffline = offline === true;
+
+      let signedAtValue: string | null = null;
+      if (isOffline) {
+        if (!signedAt) return json({ error: "Missing signedAt for an offline signature" }, 400);
+        const when = new Date(signedAt);
+        if (isNaN(when.getTime())) return json({ error: "Invalid signedAt" }, 400);
+        const now = Date.now();
+        // Cinco minutos de tolerancia hacia adelante por relojes desfasados;
+        // más que eso es un reloj mal puesto o un payload armado a mano.
+        if (when.getTime() > now + 5 * 60 * 1000) {
+          return json({ error: "signedAt is in the future" }, 400);
+        }
+        // Siete días: una cola que no se vació en una semana no es una tablet
+        // sin señal, es otra cosa. Que falle ruidosamente.
+        if (when.getTime() < now - 7 * 24 * 60 * 60 * 1000) {
+          return json({ error: "signedAt is too old to accept" }, 400);
+        }
+        signedAtValue = when.toISOString();
+      }
+
+      const ip = isOffline ? null : (req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null);
+      const userAgent = isOffline ? null : (req.headers.get("user-agent") || null);
 
       const { error } = await sb.from("waivers").insert({
         org_id: link.org_id,
@@ -207,12 +243,21 @@ Deno.serve(async (req: Request) => {
         signed_by_name: null,
         template_id: templateId || null,
         body_snapshot: bodySnapshot || null,
-        signed_via: "remote",
+        signed_via: isOffline ? "kiosk_offline" : "remote",
         signer_ip: ip,
         signer_user_agent: userAgent,
+        ...(signedAtValue ? { signed_at: signedAtValue } : {}),
       });
 
-      if (error) return json({ error: error.message }, 500);
+      // 23505 = índice único (un formulario por participante y tipo). Si la
+      // cola se reenvía porque la respuesta se perdió en el camino, el
+      // segundo intento choca acá. Eso NO es un error: la firma ya está
+      // guardada. Devolverlo como éxito es lo que hace que reintentar sea
+      // seguro -- si devolviera 500, la cola reintentaría para siempre.
+      if (error) {
+        if ((error as any).code === "23505") return json({ success: true, duplicate: true });
+        return json({ error: error.message }, 500);
+      }
       return json({ success: true });
     }
 

@@ -2249,6 +2249,8 @@ body { background: var(--navy); color: var(--text); }
         <p id="rw-invalid-reason" style="font-size:0.85rem;color:var(--muted);"></p>
       </div>
 
+      <div id="rw-pending-banner" style="display:none;font-size:0.78rem;color:#8a5a00;background:rgba(239,159,39,0.12);border:1px solid rgba(239,159,39,0.35);border-radius:8px;padding:8px 10px;margin-bottom:12px;"></div>
+
       <div id="rw-list-view" style="display:none;">
         <h2 id="rw-trip-title" style="margin-bottom:2px;"></h2>
         <p id="rw-trip-meta" style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;"></p>
@@ -2759,6 +2761,11 @@ body { background: var(--navy); color: var(--text); }
                 <label class="sf-label" data-i18n="fleet_service_interval">Service interval (hours)</label>
                 <input class="sf-input" type="number" id="bde-engine-interval" placeholder="e.g. 100" min="1">
               </div>
+              <div class="sf-group">
+                <label class="sf-label" data-i18n="svc_warn_label">Warn me this many hours ahead</label>
+                <input class="sf-input" type="number" id="bde-engine-warn" placeholder="auto" min="1" step="0.5">
+                <p style="font-size:0.75rem;color:var(--muted);margin-top:4px;" data-i18n="svc_warn_hint">Leave empty for automatic: 15% of the interval, never less than 5 hours. Raise it if your mechanic takes a while to book.</p>
+              </div>
             </div>
             <div class="settings-actions">
               <button class="btn-save" id="btn-save-boat-engine" data-i18n="fleet_add_engine_title">Add engine</button>
@@ -2774,6 +2781,11 @@ body { background: var(--navy); color: var(--text); }
               <input class="sf-input" type="text" id="bdh-logged-by" placeholder="Logged by" data-i18n-placeholder="fleet_logged_by">
               <input class="sf-input" type="number" id="bdh-hours-run" placeholder="Hours run (e.g. 2.5)" step="0.1" data-i18n-placeholder="fleet_hours_run">
             </div>
+            <!-- Lo que el capitán ya anota en el cuaderno: el recorrido o la
+                 actividad del día. Opcional a propósito: si fuera obligatorio,
+                 alguien con apuro pondría un punto y perderíamos las veces que
+                 sí lo habría escrito. -->
+            <input class="sf-input" type="text" id="bdh-note" maxlength="140" placeholder="Where the boat went (optional)" data-i18n-placeholder="fleet_hours_note_ph">
             <div class="settings-actions">
               <button class="btn-save" id="btn-save-boat-hours" data-i18n="fleet_log_hours_btn">Log hours</button>
               <button class="btn-cancel" id="btn-cancel-boat-hours" data-i18n="fleet_cancel">Cancel</button>
@@ -3181,6 +3193,11 @@ body { background: var(--navy); color: var(--text); }
                 <label class="sf-label" data-i18n="gear_filter_lifespan">Filter lifespan (hours)</label>
                 <input class="sf-input" type="number" id="compressor-interval" placeholder="e.g. 50" min="1">
               </div>
+              <div class="sf-group">
+                <label class="sf-label" data-i18n="svc_warn_label">Warn me this many hours ahead</label>
+                <input class="sf-input" type="number" id="compressor-warn" placeholder="auto" min="1" step="0.5">
+                <p style="font-size:0.75rem;color:var(--muted);margin-top:4px;" data-i18n="svc_warn_hint">Leave empty for automatic: 15% of the interval, never less than 5 hours. Raise it if your mechanic takes a while to book.</p>
+              </div>
             </div>
             <div class="settings-actions">
               <button class="btn-save" id="btn-save-compressor" data-i18n="gear_add_compressor_title">Add Compressor</button>
@@ -3251,6 +3268,15 @@ body { background: var(--navy); color: var(--text); }
             <div class="sf-group">
               <label class="sf-label" data-i18n="gear_location">Location</label>
               <select class="sf-input" id="reg-location"></select>
+            </div>
+            <!-- El vínculo con Inventario. Opcional: una pieza puede vivir
+                 sólo en el registro. Pero si se vincula, esta pieza pasa a
+                 SER una unidad del conteo, y ese artículo deja de contarse a
+                 mano. Por eso el aviso de abajo. -->
+            <div class="sf-group">
+              <label class="sf-label" data-i18n="gr_link_label">Counts towards inventory item (optional)</label>
+              <select class="sf-input" id="reg-gear-item"></select>
+              <p style="font-size:0.75rem;color:var(--muted);margin-top:4px;" data-i18n="gr_link_hint">Link it and this piece becomes one unit of that item's count. That item then stops being counted by hand — its number comes from the pieces registered here.</p>
             </div>
             <div class="sf-group">
               <label class="sf-label" data-i18n="gear_notes_optional">Notes (optional)</label>
@@ -4588,7 +4614,25 @@ const TRANSLATIONS = {
     wv_prov_remote: 'Signed from the booking link — {device}, IP {ip}.',
     wv_prov_paper: 'Paper copy held by the shop, logged by {staff}.',
     wv_med_not_checked: 'Medical not checked yet',
+    fleet_hours_note_ph: 'Where the boat went (optional)',
+    gr_link_label: 'Counts towards inventory item (optional)',
+    gr_link_none: "Don't link — registry only",
+    gr_link_hint: "Link it and this piece becomes one unit of that item's count. That item then stops being counted by hand — its number comes from the pieces registered here.",
+    gr_derived_hint: 'Counted from the individual items in the Registry — add, repair or retire them there and this updates on its own.',
+    gr_open_registry: 'Open Registry',
+    svc_warn_label: 'Warn me this many hours ahead',
+    svc_warn_hint: 'Leave empty for automatic: 15% of the interval, never less than 5 hours. Raise it if your mechanic takes a while to book.',
+    svc_home_title: 'Maintenance due', svc_engine_service: 'Engine service',
+    svc_compressor_filter: 'Compressor filter', svc_go_to_fleet: 'Open Fleet',
+    svc_hours_left: '{h} h left', svc_overdue_by: '{h} h overdue', svc_due_now: 'due now',
     rd_ready: 'Ready',
+    rw_signed_pending: 'Signed — waiting for signal',
+    rw_pending_one: '1 signature is waiting for a connection. It will send on its own — don\'t clear this tablet\'s browser data.',
+    rw_pending_many: '{n} signatures are waiting for a connection. They will send on their own — don\'t clear this tablet\'s browser data.',
+    wv_prov_kiosk_offline: 'Signed on the shop tablet with no connection. Date and time as reported by that device; no IP recorded.',
+    cover_btn: 'Cover sheet', cover_title: 'Filing cover sheet', cover_guest: 'Guest',
+    cover_form: 'Form', cover_date: 'Signed on', cover_logged_by: 'Logged by',
+    cover_instruction: 'Staple this sheet to the paper form and file it as usual. To find the digital record, search this number in Seven Seas Ops.',
     cert_doc: 'Document', cert_seal: 'Content seal (SHA-256)',
     cert_intact: 'verified intact at time of export',
     cert_broken: 'DOES NOT MATCH — this record has been altered since signing',
@@ -5254,7 +5298,25 @@ const TRANSLATIONS = {
     wv_prov_remote: 'Firmado desde el link de la reserva — {device}, IP {ip}.',
     wv_prov_paper: 'Copia en papel archivada en el centro, registrada por {staff}.',
     wv_med_not_checked: 'Falta controlar el médico',
+    fleet_hours_note_ph: 'Recorrido o actividad (opcional)',
+    gr_link_label: 'Cuenta para el artículo de inventario (opcional)',
+    gr_link_none: 'Sin vincular — sólo en el registro',
+    gr_link_hint: 'Si la vinculás, esta pieza pasa a ser una unidad del conteo de ese artículo. Ese artículo deja de contarse a mano: su número sale de las piezas registradas acá.',
+    gr_derived_hint: 'Se cuenta a partir de las piezas individuales del Registro — agregá, repará o retirá ahí y esto se actualiza solo.',
+    gr_open_registry: 'Ir al Registro',
+    svc_warn_label: 'Avisarme con esta anticipación (horas)',
+    svc_warn_hint: 'Vacío = automático: 15% del intervalo, nunca menos de 5 horas. Subilo si conseguir mecánico te lleva tiempo.',
+    svc_home_title: 'Mantenimiento por vencer', svc_engine_service: 'Service del motor',
+    svc_compressor_filter: 'Filtro del compresor', svc_go_to_fleet: 'Ir a Flota',
+    svc_hours_left: 'faltan {h} h', svc_overdue_by: 'vencido hace {h} h', svc_due_now: 'hay que hacerlo ahora',
     rd_ready: 'Listo',
+    rw_signed_pending: 'Firmado — esperando señal',
+    rw_pending_one: 'Hay 1 firma esperando conexión. Se va a enviar sola — no borres los datos del navegador de esta tablet.',
+    rw_pending_many: 'Hay {n} firmas esperando conexión. Se van a enviar solas — no borres los datos del navegador de esta tablet.',
+    wv_prov_kiosk_offline: 'Firmado en la tablet del centro, sin conexión. Fecha y hora informadas por ese dispositivo; sin IP registrada.',
+    cover_btn: 'Carátula', cover_title: 'Carátula de archivo', cover_guest: 'Huésped',
+    cover_form: 'Formulario', cover_date: 'Firmado el', cover_logged_by: 'Registrado por',
+    cover_instruction: 'Grapá esta hoja al formulario en papel y archivalo como siempre. Para encontrar el registro digital, buscá este número en Seven Seas Ops.',
     cert_doc: 'Documento', cert_seal: 'Sello de contenido (SHA-256)',
     cert_intact: 'verificado íntegro al momento de exportar',
     cert_broken: 'NO COINCIDE — este registro fue alterado desde que se firmó',
@@ -6431,6 +6493,128 @@ document.getElementById('btn-accept-invite').addEventListener('click', async () 
 // and no anon RLS policy exists (deliberately) for waivers/participants on
 // this path. One link covers the whole booking group, same as
 // Smartwaiver/WaiverForever's shared event/group-link model.
+// ─── QUIOSCO SIN CONEXIÓN ───
+//
+// Un centro de buceo tiene wifi malo, y el barco sale igual. Si el quiosco
+// necesita internet para firmar, el papel vuelve — y el papel es lo que no
+// queremos (ver la decisión de no subir fotos de formularios).
+//
+// Cómo funciona: al abrir el quiosco CON conexión se guarda una copia de la
+// reserva y de los textos de los formularios. Si después se cae internet, se
+// firma igual contra esa copia y las firmas quedan en una cola que se vacía
+// sola cuando vuelve la señal.
+//
+// Dos límites deliberados:
+//
+//   Sólo en modo quiosco. El teléfono de un huésped NO guarda nada: es un
+//   aparato ajeno y la copia tiene los nombres del resto del grupo. La tablet
+//   es del centro, que ya tiene esos datos de todas formas.
+//
+//   Doce horas. Cubre un día de operación y se muere sola durante la noche.
+//   También acota la ventana en la que un link ya revocado sigue sirviendo en
+//   una tablet sin señal, que es el costo real de esto.
+const RW_CACHE_KEY = 'sevenSeasKioskCache';
+const RW_QUEUE_KEY = 'sevenSeasKioskQueue';
+const RW_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+
+function rwReadStore(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch (e) { return fallback; }
+}
+function rwWriteStore(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {
+    // Cuota llena o almacenamiento bloqueado. No es fatal: sin caché el
+    // quiosco simplemente vuelve a necesitar conexión.
+    console.error('No se pudo escribir el almacenamiento del quiosco:', e);
+  }
+}
+
+function rwGetCache(token) {
+  const all = rwReadStore(RW_CACHE_KEY, {});
+  const entry = all[token];
+  if (!entry) return null;
+  if (Date.now() - (entry.cachedAt || 0) > RW_CACHE_TTL_MS) {
+    rwClearCache(token);
+    return null;
+  }
+  return entry;
+}
+function rwClearCache(token) {
+  const all = rwReadStore(RW_CACHE_KEY, {});
+  delete all[token];
+  rwWriteStore(RW_CACHE_KEY, all);
+}
+
+// Guarda la reserva y precarga el texto de cada formulario que haga falta.
+// Los textos son imprescindibles: el body_snapshot es lo que se firma y lo
+// que entra en el sello del certificado. Sin él no se puede firmar nada.
+async function rwCacheGroup(token, status) {
+  if (!window.rwKiosk) return;
+  const tipos = [...new Set((status.participants || []).flatMap(p => (p.waivers || []).map(w => w.type)))];
+  const templates = {};
+  for (const tipo of tipos) {
+    try {
+      const { data } = await sb.functions.invoke('waiver-remote-signing',
+        { body: { action: 'template', token, waiverType: tipo } });
+      if (data && data.template) templates[tipo] = data.template;
+    } catch (e) { /* sin este texto, ese tipo no se podrá firmar offline */ }
+  }
+  const all = rwReadStore(RW_CACHE_KEY, {});
+  all[token] = { cachedAt: Date.now(), status, templates };
+  rwWriteStore(RW_CACHE_KEY, all);
+}
+
+function rwGetQueue() { return rwReadStore(RW_QUEUE_KEY, []); }
+function rwSetQueue(q) { rwWriteStore(RW_QUEUE_KEY, q); rwUpdatePendingBanner(); }
+
+function rwQueueSignature(token, payload) {
+  const q = rwGetQueue();
+  q.push({ id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), token, payload });
+  rwSetQueue(q);
+}
+
+function rwUpdatePendingBanner() {
+  const el = document.getElementById('rw-pending-banner');
+  if (!el) return;
+  const n = rwGetQueue().length;
+  el.style.display = n ? 'block' : 'none';
+  if (n) el.textContent = t(n === 1 ? 'rw_pending_one' : 'rw_pending_many').replace('{n}', n);
+}
+
+// Vacía la cola. Cada envío es idempotente del lado del servidor: si la firma
+// ya entró, la función devuelve duplicate:true en vez de un error, así que
+// reintentar nunca crea dos formularios ni deja la cola girando para siempre.
+let rwFlushing = false;
+async function rwFlushQueue() {
+  if (rwFlushing || !navigator.onLine) return;
+  const q = rwGetQueue();
+  if (!q.length) return;
+  rwFlushing = true;
+  const quedan = [];
+  for (const item of q) {
+    try {
+      const { data, error } = await sb.functions.invoke('waiver-remote-signing',
+        { body: { action: 'sign', token: item.token, offline: true, ...item.payload } });
+      if (data && data.success) continue;             // entró, o ya estaba
+      if (error && error.context && error.context.status >= 400 && error.context.status < 500) {
+        // Rechazo definitivo (fecha inválida, demasiado vieja, link caído).
+        // Reintentar no lo va a arreglar; se saca de la cola y se deja rastro.
+        console.error('Firma offline rechazada definitivamente:', item.id, error);
+        continue;
+      }
+      quedan.push(item);                               // problema de red o del servidor: se reintenta
+    } catch (e) {
+      quedan.push(item);
+    }
+  }
+  rwSetQueue(quedan);
+  rwFlushing = false;
+}
+
+window.addEventListener('online', rwFlushQueue);
+// Al abrir la página: puede haber firmas de una sesión anterior que nunca
+// llegaron (la tablet se quedó sin batería, alguien cerró la pestaña).
+window.addEventListener('load', () => { setTimeout(rwFlushQueue, 1500); });
+
 window.rwToken = null;
 window.rwData = null;
 window.rwCurrentParticipant = null;
@@ -6460,17 +6644,53 @@ async function rwLoadStatus() {
   document.getElementById('rw-list-view').style.display = 'none';
   document.getElementById('rw-sign-view').style.display = 'none';
 
-  const { data, error } = await sb.functions.invoke('waiver-remote-signing', { body: { action: 'status', token: window.rwToken } });
+  // Se intenta la red primero SIEMPRE. La caché es la red de contención, no
+  // el camino normal: si hay señal, el estado tiene que venir del servidor
+  // para que un formulario firmado desde el teléfono del huésped aparezca
+  // como firmado también acá.
+  let data = null, error = null;
+  try {
+    ({ data, error } = await sb.functions.invoke('waiver-remote-signing', { body: { action: 'status', token: window.rwToken } }));
+  } catch (e) { error = e; }
   document.getElementById('rw-loading').style.display = 'none';
+  window.rwFromCache = false;
 
-  if (error || !data || !data.valid) {
-    document.getElementById('rw-invalid').style.display = 'block';
-    document.getElementById('rw-invalid-reason').textContent =
-      (data && data.reason === 'expired') ? t('rw_link_expired') : t('rw_link_not_found');
-    return;
+  if (!error && data && data.valid) {
+    window.rwData = data;
+    rwCacheGroup(window.rwToken, data);   // sin await: refrescar la copia no debe demorar la pantalla
+  } else {
+    // Un link caducado o inexistente es una respuesta del servidor, no una
+    // falla de red: en ese caso NO se cae a la caché, porque la respuesta
+    // correcta es justamente que el link no sirve.
+    const rechazadoPorElServidor = !!(data && data.valid === false);
+    const cache = rechazadoPorElServidor ? null : rwGetCache(window.rwToken);
+    if (!cache) {
+      document.getElementById('rw-invalid').style.display = 'block';
+      document.getElementById('rw-invalid-reason').textContent =
+        (data && data.reason === 'expired') ? t('rw_link_expired') : t('rw_link_not_found');
+      return;
+    }
+    window.rwData = cache.status;
+    window.rwFromCache = true;
+    // Lo ya firmado desde esta misma tablet sin señal todavía no está en la
+    // copia del servidor. Se marca a mano para que no se pida dos veces.
+    rwApplyQueuedToLocalStatus();
   }
-  window.rwData = data;
   rwRenderList();
+  rwUpdatePendingBanner();
+}
+
+// Lo que está esperando en la cola ya lo firmó el huésped: en la pantalla
+// tiene que verse firmado, aunque el servidor todavía no lo sepa.
+function rwApplyQueuedToLocalStatus() {
+  const pendientes = rwGetQueue().filter(i => i.token === window.rwToken);
+  if (!pendientes.length || !window.rwData) return;
+  pendientes.forEach(item => {
+    const p = (window.rwData.participants || []).find(x => x.id === item.payload.participantId);
+    if (!p) return;
+    const w = (p.waivers || []).find(x => x.type === item.payload.waiverType);
+    if (w) { w.signed = true; w.pendingSync = true; }
+  });
 }
 
 function rwRenderList() {
@@ -6497,7 +6717,7 @@ function rwRenderList() {
           <div style="font-size:0.78rem;color:var(--muted);">${label}</div>
         </div>
         ${w.signed
-          ? `<span style="color:var(--success);font-size:0.82rem;font-weight:600;">${t('rw_signed')}</span>`
+          ? `<span style="color:${w.pendingSync ? '#EF9F27' : 'var(--success)'};font-size:0.82rem;font-weight:600;">${w.pendingSync ? t('rw_signed_pending') : t('rw_signed')}</span>`
           : `<button class="btn-save" style="padding:6px 12px;font-size:0.82rem;" onclick="rwOpenSignForm('${p.id}','${nameEsc}',${p.is_minor},'${w.type}')">${t('wv_sign_waiver')}</button>`}
       </div>`;
     }).join('');
@@ -6534,6 +6754,11 @@ function rwOpenSignForm(participantId, fullName, isMinor, waiverType) {
 // agarre la tablet no ve el nombre de nadie ni puede volver atrás.
 function rwFinishSession() {
   const kiosk = !!window.rwKiosk;
+  // Se borra la copia de ESTA reserva: terminada la sesión, los nombres del
+  // grupo no tienen por qué seguir en la tablet. La cola NO se toca — ahí
+  // hay firmas que todavía no llegaron al servidor y borrarlas sería perder
+  // documentos firmados.
+  if (window.rwToken) rwClearCache(window.rwToken);
   window.rwToken = null;
   window.rwKiosk = false;
   window.rwData = null;
@@ -6561,8 +6786,18 @@ function rwBackToList() {
 async function rwLoadTemplate(type) {
   const container = document.getElementById('rw-template-content');
   container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('wv_loading_waiver')}</p>`;
-  const { data } = await sb.functions.invoke('waiver-remote-signing', { body: { action: 'template', token: window.rwToken, waiverType: type } });
-  window.rwCurrentTemplate = data?.template || null;
+  let data = null;
+  try {
+    ({ data } = await sb.functions.invoke('waiver-remote-signing', { body: { action: 'template', token: window.rwToken, waiverType: type } }));
+  } catch (e) { data = null; }
+  let template = data?.template || null;
+  if (!template) {
+    // Sin red, el texto sale de la copia. Si tampoco está ahí, no se firma:
+    // no se puede firmar un formulario cuyo texto no se puede mostrar.
+    const cache = rwGetCache(window.rwToken);
+    template = (cache && cache.templates && cache.templates[type]) || null;
+  }
+  window.rwCurrentTemplate = template;
   rwRenderTemplateContent(type, window.rwCurrentTemplate);
 }
 
@@ -6656,21 +6891,56 @@ document.getElementById('rw-btn-confirm').addEventListener('click', async () => 
 
   const btn = document.getElementById('rw-btn-confirm');
   btn.disabled = true;
-  const { data, error } = await sb.functions.invoke('waiver-remote-signing', {
-    body: {
-      action: 'sign',
-      token: window.rwToken,
-      participantId: sp.id,
-      waiverType: sp.waiver_type,
-      printedName,
-      signedDate,
-      signatureData: window.rwSigPad.canvas.toDataURL('image/png'),
-      guardianName, guardianDate, guardianSignatureData,
-      notes: null,
-      templateId: window.rwCurrentTemplate?.id || null,
-      bodySnapshot: window.rwCurrentTemplate?.body_text || null
-    }
-  });
+
+  const payload = {
+    participantId: sp.id,
+    waiverType: sp.waiver_type,
+    printedName,
+    signedDate,
+    signatureData: window.rwSigPad.canvas.toDataURL('image/png'),
+    guardianName, guardianDate, guardianSignatureData,
+    notes: null,
+    templateId: window.rwCurrentTemplate?.id || null,
+    bodySnapshot: window.rwCurrentTemplate?.body_text || null
+  };
+
+  // La hora que cuenta es ESTA, la del momento en que el huésped levanta el
+  // dedo del pad — no la de cuando la tablet recupere señal. Se manda junto
+  // con la firma; el servidor la valida y la guarda como signed_at, y marca
+  // el registro como firmado sin conexión para que la línea de procedencia
+  // pueda decir que esa hora la informó el dispositivo.
+  const firmadoEn = new Date().toISOString();
+
+  let data = null, error = null;
+  if (navigator.onLine) {
+    try {
+      ({ data, error } = await sb.functions.invoke('waiver-remote-signing', {
+        body: { action: 'sign', token: window.rwToken, ...payload }
+      }));
+    } catch (e) { error = e; }
+  }
+
+  // A la cola si no había red, o si el intento falló por red. Un rechazo del
+  // servidor (4xx) NO va a la cola: reintentarlo no lo arregla y hay que
+  // mostrárselo a quien está firmando.
+  const rechazoDelServidor = !!(error && error.context && error.context.status >= 400 && error.context.status < 500);
+  const seVaALaCola = window.rwKiosk && !rechazoDelServidor && (!navigator.onLine || !!error);
+
+  if (seVaALaCola) {
+    rwQueueSignature(window.rwToken, { ...payload, signedAt: firmadoEn });
+    btn.disabled = false;
+    if (!window.rwData) window.rwData = (rwGetCache(window.rwToken) || {}).status || null;
+    rwApplyQueuedToLocalStatus();
+    rwRenderList();
+    rwUpdatePendingBanner();
+    document.getElementById('rw-sign-view').style.display = 'none';
+    document.getElementById('rw-list-view').style.display = 'block';
+    const quedaPendienteOffline = (window.rwData?.participants || [])
+      .some(p => (p.waivers || []).some(w => !w.signed));
+    if (!quedaPendienteOffline) rwFinishSession();
+    return;
+  }
+
   btn.disabled = false;
   if (error || data?.error) {
     feedback.textContent = t('wv_error_saving') + (data?.error || '');
@@ -6964,13 +7234,18 @@ async function renderHomeGettingStartedOrFinance() {
       return;
     }
 
+    blocks.push(await buildMaintenanceDueHtml());
     blocks.push(await buildFinanceCardHtml());
     blocks.push(await buildTripsTodayHtml('all'));
     blocks.push(await buildPhase2ChecklistHtml());
   } else if (currentUserRole === 'manager') {
+    blocks.push(await buildMaintenanceDueHtml());
     blocks.push(await buildTaskBannerHtml(myId));
     blocks.push(await buildTripsTodayHtml('all'));
   } else {
+    // También la ve la tripulación. Un capitán que sale con el motor vencido
+    // tiene que enterarse antes de largar, no cuando alguien revise Flota.
+    blocks.push(await buildMaintenanceDueHtml());
     // Captain and every other crew role (deckhand, instructor, front desk,
     // etc.) only see what's assigned to them personally.
     blocks.push(await buildTaskBannerHtml(myId));
@@ -7700,7 +7975,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-23e');
+  console.info('[Seven Seas] build 2026-09-24c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -11803,7 +12078,72 @@ function waiverLogRowHtml(w) {
       ${w.guardian_printed_name ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${t('wv_cosigned_by')} ${escapeHtml(w.guardian_printed_name)}</div>` : ''}
       ${w.document_id ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:3px;font-family:ui-monospace,Menlo,Consolas,monospace;">${escapeHtml(w.document_id)}</div>` : ''}
     </div>
+    ${w.method === 'paper' && w.document_id ? `<div><button class="btn-cancel" style="padding:6px 10px;font-size:0.78rem;" onclick="printWaiverCoverSheet('${w.id}')">${t('cover_btn')}</button></div>` : ''}
   </div>`;
+}
+
+// ─── CARÁTULA DE ARCHIVO ───
+//
+// El formulario en papel vive en un cajón; la app sólo sabe que existe. Esta
+// hoja lleva el mismo document_id del registro digital, se grapa al papel, y
+// con eso el cajón queda indexado por la app: se busca el número y se sabe
+// qué carpeta abrir.
+//
+// Es lo que hacemos EN LUGAR de dejar subir una foto del formulario. Una foto
+// no prueba que alguien firmó —no hay IP, ni timestamp del acto, ni
+// consentimiento— y además traería de vuelta el cuestionario médico por una
+// puerta nueva. Acá no se guarda nada: se imprime y listo.
+async function printWaiverCoverSheet(waiverId) {
+  const { data: w, error } = await sb.from('waivers')
+    .select('*, participants(full_name)')
+    .eq('id', waiverId)
+    .single();
+  if (error || !w) { await showAlertModal(t('wv_error_loading')); return; }
+
+  const orgNameEl = document.getElementById('org-name');
+  const shopName = (orgNameEl && orgNameEl.value) || '';
+  const fecha = w.signed_at ? new Date(w.signed_at).toLocaleDateString() : '—';
+  const fila = (etiqueta, valor) =>
+    `<tr><th>${escapeHtml(etiqueta)}</th><td>${escapeHtml(valor || '—')}</td></tr>`;
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${escapeHtml(t('cover_title'))} — ${escapeHtml(w.document_id || '')}</title>
+<style>
+  body { font-family: -apple-system, Arial, sans-serif; color: #1a2b3c; padding: 48px 56px; }
+  .brand { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: #6b7c8f; }
+  h1 { font-size: 22px; margin: 4px 0 28px; }
+  .docid { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 34px;
+           font-weight: 700; letter-spacing: 0.04em; border: 3px solid #1a2b3c; border-radius: 10px;
+           padding: 18px 22px; text-align: center; margin-bottom: 30px; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e3e8ee; font-size: 14px; vertical-align: top; }
+  th { width: 34%; color: #6b7c8f; font-weight: 600; }
+  .instruction { border-left: 3px solid #1a2b3c; padding: 10px 14px; font-size: 14px; line-height: 1.6; background: #f6f9fc; }
+  .seal { margin-top: 26px; font-size: 10px; color: #8a97a5; word-break: break-all;
+          font-family: ui-monospace, Menlo, Consolas, monospace; }
+  @media print { body { padding: 24px; } }
+</style>
+</head><body>
+  <div class="brand">${escapeHtml(shopName || 'Seven Seas Ops')}</div>
+  <h1>${escapeHtml(t('cover_title'))}</h1>
+  <div class="docid">${escapeHtml(w.document_id || '—')}</div>
+  <table>
+    ${fila(t('cover_guest'), w.participants?.full_name || w.participant_printed_name)}
+    ${fila(t('cover_form'), waiverTypeLabels[w.waiver_type] || w.waiver_type)}
+    ${fila(t('cover_date'), fecha)}
+    ${fila(t('cover_logged_by'), w.signed_by_name)}
+    ${w.guardian_printed_name ? fila(t('wv_cosigned_by'), w.guardian_printed_name) : ''}
+  </table>
+  <div class="instruction">${escapeHtml(t('cover_instruction'))}</div>
+  ${w.content_hash ? `<div class="seal">${escapeHtml(t('cert_seal'))}: ${escapeHtml(w.content_hash)}</div>` : ''}
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { await showAlertModal(t('wv_allow_popups_export')); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
 }
 
 window.waiverLogView = 'daily';
@@ -12341,6 +12681,12 @@ const CERT_CSS = `
 function waiverProvenanceLine(w) {
   if (w.method === 'paper') {
     return t('wv_prov_paper').replace('{staff}', escapeHtml(w.signed_by_name || '—'));
+  }
+  if (w.signed_via === 'kiosk_offline') {
+    // La hora la puso el dispositivo, no el servidor, y no hay IP porque la
+    // del momento de sincronizar sería de otro momento y quizás otra red.
+    // Decirlo es la única forma de que el registro no afirme de más.
+    return t('wv_prov_kiosk_offline');
   }
   if (w.signed_via === 'remote') {
     // Ojo con lo que se afirma acá. signed_via='remote' significa que se usó el
@@ -14751,13 +15097,17 @@ async function loadFleet() {
   const boatIds = boats.map(b => b.id);
   const safeIds = boatIds.length ? boatIds : ['00000000-0000-0000-0000-000000000000'];
   const today = new Date().toISOString().split('T')[0];
-  const { data: engines } = await sb.from('engines').select('boat_id, current_hours, service_interval_hours').in('boat_id', safeIds);
+  const { data: engines } = await sb.from('engines').select('boat_id, current_hours, service_interval_hours, warn_hours').in('boat_id', safeIds);
   const { data: dueMaint } = await sb.from('maintenance_logs').select('boat_id, next_due_date').in('boat_id', safeIds).not('next_due_date', 'is', null).lte('next_due_date', today);
 
   const dueSoonBoatIds = new Set();
   (engines || []).forEach(e => {
-    const remaining = (e.service_interval_hours || 0) - (e.current_hours || 0);
-    if (remaining <= 10) dueSoonBoatIds.add(e.boat_id);
+    // Antes esto era `(interval || 0) - current <= 10`, que con un motor sin
+    // intervalo configurado da 0 - horas, siempre <= 10: marcaba TODOS los
+    // barcos como "service próximo". serviceStatus() devuelve null cuando
+    // nadie configuró cada cuánto, que es lo correcto.
+    const st = serviceStatus(e.current_hours, e.service_interval_hours, e.warn_hours);
+    if (st && st.state !== 'ok') dueSoonBoatIds.add(e.boat_id);
   });
   (dueMaint || []).forEach(m => { if (m.boat_id) dueSoonBoatIds.add(m.boat_id); });
 
@@ -15014,9 +15364,12 @@ document.getElementById('btn-save-boat-engine').addEventListener('click', async 
     return;
   }
   btn.disabled = true; btn.textContent = t('fleet_saving');
+  // Vacío queda en null a propósito: null significa «calculalo vos», no cero.
+  const warnRaw = parseFloat(document.getElementById('bde-engine-warn').value);
   const { error } = await sb.from('engines').insert({
     org_id: currentOrgId, boat_id: boatId, name,
-    service_interval_hours: parseFloat(interval), current_hours: 0
+    service_interval_hours: parseFloat(interval), current_hours: 0,
+    warn_hours: warnRaw > 0 ? warnRaw : null
   });
   btn.disabled = false; btn.textContent = t('fleet_add_engine_title');
   if (error) {
@@ -15042,6 +15395,7 @@ document.getElementById('btn-save-boat-hours').addEventListener('click', async (
   const boatId = window.currentBoatDetailId;
   const loggedBy = document.getElementById('bdh-logged-by').value.trim();
   const hours = parseFloat(document.getElementById('bdh-hours-run').value);
+  const note = document.getElementById('bdh-note').value.trim() || null;
   if (!boatId || !loggedBy || !hours) {
     feedback.textContent = t('fleet_logged_hours_required');
     feedback.className = 'save-feedback error visible';
@@ -15051,11 +15405,12 @@ document.getElementById('btn-save-boat-hours').addEventListener('click', async (
   const { data: engines } = await sb.from('engines').select('id, current_hours').eq('boat_id', boatId);
   for (const e of (engines || [])) {
     await sb.from('engines').update({ current_hours: (e.current_hours || 0) + hours }).eq('id', e.id);
-    await sb.from('engine_hour_logs').insert({ engine_id: e.id, logged_by: loggedBy, hours_run: hours, event_type: 'log' });
+    await sb.from('engine_hour_logs').insert({ engine_id: e.id, logged_by: loggedBy, hours_run: hours, event_type: 'log', note });
   }
   btn.disabled = false; btn.textContent = t('fleet_log_hours_btn');
   document.getElementById('bdh-logged-by').value = '';
   document.getElementById('bdh-hours-run').value = '';
+  document.getElementById('bdh-note').value = '';
   feedback.className = 'save-feedback';
   document.getElementById('form-add-boat-hours').style.display = 'none';
   await loadBoatDetailEngines(boatId);
@@ -15101,9 +15456,12 @@ function setCardExpanded(bodyId, expanded) {
 }
 
 function engineLogRowHtml(l) {
-  return `<div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;color:var(--muted);padding:4px 0;">
-    <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('fleet_serviced')}</strong>`:''}</span>
-    <span>${l.event_type==='service' ? '' : l.hours_run+'h'}</span>
+  return `<div style="font-size:0.8rem;color:var(--muted);padding:4px 0;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span>${new Date(l.logged_at).toLocaleDateString()} · ${escapeHtml(l.logged_by) || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('fleet_serviced')}</strong>`:''}</span>
+      <span>${l.event_type==='service' ? '' : l.hours_run+'h'}</span>
+    </div>
+    ${l.note ? `<div style="color:var(--navy);margin-top:2px;">${escapeHtml(l.note)}</div>` : ''}
   </div>`;
 }
 
@@ -15129,11 +15487,128 @@ function collapsibleSectionTitleHtml(label, moreId, count) {
   </div>`;
 }
 
+// ─── SEMÁFORO DE MANTENIMIENTO POR HORAS ───
+//
+// El motor del barco y el compresor son las dos máquinas de una operación de
+// buceo que se miden en HORAS de funcionamiento, no en fechas. Y el compresor
+// es la más seria de las dos: el aire malo es lo que mata buzos, y el filtro
+// se cambia por horas.
+//
+// Ninguno de los competidores que miramos (Scubafy, Dive Admin, DiveShop360)
+// modela el compresor siquiera. Es la ventaja de la sección y el motivo de que
+// esto aparezca en la pantalla de inicio y no escondido en Flota.
+//
+// La regla vivía copiada como `remaining <= 10` en TRES lugares:
+// renderEngineCard, renderCompressorCard y la lista de flota. Y la tercera
+// copia tenía un bug que las otras dos no: sin intervalo configurado marcaba
+// todos los barcos. Es exactamente [[La regla copiada N veces]] -- el defecto
+// aparece donde la copia se desvía, no donde está bien.
+const SERVICE_STATE = {
+  ok:      { color: 'var(--success)' },
+  due:     { color: '#EF9F27' },
+  overdue: { color: 'var(--error)' }
+};
+// Cuánta anticipación tiene el aviso.
+//
+// Antes eran 10 horas fijas para todo, que no tiene sentido: avisar no es un
+// porcentaje del intervalo, es TIEMPO PARA REACCIONAR, y conseguir un filtro
+// de compresor no tarda lo mismo que conseguir un mecánico de motores.
+//
+// El default es 15% del intervalo con piso de 5 horas. Un compresor de 50 h
+// avisa a las 7,5 (unos dos o tres días de operación: alcanza para conseguir
+// el filtro y ponerlo sin parar) y un motor de 100 h avisa a las 15. Un centro
+// cuyo mecánico tarda dos semanas sube su propio número y listo -- por eso es
+// configurable y no una constante: no hay un número correcto para todos.
+const SERVICE_WARN_PCT = 0.15;
+const SERVICE_WARN_MIN_HOURS = 5;
+
+function serviceWarnHours(intervalHours, warnHours) {
+  const explicito = parseFloat(warnHours);
+  if (explicito > 0) return explicito;
+  const interval = parseFloat(intervalHours) || 0;
+  return Math.max(SERVICE_WARN_MIN_HOURS, interval * SERVICE_WARN_PCT);
+}
+
+function serviceStatus(currentHours, intervalHours, warnHours) {
+  // Sin intervalo configurado no hay nada que avisar: no es que esté bien ni
+  // mal, es que nadie dijo cada cuánto. Se devuelve null y no se muestra.
+  const interval = parseFloat(intervalHours) || 0;
+  if (interval <= 0) return null;
+  const current = parseFloat(currentHours) || 0;
+  const remaining = interval - current;
+  const umbral = serviceWarnHours(interval, warnHours);
+  return {
+    state: remaining <= 0 ? 'overdue' : (remaining <= umbral ? 'due' : 'ok'),
+    remaining,
+    warnHours: umbral,
+    pct: Math.min(100, (current / interval) * 100)
+  };
+}
+
+// El texto, igual en las tres vistas. Cuando está vencido se dice por cuánto:
+// "hace 3 h" es accionable, "vencido" a secas no.
+function serviceStatusText(st) {
+  if (!st) return '';
+  if (st.state !== 'overdue') return t('svc_hours_left').replace('{h}', st.remaining.toFixed(1));
+  const pasadas = Math.abs(st.remaining);
+  // Justo en el intervalo exacto, "vencido hace 0.0 h" parece un error de la
+  // app. Es el momento de hacerlo, y eso es lo que tiene que decir.
+  if (pasadas < 0.05) return t('svc_due_now');
+  return t('svc_overdue_by').replace('{h}', pasadas.toFixed(1));
+}
+
+// Tarjeta del inicio. Sólo aparece si hay algo que avisar -- una pantalla de
+// inicio que felicita por lo que está bien es ruido, y el ruido hace que nadie
+// mire la pantalla cuando sí importa.
+async function buildMaintenanceDueHtml() {
+  if (!currentOrgId) return '';
+  const [{ data: engines }, { data: compressors }] = await Promise.all([
+    sb.from('engines').select('id, name, current_hours, service_interval_hours, warn_hours, boats(name)').eq('org_id', currentOrgId),
+    sb.from('compressors').select('id, name, current_hours, filter_interval_hours, warn_hours, boats(name), locations(name)').eq('org_id', currentOrgId)
+  ]);
+
+  const filas = [];
+  (engines || []).forEach(e => {
+    const st = serviceStatus(e.current_hours, e.service_interval_hours, e.warn_hours);
+    if (!st || st.state === 'ok') return;
+    filas.push({ st, nombre: e.name, contexto: e.boats?.name || '', que: t('svc_engine_service') });
+  });
+  (compressors || []).forEach(c => {
+    const st = serviceStatus(c.current_hours, c.filter_interval_hours, c.warn_hours);
+    if (!st || st.state === 'ok') return;
+    filas.push({ st, nombre: c.name, contexto: c.boats?.name || c.locations?.name || '', que: t('svc_compressor_filter') });
+  });
+
+  if (!filas.length) return '';
+  // Lo más vencido primero: es lo que hay que mirar antes de largar.
+  filas.sort((a, b) => a.st.remaining - b.st.remaining);
+
+  const hayVencido = filas.some(f => f.st.state === 'overdue');
+  return `<div class="card">
+    <div class="card-section-title" style="margin-top:0;display:flex;align-items:center;gap:8px;">
+      <span style="width:10px;height:10px;border-radius:50%;background:${SERVICE_STATE[hayVencido ? 'overdue' : 'due'].color};flex:none;"></span>
+      <span>${escapeHtml(t('svc_home_title'))}</span>
+    </div>
+    ${filas.map(f => `
+      <div class="participant-row">
+        <div style="min-width:0;">
+          <div class="p-name">${escapeHtml(f.nombre)}</div>
+          <div style="font-size:0.78rem;color:var(--muted);">${escapeHtml(f.que)}${f.contexto ? ' · ' + escapeHtml(f.contexto) : ''}</div>
+        </div>
+        <span style="color:${SERVICE_STATE[f.st.state].color};font-weight:600;font-size:0.82rem;white-space:nowrap;">${escapeHtml(serviceStatusText(f.st))}</span>
+      </div>`).join('')}
+    <div style="margin-top:12px;">
+      <button class="btn-cancel" style="font-size:0.8rem;padding:6px 12px;" onclick="showPage('fleet')">${escapeHtml(t('svc_go_to_fleet'))}</button>
+    </div>
+  </div>`;
+}
+
 function renderEngineCard(e, logs, maintLogs) {
   maintLogs = maintLogs || [];
-  const pct = Math.min(100, (e.current_hours / e.service_interval_hours) * 100);
-  const remaining = Math.max(0, e.service_interval_hours - e.current_hours).toFixed(1);
-  const warn = remaining <= 10;
+  const st = serviceStatus(e.current_hours, e.service_interval_hours, e.warn_hours);
+  const pct = st ? st.pct : 0;
+  const remaining = st ? Math.max(0, st.remaining).toFixed(1) : '0.0';
+  const warn = !!st && st.state !== 'ok';
   const hoursVal = parseFloat(e.current_hours || 0).toFixed(1);
   const logsMoreId = `engine-logs-more-${e.id}`;
   const maintMoreId = `engine-maint-more-${e.id}`;
@@ -15344,7 +15819,25 @@ async function populateRegistryLocationSelect() {
   if (!currentOrgId) return;
   const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId);
   const sel = document.getElementById('reg-location');
-  sel.innerHTML = (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('') || '<option value="">No locations — add one in Settings</option>';
+  sel.innerHTML = (locs || []).map(l => `<option value="${escapeHtml(l.id)}">${escapeHtml(l.name)}</option>`).join('') || '<option value="">No locations — add one in Settings</option>';
+  await populateRegistryGearItemSelect();
+}
+
+// Los artículos del inventario, para poder vincular la pieza a su casillero.
+async function populateRegistryGearItemSelect() {
+  const sel = document.getElementById('reg-gear-item');
+  if (!sel || !currentOrgId) return;
+  const { data: cats } = await sb.from('gear_categories').select('id, key, label').eq('org_id', currentOrgId).eq('active', true);
+  const catIds = (cats || []).map(c => c.id);
+  let items = [];
+  if (catIds.length) {
+    const { data } = await sb.from('gear_items').select('id, name, category_id').in('category_id', catIds).order('name');
+    items = data || [];
+  }
+  const labelDeCat = {};
+  (cats || []).forEach(c => { labelDeCat[c.id] = CATEGORY_LABELS[c.key] || c.label; });
+  sel.innerHTML = `<option value="">${escapeHtml(t('gr_link_none'))}</option>` +
+    items.map(i => `<option value="${escapeHtml(i.id)}">${escapeHtml((labelDeCat[i.category_id] ? labelDeCat[i.category_id] + ' · ' : '') + trGearItemName(i.name))}</option>`).join('');
 }
 
 document.getElementById('btn-show-add-gear-item').addEventListener('click', () => {
@@ -15366,6 +15859,7 @@ document.getElementById('btn-save-gear-item').addEventListener('click', async ()
   const serial = document.getElementById('reg-serial').value.trim();
   const locationId = document.getElementById('reg-location').value || null;
   const notes = document.getElementById('reg-notes').value.trim();
+  const gearItemId = document.getElementById('reg-gear-item').value || null;
 
   if (!name) {
     feedback.textContent = t('common_name_required');
@@ -15382,8 +15876,17 @@ document.getElementById('btn-save-gear-item').addEventListener('click', async ()
     size: size || null,
     serial_number: serial || null,
     status: 'available',
-    notes: notes || null
+    notes: notes || null,
+    gear_item_id: gearItemId,
+    size_label: gearItemId ? (size || 'total') : null
   });
+  // Vincular una pieza convierte a ese artículo en «contado por piezas». Se
+  // hace acá y no en una pantalla aparte: el momento en que alguien registra
+  // la primera pieza ES la decisión, y pedírsela dos veces sería pedirle que
+  // se acuerde de algo que ya dijo.
+  if (!error && gearItemId) {
+    await sb.from('gear_items').update({ tracked_individually: true }).eq('id', gearItemId);
+  }
   btn.disabled = false; btn.textContent = t('gear_register_item_title');
 
   if (error) {
@@ -15767,6 +16270,40 @@ async function loadGearInventory() {
   const { data: stockRows } = await sb.from('gear_stock').select('*').eq('location_id', currentLocationId).in('gear_item_id', itemIds.length ? itemIds : ['00000000-0000-0000-0000-000000000000']);
   const stockMap = {};
   (stockRows || []).forEach(s => { stockMap[s.gear_item_id + '|' + s.size_label] = s; });
+
+  // Un tipo de artículo se cuenta de UNA sola manera.
+  //
+  //   tracked_individually = false  el conteo sale de gear_stock, como siempre.
+  //                                 Neoprenes, aletas, máscaras: nadie
+  //                                 serializa cuarenta trajes.
+  //   tracked_individually = true   el conteo se DERIVA de las piezas del
+  //                                 registro. Reguladores, chalecos,
+  //                                 computadoras: cosas con número de serie.
+  //
+  // Los dos números NUNCA se suman. Por eso el doble conteo no es algo que
+  // haya que evitar con cuidado: es imposible. Antes marcar un chaleco «en
+  // reparación» en Registro no cambiaba nada acá, y el centro terminaba con
+  // dos respuestas distintas a la misma pregunta.
+  const individuales = (items || []).filter(i => i.tracked_individually).map(i => i.id);
+  if (individuales.length) {
+    const { data: piezas } = await sb.from('gear')
+      .select('gear_item_id, size_label, status')
+      .in('gear_item_id', individuales);
+    // Se reemplaza, no se suma: para estos artículos gear_stock deja de opinar.
+    individuales.forEach(id => {
+      Object.keys(stockMap).forEach(k => { if (k.startsWith(id + '|')) delete stockMap[k]; });
+    });
+    (piezas || []).forEach(g => {
+      const k = g.gear_item_id + '|' + (g.size_label || 'total');
+      if (!stockMap[k]) stockMap[k] = { available_count: 0, repair_count: 0, derived: true };
+      stockMap[k].derived = true;
+      if (g.status === 'available') stockMap[k].available_count++;
+      else if (g.status === 'in_repair') stockMap[k].repair_count++;
+      // 'retired' no suma a ninguno: salió de circulación, y el total baja.
+      // Eso es justamente lo que un conteo escrito a mano nunca refleja.
+    });
+  }
+
   renderGearInventory(categories, items || [], stockMap);
 }
 function renderGearInventory(categories, items, stockMap) {
@@ -15793,7 +16330,25 @@ function renderGearInventory(categories, items, stockMap) {
       const totalAvailable = sizes.reduce((sum, sz) => sum + ((stockMap[item.id + '|' + sz] || {}).available_count || 0), 0);
       const itemBodyId = `inv-item-body-${item.id}`;
       let stockHtml = '';
-      if (item.track_sizes) {
+      if (item.tracked_individually) {
+        // Los botones de +/- no aparecen a propósito. Acá el número se calcula
+        // a partir de las piezas del registro, así que un botón que lo suba
+        // estaría editando un resultado, no un dato: al refrescar volvería
+        // atrás y el usuario pensaría que la app perdió su cambio.
+        // En vez de un botón que miente, la salida hacia donde sí se edita.
+        stockHtml = `<div style="margin-top:8px;">
+          ${sizes.map(sz => {
+            const s = stockMap[item.id + '|' + sz] || { available_count: 0, repair_count: 0 };
+            return `<div style="display:flex;align-items:center;gap:14px;padding:4px 0;font-size:0.85rem;">
+              ${item.track_sizes ? `<span style="min-width:48px;font-weight:600;">${trGearSizeLabel(sz)}</span>` : ''}
+              <span>${t('gr_available_label')} <strong>${s.available_count}</strong></span>
+              ${s.repair_count ? `<span style="color:var(--warning);">${t('gr_in_repair_label')} <strong>${s.repair_count}</strong></span>` : ''}
+            </div>`;
+          }).join('')}
+          <p style="font-size:0.75rem;color:var(--muted);margin:8px 0 0;">${escapeHtml(t('gr_derived_hint'))}</p>
+          <button class="btn-cancel" style="font-size:0.78rem;padding:5px 10px;margin-top:6px;" onclick="goToRegistryFor('${item.id}')">${escapeHtml(t('gr_open_registry'))}</button>
+        </div>`;
+      } else if (item.track_sizes) {
         stockHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">' +
           sizes.map(sz => {
             const s = stockMap[item.id + '|' + sz] || { available_count: 0, repair_count: 0 };
@@ -15858,6 +16413,13 @@ function renderGearInventory(categories, items, stockMap) {
     if (node) node.style.display = 'block';
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   });
+}
+
+// Salida desde un artículo de conteo derivado hacia donde sí se edita: el
+// registro, que es la pestaña donde viven las piezas individuales.
+function goToRegistryFor(gearItemId) {
+  const tab = document.querySelector('#page-gear .cl-tab[onclick*="registry"]');
+  if (tab) showGearView('registry', tab);
 }
 
 async function addGearItemToCategory(categoryId) {
@@ -15980,9 +16542,11 @@ document.getElementById('btn-save-compressor').addEventListener('click', async (
     return;
   }
   btn.disabled = true; btn.textContent = t('common_saving');
+  const warnRaw = parseFloat(document.getElementById('compressor-warn').value);
   const { error } = await sb.from('compressors').insert({
     org_id: currentOrgId, location_id: locationId, boat_id: boatId || null, name,
-    filter_interval_hours: parseFloat(interval), current_hours: 0
+    filter_interval_hours: parseFloat(interval), current_hours: 0,
+    warn_hours: warnRaw > 0 ? warnRaw : null
   });
   btn.disabled = false; btn.textContent = t('gear_add_compressor_title');
   if (error) {
@@ -16017,16 +16581,20 @@ async function loadCompressors() {
 }
 
 function compressorLogRowHtml(l) {
-  return `<div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;color:var(--muted);padding:4px 0;">
-    <span>${new Date(l.logged_at).toLocaleDateString()} · ${l.logged_by || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('gear_filter_replaced')}</strong>`:''}</span>
-    <span>${l.event_type==='service' ? '' : (l.start_time && l.stop_time ? l.start_time+'-'+l.stop_time+' ('+l.hours_run+'h)' : l.hours_run+'h')}</span>
+  return `<div style="font-size:0.8rem;color:var(--muted);padding:4px 0;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span>${new Date(l.logged_at).toLocaleDateString()} · ${escapeHtml(l.logged_by) || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('gear_filter_replaced')}</strong>`:''}</span>
+      <span>${l.event_type==='service' ? '' : (l.start_time && l.stop_time ? l.start_time+'-'+l.stop_time+' ('+l.hours_run+'h)' : l.hours_run+'h')}</span>
+    </div>
+    ${l.note ? `<div style="color:var(--navy);margin-top:2px;">${escapeHtml(l.note)}</div>` : ''}
   </div>`;
 }
 
 function renderCompressorCard(c, logs) {
-  const pct = Math.min(100, (c.current_hours / c.filter_interval_hours) * 100);
-  const remaining = Math.max(0, c.filter_interval_hours - c.current_hours).toFixed(1);
-  const warn = remaining <= 10;
+  const st = serviceStatus(c.current_hours, c.filter_interval_hours, c.warn_hours);
+  const pct = st ? st.pct : 0;
+  const remaining = st ? Math.max(0, st.remaining).toFixed(1) : '0.0';
+  const warn = !!st && st.state !== 'ok';
   const logsMoreId = `comp-logs-more-${c.id}`;
   return `
   <div class="card" id="compressor-card-${c.id}">

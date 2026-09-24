@@ -46,3 +46,4 @@ distribution_p12*.txt
 profile.txt
 profile*.txt
 Archivos sensibles ios/
+.commit-msg.txt
