@@ -91,11 +91,17 @@
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script>
   // ← LA ÚNICA LÍNEA QUE SE CAMBIA PARA SALIR EN VIVO
+  //
+  // Sigue en 'sandbox' a propósito. Cambiarla a 'production' antes de que el
+  // webhook esté configurado y los tres secretos cargados en Supabase daría
+  // el peor fallo posible: el cliente paga de verdad y la app no se entera,
+  // así que queda pagando sin acceso. El orden es webhook → secretos →
+  // prueba con tarjeta real → recién ahí esta línea.
   const PADDLE_ENV = 'sandbox';   // 'sandbox' | 'production'
 
   const PADDLE_TOKENS = {
     sandbox:    'test_72490ade5a4569aaeec5660413d',
-    production: ''                // ← falta: Developer tools → Authentication
+    production: 'live_776e8646140920d4baff04056c5'
   };
 
   // Un price ID por plan Y por ciclo: Paddle trata mensual y anual como
