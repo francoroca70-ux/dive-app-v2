@@ -80,32 +80,62 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Paddle billing (phase 4) -- sandbox for now. Client-side tokens are
-     meant to be public/exposed in frontend code (unlike API keys), so
-     hardcoding this here is the pattern Paddle itself recommends. Swap
-     PADDLE_ENV/PADDLE_TOKEN to 'live' + a live token at go-live. -->
+<!-- Paddle billing.
+     Los tokens de cliente son públicos por diseño (a diferencia de la API
+     key), así que van en el HTML: es el patrón que recomienda Paddle.
+
+     Sandbox y producción son DOS CUENTAS distintas, con precios, tokens y
+     dominios propios. Antes esto se cambiaba pisando los valores, lo que
+     significaba perder los de sandbox cada vez y no poder volver a probar sin
+     buscarlos de nuevo. Ahora conviven y se elige con una sola palabra. -->
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script>
-  const PADDLE_ENV = 'sandbox';
-  const PADDLE_TOKEN = 'test_72490ade5a4569aaeec5660413d';
-  // Un price ID de Paddle por plan Y por ciclo de facturación: Paddle trata
-  // mensual y anual como precios distintos del mismo producto.
-  //
-  // Los `monthly` son los precios que ya existían en Paddle, con el importe
-  // actualizado a $79 / $169 / $329. Al no haber creado productos nuevos, el
-  // descuento FOUNDINGFLEET30 sigue apuntando a donde siempre apuntó.
-  // Los `annual` se crearon el 20/09/2026: $790 / $1.690 / $3.290 (dos meses
-  // gratis). Ver outputs/paddle-setup-precios.md.
-  //
-  // Enterprise no figura acá a propósito: se negocia por llamada, no tiene
-  // checkout propio.
-  const PADDLE_PRICE_IDS = {
-    starter: { monthly: 'pri_01m22zecwqxhn6j19e11tm9s80', annual: 'pri_01m2zpy0qa7e7z9fakzw0p32xp' },
-    growth:  { monthly: 'pri_01m22zcf8fqpf15fy6j9zwxxrb', annual: 'pri_01m2zpvcgh80gjmtxw3f52fbps' },
-    pro:     { monthly: 'pri_01m22z9gtywcb25g8h4cbx62fh', annual: 'pri_01m2zprk6jmerfjkeppgmvnn7q' }
+  // ← LA ÚNICA LÍNEA QUE SE CAMBIA PARA SALIR EN VIVO
+  const PADDLE_ENV = 'sandbox';   // 'sandbox' | 'production'
+
+  const PADDLE_TOKENS = {
+    sandbox:    'test_72490ade5a4569aaeec5660413d',
+    production: ''                // ← falta: Developer tools → Authentication
   };
-  Paddle.Environment.set(PADDLE_ENV);
-  Paddle.Initialize({ token: PADDLE_TOKEN });
+
+  // Un price ID por plan Y por ciclo: Paddle trata mensual y anual como
+  // precios distintos del mismo producto.
+  //
+  // Enterprise no figura acá a propósito: se negocia por llamada y no tiene
+  // checkout propio.
+  const PADDLE_PRICE_IDS_BY_ENV = {
+    sandbox: {
+      starter: { monthly: 'pri_01m22zecwqxhn6j19e11tm9s80', annual: 'pri_01m2zpy0qa7e7z9fakzw0p32xp' },
+      growth:  { monthly: 'pri_01m22zcf8fqpf15fy6j9zwxxrb', annual: 'pri_01m2zpvcgh80gjmtxw3f52fbps' },
+      pro:     { monthly: 'pri_01m22z9gtywcb25g8h4cbx62fh', annual: 'pri_01m2zprk6jmerfjkeppgmvnn7q' }
+    },
+    // Creados el 27/09/2026 en la cuenta de producción: 79/790, 169/1690,
+    // 329/3290 USD, sin impuesto incluido, sin trial (los 15 días los da la
+    // app) y con plan_tier en el Custom Data de cada precio, que es de donde
+    // el webhook saca el plan.
+    production: {
+      starter: { monthly: 'pri_01m39qha4dy6q8bh4n6mvp8spc', annual: 'pri_01m39qjndkyd4bcntd66t8nh6j' },
+      growth:  { monthly: 'pri_01m39qkpc112v41v6pfrkj4mc4', annual: 'pri_01m3ha819dr9k813gqtnagk975' },
+      pro:     { monthly: 'pri_01m3h9qakwr0qg1grp2293t7jy', annual: 'pri_01m3h9t7j6n6q3kg8p2bfq8n58' }
+    }
+  };
+
+  const PADDLE_TOKEN = PADDLE_TOKENS[PADDLE_ENV] || '';
+  const PADDLE_PRICE_IDS = PADDLE_PRICE_IDS_BY_ENV[PADDLE_ENV] || {};
+
+  // Salir a producción sin el token live deja un checkout que no abre y no
+  // dice por qué -- el fallo más silencioso de toda la migración. Que grite
+  // en consola es la diferencia entre descubrirlo probando y descubrirlo con
+  // el primer cliente.
+  if (!PADDLE_TOKEN) {
+    console.error(
+      `[Paddle] No hay token para el entorno '${PADDLE_ENV}'. El checkout no va a abrir. ` +
+      `Cargar PADDLE_TOKENS.${PADDLE_ENV} con el token de Developer tools → Authentication → Client-side tokens.`
+    );
+  } else {
+    Paddle.Environment.set(PADDLE_ENV);
+    Paddle.Initialize({ token: PADDLE_TOKEN });
+  }
 </script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3941,6 +3971,29 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
 
+        <!-- La etiqueta dice lo que el dueño está prometiendo, no sólo lo que
+             la función hace. «Conectar equipo con viajes» invita a un «sí,
+             dale»; esto le dice que el aviso vale lo que valga su inventario. -->
+        <div class="card">
+          <div class="card-section-title expandable-title collapsible-bubble" style="margin-top:0;" onclick="toggleExpandSection('card-gear-warn-body')">
+            <span data-i18n="set_gear_warn_title">Gear stock warnings</span>
+            <span id="card-gear-warn-body-arrow" class="expand-caret">▸</span>
+          </div>
+          <div id="card-gear-warn-body" style="display:none;">
+            <p class="card-desc" style="margin-top:8px;" data-i18n="set_gear_warn_desc1">When a guest asks for a size that isn't available, the trip screen and the printed manifest say so. Nothing is reserved and nothing is blocked — it's a heads-up, not a lock.</p>
+            <p class="card-desc" style="margin-top:6px;" data-i18n="set_gear_warn_desc2">Only turn this on if you keep your inventory current. A warning is only worth anything if the number behind it is true; if it isn't, your crew learns to ignore the red — including the times it's right.</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--foam);">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="checkbox" id="chk-gear-warn-enabled" style="width:20px;height:20px;">
+                <label class="sf-label" for="chk-gear-warn-enabled" style="margin:0;font-size:0.92rem;" data-i18n="set_gear_warn_enable">Warn me when booked gear isn't in stock</label>
+              </div>
+              <span id="gear-warn-status-badge" class="role-badge"></span>
+            </div>
+            <p class="card-desc" id="gear-warn-owner-only-note" style="margin-top:8px;display:none;" data-i18n="set_gear_warn_owner_only">Only the account owner can change this setting.</p>
+            <span class="save-feedback" id="gear-warn-toggle-feedback"></span>
+          </div>
+        </div>
+
         <!-- Waiver Templates card -->
         <div class="card" id="card-waiver-templates">
           <div class="card-section-title expandable-title" style="margin-bottom:0;" onclick="toggleExpandSection('card-waiver-templates-body')">
@@ -4620,6 +4673,13 @@ const TRANSLATIONS = {
     gr_link_hint: "Link it and this piece becomes one unit of that item's count. That item then stops being counted by hand — its number comes from the pieces registered here.",
     gr_derived_hint: 'Counted from the individual items in the Registry — add, repair or retire them there and this updates on its own.',
     gr_open_registry: 'Open Registry',
+    set_gear_warn_title: 'Gear stock warnings',
+    set_gear_warn_desc1: "When a guest asks for a size that isn't available, the trip screen and the printed manifest say so. Nothing is reserved and nothing is blocked — it's a heads-up, not a lock.",
+    set_gear_warn_desc2: "Only turn this on if you keep your inventory current. A warning is only worth anything if the number behind it is true; if it isn't, your crew learns to ignore the red — including the times it's right.",
+    set_gear_warn_enable: "Warn me when booked gear isn't in stock",
+    set_gear_warn_owner_only: 'Only the account owner can change this setting.',
+    gear_short_title: 'Not enough gear for this trip:',
+    gear_short_hint: "The booking still works — this is a heads-up so somebody can pull a spare before the boat leaves.",
     svc_warn_label: 'Warn me this many hours ahead',
     svc_warn_hint: 'Leave empty for automatic: 15% of the interval, never less than 5 hours. Raise it if your mechanic takes a while to book.',
     svc_home_title: 'Maintenance due', svc_engine_service: 'Engine service',
@@ -5304,6 +5364,13 @@ const TRANSLATIONS = {
     gr_link_hint: 'Si la vinculás, esta pieza pasa a ser una unidad del conteo de ese artículo. Ese artículo deja de contarse a mano: su número sale de las piezas registradas acá.',
     gr_derived_hint: 'Se cuenta a partir de las piezas individuales del Registro — agregá, repará o retirá ahí y esto se actualiza solo.',
     gr_open_registry: 'Ir al Registro',
+    set_gear_warn_title: 'Avisos de stock de equipo',
+    set_gear_warn_desc1: 'Cuando un huésped pide un talle que no está disponible, la pantalla del viaje y el manifiesto impreso lo dicen. No se reserva nada ni se bloquea nada — es un aviso, no una traba.',
+    set_gear_warn_desc2: 'Activalo sólo si mantenés el inventario al día. Un aviso vale lo que vale el número que tiene detrás; si el número miente, tu equipo aprende a ignorar el rojo — incluidas las veces que tiene razón.',
+    set_gear_warn_enable: 'Avisarme cuando el equipo reservado no está en stock',
+    set_gear_warn_owner_only: 'Sólo el dueño de la cuenta puede cambiar esto.',
+    gear_short_title: 'No alcanza el equipo para esta salida:',
+    gear_short_hint: 'La reserva se hace igual — esto es un aviso para que alguien saque un repuesto antes de que salga el barco.',
     svc_warn_label: 'Avisarme con esta anticipación (horas)',
     svc_warn_hint: 'Vacío = automático: 15% del intervalo, nunca menos de 5 horas. Subilo si conseguir mecánico te lleva tiempo.',
     svc_home_title: 'Mantenimiento por vencer', svc_engine_service: 'Service del motor',
@@ -6956,6 +7023,29 @@ document.getElementById('rw-btn-confirm').addEventListener('click', async () => 
   else rwFinishSession();
 });
 
+document.getElementById('chk-gear-warn-enabled')?.addEventListener('change', async function () {
+  const feedback = document.getElementById('gear-warn-toggle-feedback');
+  if (currentUserRole !== 'owner') {
+    this.checked = !this.checked;
+    document.getElementById('gear-warn-owner-only-note').style.display = 'block';
+    return;
+  }
+  const { error } = await sb.from('organizations')
+    .update({ gear_stock_warnings_enabled: this.checked }).eq('id', currentOrgId);
+  if (error) {
+    this.checked = !this.checked;
+    feedback.textContent = t('common_error_prefix') + error.message;
+    feedback.className = 'save-feedback error visible';
+    return;
+  }
+  window.gearStockWarningsEnabled = this.checked;
+  document.getElementById('gear-warn-status-badge').textContent =
+    this.checked ? t('set_enabled') : t('set_disabled');
+  feedback.textContent = t('set_saved');
+  feedback.className = 'save-feedback visible';
+  setTimeout(() => { feedback.className = 'save-feedback'; }, 2000);
+});
+
 // ─── SCREEN MANAGEMENT ───
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -7975,7 +8065,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-24c');
+  console.info('[Seven Seas] build 2026-09-27a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -8747,6 +8837,11 @@ async function loadSettings(user) {
       window.currentCaptainElevated = org.captain_elevated_permissions || false;
       document.getElementById('chk-waivers-enabled').checked = org.waivers_enabled || false;
       window.waiversEnabled = org.waivers_enabled || false;
+      const chkGear = document.getElementById('chk-gear-warn-enabled');
+      if (chkGear) chkGear.checked = org.gear_stock_warnings_enabled || false;
+      window.gearStockWarningsEnabled = org.gear_stock_warnings_enabled || false;
+      const badgeGear = document.getElementById('gear-warn-status-badge');
+      if (badgeGear) badgeGear.textContent = window.gearStockWarningsEnabled ? t('set_enabled') : t('set_disabled');
       updateWaiversStatusBadge();
       const isOwnerRole = staffRow.role === 'owner';
       applyWaiverGatingUI(isOwnerRole);
@@ -9690,6 +9785,10 @@ let groupParticipants_cache = {};
 // un papel que sube al barco no puede salir de una caché de hace media hora.
 let tripReadiness_cache = {};
 
+// Disponibilidad de la sede mientras hay un viaje abierto. null cuando el
+// aviso está apagado, que es el default -- y entonces nada de esto corre.
+let tripStock_cache = null;
+
 async function loadTripReadiness(tripId) {
   tripReadiness_cache = {};
   if (!window.waiversEnabled || !tripId) return;
@@ -9787,6 +9886,7 @@ async function openTrip(id) {
   tripGroups_cache = (groups && groups.length) ? groups : [blankGroup()];
   groupParticipants_cache = {};
   await loadTripReadiness(id);
+  tripStock_cache = await cargarStockDeLaSede();
 
   await populateTripTypeSelect(trip.trip_type_id);
   await onTripTypeChange(false);
@@ -9962,6 +10062,22 @@ async function fetchTripTypesById() {
   return typeById;
 }
 
+// El faltante es de la SALIDA, así que se calcula sobre todos los huéspedes
+// del viaje y se muestra una vez, no repetido en cada grupo.
+//
+// Ámbar y no rojo a propósito: falta equipo, no falta un formulario. Se
+// resuelve sacando uno de repuesto del barco, y no impide que nadie bucee.
+function faltaEquipoHTML() {
+  const todos = tripGroups_cache.flatMap(g => (g.id && groupParticipants_cache[g.id]) || []);
+  const faltan = faltantesDelViaje(todos, tripStock_cache);
+  if (!faltan.length) return '';
+  const detalle = faltan.map(f => `${f.faltan} × ${escapeHtml(f.etiqueta)}`).join(' · ');
+  return `<div class="warning-banner caution" style="margin-top:16px;">
+    <strong>${escapeHtml(t('gear_short_title'))}</strong> ${detalle}
+    <div style="font-size:0.78rem;margin-top:4px;opacity:0.85;">${escapeHtml(t('gear_short_hint'))}</div>
+  </div>`;
+}
+
 async function groupCardHTML(g, index) {
   const key = gKey(g);
   const isSaved = !!g.id;
@@ -10022,6 +10138,7 @@ async function groupCardHTML(g, index) {
     </div>
     ${checkInHtml ? `<div style="margin-top:14px;">${checkInHtml}</div><div id="checkin-panel-${g.id}" style="display:none;margin-top:10px;"></div>` : ''}
 
+    ${faltaEquipoHTML()}
     <div class="card-section-title" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;">
       <span>${t('tt_guests_label')}${guestCount ? ` (${guestCount})` : ''}${isSaved ? readinessBadgeHTML(g.id, groupParticipants_cache[g.id] || []) : ''}</span>
       ${isSaved ? `<button class="btn-save" style="font-size:0.8rem;padding:6px 12px;" onclick="showAddGuestForm('${g.id}')">${t('tt_add_guest')}</button>` : ''}
@@ -11519,6 +11636,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
 
   await renderTripCrewSection();
   await loadTripReadiness(tripId);
+  tripStock_cache = await cargarStockDeLaSede();
   await renderGroupsPanel();
 
   feedback.textContent = t('set_saved');
@@ -11661,6 +11779,10 @@ async function printManifest() {
     }
   }
   const tripStates = [];
+  // El manifiesto vuelve a consultar el stock por su cuenta: se imprime
+  // bastante después de abrir la pantalla, y el papel que sube al barco no
+  // puede salir de una caché de hace media hora.
+  const stockManifiesto = await cargarStockDeLaSede();
 
 
   const groupsHtml = (await Promise.all(tripGroups_cache.map(async (g, i) => {
@@ -11748,6 +11870,12 @@ async function printManifest() {
 </head><body>
   <h1>${escapeHtml(tripType ? t('mf_h1').replace('{type}', trTypeName(tripType.name)) : t('mf_title'))}</h1>
   <div class="meta">${date} · ${time ? time.slice(0,5) : ''}${arrival ? ' – ' + arrival.slice(0,5) : ''} · ${escapeHtml(boatName)} · ${escapeHtml(t('mf_crew'))}: ${escapeHtml(crewNames)}</div>
+  ${(() => {
+    const todos = tripGroups_cache.flatMap(g => groupParticipants_cache[g.id] || []);
+    const faltan = faltantesDelViaje(todos, stockManifiesto);
+    if (!faltan.length) return '';
+    return `<div class="readiness-banner" style="border-color:${READINESS.waiting.print};color:${READINESS.waiting.print};margin-right:10px;">${escapeHtml(t('gear_short_title'))} ${faltan.map(f => `${f.faltan} × ${escapeHtml(f.etiqueta)}`).join(' · ')}</div>`;
+  })()}
   ${tripStates.length ? `<div class="readiness-banner" style="border-color:${tripStates.includes('blocked') ? READINESS.blocked.print : (tripStates.every(x => x === 'ready') ? READINESS.ready.print : READINESS.waiting.print)};color:${tripStates.includes('blocked') ? READINESS.blocked.print : (tripStates.every(x => x === 'ready') ? READINESS.ready.print : READINESS.waiting.print)};">${escapeHtml(readinessCounterText(tripStates))}</div>` : ''}
   ${groupsHtml || `<p>${escapeHtml(t('mf_no_groups'))}</p>`}
   ${tripStates.length ? `<p class="legend">${escapeHtml(t('rd_legend'))}</p>` : ''}
@@ -13413,6 +13541,174 @@ async function loadGroupParticipants(groupId) {
   const { data } = await sb.from('participants').select('*').eq('group_id', groupId).order('created_at');
   groupParticipants_cache[groupId] = data || [];
   return groupParticipants_cache[groupId];
+}
+
+// ─── AVISO DE STOCK AL ARMAR LA SALIDA ───
+//
+// La pregunta NO es «¿está el talle que pidió este huésped?». Es
+// «¿alcanza el equipo para toda la salida?».
+//
+// Esa distinción la marcó Fran y cambia el diseño entero. Un huésped que pide
+// aletas L y recibe XL no tiene un problema: con talón abierto ni se entera.
+// Pero ocho huéspedes y siete reguladores SÍ es un problema, y un regulador
+// no tiene talle -- con lo cual la primera versión de esto, que sólo miraba
+// campos con talle, dejaba justo afuera el caso que importa.
+//
+// El escenario real: ayer un instructor mandó un regulador a reparar. Hoy hay
+// un huésped más que reguladores. Eso tiene que saltar al armar la reserva,
+// no en el muelle. No para impedir la reserva -- se saca uno de repuesto del
+// barco y listo -- sino para que alguien lo sepa a tiempo.
+//
+// Por eso la demanda se SUMA por artículo y talle a lo largo del viaje, y se
+// compara contra lo disponible. Y por eso el faltante se muestra a nivel de
+// la salida y no del huésped: «faltan 2 reguladores» es un hecho del viaje.
+// Señalar a un huésped concreto sería inventar cuál de los tres que pidieron
+// el mismo talle es el que se queda afuera.
+
+// Qué pide cada valor del formulario. Devuelve el nombre del artículo del
+// inventario y, si corresponde, el talle. null = no hace falta equipo del
+// centro (lo trae el huésped, o no lleva).
+//
+// Salen del catálogo real de gear_field_definitions, no de suposiciones.
+function itemQuePide(campo, valor, todoElPedido) {
+  const v = (valor == null ? '' : String(valor)).trim();
+  if (!v) return null;
+
+  switch (campo) {
+    // Sin talle: lo que importa es la CANTIDAD. Acá es donde duele.
+    case 'regs':       return v === 'Rental' ? { item: 'Regulators' } : null;
+    case 'mask_type':  return v === 'Shop mask' ? { item: 'Masks (Adult)' } : null;
+    case 'computer':   return v === 'Rental' ? { item: 'Dive Computers' } : null;
+    case 'compass':    return v === 'Yes — rental' ? { item: 'Compasses' } : null;
+    case 'torch':      return v === 'Yes — rental' ? { item: 'Dive Torches', talle: 'Primary' } : null;
+
+    // El tanque siempre sale del centro: el campo no ofrece «propio». Cuál de
+    // los dos artículos depende de la mezcla que pidió.
+    case 'tank_size': {
+      const nx = (todoElPedido && todoElPedido.nitrox) || 'No';
+      const esNitrox = nx !== 'No' && nx !== '' && nx !== '21%';
+      return { item: esNitrox ? 'Tanks (Nitrox)' : 'Tanks (Air)' };
+    }
+
+    // Con talle.
+    case 'bcd_size':           return v === 'Own gear' ? null : { item: 'BCDs', talle: v };
+    case 'wetsuit_size':       return (v === 'Own gear' || v === 'None') ? null : { item: 'Wetsuits', talle: v };
+    case 'fins_size':          return v === 'Own gear' ? null : { item: 'Fins', talle: v };
+    case 'rashguard_size':     return v === 'None' ? null : { item: 'Rash Guards', talle: v };
+    case 'surf_wetsuit':       return v === 'None' ? null : { item: 'Wetsuits', talle: v };
+    case 'monofin_size':       return { item: 'Monofins', talle: v };
+    case 'freediving_wetsuit': return v === 'None' ? null : { item: 'Apnea Wetsuits', talle: v };
+    case 'flotation_vest':     return v === 'Yes' ? { item: 'Flotation Vests', talle: 'Adult' } : null;
+    case 'board_type':
+      if (v === 'Rental — shortboard') return { item: 'Shortboards' };
+      if (v === 'Rental — longboard')  return { item: 'Longboards' };
+      if (v === 'Rental — foil')       return { item: 'Foil Boards' };
+      return null;
+    default: return null;   // campo sin mapa: nunca avisa
+  }
+}
+
+// El stock guarda «M-3mm» y el formulario ofrece «3mm M». Son la misma cosa
+// escrita distinta, y comparadas literalmente NUNCA coinciden -- con lo cual
+// el aviso de trajes, que es el artículo más pedido, habría quedado
+// silenciosamente muerto.
+//
+// Se comparan los trozos ordenados: «3mm M» y «M-3mm» dan los dos «3MM|M».
+function talleNormalizado(t) {
+  return String(t == null ? '' : t)
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter(Boolean)
+    .sort()
+    .join('|');
+}
+
+// Disponibilidad por artículo y talle de la sede actual, ya resuelta: si el
+// artículo se cuenta por piezas individuales el número sale del registro, y
+// si no, del stock. Es la misma regla de «Inventario y registro de equipo»,
+// leída acá en vez de reimplementada.
+async function cargarStockDeLaSede() {
+  if (!window.gearStockWarningsEnabled || !currentOrgId || !currentLocationId) return null;
+
+  const { data: cats } = await sb.from('gear_categories').select('id').eq('org_id', currentOrgId).eq('active', true);
+  const catIds = (cats || []).map(c => c.id);
+  if (!catIds.length) return null;
+
+  const { data: items } = await sb.from('gear_items')
+    .select('id, name, track_sizes, tracked_individually').in('category_id', catIds);
+  if (!items || !items.length) return null;
+  const itemIds = items.map(i => i.id);
+
+  const [{ data: stockRows }, { data: piezas }] = await Promise.all([
+    sb.from('gear_stock').select('gear_item_id, size_label, available_count')
+      .eq('location_id', currentLocationId).in('gear_item_id', itemIds),
+    sb.from('gear').select('gear_item_id, size_label, status').in('gear_item_id', itemIds)
+  ]);
+
+  const porNombre = {};
+  items.forEach(i => { porNombre[i.name] = i; });
+
+  // Clave: idDelArtículo + '|' + talle normalizado (o 'TOTAL').
+  const disponible = {};
+  const sumar = (itemId, talle, n) => {
+    const k = itemId + '|' + (talle ? talleNormalizado(talle) : 'TOTAL');
+    disponible[k] = (disponible[k] || 0) + n;
+  };
+  (stockRows || []).forEach(r => {
+    const it = items.find(i => i.id === r.gear_item_id);
+    if (!it || it.tracked_individually) return;   // para estos manda el registro
+    sumar(r.gear_item_id, it.track_sizes ? r.size_label : null, r.available_count || 0);
+  });
+  (piezas || []).forEach(g => {
+    const it = items.find(i => i.id === g.gear_item_id);
+    if (!it || !it.tracked_individually) return;
+    if (g.status !== 'available') return;
+    sumar(g.gear_item_id, it.track_sizes ? g.size_label : null, 1);
+  });
+
+  return { porNombre, disponible };
+}
+
+// Qué le falta a la SALIDA. Devuelve [] cuando alcanza para todos, que es el
+// caso normal y el que no tiene que ensuciar la pantalla.
+//
+// Un artículo que el centro no tiene cargado NO genera aviso: «no sé» y
+// «no hay» son cosas distintas, y confundirlas llenaría de rojo la pantalla
+// de un centro nuevo el primer día.
+function faltantesDelViaje(participantes, stock) {
+  if (!stock || !participantes || !participantes.length) return [];
+
+  const pedido = {};   // clave → { item, talle, cantidad }
+  participantes.forEach(p => {
+    const g = p && p.gear;
+    if (!g) return;
+    Object.keys(g).forEach(campo => {
+      const necesita = itemQuePide(campo, g[campo], g);
+      if (!necesita) return;
+      const it = stock.porNombre[necesita.item];
+      if (!it) return;                                  // el centro no lo tiene cargado
+      const talle = it.track_sizes ? (necesita.talle || null) : null;
+      const k = it.id + '|' + (talle ? talleNormalizado(talle) : 'TOTAL');
+      if (!(k in stock.disponible)) return;             // ese talle no está configurado
+      if (!pedido[k]) pedido[k] = { item: necesita.item, talle, cantidad: 0 };
+      pedido[k].cantidad++;
+    });
+  });
+
+  const faltan = [];
+  Object.keys(pedido).forEach(k => {
+    const d = pedido[k];
+    const hay = stock.disponible[k] || 0;
+    if (d.cantidad > hay) {
+      faltan.push({
+        item: d.item, talle: d.talle, pedidos: d.cantidad, hay,
+        faltan: d.cantidad - hay,
+        etiqueta: trGearItemName(d.item) + (d.talle ? ' ' + trGearSizeLabel(d.talle) : '')
+      });
+    }
+  });
+  faltan.sort((a, b) => b.faltan - a.faltan);
+  return faltan;
 }
 
 function gearDisplayString(gear) {
