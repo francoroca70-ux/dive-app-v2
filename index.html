@@ -92,12 +92,14 @@
 <script>
   // ← LA ÚNICA LÍNEA QUE SE CAMBIA PARA SALIR EN VIVO
   //
-  // Sigue en 'sandbox' a propósito. Cambiarla a 'production' antes de que el
-  // webhook esté configurado y los tres secretos cargados en Supabase daría
-  // el peor fallo posible: el cliente paga de verdad y la app no se entera,
-  // así que queda pagando sin acceso. El orden es webhook → secretos →
-  // prueba con tarjeta real → recién ahí esta línea.
-  const PADDLE_ENV = 'sandbox';   // 'sandbox' | 'production'
+  // En producción desde el 27/09/2026. Se cambió recién después de que el
+  // webhook devolviera 200 a una simulación firmada, que es lo que prueba
+  // que un pago real va a llegar a la app. Al revés —salir en vivo y probar
+  // después— el primer cliente paga y la app no se entera.
+  //
+  // Para volver a probar sin cobrarle a nadie, esta línea vuelve a
+  // 'sandbox' y los precios y el token de prueba siguen abajo, intactos.
+  const PADDLE_ENV = 'production';   // 'sandbox' | 'production'
 
   const PADDLE_TOKENS = {
     sandbox:    'test_72490ade5a4569aaeec5660413d',
@@ -8071,7 +8073,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-27a');
+  console.info('[Seven Seas] build 2026-09-27b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
