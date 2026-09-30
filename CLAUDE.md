@@ -210,6 +210,11 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
   dominio. Opciones: moverlo al servicio correcto y usarlo como URL oficial de
   la app, o soltarlo. No es urgente.
 - Bajar el prototipo *Blue Drift* de Render
+- **iOS: build 136001 en revisión** desde el 30/09, reenviado con capturas
+  nuevas tras el rechazo del 23/09 por metadatos (guía 2.3.3: las capturas de
+  13" sólo mostraban el login). El procedimiento para prepararlas está en
+  `Operativa/Capturas para el App Store.md` del vault — se repite en cada
+  versión.
 - Casilla de correo para reemplazar el domicilio particular publicado en la
   ficha europea del App Store
 - Contactar los 10 centros de la investigación — **no depende de nada**
