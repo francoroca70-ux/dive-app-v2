@@ -6341,17 +6341,11 @@ async function openBillingPortal() {
   feedback.textContent = t('bp_redirecting');
   feedback.className = 'save-feedback visible';
   try {
-    // `body` explícito, aunque esté vacío.
-    //
-    // Con `invoke(nombre, {})` la llamada llegaba a la función con un método
-    // que no era POST, y paddle-portal corta en su primera línea:
-    //
-    //     if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
-    //
-    // Resultado: 405 en los registros de Supabase y "no se pudo abrir el
-    // portal" en pantalla, con la clave de Paddle, el cliente y los permisos
-    // todos correctos. Un objeto vacío como body fuerza POST y no cambia nada
-    // del lado de la función, que ignora el cuerpo.
+    // `body` explícito para que la llamada salga como POST, que es lo único
+    // que paddle-portal acepta. No era la causa del fallo del 30/09 -- esa
+    // estaba del lado de la función, que no contestaba el preflight CORS --
+    // pero depender del método por defecto del cliente es una suposición de
+    // más en el camino del cobro.
     const { data, error } = await sb.functions.invoke('paddle-portal', { body: {} });
     if (error || !data?.url) throw error || new Error('no url');
     window.open(data.url, '_blank');
@@ -8218,7 +8212,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-30c');
+  console.info('[Seven Seas] build 2026-09-30d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo

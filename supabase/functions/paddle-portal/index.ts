@@ -5,17 +5,28 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // customer portal (update card, view invoices, cancel/change plan) for the
 // caller's own org. Called from the "Manage billing" button in Settings.
 //
-// NOTE (30/09/2026): this file was recovered from the deployed function --
-// version 8 was live in Supabase and had never been committed anywhere. It is
-// byte-for-byte what is running; do not "tidy" it without redeploying.
+// ─── Why the CORS block below is not boilerplate ───
 //
-// The POST check on the first line is what made "Manage billing" fail for the
-// first real subscriber: the browser was calling invoke() without a body and
-// the request arrived as something other than POST, so this returned 405
-// before touching Paddle. Three of the early returns below (401, 403, 400)
-// also answer without logging anything, which is why the Supabase function
-// logs were empty while the edge logs showed the 405. If this function is
-// ever edited, give those three a console.warn -- a silent 4xx costs hours.
+// This function had no CORS handling and rejected anything that wasn't POST.
+// The browser calls it cross-origin with an Authorization header, which makes
+// it a *preflighted* request: Chrome sends OPTIONS first and only sends the
+// POST if that answer says it may. OPTIONS hit `req.method !== "POST"` and got
+// a bare 405, so the real POST was never sent at all.
+//
+// From the outside that looked like the button doing nothing. The Supabase
+// *function* logs were empty -- an early return that doesn't log leaves no
+// trace there -- while the *edge* logs showed the truth, but only once the
+// request.method column was actually read:
+//
+//     OPTIONS  405  /functions/v1/paddle-portal
+//
+// So: answer OPTIONS before any other check, and put the CORS headers on every
+// response, including the failures. A 403 without CORS headers reaches the
+// browser as an opaque network error, which is how a clear "owner only" turns
+// into "something went wrong".
+//
+// The other early returns now log too. A silent 4xx in a function that "does
+// nothing" costs hours, and that is not a hypothetical here.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -25,20 +36,33 @@ const PADDLE_API_KEY = Deno.env.get("PADDLE_API_KEY") ?? "";
 // same as PADDLE_ENV in index.html.
 const PADDLE_API_BASE = Deno.env.get("PADDLE_API_BASE") || "https://sandbox-api.paddle.com";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req: Request) => {
+  // El preflight va primero: antes de esto, la petición real nunca se enviaba.
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   if (req.method !== "POST") {
+    console.warn("paddle-portal: método no permitido:", req.method);
     return json({ error: "method not allowed" }, 405);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
+    console.warn("paddle-portal: sin cabecera Authorization");
     return json({ error: "missing auth" }, 401);
   }
 
@@ -49,6 +73,7 @@ Deno.serve(async (req: Request) => {
   });
   const { data: { user }, error: userErr } = await userClient.auth.getUser();
   if (userErr || !user) {
+    console.warn("paddle-portal: token inválido o expirado");
     return json({ error: "unauthorized" }, 401);
   }
 
@@ -59,6 +84,7 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (!staffRow || staffRow.role !== "owner") {
+    console.warn(`paddle-portal: no es dueño (user=${user.id}, role=${staffRow?.role ?? "sin fila en staff"})`);
     return json({ error: "owner only" }, 403);
   }
 
@@ -77,6 +103,7 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (!org?.paddle_customer_id) {
+    console.warn(`paddle-portal: la org ${staffRow.org_id} no tiene paddle_customer_id`);
     return json({ error: "no paddle customer on file" }, 400);
   }
 
