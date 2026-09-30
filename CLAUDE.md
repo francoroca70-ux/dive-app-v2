@@ -168,38 +168,37 @@ JS + las traducciones. Es a propósito — Fran despliega sin build step.
 con 10 usos, webhook probado con firma real (200), y los tres secretos en
 Supabase. `PADDLE_ENV = 'production'`.
 
-**«Could not open checkout» eran dos fallos distintos con el mismo cartel.**
+**El circuito de cobro está probado de punta a punta con tarjeta real
+(30/09/2026).** Alta → cobro → plan derivado del price ID de Paddle → portal
+de cliente → baja. Los registros del webhook muestran las dos escrituras:
 
-1. `transaction_default_checkout_url_not_set` — de Paddle, real, ya resuelto
-   cargando el Default payment link.
-2. **Un bug nuestro de una línea**: el contenedor del checkout inline tenía
-   sólo el `id`, y `frameTarget` de Paddle resuelve por **`className`**
-   (`getElementsByClassName(frameTarget)[0]`). Paddle recibía `undefined` y
-   tiraba `Cannot read properties of undefined (reading 'appendChild')` — y el
-   `catch` de `openPaddleCheckout()` se comía el error sin loguearlo.
+```
+11:58:57  org 81944871… -> active    (starter via price.custom_data)
+13:30:54  org 81944871… -> canceled  (starter via price.custom_data)
+```
 
-Arreglado el 30/09 y verificado en la página en vivo: con la clase puesta,
-Paddle inyecta el iframe y no tira error. Ver
-`Errores y aprendizajes/El catch que se comió el diagnóstico.md`.
+> [!important] Dónde se prueba
+> **`https://www.sevenseasops.com/index.html`**, en navegador. No desde la URL
+> de Render (ese dominio no está aprobado en Paddle) y **nunca** desde la app
+> instalada, donde el checkout corta a propósito por la guía 3.1.1 de Apple.
+> No hace falta `app.sevenseasops.com` para cobrar — ver
+> `Errores y aprendizajes/El dominio que ya estaba aprobado.md`.
 
-> [!important] La app vive en el dominio aprobado
-> **`https://www.sevenseasops.com/index.html` sirve la app**, con login,
-> `PADDLE_ENV = 'production'` y Paddle inicializado. `sevenseasops.com` está
-> aprobado en Paddle. **No hace falta `app.sevenseasops.com` para cobrar** —
-> ver `Errores y aprendizajes/El dominio que ya estaba aprobado.md`.
+La prueba costó ~4,45 USD (la comisión de Paddle no se reembolsa) y encontró
+cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
+`Errores y aprendizajes/`; conviene leerlos antes de tocar cobros.
 
-### Lo que falta
+### Lo que sigue en esta área
 
-**1 · Pushear el build.** `index.html` y `sw.js` en disco
-(`build 2026-09-30a`, `sw v17`), mensaje ya escrito en `.commit-msg.txt`.
-Lleva el arreglo del checkout **y** los enlaces a términos, privacidad y
-reembolsos dentro de la app. Hasta que esto no esté arriba, el botón sigue sin
-funcionar.
-
-**2 · La prueba con tarjeta real**, **desde
-`https://www.sevenseasops.com/index.html`** — no desde la URL de Render (ese
-dominio no está aprobado en Paddle) y nunca desde la app instalada. Los cinco
-pasos están en `Operativa/Paddle — grillas de carga.md`.
+- **Configurar el payout**: `vendors.paddle.com` → Paddle Balance. Cuenta
+  bancaria y verificación de identidad. Es lo único que falta para que el
+  dinero llegue a Fran. Ojo con el mínimo de payout y el ciclo de pago: la
+  primera transferencia no sale al día siguiente del primer cliente.
+- **Corregir la ficha del App Store**: dice «14-day trial» en el texto
+  promocional y en la descripción. La app da **15**, y la landing también.
+- **La app no registra el cambio agendado.** Un centro que cancela con 20 días
+  por delante no ve nada: ni «tu suscripción termina el 30 de octubre», ni un
+  aviso. Funciona, pero queda mudo justo cuando el cliente quiere confirmación.
 
 ### Después de eso
 
