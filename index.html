@@ -4885,7 +4885,9 @@ const TRANSLATIONS = {
     plan_limit_upgrade_to: '{plan} covers what you need.',
     plan_limit_contact: 'For larger fleets, get in touch at contact@sevenseasops.com.',
     plan_limit_see_plans: 'See plans',
-    plan_overage_boats: 'You have {used} active boats and your plan covers {max}.',
+    plan_overage_boats: 'You have {used} active boats across all your locations and your plan covers {max}.',
+    plan_overage_where: 'Where they are — {list}.',
+    plan_overage_no_location: 'No location',
     pay_offline: "You're offline — payments need a live connection so nothing gets logged twice or lost. Try again once you're back online.",
     pay_exceeds_owed_note: "This exceeds what's owed — please add a note explaining why.",
     guest_offline: "You're offline — guest changes need a live connection. Try again once you're back online.",
@@ -5577,7 +5579,9 @@ const TRANSLATIONS = {
     plan_limit_upgrade_to: '{plan} cubre lo que necesitás.',
     plan_limit_contact: 'Para flotas más grandes, escribinos a contact@sevenseasops.com.',
     plan_limit_see_plans: 'Ver planes',
-    plan_overage_boats: 'Tenés {used} botes activos y tu plan cubre {max}.',
+    plan_overage_boats: 'Tenés {used} botes activos entre todos tus locales y tu plan cubre {max}.',
+    plan_overage_where: 'Dónde están — {list}.',
+    plan_overage_no_location: 'Sin local',
     pay_offline: 'Estás sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Intentá de nuevo cuando vuelvas a estar en línea.',
     pay_exceeds_owed_note: 'Esto excede lo adeudado — por favor agregá una nota explicando por qué.',
     guest_offline: 'Estás sin conexión — los cambios de huéspedes necesitan conexión. Intentá de nuevo cuando vuelvas a estar en línea.',
@@ -5982,10 +5986,39 @@ const PLAN_LIMITS = {
 };
 const PLAN_ORDER = ['starter', 'growth', 'pro', 'enterprise'];
 
+// Estados en los que hay una suscripción paga de por medio. En trial no se
+// aplican límites: el punto de la prueba es que el centro cargue TODA su
+// operación y vea si le sirve. Recién al pagar aparece el techo.
+const PAYING_STATUSES = ['active', 'past_due'];
+
 function currentPlanLimits() {
   const status = window.currentOrgSubscriptionStatus;
   if (status === 'trial' || status === 'trialing') return null;
-  return PLAN_LIMITS[window.currentOrgPlanTier] || null;
+
+  const tier = window.currentOrgPlanTier;
+  if (PLAN_LIMITS[tier]) return PLAN_LIMITS[tier];
+
+  // Suscripción paga sin plan reconocible.
+  //
+  // Antes esto devolvía null, que significa "sin límite". O sea: una
+  // organización marcada como `active` con `plan_tier` vacío tenía botes
+  // ilimitados sin pagar por ellos. No es hipotético -- el webhook deja
+  // `plan_tier` intacto cuando no puede derivarlo del price ID de Paddle
+  // (ver la nota del Custom Data), así que un precio mal cargado producía
+  // exactamente esta fila.
+  //
+  // Se falla CERRADO, al plan más chico. Un cliente de Pro al que no se le
+  // resolvió el plan se topa con un límite que no le corresponde y escribe:
+  // molesto, pero visible y de una sola llamada. Al revés -- fallar abierto --
+  // nadie escribe nunca, porque a nadie le molesta recibir de más. Es la
+  // misma decisión que tomamos cuando el navegador decía qué plan había
+  // comprado: entre confiar y no confiar, no confiar.
+  if (PAYING_STATUSES.includes(status)) {
+    console.warn(`[PLAN] org sin plan_tier reconocible (status="${status}", tier=${JSON.stringify(tier)}). ` +
+      'Se aplican los límites del plan más chico hasta que el webhook lo resuelva.');
+    return PLAN_LIMITS[PLAN_ORDER[0]];
+  }
+  return null;
 }
 
 // Smallest tier that would fit n of this resource -- powers "Growth covers
@@ -6024,16 +6057,38 @@ async function updatePlanOverageBanner() {
     banner.style.display = 'none';
     return;
   }
-  const { count, error } = await sb.from('boats')
-    .select('id', { count: 'exact', head: true })
+  // Se traen las filas, no sólo el total: cuando los botes están repartidos
+  // en varios locales hay que poder decir DÓNDE están.
+  //
+  // La cuenta es de toda la organización porque el plan es de toda la
+  // organización. Pero la pantalla de Flota filtra por el local seleccionado,
+  // así que un dueño con 3 botes acá y 1 allá leía "tenés 4 botes activos"
+  // mirando una lista de 3, y la conclusión razonable era que la app se
+  // equivocaba. El número era correcto y el mensaje era engañoso igual: decir
+  // la verdad sin decir dónde mirar no sirve de nada.
+  const { data: rows, error } = await sb.from('boats')
+    .select('id, location_id, locations(name)')
     .eq('org_id', currentOrgId).not('active', 'is', false);
-  if (error) { banner.style.display = 'none'; return; }
-  const used = count || 0;
+  if (error || !rows) { banner.style.display = 'none'; return; }
+  const used = rows.length;
   if (used <= limits.boats) { banner.style.display = 'none'; return; }
+
+  const porLocal = new Map();
+  rows.forEach(r => {
+    const nombre = (r.locations && r.locations.name) || t('plan_overage_no_location');
+    porLocal.set(nombre, (porLocal.get(nombre) || 0) + 1);
+  });
 
   const needs = smallestPlanFor('boats', used);
   let msg = t('plan_overage_boats')
     .replace('{used}', used).replace('{max}', limits.boats);
+  if (porLocal.size > 1) {
+    const lista = [...porLocal.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([nombre, n]) => `${escapeHtml(nombre)}: ${n}`)
+      .join(' · ');
+    msg += ' ' + t('plan_overage_where').replace('{list}', lista);
+  }
   msg += ' ' + (needs
     ? t('plan_limit_upgrade_to').replace('{plan}', needs.charAt(0).toUpperCase() + needs.slice(1))
     : t('plan_limit_contact'));
@@ -6286,12 +6341,30 @@ async function openBillingPortal() {
   feedback.textContent = t('bp_redirecting');
   feedback.className = 'save-feedback visible';
   try {
-    const { data, error } = await sb.functions.invoke('paddle-portal', {});
+    // `body` explícito, aunque esté vacío.
+    //
+    // Con `invoke(nombre, {})` la llamada llegaba a la función con un método
+    // que no era POST, y paddle-portal corta en su primera línea:
+    //
+    //     if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+    //
+    // Resultado: 405 en los registros de Supabase y "no se pudo abrir el
+    // portal" en pantalla, con la clave de Paddle, el cliente y los permisos
+    // todos correctos. Un objeto vacío como body fuerza POST y no cambia nada
+    // del lado de la función, que ignora el cuerpo.
+    const { data, error } = await sb.functions.invoke('paddle-portal', { body: {} });
     if (error || !data?.url) throw error || new Error('no url');
     window.open(data.url, '_blank');
     feedback.textContent = '';
     feedback.className = 'save-feedback';
   } catch (err) {
+    // El error real va a la consola. Mismo motivo que en openPaddleCheckout():
+    // un mensaje amable que reemplaza al error no es neutral, manda la
+    // búsqueda para el lado equivocado. Los errores de functions.invoke
+    // traen el status dentro de `context`, que es justo lo que hace falta
+    // para distinguir un 405 de un 403 o un 502.
+    console.error('[PADDLE PORTAL] Error:', err,
+      err && err.context ? { status: err.context.status } : '');
     feedback.textContent = t('bp_portal_error');
     feedback.className = 'save-feedback error visible';
   } finally {
@@ -8145,7 +8218,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-30a');
+  console.info('[Seven Seas] build 2026-09-30c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
