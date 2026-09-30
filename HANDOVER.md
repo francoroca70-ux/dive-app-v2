@@ -1,3 +1,7 @@
+> [!warning] HISTÓRICO — no arrancar por acá
+> Desde el 29/09/2026 la fuente de verdad es **`CLAUDE.md`** en la raíz del
+> repo, y el vault de Obsidian. Este archivo es de julio y quedó como registro.
+
 # Seven Seas — Project Handover
 
 *Keep this file up to date. When a Claude conversation runs out of context, a fresh

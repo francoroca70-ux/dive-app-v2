@@ -319,6 +319,30 @@ body { background: var(--navy); color: var(--text); }
   color: var(--teal); text-decoration: none; font-weight: 600;
 }
 
+/* ─── LEGAL FOOTER ───
+   Terms, privacy and refund policy have to be reachable from inside the app,
+   not just from the marketing site: Paddle requires it of any domain it will
+   take payments from, and a paying shop deserves to find the refund policy
+   without having to go looking for the landing page.
+
+   The markup lives in exactly one place (buildLegalFooter) and is injected
+   into every [data-legal-footer] placeholder. Three hand-written copies of
+   the same three links is three chances for one of them to drift. */
+.legal-footer {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: rgba(255,255,255,0.28);
+}
+.legal-footer a {
+  color: rgba(255,255,255,0.45);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.legal-footer a:hover { color: var(--teal); }
+.legal-footer .legal-sep { margin: 0 8px; opacity: 0.5; }
+
 /* ─── FORGOT PASSWORD SCREEN ─── */
 #screen-forgot {
   align-items: center; justify-content: center;
@@ -2061,7 +2085,15 @@ body { background: var(--navy); color: var(--text); }
       </div>
       <div id="paddle-checkout-step" style="display:none;">
         <button type="button" onclick="backToPlanPicker()" style="background:none;border:none;color:var(--blue);font-size:0.85rem;font-weight:600;cursor:pointer;margin-bottom:12px;padding:0;">&larr; <span data-i18n="bp_back_to_plans">Back to plans</span></button>
-        <div id="paddle-checkout-container"></div>
+        <!-- La CLASE no es decorativa: `frameTarget` de Paddle busca el
+             contenedor por className, no por id (hace
+             getElementsByClassName(frameTarget)[0]). Con sólo el id, Paddle
+             recibe undefined y revienta con "Cannot read properties of
+             undefined (reading 'appendChild')" — y el catch de
+             openPaddleCheckout() lo mostraba como "Could not open checkout",
+             que parecía un problema de la cuenta de Paddle. El id queda
+             porque el código lo usa para vaciar el contenedor. -->
+        <div id="paddle-checkout-container" class="paddle-checkout-container"></div>
       </div>
     </div>
   </div>
@@ -2123,6 +2155,7 @@ body { background: var(--navy); color: var(--text); }
         <span data-i18n="login_new_operation">New operation?</span> <a href="#" id="link-signup" data-i18n="login_request_access">Request access</a>
       </div>
     </div>
+    <div class="legal-footer" data-legal-footer></div>
   </div>
 </div>
 
@@ -2159,6 +2192,7 @@ body { background: var(--navy); color: var(--text); }
       <div class="login-error" id="signup-error"></div>
       <div class="success-msg" id="signup-success" data-i18n="signup_check_email">Account created — check your email to confirm, then sign in.</div>
     </div>
+    <div class="legal-footer" data-legal-footer></div>
   </div>
 </div>
 
@@ -4109,6 +4143,8 @@ body { background: var(--navy); color: var(--text); }
           <span class="save-feedback" id="close-shop-feedback" style="color:var(--error);display:block;margin-top:10px;"></span>
         </div>
 
+        <div class="legal-footer" data-legal-footer style="margin-bottom:30px;"></div>
+
       </div>
 
       <!-- Help / FAQ page -->
@@ -4173,6 +4209,7 @@ const TRANSLATIONS = {
     nav_waivers: 'Waivers', nav_cashup: 'Daily Cash-Up', nav_reports: 'Reports', nav_settings: 'Settings',
     nav_help: 'Help & FAQ',
     signed_in_as: 'Signed in as', sign_out: 'Sign out',
+    legal_terms: 'Terms of Service', legal_privacy: 'Privacy Policy', legal_refund: 'Refund Policy',
     switch_account_add: '+ Add another account', switch_account_none: 'No saved accounts yet.',
     switch_account_remove: 'Remove from this device', switch_account_expired: 'That saved session expired. Please sign in again.',
     switch_account_hello: 'Hi, {name}', switch_account_switch_section: 'Switch account',
@@ -4864,6 +4901,7 @@ const TRANSLATIONS = {
     nav_waivers: 'Formularios', nav_cashup: 'Arqueo de Caja Diario', nav_reports: 'Informes', nav_settings: 'Configuración',
     nav_help: 'Ayuda y Preguntas',
     signed_in_as: 'Sesión iniciada como', sign_out: 'Cerrar sesión',
+    legal_terms: 'Términos del servicio', legal_privacy: 'Política de privacidad', legal_refund: 'Política de reembolsos',
     switch_account_add: '+ Agregar otra cuenta', switch_account_none: 'Todavía no hay cuentas guardadas.',
     switch_account_remove: 'Quitar de este dispositivo', switch_account_expired: 'Esa sesión guardada expiró. Por favor, iniciá sesión de nuevo.',
     switch_account_hello: 'Hola, {name}', switch_account_switch_section: 'Cambiar cuenta',
@@ -5674,6 +5712,34 @@ function setLanguage(lang) {
   refreshDynamicTranslations();
 }
 
+// ─── Legal footer ───
+// One definition, injected into every [data-legal-footer] placeholder. The
+// three pages that show it (sign in, sign up, Settings) never hold their own
+// copy of the markup, so the refund link cannot exist on two of them and be
+// missing from the third.
+//
+// target="_blank" on purpose: these open beside the app instead of navigating
+// away from it, which on a half-filled signup form or an unsaved settings
+// page matters.
+function buildLegalFooter() {
+  const sep = '<span class="legal-sep">·</span>';
+  return [
+    '<a href="terms.html" target="_blank" rel="noopener" data-i18n="legal_terms">Terms of Service</a>',
+    '<a href="privacy.html" target="_blank" rel="noopener" data-i18n="legal_privacy">Privacy Policy</a>',
+    '<a href="refund.html" target="_blank" rel="noopener" data-i18n="legal_refund">Refund Policy</a>'
+  ].join(sep);
+}
+
+function renderLegalFooters() {
+  const html = buildLegalFooter();
+  document.querySelectorAll('[data-legal-footer]').forEach(el => { el.innerHTML = html; });
+}
+
+// Injected before the first applyTranslations() so the data-i18n tags inside
+// are picked up by the same pass that translates the rest of the page -- and
+// by every later pass when the language is switched.
+renderLegalFooters();
+
 applyTranslations();
 
 // ─── HELP / FAQ ───
@@ -6289,6 +6355,12 @@ async function openPaddleCheckout(tier, cycle) {
     });
     feedback.className = 'save-feedback';
   } catch (err) {
+    // El usuario ve un mensaje amable; la consola tiene que ver el error real.
+    // Tragarse `err` acá costó tres días: la pantalla decía "no se pudo abrir
+    // el pago" y el único dato que explicaba por qué se perdía en este catch,
+    // así que la búsqueda se fue a la cuenta de Paddle, al dominio y al DNS.
+    // Un mensaje para la persona no reemplaza al error para quien diagnostica.
+    console.error('[PADDLE BILLING] Checkout error:', err);
     feedback.textContent = t('bp_checkout_error');
     feedback.className = 'save-feedback error visible';
     backToPlanPicker();
@@ -8073,7 +8145,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-27b');
+  console.info('[Seven Seas] build 2026-09-30a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo

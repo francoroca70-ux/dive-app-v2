@@ -1,3 +1,11 @@
+> [!warning] HISTÓRICO — no arrancar por acá
+> Desde el 29/09/2026 la fuente de verdad es **`CLAUDE.md`** en la raíz del
+> repo, y el vault de Obsidian. Este archivo quedó como registro de lo que se
+> pensaba el 19 de septiembre.
+>
+> Varias cosas de acá abajo **ya están resueltas**: Supabase Pro, y el routing
+> de la raíz (hoy `sevenseasops.com` redirige a `www` y sirve la landing).
+
 # Próxima sesión — arrancar por acá
 *Actualizado 19 sep 2026. Leer esto antes de tocar nada.*
 
