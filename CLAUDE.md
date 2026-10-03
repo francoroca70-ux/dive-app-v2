@@ -194,8 +194,6 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
   bancaria y verificación de identidad. Es lo único que falta para que el
   dinero llegue a Fran. Ojo con el mínimo de payout y el ciclo de pago: la
   primera transferencia no sale al día siguiente del primer cliente.
-- **Corregir la ficha del App Store**: dice «14-day trial» en el texto
-  promocional y en la descripción. La app da **15**, y la landing también.
 - **La app no registra el cambio agendado.** Un centro que cancela con 20 días
   por delante no ve nada: ni «tu suscripción termina el 30 de octubre», ni un
   aviso. Funciona, pero queda mudo justo cuando el cliente quiere confirmación.

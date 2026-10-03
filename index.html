@@ -3118,7 +3118,7 @@ body { background: var(--navy); color: var(--text); }
             </div>
             <div id="cl-instructor-items"></div>
             <div class="cl-signoff">
-              <input class="sf-input" type="text" id="cl-instructor-name" placeholder="Your name" data-i18n-placeholder="cl_your_name">
+              <select class="sf-input signer-select" id="cl-instructor-name"></select>
               <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
                 <button class="btn-save" onclick="instructorSignOff()" data-i18n="cl_sign_off_gear">Sign Off — Gear Ready</button>
@@ -3194,7 +3194,7 @@ body { background: var(--navy); color: var(--text); }
             <div class="cl-progress-bar"><div class="cl-progress-fill" id="dept-routine-progress"></div></div>
             <div id="dept-list"></div>
             <div class="cl-signoff">
-              <input class="sf-input" type="text" id="dept-routine-name" placeholder="Your name" data-i18n-placeholder="cl_your_name">
+              <select class="sf-input signer-select" id="dept-routine-name"></select>
               <div class="cl-done-banner" id="dept-routine-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
                 <button class="btn-save" onclick="deptRoutineSignOff()" data-i18n="cl_sign_off_routine">Sign Off</button>
@@ -4312,6 +4312,7 @@ const TRANSLATIONS = {
     onboard_step_boat: 'Add at least one boat in Fleet',
     onboard_step_prices: 'Set a price for at least one trip type in Settings',
     onboard_step_crew: 'Invite at least one crew member',
+    onboard_solo_note: 'Working on your own? Skip the last step — everything else works the same.',
     home_finance_title: 'Money in',
     home_finance_today: 'Today',
     home_finance_yesterday: 'Yesterday',
@@ -4477,9 +4478,10 @@ const TRANSLATIONS = {
     cl_new_checklist_no_role: "Your role can't create department checklists.",
     cl_new_checklist_need_title_items: 'Add a title and at least one item.',
     cl_delete_checklist: 'Delete', cl_delete_checklist_confirm: "Delete this checklist? This can't be undone.",
-    cl_complete_check: 'Complete ✓', cl_enter_captain_name: 'Enter captain name to sign off.', cl_enter_your_name: 'Enter your name to sign off.',
+    cl_complete_check: 'Complete ✓', cl_enter_captain_name: 'Enter captain name to sign off.', cl_enter_your_name: 'Select who is signing off.',
     cl_items_incomplete: ' items incomplete. Sign off anyway?', cl_signed_off_by: 'Signed off by ', cl_saved_offline_sync: ' (saved offline — will sync automatically)',
     cl_no_trips_today: 'No trips today. You can still use checklists independently.', cl_guest_singular: 'guest', cl_guest_plural: 'guests',
+    cl_pick_signer: 'Select who is signing…',
     cl_tanks_needed: 'tanks needed', cl_kg_weights_total: 'kg weights total', cl_no_signoffs_yet: 'No sign-offs yet for this trip.', cl_signed_by: 'Signed by ',
 
     gear_tab_compressors: 'Compressors', gear_tab_inventory: 'Inventory', gear_tab_inspection: 'Inspection', gear_tab_registry: 'Registry',
@@ -5006,6 +5008,7 @@ const TRANSLATIONS = {
     onboard_step_boat: 'Agregá al menos una embarcación en Flota',
     onboard_step_prices: 'Definí un precio para al menos un tipo de salida en Configuración',
     onboard_step_crew: 'Invitá al menos un miembro de la tripulación',
+    onboard_solo_note: '¿Trabajás solo? Saltate el último paso — todo lo demás funciona igual.',
     home_finance_title: 'Entrada de dinero',
     home_finance_today: 'Hoy',
     home_finance_yesterday: 'Ayer',
@@ -5171,9 +5174,10 @@ const TRANSLATIONS = {
     cl_new_checklist_no_role: 'Tu rol no puede crear checklists de departamento.',
     cl_new_checklist_need_title_items: 'Agregá un título y al menos un ítem.',
     cl_delete_checklist: 'Eliminar', cl_delete_checklist_confirm: '¿Eliminar esta checklist? No se puede deshacer.',
-    cl_complete_check: 'Completo ✓', cl_enter_captain_name: 'Ingresa el nombre del capitán para confirmar.', cl_enter_your_name: 'Ingresa tu nombre para confirmar.',
+    cl_complete_check: 'Completo ✓', cl_enter_captain_name: 'Ingresa el nombre del capitán para confirmar.', cl_enter_your_name: 'Elegí quién firma para confirmar.',
     cl_items_incomplete: ' elementos incompletos. ¿Confirmar de todos modos?', cl_signed_off_by: 'Confirmado por ', cl_saved_offline_sync: ' (guardado sin conexión — se sincronizará automáticamente)',
     cl_no_trips_today: 'No hay salidas hoy. Aún puedes usar las listas de verificación de forma independiente.', cl_guest_singular: 'huésped', cl_guest_plural: 'huéspedes',
+    cl_pick_signer: 'Elegí quién firma…',
     cl_tanks_needed: 'tanques necesarios', cl_kg_weights_total: 'kg de plomos en total', cl_no_signoffs_yet: 'Aún no hay confirmaciones para esta salida.', cl_signed_by: 'Confirmado por ',
 
     gear_tab_compressors: 'Compresores', gear_tab_inventory: 'Inventario', gear_tab_inspection: 'Inspección', gear_tab_registry: 'Registro',
@@ -7455,11 +7459,27 @@ async function renderHomeGettingStartedOrFinance() {
 
     const hasBoat = (boatsCount || 0) > 0;
     const hasPricedTrip = (pricedTypes || []).length > 0;
+    // Más de uno: el dueño ya tiene su propia fila en staff desde el alta.
     const hasCrew = (staffCount || 0) > 1;
     const setupComplete = hasBoat && hasPricedTrip && hasCrew;
 
     if (!setupComplete) {
-      container.innerHTML = `<div class="card">
+      // La lista de primeros pasos acompaña al panel, no lo reemplaza.
+      //
+      // Antes había un `return` acá y el dueño no veía NADA más hasta
+      // completar los tres pasos. Dos problemas:
+      //
+      //  1. «Invitá a un tripulante» exige staff > 1, y un instructor que
+      //     trabaja solo nunca lo va a cumplir. Starter es de 1 a 3 botes:
+      //     operar solo no es el caso raro, es el caso típico del plan más
+      //     barato. Ese dueño se quedaba con una lista imposible en lugar de
+      //     una app, para siempre. Hay dos organizaciones así en la base.
+      //  2. Aun pudiendo completarlos, esconder el panel mientras se
+      //     configura castiga justo los primeros diez minutos, que son los
+      //     que deciden si la prueba sigue.
+      //
+      // Una lista de tareas sugiere; no debería tomar la pantalla de rehén.
+      blocks.push(`<div class="card">
         <h2>${t('getting_started_title')}</h2>
         <p class="card-desc" style="margin-bottom:14px;">${t('getting_started_sub')}</p>
         <div class="onboard-checklist">
@@ -7467,8 +7487,8 @@ async function renderHomeGettingStartedOrFinance() {
           ${renderOnboardStep(hasPricedTrip, t('onboard_step_prices'), 'settings')}
           ${renderOnboardStep(hasCrew, t('onboard_step_crew'), 'crew')}
         </div>
-      </div>`;
-      return;
+        ${hasCrew ? '' : `<p class="card-desc" style="margin-top:12px;font-style:italic;">${t('onboard_solo_note')}</p>`}
+      </div>`);
     }
 
     blocks.push(await buildMaintenanceDueHtml());
@@ -7620,8 +7640,21 @@ async function buildTaskBannerHtml(myId) {
 // collapse preference. Once both items are done it stops rendering
 // entirely rather than sitting around empty.
 async function buildPhase2ChecklistHtml() {
-  const { count: compCount } = await sb.from('compressors').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId);
-  const hasCompressor = (compCount || 0) > 0;
+  // El compresor sólo se pide si el centro bucea.
+  //
+  // La app soporta cinco tipos de operación —buceo, charter/yate, surf, pesca
+  // y apnea— y sólo el primero usa compresor. Un centro de surf veía para
+  // siempre un paso pendiente que no tenía forma de completar, porque la
+  // tarea no existe en su operación. Pedirle a alguien que haga algo que no
+  // le corresponde es peor que no pedirle nada: le enseña a ignorar la lista.
+  const categorias = await loadActiveCategories();
+  const buceaONoSabemos = !categorias.length || categorias.includes('diving');
+
+  let hasCompressor = true;
+  if (buceaONoSabemos) {
+    const { count: compCount } = await sb.from('compressors').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId);
+    hasCompressor = (compCount || 0) > 0;
+  }
 
   const { data: orgGearItems } = await sb.from('gear_items').select('id').eq('org_id', currentOrgId).limit(500);
   let hasGearStock = false;
@@ -7642,7 +7675,7 @@ async function buildPhase2ChecklistHtml() {
     <div class="phase2-body" style="${collapsed ? 'display:none;' : ''}">
       <p class="card-desc" style="margin:8px 0 14px;">${t('phase2_sub')}</p>
       <div class="onboard-checklist">
-        ${renderOnboardStep(hasCompressor, t('phase2_step_compressor'), 'gear')}
+        ${buceaONoSabemos ? renderOnboardStep(hasCompressor, t('phase2_step_compressor'), 'gear') : ''}
         ${renderOnboardStep(hasGearStock, t('phase2_step_gear'), 'gear')}
       </div>
     </div>
@@ -7663,6 +7696,7 @@ function togglePhase2Checklist() {
 document.getElementById('location-picker').addEventListener('change', (e) => {
   currentLocationId = e.target.value;
   localStorage.setItem(locationStorageKey(), currentLocationId || '');
+  clearSignerStaffCache();   // la tripulación ofrecida depende del local
   const current = (e.target.options[e.target.selectedIndex] || {}).text;
   const shopLabelEl = document.getElementById('home-current-shop');
   if (shopLabelEl && current) shopLabelEl.textContent = current;
@@ -8212,7 +8246,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-09-30d');
+  console.info('[Seven Seas] build 2026-10-03c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14446,6 +14480,7 @@ async function initChecklists() {
   await loadTodaysTripList();
   initInstructorChecklist();
   initDeptChecklists();
+  await populateSignerSelects();
 }
 
 // Roles that actually get in the water and need their own tank, as opposed
@@ -14660,13 +14695,76 @@ async function renderInstructorChecklistForTrip(tripId) {
   }
 }
 
+// ─── Quién firma una checklist ───
+//
+// Antes era un cuadro de texto libre: el que firmaba escribía su nombre a
+// mano, teniendo la sesión iniciada al lado. Eso deja un registro de
+// seguridad que no se puede verificar contra nadie — un nombre mal escrito,
+// el de otro, o cualquier cosa.
+//
+// Ahora es un selector de la tripulación del local, con el usuario actual ya
+// elegido. De ahí salen el nombre Y el `staff_id`, que se guarda en
+// `completed_by` (la columna existía desde el principio y no se escribía
+// nunca).
+//
+// El selector, y no un campo bloqueado, por la tablet compartida del barco:
+// un solo login para toda la tripulación es lo normal en un centro. Bloquear
+// el nombre haría que todo quedara firmado por el dueño de la cuenta.
+//
+// OJO: esto NO toca `checklist_completions.role`. Esa columna identifica QUÉ
+// checklist se firmó ('deck_morning', 'instructor', 'custom_<id>'), no quién.
+// Pisarla con el rol de la persona rompería Logged Checklists entero.
+let signerStaffCache = null;
+
+async function loadSignerStaff() {
+  if (signerStaffCache) return signerStaffCache;
+  if (!currentOrgId) return [];
+  const { data } = await sb.from('staff')
+    .select('id, full_name, role, custom_role_name')
+    .eq('org_id', currentOrgId)
+    .not('active', 'is', false)
+    .order('full_name');
+  signerStaffCache = data || [];
+  return signerStaffCache;
+}
+
+// Se vacía al cambiar de local o de organización, para no ofrecer tripulación
+// que ya no corresponde.
+function clearSignerStaffCache() { signerStaffCache = null; }
+
+async function populateSignerSelects(root) {
+  const selects = (root || document).querySelectorAll('select.signer-select');
+  if (!selects.length) return;
+  const staff = await loadSignerStaff();
+  const { data: { user } } = await sb.auth.getUser();
+  const myId = user && user.id;
+  const opciones = [`<option value="">${t('cl_pick_signer')}</option>`]
+    .concat(staff.map(s => {
+      const etiqueta = s.custom_role_name || crewRoleLabel(s.role) || '';
+      return `<option value="${s.id}"${s.id === myId ? ' selected' : ''}>` +
+        `${escapeHtml(s.full_name || '')}${etiqueta ? ' — ' + escapeHtml(etiqueta) : ''}</option>`;
+    })).join('');
+  selects.forEach(sel => { sel.innerHTML = opciones; });
+}
+
+// Devuelve {staff_id, name} o null. Un solo lector para los tres lugares que
+// firman, para que no puedan divergir.
+function readSigner(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel || !sel.value) return null;
+  const s = (signerStaffCache || []).find(x => x.id === sel.value);
+  if (!s) return null;
+  return { staff_id: s.id, name: s.full_name || '' };
+}
+
 async function instructorSignOff() {
   if (!currentChecklistTripId) { await showAlertModal(t('cl_select_trip_first')); return; }
-  const name = document.getElementById('cl-instructor-name').value.trim();
+  const signer = readSigner('cl-instructor-name');
+  const name = signer ? signer.name : '';
   const instructorItems = INSTRUCTOR_ITEMS_get();
   const checks = instructorChecksByTrip[currentChecklistTripId] || {};
   const done = instructorItems.filter(i => checks[i.id]).length;
-  if (!name) { await showAlertModal(t('cl_enter_your_name')); return; }
+  if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
   if (done < instructorItems.length && !(await showConfirmModal(`${instructorItems.length - done}${t('cl_items_incomplete')}`))) return;
   const ts = new Date().toLocaleString();
   document.getElementById('cl-instructor-done').innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
@@ -14676,7 +14774,8 @@ async function instructorSignOff() {
   if (currentOrgId) {
     const payload = {
       org_id: currentOrgId, trip_id: currentChecklistTripId,
-      role: 'instructor', signed_by: name,
+      role: 'instructor',                 // qué checklist, NO quién firmó
+      signed_by: name, completed_by: signer.staff_id,
       completed_items: done, total_items: instructorItems.length,
       signed_at: new Date().toISOString()
     };
@@ -14716,7 +14815,28 @@ function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
 // admin elsewhere in this file) still get every tab, since overseeing every
 // department is the point of those roles.
 const DEPT_ROUTINE_VISIBILITY_BY_ROLE = {
-  captain: ['captain'],
+  // El capitán ve los cuatro departamentos.
+  //
+  // Antes veía sólo el suyo, y eso dejaba fuera justo aquello de lo que
+  // responde a bordo: las rutinas de cubierta y el mantenimiento del equipo de
+  // buceo que sube a su barco. Un capitán que no puede abrir el control
+  // mensual del equipo que lleva arriba no está en condiciones de responder
+  // por él.
+  //
+  // Cocina y servicio también: en un liveaboard o un yate el capitán manda a
+  // bordo y ese departamento existe de verdad. En un centro de salida diaria
+  // simplemente no va a tener nada cargado — el mismo ruido que ya ven hoy
+  // dueño y gerente, porque los departamentos no se filtran por lo que el
+  // centro realmente hace.
+  //
+  // Esto amplía lo que VE, no lo que puede HACER. Invitar gente, dar de baja o
+  // aprobar francos siguen detrás del interruptor de «permisos elevados para
+  // capitanes», que es otra decisión y sigue apagado por defecto.
+  //
+  // OJO: no confundir con deptKeyForRole() más abajo, que se ve casi igual y
+  // dice otra cosa — bajo QUÉ pestaña se archivan las checklists propias de un
+  // rol. Las del capitán van bajo «Capitán», no bajo las cuatro.
+  captain: ['captain', 'deck', 'instructor', 'stewards'],
   first_mate: ['deck'], deckhand: ['deck'], bosun: ['deck'], engineer: ['deck'],
   instructor: ['instructor'], divemaster: ['instructor'], dive_guide: ['instructor'], equipment_technician: ['instructor'],
   head_steward: ['stewards'], steward: ['stewards'], head_chef: ['stewards'], chef: ['stewards'],
@@ -14843,11 +14963,11 @@ function toggleCustomChecklistItem(checklistId, idx) {
 async function customChecklistSignOff(checklistId) {
   const cc = customChecklists.find(c => c.id === checklistId);
   if (!cc) return;
-  const nameInput = document.getElementById(`custom-cl-name-${checklistId}`);
-  const name = (nameInput?.value || '').trim();
+  const signer = readSigner(`custom-cl-name-${checklistId}`);
+  const name = signer ? signer.name : '';
   const checks = customChecklistChecks[checklistId] || {};
   const done = cc.items.filter((_, idx) => checks[idx]).length;
-  if (!name) { await showAlertModal(t('cl_enter_your_name')); return; }
+  if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
   if (done < cc.items.length && !(await showConfirmModal(`${cc.items.length - done}${t('cl_items_incomplete')}`))) return;
   const ts = new Date().toLocaleString();
   const doneBanner = document.getElementById(`custom-cl-done-${checklistId}`);
@@ -14858,7 +14978,8 @@ async function customChecklistSignOff(checklistId) {
   if (currentOrgId) {
     const payload = {
       org_id: currentOrgId, trip_id: null,
-      role: `custom_${checklistId}`, signed_by: name,
+      role: `custom_${checklistId}`,      // qué checklist, NO quién firmó
+      signed_by: name, completed_by: signer.staff_id,
       completed_items: done, total_items: cc.items.length,
       signed_at: new Date().toISOString()
     };
@@ -14897,7 +15018,7 @@ async function renderCustomChecklistsForCurrentView() {
       <div class="cl-progress-bar"><div class="cl-progress-fill" style="width:${cc.items.length ? (done / cc.items.length * 100) : 0}%;"></div></div>
       ${itemsHtml}
       <div class="cl-signoff">
-        <input class="sf-input" type="text" id="custom-cl-name-${cc.id}" placeholder="Your name" data-i18n-placeholder="cl_your_name">
+        <select class="sf-input signer-select" id="custom-cl-name-${cc.id}"></select>
         <div class="cl-done-banner" id="custom-cl-done-${cc.id}" style="display:none;"></div>
         <div class="settings-actions" style="margin-top:12px;">
           <button class="btn-save" onclick="customChecklistSignOff('${cc.id}')">${t('cl_sign_off_routine')}</button>
@@ -14905,6 +15026,9 @@ async function renderCustomChecklistsForCurrentView() {
       </div>
     </div>`;
   }).join('');
+  // Los selectores de estas tarjetas nacen vacíos: se llenan acá, después
+  // de inyectar el HTML.
+  await populateSignerSelects(container);
 }
 
 document.getElementById('btn-show-new-checklist').addEventListener('click', () => {
@@ -15028,9 +15152,10 @@ function toggleDeptItem(id) {
 async function deptRoutineSignOff() {
   const routine = currentDeptRoutine();
   const checks = deptRoutineChecks[routine.role] || {};
-  const name = document.getElementById('dept-routine-name').value.trim();
+  const signer = readSigner('dept-routine-name');
+  const name = signer ? signer.name : '';
   const done = routine.items.filter(i => checks[i.id]).length;
-  if (!name) { await showAlertModal(t('cl_enter_your_name')); return; }
+  if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
   if (done < routine.items.length && !(await showConfirmModal(`${routine.items.length - done}${t('cl_items_incomplete')}`))) return;
   const ts = new Date().toLocaleString();
   const doneBanner = document.getElementById('dept-routine-done');
@@ -15041,7 +15166,8 @@ async function deptRoutineSignOff() {
   if (currentOrgId) {
     const payload = {
       org_id: currentOrgId, trip_id: null,
-      role: routine.role, signed_by: name,
+      role: routine.role,                 // qué rutina, NO quién firmó
+      signed_by: name, completed_by: signer.staff_id,
       completed_items: done, total_items: routine.items.length,
       signed_at: new Date().toISOString()
     };
