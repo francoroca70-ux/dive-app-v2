@@ -23,7 +23,7 @@ window.Chart=function(){};
 const scripts=[...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
 const main=scripts.find(s=>s.includes('[Seven Seas] build'));
 const hook=main+"\n;window.__t={setRole:(r)=>{currentUserRole=r;},elevated:(v)=>{window.currentCaptainElevated=v;},"+
-  "deptKeyForRole:(r)=>deptKeyForRole(r)};";
+  "deptKeyForRole:(r)=>deptKeyForRole(r),setOrg:(id)=>{currentOrgId=id;}};";
 let boot=null; try{window.eval(hook);}catch(e){boot=e;}
 let fail=0;
 function chk(n,ok,x){console.log((ok?'PASS  ':'FAIL  ')+n+(x?'  '+x:'')); if(!ok)fail=1;}
@@ -56,5 +56,43 @@ chk('las checklists propias del capitán se archivan bajo «capitán», no bajo 
 chk('las del deckhand siguen bajo cubierta', window.__t.deptKeyForRole('deckhand')==='deck');
 chk('las del divemaster siguen bajo instructor', window.__t.deptKeyForRole('divemaster')==='instructor');
 chk('las del chef siguen bajo cocina', window.__t.deptKeyForRole('chef')==='stewards');
+
+
+// ── El interruptor «ver todos los departamentos» (opción D) ──
+window.__t.setOrg('org-1');
+const key='deptShowAll:org-1';
+window.localStorage.removeItem(key);
+
+window.__t.setRole('deckhand');
+chk('apagado: el deckhand sigue viendo sólo cubierta',
+    JSON.stringify(ve('deckhand'))===JSON.stringify(['deck']), ve('deckhand').join(','));
+
+window.toggleDeptShowAll(true);
+window.__t.setRole('deckhand');
+chk('encendido: el deckhand ve los cuatro',
+    JSON.stringify(ve('deckhand'))===JSON.stringify(TODOS), ve('deckhand').join(','));
+chk('queda guardado en localStorage', window.localStorage.getItem(key)==='true');
+chk('y encendido también lo ve el instructor',
+    JSON.stringify(ve('instructor'))===JSON.stringify(TODOS));
+
+window.toggleDeptShowAll(false);
+window.__t.setRole('deckhand');
+chk('se puede volver atrás', JSON.stringify(ve('deckhand'))===JSON.stringify(['deck']), ve('deckhand').join(','));
+
+// La preferencia es por organización: no se filtra a otra.
+window.localStorage.setItem('deptShowAll:org-1','true');
+window.__t.setOrg('org-2'); window.__t.setRole('deckhand');
+chk('la preferencia no se cuela a otra organización',
+    JSON.stringify(ve('deckhand'))===JSON.stringify(['deck']), ve('deckhand').join(','));
+window.__t.setOrg('org-1');
+
+// ── A quién se le muestra el interruptor ──
+const muestra=(rol,elev)=>{ window.__t.setRole(rol); window.__t.elevated(!!elev); return !window.roleSeesEveryDept(); };
+chk('se le muestra al deckhand', muestra('deckhand'));
+chk('se le muestra al instructor', muestra('instructor'));
+chk('NO se le muestra al dueño', !muestra('owner'));
+chk('NO se le muestra al gerente', !muestra('manager'));
+chk('NO se le muestra al capitán (ya ve los cuatro)', !muestra('captain'));
+chk('NO se le muestra a un rol fuera del mapa', !muestra('front_desk'));
 
 process.exit(fail);

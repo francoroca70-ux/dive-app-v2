@@ -315,6 +315,12 @@ body { background: var(--navy); color: var(--text); }
   text-align: center; font-size: 0.83rem;
   color: rgba(255,255,255,0.35);
 }
+.dept-show-all {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px; font-size: 0.82rem; color: var(--muted); cursor: pointer;
+}
+.dept-show-all input { width: 15px; height: 15px; }
+
 .login-signup a {
   color: var(--teal); text-decoration: none; font-weight: 600;
 }
@@ -3181,6 +3187,12 @@ body { background: var(--navy); color: var(--text); }
               <div class="sf-group" style="max-width:260px;">
                 <label class="sf-label" data-i18n="cl_department_label">Department</label>
                 <select class="sf-input" id="dept-tabs" onchange="selectDeptDepartment(this.value)"></select>
+                <!-- Sólo aparece para quien tiene la vista acotada por su rol.
+                     A dueño y gerente no se les muestra: ya ven todo. -->
+                <label class="dept-show-all" id="dept-show-all-row" style="display:none;">
+                  <input type="checkbox" id="chk-dept-show-all" onchange="toggleDeptShowAll(this.checked)">
+                  <span data-i18n="cl_show_all_depts">Show all departments</span>
+                </label>
               </div>
               <div class="sf-group" style="max-width:200px;">
                 <label class="sf-label" data-i18n="cl_cadence_label">Checklist</label>
@@ -4482,6 +4494,7 @@ const TRANSLATIONS = {
     cl_items_incomplete: ' items incomplete. Sign off anyway?', cl_signed_off_by: 'Signed off by ', cl_saved_offline_sync: ' (saved offline — will sync automatically)',
     cl_no_trips_today: 'No trips today. You can still use checklists independently.', cl_guest_singular: 'guest', cl_guest_plural: 'guests',
     cl_pick_signer: 'Select who is signing…',
+    cl_show_all_depts: 'Show all departments',
     cl_tanks_needed: 'tanks needed', cl_kg_weights_total: 'kg weights total', cl_no_signoffs_yet: 'No sign-offs yet for this trip.', cl_signed_by: 'Signed by ',
 
     gear_tab_compressors: 'Compressors', gear_tab_inventory: 'Inventory', gear_tab_inspection: 'Inspection', gear_tab_registry: 'Registry',
@@ -5178,6 +5191,7 @@ const TRANSLATIONS = {
     cl_items_incomplete: ' elementos incompletos. ¿Confirmar de todos modos?', cl_signed_off_by: 'Confirmado por ', cl_saved_offline_sync: ' (guardado sin conexión — se sincronizará automáticamente)',
     cl_no_trips_today: 'No hay salidas hoy. Aún puedes usar las listas de verificación de forma independiente.', cl_guest_singular: 'huésped', cl_guest_plural: 'huéspedes',
     cl_pick_signer: 'Elegí quién firma…',
+    cl_show_all_depts: 'Ver todos los departamentos',
     cl_tanks_needed: 'tanques necesarios', cl_kg_weights_total: 'kg de plomos en total', cl_no_signoffs_yet: 'Aún no hay confirmaciones para esta salida.', cl_signed_by: 'Confirmado por ',
 
     gear_tab_compressors: 'Compresores', gear_tab_inventory: 'Inventario', gear_tab_inspection: 'Inspección', gear_tab_registry: 'Registro',
@@ -8246,7 +8260,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-03c');
+  console.info('[Seven Seas] build 2026-10-03d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14841,11 +14855,52 @@ const DEPT_ROUTINE_VISIBILITY_BY_ROLE = {
   instructor: ['instructor'], divemaster: ['instructor'], dive_guide: ['instructor'], equipment_technician: ['instructor'],
   head_steward: ['stewards'], steward: ['stewards'], head_chef: ['stewards'], chef: ['stewards'],
 };
+// ─── «Ver todos los departamentos» ───
+//
+// El filtro por rol acierta la mayoría de las veces y falla en los casos
+// reales: un deckhand que también guía buceo necesita el control mensual del
+// equipo, y ese control no cae necesariamente un día en que tenga salida.
+//
+// Esto es una PREFERENCIA DE VISTA, no un permiso: vive en localStorage, por
+// persona y por organización. No toca el esquema, ni RLS, ni quién puede
+// hacer qué. El dato ya es visible para dueño y gerente, así que mostrárselo
+// a quien lo pide no cambia nada de privacidad.
+//
+// Se eligió esto por encima de un campo «áreas adicionales» por persona
+// (tabla nueva + pantalla de configuración) porque todavía no vimos un centro
+// usando la app. Si algún día el dueño necesita controlar quién ve qué, ese
+// es el camino de arriba — ver «Qué ve cada rol» en el vault.
+function deptShowAllKey() {
+  return `deptShowAll:${currentOrgId || 'sin-org'}`;
+}
+function deptShowAllEnabled() {
+  try { return localStorage.getItem(deptShowAllKey()) === 'true'; } catch { return false; }
+}
+function toggleDeptShowAll(on) {
+  try { localStorage.setItem(deptShowAllKey(), on ? 'true' : 'false'); } catch {}
+  // Al apagarlo puede quedar seleccionado un departamento que ya no se ve;
+  // initDeptChecklists() reencauza currentDeptKey al primero visible.
+  initDeptChecklists();
+}
+
+// Los roles que ya ven todo por su cuenta. El interruptor no les aporta nada,
+// así que ni se les muestra.
+function roleSeesEveryDept() {
+  const allKeys = Object.keys(departmentRoutinesGet());
+  if (['owner', 'manager'].includes(currentUserRole)) return true;
+  if (currentUserRole === 'captain' && window.currentCaptainElevated) return true;
+  const mapped = DEPT_ROUTINE_VISIBILITY_BY_ROLE[currentUserRole];
+  // Sin entrada en el mapa, o con todas: ya ve todo.
+  if (!mapped || !mapped.length) return true;
+  return allKeys.every(k => mapped.includes(k));
+}
+
 function visibleDeptKeysForCurrentUser() {
   const allKeys = Object.keys(departmentRoutinesGet());
   const sees_everything = ['owner', 'manager'].includes(currentUserRole) ||
     (currentUserRole === 'captain' && window.currentCaptainElevated);
   if (sees_everything) return allKeys;
+  if (deptShowAllEnabled()) return allKeys;
   const mapped = DEPT_ROUTINE_VISIBILITY_BY_ROLE[currentUserRole];
   return (mapped && mapped.length) ? mapped.filter(k => allKeys.includes(k)) : allKeys;
 }
@@ -15053,6 +15108,15 @@ function initDeptChecklists() {
   tabRow.innerHTML = visibleKeys.map(key =>
     `<option value="${key}" ${key===currentDeptKey?'selected':''}>${depts[key].label}</option>`
   ).join('');
+
+  // El interruptor sólo para quien tiene la vista acotada.
+  const fila = document.getElementById('dept-show-all-row');
+  const chk = document.getElementById('chk-dept-show-all');
+  if (fila && chk) {
+    const acotado = !roleSeesEveryDept();
+    fila.style.display = acotado ? 'flex' : 'none';
+    chk.checked = acotado && deptShowAllEnabled();
+  }
   document.getElementById('btn-show-new-checklist').style.display = myCreatableChecklistRoles().length ? 'inline-block' : 'none';
   loadCustomChecklists().then(renderDeptRoutine);
   renderDeptCadenceTabs();
