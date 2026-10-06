@@ -172,11 +172,22 @@ real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 tabla conservar o borrar está en `Seven Seas Ops/Plantillas y actas.md` del
 vault — **leerlo antes de tocar este módulo.**
 
-Hecho: bloque 0 (actas inmutables, sin UPDATE ni DELETE, por RLS y trigger) y
-etapa 0.5 (`checklist_progress`, una fila por tilde).
-Sigue: **etapa 1** — renombrar `checklists` → `checklist_templates`,
-`checklist_items` → `checklist_template_items`, borrar
-`checklist_item_completions` y fusionar `custom_checklists`.
+Hecho: bloque 0 (actas inmutables), etapa 0.5 (`checklist_progress`, una fila
+por tilde) y etapa 1 (el esquema: `checklist_templates` +
+`checklist_template_items`, con `scope` y una restricción de coherencia).
+Sigue: **etapa 2** — semillas de los 17 tipos de salida, sembradas al activar
+cada categoría. `custom_checklists` sigue viva a propósito hasta la etapa 3.
+
+**El acta no tiene FK a local, salida ni persona, y es a propósito.** Un acta
+es inmutable, así que una cascada —que la borraría— o un `SET NULL` —que la
+modificaría— chocan con el trigger y rompen la operación del vecino: borrar un
+local, dar de baja a alguien, borrar una salida. En vez de eso el acta guarda
+el nombre (`boat_name`, `signed_by`, `location_name`, `trip_name`) y deja los
+ids como punteros. No volver a ponerle FKs ni ablandar el trigger — ver
+`Errores y aprendizajes/Las claves que peleaban con la inmutabilidad.md`.
+
+El acta se arma en **un solo lugar**, `buildRecordPayload()`. Los tres caminos
+que firman la usan y hay un test estructural que lo verifica.
 
 **Edge functions** (`supabase/functions/`): `paddle-webhook`, `paddle-portal`,
 `waiver-remote-signing`, `send-booking-confirmation`, `send-staff-invite`,

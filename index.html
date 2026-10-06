@@ -7428,6 +7428,12 @@ async function updateAppContext(orgName) {
     const current = locations.find(l => l.id === currentLocationId);
     if (shopLabelEl) shopLabelEl.textContent = current ? current.name : '';
   }
+  // Un solo lugar resuelve el nombre del local actual, después de las tres
+  // ramas de arriba. Lo necesita el acta de una checklist, que guarda el
+  // nombre y no sólo el id: el local puede cerrarse o renombrarse y el acta
+  // tiene que seguir diciendo dónde se firmó.
+  const locActual = (locations || []).find(l => l.id === currentLocationId);
+  currentLocationName = locActual ? locActual.name : '';
   localStorage.setItem(locationStorageKey(), currentLocationId || '');
   await checkShopMismatchBanner();
 }
@@ -8294,7 +8300,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-06b');
+  console.info('[Seven Seas] build 2026-10-06c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9009,6 +9015,9 @@ document.getElementById('account-switcher-forget').addEventListener('click', () 
 // ─── SETTINGS ───
 let currentOrgId = null;
 let currentLocationId = null;
+// Nombre del local actual. Lo setea updateAppContext() en un solo lugar y lo
+// consume el acta de una checklist como snapshot. Ver buildRecordPayload().
+let currentLocationName = '';
 
 async function loadSettings(user) {
   document.getElementById('settings-email').textContent = user.email;
@@ -14510,6 +14519,9 @@ let deptRoutineChecks = {}; // { [role]: { [itemId]: bool } }
 let currentDeptKey = 'captain';
 let currentCadenceKey = 'morning';
 let currentChecklistTripId = null;
+// { [tripId]: nombre mostrado }. Lo llena loadTodaysTripList() y lo consume el
+// acta como snapshot. Ver buildRecordPayload().
+let checklistTripNameById = {};
 let currentUserRole = 'instructor';
 
 // ─── INIT ───
@@ -14562,6 +14574,11 @@ async function loadTodaysTripList() {
 
   list.innerHTML = trips.map(tr => {
     const name = tr.trip_name || trTypeName(tr.trip_types?.name) || trTypeName(tr.trip_type) || t('cal_trip_fallback');
+    // El acta guarda el nombre de la salida, no sólo el id, porque la salida
+    // se puede borrar. Se registra ACÁ, donde el nombre ya se resolvió con su
+    // cadena de fallbacks, para que el acta diga exactamente lo mismo que vio
+    // en pantalla quien firmó — y no una segunda versión del mismo cálculo.
+    checklistTripNameById[tr.id] = name;
     const time = tr.trip_time?.slice(0,5) || '';
     const guests = (tr.participants || []).length;
 
@@ -14923,6 +14940,37 @@ function buildItemsSnapshot(items, estaTildado) {
   }));
 }
 
+// Arma el acta. Un solo constructor para los tres lugares que firman
+// (instructor, rutina de departamento, checklist propia).
+//
+// Antes cada uno armaba su objeto a mano. Eran idénticos salvo el rol y los
+// ítems, así que agregarle un campo al acta significaba acordarse de tocarlo
+// en tres lados — y el defecto aparece donde la copia FALTA, no donde está.
+// Esta etapa le agregó tres campos de una sola vez; con el patrón viejo
+// habrían sido nueve ediciones y un acta a medio llenar.
+//
+// Los campos *_name son snapshots a propósito: `signed_by` ya lo era, y ahora
+// también el local y la salida. El acta registra un hecho y ese hecho no deja
+// de ser cierto porque se borre la fila de al lado. Los ids quedan como
+// punteros históricos, sin foreign key, justamente para que el acta pueda
+// sobrevivir a lo que referencia.
+function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos }) {
+  return {
+    org_id: currentOrgId,
+    trip_id: tripId || null,
+    trip_name: tripId ? (checklistTripNameById[tripId] || null) : null,
+    location_id: currentLocationId || null,
+    location_name: currentLocationName || null,
+    role,                               // qué checklist, NO quién firmó
+    signed_by: signer.name,
+    completed_by: signer.staff_id,
+    completed_items: hechos,
+    total_items: items.length,
+    items_snapshot: buildItemsSnapshot(items, estaTildado),
+    signed_at: new Date().toISOString()
+  };
+}
+
 // Devuelve {staff_id, name} o null. Un solo lector para los tres lugares que
 // firman, para que no puedan divergir.
 function readSigner(selectId) {
@@ -14948,14 +14996,11 @@ async function instructorSignOff() {
   const status = document.getElementById('cl-instructor-status');
   if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
   if (currentOrgId) {
-    const payload = {
-      org_id: currentOrgId, trip_id: currentChecklistTripId,
-      role: 'instructor',                 // qué checklist, NO quién firmó
-      signed_by: name, completed_by: signer.staff_id,
-      completed_items: done, total_items: instructorItems.length,
-      items_snapshot: buildItemsSnapshot(instructorItems, (it) => checks[it.id]),
-      signed_at: new Date().toISOString()
-    };
+    const payload = buildRecordPayload({
+      role: 'instructor', tripId: currentChecklistTripId,
+      items: instructorItems, estaTildado: (it) => checks[it.id],
+      signer, hechos: done
+    });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
       document.getElementById('cl-instructor-done').innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
@@ -15210,15 +15255,15 @@ async function customChecklistSignOff(checklistId) {
     doneBanner.style.display = 'block';
   }
   if (currentOrgId) {
-    const payload = {
-      org_id: currentOrgId, trip_id: null,
-      role: `custom_${checklistId}`,      // qué checklist, NO quién firmó
-      signed_by: name, completed_by: signer.staff_id,
-      completed_items: done, total_items: cc.items.length,
-      // Acá los ítems son texto suelto y `checks` va por índice, no por id.
-      items_snapshot: buildItemsSnapshot(cc.items, (_it, idx) => checks[idx]),
-      signed_at: new Date().toISOString()
-    };
+    const payload = buildRecordPayload({
+      role: `custom_${checklistId}`, tripId: null,
+      // Acá los ítems son texto suelto y `checks` va por índice, no por id:
+      // `custom_checklists.items` es un text[] y todavía no tiene id propio
+      // por ítem. Eso se arregla en la etapa 3, cuando las checklists propias
+      // pasen a checklist_templates y cada ítem tenga su uuid.
+      items: cc.items, estaTildado: (_it, idx) => checks[idx],
+      signer, hechos: done
+    });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
     } else {
@@ -15431,14 +15476,11 @@ async function deptRoutineSignOff() {
   const status = document.getElementById('dept-routine-status');
   if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
   if (currentOrgId) {
-    const payload = {
-      org_id: currentOrgId, trip_id: null,
-      role: routine.role,                 // qué rutina, NO quién firmó
-      signed_by: name, completed_by: signer.staff_id,
-      completed_items: done, total_items: routine.items.length,
-      items_snapshot: buildItemsSnapshot(routine.items, (it) => checks[it.id]),
-      signed_at: new Date().toISOString()
-    };
+    const payload = buildRecordPayload({
+      role: routine.role, tripId: null,
+      items: routine.items, estaTildado: (it) => checks[it.id],
+      signer, hechos: done
+    });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
       doneBanner.innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
