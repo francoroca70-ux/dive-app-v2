@@ -6496,6 +6496,22 @@ async function replayOfflineAction(item) {
       if (error) throw error;
       break;
     }
+    // Un tilde marcado sin conexión. La restricción única hace que reenviar
+    // sea seguro: el segundo intento actualiza la fila en vez de duplicarla.
+    case 'checklist_tick': {
+      const { error } = await sb.from('checklist_progress')
+        .upsert(item.payload, { onConflict: 'org_id,scope_key,item_id' });
+      if (error) throw error;
+      break;
+    }
+    case 'checklist_untick': {
+      const { error } = await sb.from('checklist_progress').delete()
+        .eq('org_id', item.payload.org_id)
+        .eq('scope_key', item.payload.scope_key)
+        .eq('item_id', item.payload.item_id);
+      if (error) throw error;
+      break;
+    }
     case 'maintenance_log': {
       const { error } = await sb.from('maintenance_logs').insert(item.payload);
       if (error) throw error;
@@ -8278,7 +8294,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-06a');
+  console.info('[Seven Seas] build 2026-10-06b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14695,10 +14711,20 @@ function resetInstructorChecklist() {
   renderInstructorChecklistForTrip(currentChecklistTripId);
 }
 
-function toggleInstructor(id) {
+// La llave de la instancia: una preparación por salida.
+function instructorScope() {
+  const periodKey = periodKeyForCadence(null, currentChecklistTripId);
+  return { scopeKey: progressScopeKey('instructor', periodKey),
+           meta: { role: 'instructor', periodKey, tripId: currentChecklistTripId } };
+}
+
+async function toggleInstructor(id) {
   if (!currentChecklistTripId) return;
-  const checks = instructorChecksByTrip[currentChecklistTripId] = instructorChecksByTrip[currentChecklistTripId] || {};
+  const { scopeKey, meta } = instructorScope();
+  const checks = instructorChecksByTrip[currentChecklistTripId] = progressCache[scopeKey] || {};
   checks[id] = !checks[id];
+  if (!checks[id]) delete checks[id];
+  await saveChecklistTick(scopeKey, meta, id, !!checks[id]);
   renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), checks, 'toggleInstructor', null);
 }
 
@@ -14707,7 +14733,9 @@ function toggleInstructor(id) {
 // sign-off that already exists for this trip so switching back to a trip
 // someone already signed off doesn't show a misleading "Pending".
 async function renderInstructorChecklistForTrip(tripId) {
-  instructorChecksByTrip[tripId] = instructorChecksByTrip[tripId] || {};
+  // Lo que ya esté tildado por otro, o por uno mismo en otro dispositivo.
+  const periodKey = periodKeyForCadence(null, tripId);
+  instructorChecksByTrip[tripId] = await loadChecklistProgress(progressScopeKey('instructor', periodKey));
   renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), instructorChecksByTrip[tripId], 'toggleInstructor', null);
   const doneBanner = document.getElementById('cl-instructor-done');
   doneBanner.style.display = 'none';
@@ -14779,6 +14807,100 @@ async function populateSignerSelects(root) {
   selects.forEach(sel => { sel.innerHTML = opciones; });
 }
 
+// ─── El trabajo en curso de una checklist ───
+//
+// Los tildes vivían en una variable de JavaScript, así que se perdían al
+// recargar y no se compartían con nadie. El control mensual repartido entre
+// tres personas a lo largo de cuatro días —la forma normal de hacerlo en un
+// centro— era imposible.
+//
+// Ahora cada tilde es una fila, con quién lo marcó y cuándo. Las variables en
+// memoria siguen existiendo como caché de lo que ya se leyó: la pantalla
+// responde al instante y la base se actualiza detrás.
+
+// Qué instancia concreta de una checklist se está trabajando.
+// Una rutina de mañana es una por día; el control mensual, una por mes; la
+// preparación de una salida, una por salida.
+function periodKeyForCadence(cadence, tripId) {
+  if (tripId) return tripId;
+  const hoy = new Date();
+  const yyyy = hoy.getFullYear();
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dd = String(hoy.getDate()).padStart(2, '0');
+  if (cadence === 'monthly') return `${yyyy}-${mm}`;
+  if (cadence === 'yearly')  return String(yyyy);
+  return `${yyyy}-${mm}-${dd}`;     // morning / eod y cualquier otra: por día
+}
+
+// El local va adentro de la llave porque dos locales haciendo la rutina de
+// cubierta el mismo día son dos listas distintas, no una compartida.
+function progressScopeKey(role, periodKey) {
+  return `${currentLocationId || 'all'}:${role}:${periodKey}`;
+}
+
+const progressCache = {};   // { [scopeKey]: { [itemId]: true } }
+
+async function loadChecklistProgress(scopeKey) {
+  if (progressCache[scopeKey]) return progressCache[scopeKey];
+  const mapa = {};
+  if (currentOrgId && !isOffline) {
+    const { data } = await sb.from('checklist_progress')
+      .select('item_id, checked')
+      .eq('org_id', currentOrgId)
+      .eq('scope_key', scopeKey);
+    (data || []).forEach(r => { if (r.checked) mapa[r.item_id] = true; });
+  }
+  progressCache[scopeKey] = mapa;
+  return mapa;
+}
+
+// Un tilde. Se guarda o se borra la fila según el estado nuevo.
+//
+// Sin conexión va a la cola: la restricción única (org, scope_key, item_id)
+// hace que reenviar sea seguro — el segundo intento actualiza en vez de
+// duplicar.
+async function saveChecklistTick(scopeKey, meta, itemId, checked) {
+  const cache = progressCache[scopeKey] = progressCache[scopeKey] || {};
+  if (checked) cache[itemId] = true; else delete cache[itemId];
+  if (!currentOrgId) return;
+
+  const { data: { user } } = await sb.auth.getUser();
+
+  const payload = {
+    org_id: currentOrgId,
+    scope_key: scopeKey,
+    role: meta.role,
+    period_key: meta.periodKey,
+    location_id: currentLocationId || null,
+    trip_id: meta.tripId || null,
+    item_id: String(itemId),
+    checked: true,
+    checked_by: (user && user.id) || null,
+    checked_at: new Date().toISOString()
+  };
+
+  if (isOffline) {
+    queueOfflineAction(checked ? 'checklist_tick' : 'checklist_untick', payload);
+    return;
+  }
+  if (checked) {
+    await sb.from('checklist_progress').upsert(payload, { onConflict: 'org_id,scope_key,item_id' });
+  } else {
+    await sb.from('checklist_progress').delete()
+      .eq('org_id', currentOrgId).eq('scope_key', scopeKey).eq('item_id', String(itemId));
+  }
+}
+
+// Al firmar, la instancia se cierra: el acta pasa a ser el registro y el
+// trabajo en curso deja de existir. Si hiciera falta corregir algo, se firma
+// una nueva y quedan las dos — las actas no se tocan.
+async function clearChecklistProgress(scopeKey) {
+  delete progressCache[scopeKey];
+  if (!currentOrgId || isOffline) return;
+  await sb.from('checklist_progress').delete()
+    .eq('org_id', currentOrgId).eq('scope_key', scopeKey);
+}
+
 // ─── El acta de lo que se firmó ───
 //
 // Antes se guardaban sólo dos números: 7 de 14. Eso prueba que algo se salteó
@@ -14839,6 +14961,10 @@ async function instructorSignOff() {
       document.getElementById('cl-instructor-done').innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
     } else {
       await sb.from('checklist_completions').insert(payload);
+      // Firmada: la instancia se cierra. El acta pasa a ser el registro y el
+      // trabajo en curso deja de existir, para que nadie siga tildando sobre
+      // algo ya firmado.
+      await clearChecklistProgress(instructorScope().scopeKey);
       if (['owner','manager','captain'].includes(currentUserRole)) {
         await loadCrewStatus(currentChecklistTripId);
       }
@@ -15050,9 +15176,21 @@ function canDeleteCustomChecklist(cc, myUserId) {
   return ['owner', 'manager'].includes(currentUserRole) || cc.created_by === myUserId;
 }
 
-function toggleCustomChecklistItem(checklistId, idx) {
-  const checks = customChecklistChecks[checklistId] = customChecklistChecks[checklistId] || {};
+function customScope(cc) {
+  const periodKey = periodKeyForCadence(cc.cadence, null);
+  const role = `custom_${cc.id}`;
+  return { scopeKey: progressScopeKey(role, periodKey),
+           meta: { role, periodKey, tripId: null } };
+}
+
+async function toggleCustomChecklistItem(checklistId, idx) {
+  const cc = customChecklists.find(c => c.id === checklistId);
+  if (!cc) return;
+  const { scopeKey, meta } = customScope(cc);
+  const checks = customChecklistChecks[checklistId] = progressCache[scopeKey] || {};
   checks[idx] = !checks[idx];
+  if (!checks[idx]) delete checks[idx];
+  await saveChecklistTick(scopeKey, meta, idx, !!checks[idx]);
   renderCustomChecklistsForCurrentView();
 }
 
@@ -15085,6 +15223,7 @@ async function customChecklistSignOff(checklistId) {
       queueOfflineAction('checklist_completion', payload);
     } else {
       await sb.from('checklist_completions').insert(payload);
+      await clearChecklistProgress(customScope(cc).scopeKey);
     }
   }
 }
@@ -15098,6 +15237,11 @@ async function renderCustomChecklistsForCurrentView() {
   const { data: userData } = await sb.auth.getUser();
   const myUserId = userData?.user?.id;
   const matching = customChecklists.filter(cc => cc.dept_key === currentDeptKey && cc.cadence === currentCadenceKey);
+  // Cada una tiene su propia instancia en curso.
+  for (const cc of matching) {
+    const { scopeKey } = customScope(cc);
+    customChecklistChecks[cc.id] = await loadChecklistProgress(scopeKey);
+  }
   container.innerHTML = matching.map(cc => {
     const checks = customChecklistChecks[cc.id] = customChecklistChecks[cc.id] || {};
     const done = cc.items.filter((_, idx) => checks[idx]).length;
@@ -15213,9 +15357,13 @@ function deptRoutinePeriodRange(cadenceKey) {
 async function renderDeptRoutine() {
   const routine = currentDeptRoutine();
   const roleKey = routine.role;
-  deptRoutineChecks[roleKey] = deptRoutineChecks[roleKey] || {};
+  // Lo que ya esté tildado de esta instancia — por otro tripulante, o por uno
+  // mismo ayer. Un control mensual se hace de a poco entre varios días.
+  const periodKeyDept = periodKeyForCadence(currentCadenceKey, null);
+  deptRoutineChecks[roleKey] = await loadChecklistProgress(progressScopeKey(roleKey, periodKeyDept));
   document.getElementById('dept-routine-title').textContent = routine.label;
-  document.getElementById('dept-routine-name').value = '';
+  const nombreSel = document.getElementById('dept-routine-name');
+  if (nombreSel) nombreSel.value = '';
   const doneBanner = document.getElementById('dept-routine-done');
   if (doneBanner) doneBanner.style.display = 'none';
   const status = document.getElementById('dept-routine-status');
@@ -15249,10 +15397,22 @@ function resetDeptRoutine() {
   renderDeptRoutine();
 }
 
-function toggleDeptItem(id) {
+// Una instancia por período: la de mañana es diaria, el control mensual es
+// uno por mes.
+function deptScope() {
   const routine = currentDeptRoutine();
-  const checks = deptRoutineChecks[routine.role];
+  const periodKey = periodKeyForCadence(currentCadenceKey, null);
+  return { routine, periodKey,
+           scopeKey: progressScopeKey(routine.role, periodKey),
+           meta: { role: routine.role, periodKey, tripId: null } };
+}
+
+async function toggleDeptItem(id) {
+  const { routine, scopeKey, meta } = deptScope();
+  const checks = deptRoutineChecks[routine.role] = progressCache[scopeKey] || {};
   checks[id] = !checks[id];
+  if (!checks[id]) delete checks[id];
+  await saveChecklistTick(scopeKey, meta, id, !!checks[id]);
   renderCheckItems('dept-list', routine.items, checks, 'toggleDeptItem', 'dept-routine-progress');
 }
 
@@ -15284,6 +15444,7 @@ async function deptRoutineSignOff() {
       doneBanner.innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
     } else {
       await sb.from('checklist_completions').insert(payload);
+      await clearChecklistProgress(deptScope().scopeKey);
     }
   }
 }
