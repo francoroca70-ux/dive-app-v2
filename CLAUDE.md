@@ -4,7 +4,7 @@
 verdad del proyecto. `HANDOVER.md` y `NEXT-SESSION.md` son históricos y están
 desactualizados — no mandan.*
 
-**Última actualización: 2026-09-30.**
+**Última actualización: 2026-10-03.**
 
 ---
 
@@ -146,6 +146,24 @@ JS + las traducciones. Es a propósito — Fran despliega sin build step.
 - **Apps nativas**: `isNativeAppShell()` detecta Capacitor. El checkout y el
   portal de facturación **cortan ahí antes de abrir nada** — lo exige la guía
   3.1.1 de Apple. Los botones "no funcionan" en el celular a propósito.
+
+**Roles y checklists** (revisado el 03/10): un rol por persona (`staff.role`).
+Ese único campo hace dos trabajos distintos — permiso y área de trabajo — y de
+ahí salen casi todos los roces. El detalle completo, con lo que está y lo que
+no está filtrado por rol, en `Seven Seas Ops/Qué ve cada rol.md` del vault.
+
+Tres cuidados concretos al tocar esta zona:
+- `checklist_completions.role` dice **qué checklist** se firmó
+  (`deck_morning`, `instructor`, `custom_<id>`), **no quién**. Logged
+  Checklists la lee para etiquetar. Pisarla rompe esa vista.
+- `DEPT_ROUTINE_VISIBILITY_BY_ROLE` (qué pestañas ve un rol) y
+  `deptKeyForRole()` (bajo qué pestaña se archivan sus checklists propias) se
+  ven casi iguales y dicen cosas distintas. No editar las dos a la vez.
+- Quien firma sale de un selector de la tripulación, no de texto libre, y se
+  guarda en `completed_by`. Ver `Quién firma una checklist.md`.
+
+**Pruebas**: `_tests/*.test.js` — 72 comprobaciones corriendo el `index.html`
+real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Edge functions** (`supabase/functions/`): `paddle-webhook`, `paddle-portal`,
 `waiver-remote-signing`, `send-booking-confirmation`, `send-staff-invite`,
