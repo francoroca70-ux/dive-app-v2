@@ -162,8 +162,21 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 72 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 106 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
+
+**Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
+«checklist» tapaba: **plantilla** (lo que hay que revisar, editable),
+**en curso** (lo que se lleva tildado, compartido entre personas y días) y
+**acta** (lo firmado, inmutable). El plan completo, las siete etapas y qué
+tabla conservar o borrar está en `Seven Seas Ops/Plantillas y actas.md` del
+vault — **leerlo antes de tocar este módulo.**
+
+Hecho: bloque 0 (actas inmutables, sin UPDATE ni DELETE, por RLS y trigger) y
+etapa 0.5 (`checklist_progress`, una fila por tilde).
+Sigue: **etapa 1** — renombrar `checklists` → `checklist_templates`,
+`checklist_items` → `checklist_template_items`, borrar
+`checklist_item_completions` y fusionar `custom_checklists`.
 
 **Edge functions** (`supabase/functions/`): `paddle-webhook`, `paddle-portal`,
 `waiver-remote-signing`, `send-booking-confirmation`, `send-staff-invite`,
