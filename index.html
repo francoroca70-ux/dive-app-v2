@@ -315,6 +315,22 @@ body { background: var(--navy); color: var(--text); }
   text-align: center; font-size: 0.83rem;
   color: rgba(255,255,255,0.35);
 }
+.cl-logged-row { cursor: pointer; }
+.cl-logged-detail {
+  padding: 4px 0 14px 4px; border-bottom: 1px solid var(--border);
+}
+.cl-logged-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 0.82rem; padding: 4px 0; line-height: 1.45;
+}
+.cl-logged-item-mark { flex: 0 0 14px; font-weight: 700; }
+.cl-logged-item.ok     { color: var(--muted); }
+.cl-logged-item.ok .cl-logged-item-mark    { color: var(--success); }
+.cl-logged-item.missed { color: var(--text); font-weight: 600; }
+.cl-logged-item.missed .cl-logged-item-mark { color: var(--error); }
+.cl-logged-no-detail { font-size: 0.8rem; color: var(--muted); font-style: italic; }
+.cl-role-badge.warn { background: rgba(239,159,39,0.15); color: #EF9F27; }
+
 .dept-show-all {
   display: flex; align-items: center; gap: 8px;
   margin-top: 8px; font-size: 0.82rem; color: var(--muted); cursor: pointer;
@@ -4495,6 +4511,7 @@ const TRANSLATIONS = {
     cl_no_trips_today: 'No trips today. You can still use checklists independently.', cl_guest_singular: 'guest', cl_guest_plural: 'guests',
     cl_pick_signer: 'Select who is signing…',
     cl_show_all_depts: 'Show all departments',
+    cl_logged_no_detail: 'This sign-off was recorded before the app stored item-by-item detail. Only the totals are available.',
     cl_tanks_needed: 'tanks needed', cl_kg_weights_total: 'kg weights total', cl_no_signoffs_yet: 'No sign-offs yet for this trip.', cl_signed_by: 'Signed by ',
 
     gear_tab_compressors: 'Compressors', gear_tab_inventory: 'Inventory', gear_tab_inspection: 'Inspection', gear_tab_registry: 'Registry',
@@ -5192,6 +5209,7 @@ const TRANSLATIONS = {
     cl_no_trips_today: 'No hay salidas hoy. Aún puedes usar las listas de verificación de forma independiente.', cl_guest_singular: 'huésped', cl_guest_plural: 'huéspedes',
     cl_pick_signer: 'Elegí quién firma…',
     cl_show_all_depts: 'Ver todos los departamentos',
+    cl_logged_no_detail: 'Esta firma se registró antes de que la app guardara el detalle ítem por ítem. Sólo están los totales.',
     cl_tanks_needed: 'tanques necesarios', cl_kg_weights_total: 'kg de plomos en total', cl_no_signoffs_yet: 'Aún no hay confirmaciones para esta salida.', cl_signed_by: 'Confirmado por ',
 
     gear_tab_compressors: 'Compresores', gear_tab_inventory: 'Inventario', gear_tab_inspection: 'Inspección', gear_tab_registry: 'Registro',
@@ -8260,7 +8278,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-03d');
+  console.info('[Seven Seas] build 2026-10-06a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14761,6 +14779,28 @@ async function populateSignerSelects(root) {
   selects.forEach(sel => { sel.innerHTML = opciones; });
 }
 
+// ─── El acta de lo que se firmó ───
+//
+// Antes se guardaban sólo dos números: 7 de 14. Eso prueba que algo se salteó
+// y no puede decir qué — para un reclamo de seguro es discutiblemente peor
+// que no tener registro, porque deja constancia del hueco sin describirlo.
+//
+// Se guarda el TEXTO de cada ítem, no sólo su id. Mismo motivo que
+// `body_snapshot` en los waivers: las plantillas cambian —las checklists van
+// a pasar a depender del tipo de salida— y un acta que sólo tenga ids se
+// vuelve ilegible en cuanto la lista cambie. Tiene que poder leerse sola
+// dentro de cinco años, sin la versión del código que la generó al lado.
+//
+// `items` llega con la forma {id, text} y `checks` indexado por lo que use
+// cada pantalla (id o índice), así que el que llama resuelve el estado.
+function buildItemsSnapshot(items, estaTildado) {
+  return items.map((item, idx) => ({
+    id: String(item.id != null ? item.id : idx),
+    text: item.text != null ? item.text : String(item),
+    done: !!estaTildado(item, idx)
+  }));
+}
+
 // Devuelve {staff_id, name} o null. Un solo lector para los tres lugares que
 // firman, para que no puedan divergir.
 function readSigner(selectId) {
@@ -14791,6 +14831,7 @@ async function instructorSignOff() {
       role: 'instructor',                 // qué checklist, NO quién firmó
       signed_by: name, completed_by: signer.staff_id,
       completed_items: done, total_items: instructorItems.length,
+      items_snapshot: buildItemsSnapshot(instructorItems, (it) => checks[it.id]),
       signed_at: new Date().toISOString()
     };
     if (isOffline) {
@@ -15036,6 +15077,8 @@ async function customChecklistSignOff(checklistId) {
       role: `custom_${checklistId}`,      // qué checklist, NO quién firmó
       signed_by: name, completed_by: signer.staff_id,
       completed_items: done, total_items: cc.items.length,
+      // Acá los ítems son texto suelto y `checks` va por índice, no por id.
+      items_snapshot: buildItemsSnapshot(cc.items, (_it, idx) => checks[idx]),
       signed_at: new Date().toISOString()
     };
     if (isOffline) {
@@ -15233,6 +15276,7 @@ async function deptRoutineSignOff() {
       role: routine.role,                 // qué rutina, NO quién firmó
       signed_by: name, completed_by: signer.staff_id,
       completed_items: done, total_items: routine.items.length,
+      items_snapshot: buildItemsSnapshot(routine.items, (it) => checks[it.id]),
       signed_at: new Date().toISOString()
     };
     if (isOffline) {
@@ -15273,7 +15317,7 @@ async function loadLoggedChecklists() {
   const searchDate = document.getElementById('cl-logged-date-search').value;
 
   const { data: completions } = await sb.from('checklist_completions')
-    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trips(trip_name, trip_date, trip_time, trip_type)')
+    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, items_snapshot, trips(trip_name, trip_date, trip_time, trip_type)')
     .eq('org_id', currentOrgId)
     .order('signed_at', { ascending: false })
     .limit(300);
@@ -15302,19 +15346,43 @@ async function loadLoggedChecklists() {
         ? `${r.trips.trip_time ? r.trips.trip_time.slice(0,5) + ' — ' : ''}${trTypeName(r.trips.trip_type) || r.trips.trip_name || t('wv_trip_fallback')}`
         : t('cl_logged_vessel_check');
       const roleLabel = crewRoleLabel(r.role) || r.role;
-      return `<div class="cl-logged-row">
+      const faltaron = (r.completed_items || 0) < (r.total_items || 0);
+      // Un registro firmado completo y uno con huecos no pueden verse igual.
+      const badge = faltaron ? 'cl-role-badge warn' : 'cl-role-badge done';
+
+      // El acta sólo existe desde el 06/10. Las firmas anteriores guardaron
+      // los dos números y nada más, así que para ésas se dice justamente eso
+      // en vez de mostrar una lista vacía que parecería un error.
+      const acta = Array.isArray(r.items_snapshot) ? r.items_snapshot : null;
+      const detalle = acta
+        ? acta.map(i => `<div class="cl-logged-item ${i.done ? 'ok' : 'missed'}">
+             <span class="cl-logged-item-mark">${i.done ? '✓' : '✗'}</span>
+             <span>${escapeHtml(i.text || '')}</span>
+           </div>`).join('')
+        : `<p class="cl-logged-no-detail">${t('cl_logged_no_detail')}</p>`;
+
+      return `<div class="cl-logged-row" onclick="toggleLoggedDetail('${r.id}')">
         <div>
-          <div class="cl-logged-row-title">${tripLabel}${r.boat_name ? ' · ' + r.boat_name : ''}</div>
-          <div class="cl-logged-row-meta">${roleLabel} · ${t('cl_signed_by')}${r.signed_by} · ${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          <div class="cl-logged-row-title">${tripLabel}${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}</div>
+          <div class="cl-logged-row-meta">${roleLabel} · ${t('cl_signed_by')}${escapeHtml(r.signed_by || '—')} · ${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
         </div>
-        <div class="cl-role-badge done">${r.completed_items}/${r.total_items} ✓</div>
-      </div>`;
+        <div class="${badge}">${r.completed_items}/${r.total_items} ${faltaron ? '' : '✓'}</div>
+      </div>
+      <div class="cl-logged-detail" id="cl-logged-detail-${r.id}" style="display:none;">${detalle}</div>`;
     }).join('');
     return `<div class="cl-logged-day-group">
       <div class="cl-logged-day-heading">${dayLabel}</div>
       ${rowsHtml}
     </div>`;
   }).join('');
+}
+
+// Abre el acta de una firma. Nada se carga aparte: el detalle ya vino en la
+// misma consulta, así que abrir es instantáneo y funciona sin conexión.
+function toggleLoggedDetail(id) {
+  const el = document.getElementById('cl-logged-detail-' + id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 document.getElementById('cl-logged-date-search').addEventListener('change', loadLoggedChecklists);
