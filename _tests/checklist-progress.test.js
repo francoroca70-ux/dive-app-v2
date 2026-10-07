@@ -60,6 +60,10 @@ window.Chart=function(){};
 const scripts=[...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
 const main=scripts.find(s=>s.includes('[Seven Seas] build'));
 const hook=main+"\n;window.__t={setOrg:(id)=>{currentOrgId=id;},setLoc:(id)=>{currentLocationId=id;},"+
+  // En produccion `currentUserId` lo setea initAuthInner() desde la sesion.
+  // El stub de auth no devuelve sesion (a proposito, para que la app muestre
+  // el login y no arranque entera), asi que aca se simula ese paso.
+  "setUser:(id)=>{currentUserId=id;},"+
   "offline:(v)=>{isOffline=v;},cache:()=>progressCache,limpiarCache:()=>{for(const k in progressCache) delete progressCache[k];}};";
 let boot=null; try{window.eval(hook);}catch(e){boot=e;}
 let fail=0;
@@ -67,6 +71,7 @@ function chk(n,ok,x){console.log((ok?'PASS  ':'FAIL  ')+n+(x?'  '+x:'')); if(!ok
 chk('arranca sin excepción',!boot,boot?String(boot).slice(0,200):'');
 
 window.__t.setOrg('org-1'); window.__t.setLoc('loc-a'); window.__t.offline(false);
+window.__t.setUser('u-ana');   // lo que initAuthInner() hace desde la sesión
 
 (async()=>{ try {
   // ── La llave de cada instancia ──
@@ -125,6 +130,55 @@ window.__t.setOrg('org-1'); window.__t.setLoc('loc-a'); window.__t.offline(false
   await window.saveChecklistTick(mensual, meta, 'i7', false);
   chk('offline: destildar también', cola[1] && cola[1].tipo==='checklist_untick');
   chk('offline: la pantalla igual responde', window.__t.cache()[mensual].i7===undefined);
+  window.__t.offline(false);
+
+  // ── La pantalla se pinta ANTES de guardar ──
+  // Los tres toggles hacían `await saveChecklistTick(...)` y recién entonces
+  // dibujaban, así que el casillero no se marcaba hasta que volvía el viaje a
+  // la base: con Supabase en São Paulo, cerca de un segundo por tilde. Lo
+  // encontró Fran usando la app, no un test — de ahí este.
+  let orden=[]; let liberar;
+  const lento=new Promise(r=>{ liberar=r; });
+  const saveOriginal=window.saveChecklistTick;
+  window.saveChecklistTick=async(...a)=>{ orden.push('guardar'); await lento; return saveOriginal(...a); };
+  const checks={};
+  const p=window.marcarTilde({ scopeKey:mensual, meta, itemId:'i9', checks,
+                               dibujar:()=>orden.push('dibujar') });
+  await new Promise(r=>setTimeout(r,0));
+  chk('el casillero se pinta antes de que la escritura termine',
+      orden[0]==='dibujar', orden.join(' → ')||'(nada)');
+  chk('y el tilde ya se ve en la pantalla sin esperar la red', checks.i9===true, String(checks.i9));
+  liberar(); await p;
+  window.saveChecklistTick=saveOriginal;
+
+  // ── Si la escritura falla, el tilde se deshace ──
+  // Un tilde que no se guardó no puede verse igual que uno que sí: alguien
+  // está revisando un barco contra esa lista.
+  let avisos=[]; window.showAlertModal=async(m)=>{avisos.push(String(m));};
+  window.saveChecklistTick=async()=>false;
+  const checks2={};
+  await window.marcarTilde({ scopeKey:mensual, meta, itemId:'i10', checks:checks2,
+                             dibujar:()=>{} });
+  chk('si falla la escritura, el tilde se revierte en pantalla',
+      checks2.i10===undefined, JSON.stringify(checks2));
+  chk('y se le avisa a quien estaba tildando', avisos.length===1, avisos[0]||'(ningún aviso)');
+  window.saveChecklistTick=saveOriginal;
+
+  // ── El id del usuario no se pide por red en cada tilde ──
+  chk('el tilde no pide el usuario por red: usa currentUserId',
+      /checked_by: currentUserId/.test(html) &&
+      !/getUser\(\)[\s\S]{0,200}?checked_by: currentUserId/.test(html),
+      'checked_by: currentUserId');
+
+  // ── Los tres toggles pasan por el mismo camino ──
+  const llamadas=(html.match(/await marcarTilde\(\{/g)||[]).length;
+  const declara=(html.match(/async function marcarTilde\(/g)||[]).length;
+  chk('los tres toggles usan marcarTilde()', llamadas===3 && declara===1,
+      llamadas+' llamadas, '+declara+' declaracion');
+  // Sin contar la mencion dentro del comentario que explica por que cambio.
+  const directas=(html.match(/= await saveChecklistTick\(/g)||[]).length;
+  chk('y ninguno llama a saveChecklistTick por su cuenta',
+      directas===1, directas+' llamada real (solo la de marcarTilde)');
 
   process.exit(fail);
 } catch(e){ console.log('EXCEPCIÓN:', e && (e.stack||String(e))); process.exit(1);} })();

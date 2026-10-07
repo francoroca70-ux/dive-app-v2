@@ -4492,6 +4492,7 @@ const TRANSLATIONS = {
     cl_tab_tripprep: 'Trip Prep', cl_tab_captain: 'Captain', cl_tab_department: 'Department Checklists', cl_tab_logged: 'Logged Checklists',
     cl_logged_title: 'Logged Checklists', cl_logged_sub: 'Every gear and vessel sign-off, organized by day.',
     cl_logged_search_date: 'Search a date', cl_logged_clear: 'Clear', cl_logged_none: 'No checklists logged yet.',
+    cl_tick_failed: "That tick couldn't be saved, so it's been undone. Check your connection and try again.",
     cl_logged_vessel_check: 'Vessel safety check',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
@@ -5198,6 +5199,7 @@ const TRANSLATIONS = {
     cl_tab_tripprep: 'Preparación de Salida', cl_tab_captain: 'Capitán', cl_tab_department: 'Checklists por Departamento', cl_tab_logged: 'Checklists Logueadas',
     cl_logged_title: 'Checklists Logueadas', cl_logged_sub: 'Cada confirmación de equipo y de embarcación, organizada por día.',
     cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
+    cl_tick_failed: 'Ese tilde no se pudo guardar, así que se deshizo. Revisá la conexión y probá de nuevo.',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
@@ -8316,7 +8318,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-07a');
+  console.info('[Seven Seas] build 2026-10-07b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -8365,6 +8367,7 @@ async function initAuthInner() {
   console.info('[boot] 2 sesión:', session ? 'sí' : 'no');
 
   if (session) {
+    currentUserId = session.user && session.user.id;
     initHome(session.user);
     const settingsOk = await loadSettings(session.user);
     if (settingsOk === false) { hideLoadingScreen(); return; }
@@ -8796,6 +8799,7 @@ document.getElementById('btn-close-shop-confirm').addEventListener('click', asyn
 
 // ─── LISTEN FOR AUTH CHANGES ───
 sb.auth.onAuthStateChange((event, session) => {
+  currentUserId = (session && session.user && session.user.id) || null;
   if (event === 'SIGNED_OUT') showScreen('login');
   // Supabase rotates the refresh token on every refresh -- if the copy sitting
   // in ss_saved_accounts isn't kept current, switching back to this account
@@ -13292,7 +13296,7 @@ async function exportChecklistsForDay(date) {
 
 
   const { data, error } = await sb.from('checklist_completions')
-    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trips(trip_name, trip_date, trip_time, trip_type)')
+    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trip_name, trip_date, trip_time')
     .eq('org_id', currentOrgId)
     .gte('signed_at', date + 'T00:00:00')
     .lte('signed_at', date + 'T23:59:59')
@@ -13310,9 +13314,8 @@ async function exportChecklistsForDay(date) {
   }
 
   const rowsHtml = data.map(r => {
-    const tripLabel = r.trips
-      ? `${r.trips.trip_time ? r.trips.trip_time.slice(0, 5) + ' — ' : ''}${escapeHtml(trTypeName(r.trips.trip_type) || r.trips.trip_name || 'Trip')}`
-      : t('cl_logged_vessel_check');
+    const etiqueta = tripLabelDeActa(r);
+    const tripLabel = etiqueta ? escapeHtml(etiqueta) : t('cl_logged_vessel_check');
     const roleLabel = escapeHtml(crewRoleLabel(r.role) || r.role);
     return `
     <div class="cl-export-entry">
@@ -13465,7 +13468,7 @@ async function exportAllShopRecords() {
   const [{ data: waivers }, { data: completions }, { data: trips }] = await Promise.all([
     waiversQuery,
     sb.from('checklist_completions')
-      .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trips(trip_name, trip_date, trip_time, trip_type)')
+      .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trip_name, trip_date, trip_time')
       .eq('org_id', currentOrgId).order('signed_at'),
     (() => {
       // A propósito NO usa tripsVigentes(): este export es el historial
@@ -13491,9 +13494,8 @@ async function exportAllShopRecords() {
     </div>`).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
 
   const checklistsHtml = (completions || []).map(r => {
-    const tripLabel = r.trips
-      ? `${r.trips.trip_date || ''} ${r.trips.trip_time ? r.trips.trip_time.slice(0, 5) : ''} — ${escapeHtml(trTypeName(r.trips.trip_type) || r.trips.trip_name || 'Trip')}`
-      : t('cl_logged_vessel_check');
+    const etiquetaExp = tripLabelDeActa(r, { conFecha: true });
+    const tripLabel = etiquetaExp ? escapeHtml(etiquetaExp) : t('cl_logged_vessel_check');
     return `
     <div class="ex-entry">
       <strong>${tripLabel}</strong>${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}
@@ -14620,10 +14622,19 @@ let deptRoutineChecks = {}; // { [role]: { [itemId]: bool } }
 let currentDeptKey = 'captain';
 let currentCadenceKey = 'morning';
 let currentChecklistTripId = null;
-// { [tripId]: nombre mostrado }. Lo llena loadTodaysTripList() y lo consume el
-// acta como snapshot. Ver buildRecordPayload().
-let checklistTripNameById = {};
+// { [tripId]: { name, date, time } }. Lo llena loadTodaysTripList() y lo
+// consume el acta como snapshot. Ver buildRecordPayload().
+//
+// El acta guarda estos tres datos para no tener que mirar `trips` nunca: la
+// salida se puede archivar o borrar, y —desde que el acta no tiene FK— la API
+// ya no puede incrustarla igual. Ver la migración
+// checklist_records_trip_fecha_hora.
+let checklistTripById = {};
 let currentUserRole = 'instructor';
+// Id del usuario logueado, cacheado al arrancar la sesión. Existe para que
+// escrituras frecuentes —los tildes de una checklist— no tengan que pedirlo
+// por red cada vez. Lo setea initAuthInner() y lo limpia el cierre de sesión.
+let currentUserId = null;
 
 // ─── INIT ───
 async function initChecklists() {
@@ -14678,7 +14689,7 @@ async function loadTodaysTripList() {
     // se puede borrar. Se registra ACÁ, donde el nombre ya se resolvió con su
     // cadena de fallbacks, para que el acta diga exactamente lo mismo que vio
     // en pantalla quien firmó — y no una segunda versión del mismo cálculo.
-    checklistTripNameById[tr.id] = name;
+    checklistTripById[tr.id] = { name, date: today, time: tr.trip_time || null };
     const time = tr.trip_time?.slice(0,5) || '';
     const guests = (tr.participants || []).length;
 
@@ -14839,10 +14850,8 @@ async function toggleInstructor(id) {
   if (!currentChecklistTripId) return;
   const { scopeKey, meta } = instructorScope();
   const checks = instructorChecksByTrip[currentChecklistTripId] = progressCache[scopeKey] || {};
-  checks[id] = !checks[id];
-  if (!checks[id]) delete checks[id];
-  await saveChecklistTick(scopeKey, meta, id, !!checks[id]);
-  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), checks, 'toggleInstructor', null);
+  await marcarTilde({ scopeKey, meta, itemId: id, checks,
+    dibujar: () => renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), checks, 'toggleInstructor', null) });
 }
 
 // Loads a fresh, trip-specific checklist -- each trip today keeps its own
@@ -14976,13 +14985,22 @@ async function loadChecklistProgress(scopeKey) {
 // Sin conexión va a la cola: la restricción única (org, scope_key, item_id)
 // hace que reenviar sea seguro — el segundo intento actualiza en vez de
 // duplicar.
+// Guarda un tilde. La llaman los tres toggles DESPUÉS de haber pintado la
+// pantalla, no antes: ver el comentario en marcarTilde().
+//
+// Devuelve true si quedó guardado (o encolado sin conexión) y false si falló,
+// para que quien la llamó pueda deshacer el tilde en pantalla. Antes no
+// devolvía nada y no miraba el error: un tilde que no se guardaba se veía
+// igual que uno que sí, hasta que alguien recargaba y descubría que faltaba.
 async function saveChecklistTick(scopeKey, meta, itemId, checked) {
   const cache = progressCache[scopeKey] = progressCache[scopeKey] || {};
   if (checked) cache[itemId] = true; else delete cache[itemId];
-  if (!currentOrgId) return;
+  if (!currentOrgId) return true;
 
-  const { data: { user } } = await sb.auth.getUser();
-
+  // El id sale de `currentUserId`, cacheado al arrancar la sesión. Antes esto
+  // hacía `await sb.auth.getUser()` en CADA tilde, que es un viaje de red de
+  // ida y vuelta antes de poder siquiera escribir — y con la base en São Paulo
+  // eso era la mitad del segundo que se sentía al tildar.
   const payload = {
     org_id: currentOrgId,
     scope_key: scopeKey,
@@ -14992,19 +15010,61 @@ async function saveChecklistTick(scopeKey, meta, itemId, checked) {
     trip_id: meta.tripId || null,
     item_id: String(itemId),
     checked: true,
-    checked_by: (user && user.id) || null,
+    checked_by: currentUserId || null,
     checked_at: new Date().toISOString()
   };
 
   if (isOffline) {
     queueOfflineAction(checked ? 'checklist_tick' : 'checklist_untick', payload);
-    return;
+    return true;
   }
-  if (checked) {
-    await sb.from('checklist_progress').upsert(payload, { onConflict: 'org_id,scope_key,item_id' });
-  } else {
-    await sb.from('checklist_progress').delete()
-      .eq('org_id', currentOrgId).eq('scope_key', scopeKey).eq('item_id', String(itemId));
+  const { error } = checked
+    ? await sb.from('checklist_progress').upsert(payload, { onConflict: 'org_id,scope_key,item_id' })
+    : await sb.from('checklist_progress').delete()
+        .eq('org_id', currentOrgId).eq('scope_key', scopeKey).eq('item_id', String(itemId));
+  if (error) {
+    console.error('[CHECKLIST] no se pudo guardar el tilde:', error);
+    // Acá NO se deshace nada: deshacer es de marcarTilde(), que es quien tiene
+    // en la mano el objeto que la pantalla está mostrando. Esta función veía
+    // `progressCache[scopeKey]`, que en el primer tilde de un scope nuevo es
+    // un objeto DISTINTO del que dibuja la pantalla — así que el revert tocaba
+    // el que nadie mira y el tilde quedaba marcado igual. Un dueño por estado.
+    return false;
+  }
+  return true;
+}
+
+// Tilda o destilda un ítem: pinta primero, guarda después.
+//
+// Los tres toggles hacían `await saveChecklistTick(...)` y recién entonces
+// volvían a dibujar, así que el casillero no se marcaba hasta que volvía el
+// viaje a la base. Con Supabase en São Paulo eso es cerca de un segundo por
+// tilde, y el comentario de esta zona decía justo lo contrario: «la pantalla
+// responde al instante y la base se actualiza detrás». Lo encontró Fran
+// usando la app.
+//
+// Ahora: se actualiza la caché, se dibuja, y la escritura va por detrás. Si
+// falla, se vuelve a dibujar con el tilde deshecho y se avisa, porque un
+// tilde que no se guardó no puede quedar igual que uno que sí.
+async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
+  // El objeto que dibuja la pantalla y el de la caché tienen que ser EL MISMO.
+  // Los toggles hacen `progressCache[scopeKey] || {}`, así que en el primer
+  // tilde de un scope nuevo se quedaban con un objeto suelto y la caché creaba
+  // otro aparte: dos estados para la misma lista. Esto los une.
+  progressCache[scopeKey] = checks;
+
+  const estabaTildado = !!checks[itemId];
+  if (estabaTildado) delete checks[itemId]; else checks[itemId] = true;
+  const quedoTildado = !!checks[itemId];
+  dibujar();
+
+  const ok = await saveChecklistTick(scopeKey, meta, itemId, quedoTildado);
+  if (!ok) {
+    // Vuelve a como estaba. Un tilde que no se guardó no puede verse igual
+    // que uno que sí: alguien está revisando un barco contra esta lista.
+    if (estabaTildado) checks[itemId] = true; else delete checks[itemId];
+    dibujar();
+    await showAlertModal(t('cl_tick_failed'));
   }
 }
 
@@ -15055,10 +15115,13 @@ function buildItemsSnapshot(items, estaTildado) {
 // punteros históricos, sin foreign key, justamente para que el acta pueda
 // sobrevivir a lo que referencia.
 function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos }) {
+  const salida = (tripId && checklistTripById[tripId]) || null;
   return {
     org_id: currentOrgId,
     trip_id: tripId || null,
-    trip_name: tripId ? (checklistTripNameById[tripId] || null) : null,
+    trip_name: salida ? (salida.name || null) : null,
+    trip_date: salida ? (salida.date || null) : null,
+    trip_time: salida ? (salida.time || null) : null,
     location_id: currentLocationId || null,
     location_name: currentLocationName || null,
     role,                               // qué checklist, NO quién firmó
@@ -15069,6 +15132,30 @@ function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos }
     items_snapshot: buildItemsSnapshot(items, estaTildado),
     signed_at: new Date().toISOString()
   };
+}
+
+// Etiqueta de la salida de un acta, leída del SNAPSHOT DEL ACTA y no de la
+// tabla `trips`.
+//
+// Antes los tres lugares que listan actas incrustaban
+// `trips(trip_name, trip_date, trip_time, trip_type)`. PostgREST deduce esos
+// joins de las foreign keys, así que cuando el acta dejó de tener FK a `trips`
+// —a propósito, para que una salida borrada no pueda tocar un acta inmutable—
+// las tres consultas empezaron a devolver 400 y las vistas quedaron vacías.
+//
+// El acta ya guarda nombre, fecha y hora, así que el join no hace falta: ésta
+// es la única función que arma la etiqueta, y lee sólo campos del acta.
+//
+// Devuelve texto sin escapar: escapar es responsabilidad de quien lo inserta
+// en el HTML.
+function tripLabelDeActa(r, { conFecha = false } = {}) {
+  // Un acta sin salida es una rutina de departamento (el control del capitán,
+  // por ejemplo), que no está atada a ninguna salida concreta.
+  if (!r.trip_id) return null;
+  const hora = r.trip_time ? String(r.trip_time).slice(0, 5) : '';
+  const nombre = r.trip_name || t('wv_trip_fallback');
+  if (conFecha) return `${r.trip_date || ''} ${hora} — ${nombre}`.trim();
+  return `${hora ? hora + ' — ' : ''}${nombre}`;
 }
 
 // Devuelve {staff_id, name} o null. Un solo lector para los tres lugares que
@@ -15333,10 +15420,8 @@ async function toggleCustomChecklistItem(checklistId, idx) {
   if (!cc) return;
   const { scopeKey, meta } = customScope(cc);
   const checks = customChecklistChecks[checklistId] = progressCache[scopeKey] || {};
-  checks[idx] = !checks[idx];
-  if (!checks[idx]) delete checks[idx];
-  await saveChecklistTick(scopeKey, meta, idx, !!checks[idx]);
-  renderCustomChecklistsForCurrentView();
+  await marcarTilde({ scopeKey, meta, itemId: idx, checks,
+    dibujar: () => renderCustomChecklistsForCurrentView() });
 }
 
 async function customChecklistSignOff(checklistId) {
@@ -15555,10 +15640,8 @@ function deptScope() {
 async function toggleDeptItem(id) {
   const { routine, scopeKey, meta } = deptScope();
   const checks = deptRoutineChecks[routine.role] = progressCache[scopeKey] || {};
-  checks[id] = !checks[id];
-  if (!checks[id]) delete checks[id];
-  await saveChecklistTick(scopeKey, meta, id, !!checks[id]);
-  renderCheckItems('dept-list', routine.items, checks, 'toggleDeptItem', 'dept-routine-progress');
+  await marcarTilde({ scopeKey, meta, itemId: id, checks,
+    dibujar: () => renderCheckItems('dept-list', routine.items, checks, 'toggleDeptItem', 'dept-routine-progress') });
 }
 
 async function deptRoutineSignOff() {
@@ -15620,7 +15703,7 @@ async function loadLoggedChecklists() {
   const searchDate = document.getElementById('cl-logged-date-search').value;
 
   const { data: completions } = await sb.from('checklist_completions')
-    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, items_snapshot, trips(trip_name, trip_date, trip_time, trip_type)')
+    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, items_snapshot, trip_name, trip_date, trip_time')
     .eq('org_id', currentOrgId)
     .order('signed_at', { ascending: false })
     .limit(300);
@@ -15629,7 +15712,10 @@ async function loadLoggedChecklists() {
   // Group by the trip's own date when there's a linked trip (a captain's
   // vessel check isn't tied to one specific trip, so it falls back to the
   // date it was signed on instead).
-  const dayOf = (row) => row.trips?.trip_date || row.signed_at.split('T')[0];
+  // Se lee del snapshot del acta, no de `trips`: desde que el acta no tiene FK
+  // a la salida, la API ya no puede incrustarla. Las actas anteriores al
+  // 07/10 no tienen trip_date, y para ésas sigue valiendo la fecha de firma.
+  const dayOf = (row) => row.trip_date || row.signed_at.split('T')[0];
 
   if (searchDate) rows = rows.filter(r => dayOf(r) === searchDate);
 
@@ -15645,9 +15731,10 @@ async function loadLoggedChecklists() {
   list.innerHTML = days.map(day => {
     const dayLabel = new Date(day + 'T12:00:00').toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const rowsHtml = byDay[day].map(r => {
-      const tripLabel = r.trips
-        ? `${r.trips.trip_time ? r.trips.trip_time.slice(0,5) + ' — ' : ''}${trTypeName(r.trips.trip_type) || r.trips.trip_name || t('wv_trip_fallback')}`
-        : t('cl_logged_vessel_check');
+      // Se escapa, que antes no se hacía: el nombre de la salida lo escribe
+      // una persona y termina insertado como HTML.
+      const etiquetaActa = tripLabelDeActa(r);
+      const tripLabel = etiquetaActa ? escapeHtml(etiquetaActa) : t('cl_logged_vessel_check');
       const roleLabel = crewRoleLabel(r.role) || r.role;
       const faltaron = (r.completed_items || 0) < (r.total_items || 0);
       // Un registro firmado completo y uno con huecos no pueden verse igual.

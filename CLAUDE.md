@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 172 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 188 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -188,6 +188,26 @@ ids como punteros. No volver a ponerle FKs ni ablandar el trigger — ver
 
 El acta se arma en **un solo lugar**, `buildRecordPayload()`. Los tres caminos
 que firman la usan y hay un test estructural que lo verifica.
+
+**El acta se lee sola: no se incrusta `trips(...)`.** PostgREST deduce los
+`select` incrustados de las foreign keys, así que al soltar la FK del acta a
+`trips` las tres consultas que la incrustaban empezaron a devolver 400
+(PGRST200) y Logged Checklists quedó vacío. El acta guarda `trip_name`,
+`trip_date` y `trip_time`, y la etiqueta se arma en `tripLabelDeActa()`, que
+lee sólo columnas del acta. **Antes de soltar una FK, buscar quién la estaba
+usando para incrustar** — el error es idéntico al de una tabla inexistente.
+Ver `Errores y aprendizajes/La clave que sostenía un join.md`.
+
+**Y para cambios de esquema, jsdom no alcanza.** La suite estaba en verde: un
+stub de Supabase no sabe que PostgREST necesita una FK para incrustar. Hay que
+pegarle a la API real con la consulta que usa la app.
+
+**Los tildes se pintan antes de guardar**, vía `marcarTilde()`. Los tres
+toggles esperaban el viaje a São Paulo antes de dibujar (más otro por
+`getUser()` en cada tilde), así que tildar tardaba ~1s. El id del usuario sale
+de `currentUserId`, cacheado al arrancar la sesión. Si la escritura falla, el
+tilde se deshace en pantalla y se avisa. `marcarTilde()` es el **único dueño**
+del estado en pantalla — `saveChecklistTick()` no lo toca.
 
 **Archivar en vez de borrar** (decidido por Fran el 07/10). Nada que tenga
 historia se borra: se archiva. Los registros legales guardan snapshot y sueltan
