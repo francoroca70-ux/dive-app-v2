@@ -4365,6 +4365,14 @@ const TRANSLATIONS = {
     tt_booking_mode: 'Booking Mode', tt_mode_question: 'Is this boat private or shared?', tt_mode_private: 'Private boat', tt_mode_shared: 'Shared boat',
     tt_group: 'Group', tt_add_group: '+ Add another group to this trip', tt_save_trip: 'Save trip', tt_update_trip: 'Update trip',
     tt_print_manifest: 'Print Manifest', tt_delete_trip: 'Delete trip', tt_new_trip_title: 'New trip',
+    tt_del_empty_confirm: 'This trip is empty — nothing is booked on it. Delete it for good?',
+    tt_del_archive_confirm: 'This trip has {detalle}. It will be archived, not deleted: it leaves the calendar and nothing is lost. Archive it?',
+    tt_del_archived_ok: 'Trip archived. It is off the calendar and its history is kept.',
+    tt_del_deleted_ok: 'Empty trip deleted.',
+    tt_del_already: 'This trip was already archived.',
+    tt_del_failed: "Couldn't remove the trip: {error}",
+    tt_del_n_bookings: '{n} booking(s)', tt_del_n_guests: '{n} guest(s)', tt_del_n_payments: '{n} payment(s)',
+    tt_del_n_waivers: '{n} signed waiver(s)', tt_del_n_records: '{n} signed checklist(s)', tt_del_n_crew: '{n} crew assigned',
     tt_contact: 'Contact', tt_lead_contact_name: 'Lead contact name', tt_phone: 'Phone', tt_email: 'Email', tt_booked_by: 'Booked by',
     tt_guests_label: 'Guests', tt_add_guest: '+ Add guest', tt_notes: 'Notes', tt_payment: 'Payment', tt_price_per_person: 'Price per person', tt_total: 'Total',
     tt_price_per_day: 'Price per day', tt_trip_price: 'Trip price',
@@ -5063,6 +5071,14 @@ const TRANSLATIONS = {
     tt_booking_mode: 'Modo de Reserva', tt_mode_question: '¿Esta embarcación es privada o compartida?', tt_mode_private: 'Embarcación privada', tt_mode_shared: 'Embarcación compartida',
     tt_group: 'Grupo', tt_add_group: '+ Agregar otro grupo a esta salida', tt_save_trip: 'Guardar salida', tt_update_trip: 'Actualizar salida',
     tt_print_manifest: 'Imprimir Manifiesto', tt_delete_trip: 'Eliminar salida', tt_new_trip_title: 'Nueva salida',
+    tt_del_empty_confirm: 'Esta salida está vacía — no tiene nada reservado. ¿Eliminarla definitivamente?',
+    tt_del_archive_confirm: 'Esta salida tiene {detalle}. Se va a archivar, no a eliminar: sale del calendario y no se pierde nada. ¿Archivarla?',
+    tt_del_archived_ok: 'Salida archivada. Salió del calendario y su historial se conserva.',
+    tt_del_deleted_ok: 'Salida vacía eliminada.',
+    tt_del_already: 'Esta salida ya estaba archivada.',
+    tt_del_failed: 'No se pudo quitar la salida: {error}',
+    tt_del_n_bookings: '{n} reserva(s)', tt_del_n_guests: '{n} huésped(es)', tt_del_n_payments: '{n} pago(s)',
+    tt_del_n_waivers: '{n} formulario(s) firmado(s)', tt_del_n_records: '{n} checklist(s) firmada(s)', tt_del_n_crew: '{n} tripulante(s) asignado(s)',
     tt_contact: 'Contacto', tt_lead_contact_name: 'Nombre del contacto principal', tt_phone: 'Teléfono', tt_email: 'Correo electrónico', tt_booked_by: 'Reservado por',
     tt_guests_label: 'Huéspedes', tt_add_guest: '+ Agregar huésped', tt_notes: 'Notas', tt_payment: 'Pago', tt_price_per_person: 'Precio por persona', tt_total: 'Total',
     tt_price_per_day: 'Precio por día', tt_trip_price: 'Precio del viaje',
@@ -7444,7 +7460,7 @@ async function refreshHomeStats() {
   // Match trips whose date range covers today, not just ones that start today — otherwise
   // a multi-day trip already underway drops out of "today's" guest/trip count the moment
   // it's no longer day 1, same issue as the calendar's day view had.
-  let tripsQuery = sb.from('trips').select('id')
+  let tripsQuery = tripsVigentes('id')
     .eq('org_id', currentOrgId)
     .lte('trip_date', today)
     .or(`end_date.gte.${today},and(end_date.is.null,trip_date.eq.${today})`);
@@ -7620,7 +7636,7 @@ async function buildTripsTodayHtml(scope, myId) {
         && (!currentLocationId || tr.location_id === currentLocationId)
         && tr.trip_date <= today && (tr.end_date ? tr.end_date >= today : tr.trip_date === today));
   } else {
-    let q = sb.from('trips').select(tripCols)
+    let q = tripsVigentes(tripCols)
       .eq('org_id', currentOrgId)
       .lte('trip_date', today)
       .or(`end_date.gte.${today},and(end_date.is.null,trip_date.eq.${today})`);
@@ -8300,7 +8316,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-06c');
+  console.info('[Seven Seas] build 2026-10-07a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9531,6 +9547,21 @@ let calDate = new Date();
 let currentTripId = null;
 let trips = {};
 
+// Una salida archivada salió del calendario pero NO se borró: conserva sus
+// reservas, participantes, pagos, waivers y actas. Ver trip_archive_or_delete().
+//
+// Toda consulta que LISTA salidas tiene que pasar por acá. Son nueve lugares, y
+// filtrar a mano en nueve es exactamente el patrón donde el defecto aparece
+// donde la copia falta: alcanza con que una vista se olvide para que el centro
+// vea una salida que creía quitada. El test de archivado tiene un guardián
+// estructural que falla si aparece una consulta de lista que no use esto.
+//
+// La excepción deliberada es openTrip(id), que busca UNA salida por id: si
+// alguien llega con un id archivado, verlo es mejor que una pantalla vacía.
+function tripsVigentes(cols) {
+  return sb.from('trips').select(cols).is('archived_at', null);
+}
+
 function formatDate(d) {
   return d.toISOString().split('T')[0];
 }
@@ -9588,9 +9619,8 @@ async function checkDoubleBookings() {
   const windowStart = formatDate(addDays(new Date(), -14));
   const windowEnd = formatDate(addDays(new Date(), 90));
 
-  const { data: trips } = await sb
-    .from('trips')
-    .select('id, contact_name, trip_date, end_date, trip_time, arrival_time, boat_id, boats(name), trip_crew(staff_id, staff(full_name))')
+  const { data: trips } = await tripsVigentes(
+      'id, contact_name, trip_date, end_date, trip_time, arrival_time, boat_id, boats(name), trip_crew(staff_id, staff(full_name))')
     .eq('org_id', currentOrgId)
     .not('boat_id', 'is', null)
     .gte('trip_date', windowStart)
@@ -9660,9 +9690,8 @@ function tripDateRangeLabel(trip) {
 async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
   const startStr = formatDate(start), endStr = formatDate(end);
-  let query = sb
-    .from('trips')
-    .select('*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(trip_type_id, price_per_person, crew_hire_total, participants(id, rental_surcharge))')
+  let query = tripsVigentes(
+      '*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(trip_type_id, price_per_person, crew_hire_total, participants(id, rental_surcharge))')
     .eq('org_id', currentOrgId)
     .lte('trip_date', endStr)
     .or(`end_date.gte.${startStr},and(end_date.is.null,trip_date.gte.${startStr})`)
@@ -10113,6 +10142,9 @@ async function openNewTrip() {
 
 async function openTrip(id) {
   currentTripId = id;
+  // A propósito NO usa tripsVigentes(): busca UNA salida por id, no lista.
+  // Si alguien llega con el id de una archivada, mostrarla es mejor que una
+  // pantalla vacía — y el botón de quitarla ya avisa que estaba archivada.
   const { data: trip } = await sb
     .from('trips')
     .select('*, boats(name)')
@@ -10146,7 +10178,7 @@ async function openTrip(id) {
 
   document.getElementById('trip-form-section').style.display = 'block';
   document.getElementById('btn-save-trip').textContent = t('tt_update_trip');
-  document.getElementById('btn-delete-trip').style.display = 'inline-block';
+  mostrarBotonQuitarSalida();
   document.getElementById('btn-print-manifest').style.display = 'inline-block';
   document.getElementById('modal-trip').style.display = 'flex';
   document.getElementById('modal-trip').scrollTop = 0;
@@ -10160,21 +10192,85 @@ async function openTrip(id) {
 
 document.getElementById('btn-new-trip').addEventListener('click', openNewTrip);
 
+// Quitar una salida del calendario es de dueño o encargado. El servidor lo
+// exige igual (ver trip_archive_or_delete), así que esto es sólo para no
+// ofrecer un botón que va a ser rechazado. Un solo lugar decide, y los dos
+// lugares que muestran el botón lo llaman.
+//
+// OJO: esto NO es cancelar una salida. Cancelar es `status = 'cancelled'`, un
+// hecho operativo que el centro quiere ver, y sigue disponible para todos.
+function puedeQuitarSalida() {
+  return ['owner', 'manager'].includes(currentUserRole);
+}
+function mostrarBotonQuitarSalida() {
+  document.getElementById('btn-delete-trip').style.display =
+    puedeQuitarSalida() ? 'inline-block' : 'none';
+}
+
+// Resumen legible de lo que tiene colgado una salida, para el aviso.
+function tripHistoriaResumen(d) {
+  const partes = [
+    [d.reservas,      'tt_del_n_bookings'],
+    [d.participantes, 'tt_del_n_guests'],
+    [d.pagos,         'tt_del_n_payments'],
+    [d.waivers,       'tt_del_n_waivers'],
+    [d.actas,         'tt_del_n_records'],
+    [d.tripulacion,   'tt_del_n_crew']
+  ];
+  return partes.filter(([n]) => n > 0)
+               .map(([n, clave]) => t(clave).replace('{n}', n))
+               .join(', ');
+}
+
+// Quitar una salida del calendario.
+//
+// Antes esto borraba en cinco pedidos sueltos —pagos, participantes, reservas,
+// tripulación y recién la salida— sin controlar un solo error. Como cada
+// pedido es su propia transacción, los cuatro primeros commiteaban; si el
+// quinto fallaba (y fallaba siempre que hubiera un waiver firmado, porque
+// `waivers.trip_id` bloquea), la salida quedaba viva con sus reservas,
+// participantes y pagos ya borrados. Un borrado a medias, sin aviso.
+//
+// Ahora es UNA llamada atómica. La regla de qué se puede borrar vive en
+// `trip_archive_or_delete()`, del lado del servidor, donde el cliente no la
+// puede saltear — y el modo consulta es el que arma el aviso, para no contar
+// dos veces la misma cosa en dos lugares distintos.
 document.getElementById('btn-delete-trip').addEventListener('click', async () => {
   if (!currentTripId) return;
-   if (!(await showConfirmModal('Delete this trip? This cannot be undone.', { danger: true }))) return;
-  const groupIds = tripGroups_cache.map(g => g.id).filter(Boolean);
-  if (groupIds.length) {
-    await sb.from('payments').delete().in('group_id', groupIds);
-    await sb.from('participants').delete().in('group_id', groupIds);
+  const tripId = currentTripId;
+
+  // Qué va a pasar, preguntado al servidor antes de pedir confirmación.
+  const { data: previo, error: errPrevio } =
+    await sb.rpc('trip_archive_or_delete', { p_trip_id: tripId, p_solo_consultar: true });
+  if (errPrevio) {
+    console.error('[TRIP] consulta previa falló:', errPrevio);
+    await showAlertModal(t('tt_del_failed').replace('{error}', errPrevio.message || ''));
+    return;
   }
-  await sb.from('trip_groups').delete().eq('trip_id', currentTripId);
-  await sb.from('trip_crew').delete().eq('trip_id', currentTripId);
-  await sb.from('trips').delete().eq('id', currentTripId);
+
+  if (previo.accion === 'ya_archivada') { await showAlertModal(t('tt_del_already')); return; }
+
+  const vaABorrar = previo.accion === 'borraria';
+  const aviso = vaABorrar
+    ? t('tt_del_empty_confirm')
+    : t('tt_del_archive_confirm').replace('{detalle}', tripHistoriaResumen(previo));
+  if (!(await showConfirmModal(aviso, { danger: vaABorrar }))) return;
+
+  const { data: res, error } =
+    await sb.rpc('trip_archive_or_delete', { p_trip_id: tripId, p_solo_consultar: false });
+  if (error) {
+    // Antes este error no existía para el usuario: fallaba y la pantalla
+    // seguía como si nada.
+    console.error('[TRIP] archivar/borrar falló:', error);
+    await showAlertModal(t('tt_del_failed').replace('{error}', error.message || ''));
+    return;
+  }
+
   document.getElementById('modal-trip').style.display = 'none';
   currentTripId = null;
   renderCalendar();
   checkDoubleBookings();
+  await showAlertModal(res.accion === 'borrada' ? t('tt_del_deleted_ok') : t('tt_del_archived_ok'));
 });
 document.getElementById('modal-trip-close').addEventListener('click', () => {
   document.getElementById('modal-trip').style.display = 'none';
@@ -10704,9 +10800,10 @@ async function checkBoatConflict() {
   const newMode = window.currentBookingMode || 'private';
   if (!boatId || !date || !currentOrgId) { warning.style.display = 'none'; window.currentBoatConflict = false; return; }
 
-  const { data: existing } = await sb
-    .from('trips')
-    .select('id, trip_name, contact_name, trip_time, arrival_time, booking_mode, max_guests, trip_date, end_date')
+  // Una salida archivada no puede generar un choque de barco: ya no existe
+  // para el calendario.
+  const { data: existing } = await tripsVigentes(
+      'id, trip_name, contact_name, trip_time, arrival_time, booking_mode, max_guests, trip_date, end_date')
     .eq('boat_id', boatId)
     .lte('trip_date', endDate)
     .or(`end_date.gte.${date},end_date.is.null`)
@@ -11880,7 +11977,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   feedback.textContent = t('set_saved');
   feedback.className = 'save-feedback visible';
   btn.disabled = false; btn.textContent = t('tt_update_trip');
-  document.getElementById('btn-delete-trip').style.display = 'inline-block';
+  mostrarBotonQuitarSalida();
   document.getElementById('btn-print-manifest').style.display = 'inline-block';
   updateTripModalTitleFromForm();
   document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared') ? 'inline-block' : 'none';
@@ -12169,7 +12266,7 @@ async function loadWaivers() {
   if (!currentOrgId) return;
   const today = new Date().toISOString().split('T')[0];
 
-  let tripsQuery = sb.from('trips').select('id, trip_time, trip_type, trip_type_id, contact_name').eq('org_id', currentOrgId).eq('trip_date', today);
+  let tripsQuery = tripsVigentes('id, trip_time, trip_type, trip_type_id, contact_name').eq('org_id', currentOrgId).eq('trip_date', today);
   if (currentLocationId) tripsQuery = tripsQuery.eq('location_id', currentLocationId);
   const { data: todaysTrips } = await tripsQuery;
   const tripIds = (todaysTrips || []).map(t => t.id);
@@ -13270,8 +13367,7 @@ async function exportTripRecordsForDay(date) {
   feedback.className = 'save-feedback visible';
 
 
-  let query = sb.from('trips')
-    .select('id, trip_time, trip_type, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
+  let query = tripsVigentes('id, trip_time, trip_type, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
     .eq('org_id', currentOrgId)
     .eq('trip_date', date)
     .order('trip_time');
@@ -13372,8 +13468,13 @@ async function exportAllShopRecords() {
       .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trips(trip_name, trip_date, trip_time, trip_type)')
       .eq('org_id', currentOrgId).order('signed_at'),
     (() => {
+      // A propósito NO usa tripsVigentes(): este export es el historial
+      // completo del centro, así que las salidas archivadas tienen que estar.
+      // Archivar saca una salida del calendario, no del registro — y este
+      // archivo es exactamente el registro que se le entrega a un contador o
+      // a un abogado.
       let q = sb.from('trips')
-        .select('id, trip_date, trip_time, trip_type, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
+        .select('id, trip_date, trip_time, trip_type, archived_at, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
         .eq('org_id', currentOrgId).order('trip_date').order('trip_time');
       if (currentLocationId) q = q.eq('location_id', currentLocationId);
       return q;
@@ -14559,9 +14660,8 @@ async function loadTodaysTripList() {
   const typeById = {};
   (allTypes || []).forEach(tt => { typeById[tt.id] = tt; });
 
-  const { data: trips } = await sb
-    .from('trips')
-    .select('id, trip_name, trip_time, trip_type, trip_types(name, num_tanks, needs_tank_count), participants(id, gear, group_id), trip_crew(staff(role)), trip_groups(id, trip_type_id)')
+  const { data: trips } = await tripsVigentes(
+      'id, trip_name, trip_time, trip_type, trip_types(name, num_tanks, needs_tank_count), participants(id, gear, group_id), trip_crew(staff(role)), trip_groups(id, trip_type_id)')
     .eq('org_id', currentOrgId)
     .eq('trip_date', today)
     .order('trip_time');

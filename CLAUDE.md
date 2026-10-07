@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 106 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 172 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -188,6 +188,32 @@ ids como punteros. No volver a ponerle FKs ni ablandar el trigger — ver
 
 El acta se arma en **un solo lugar**, `buildRecordPayload()`. Los tres caminos
 que firman la usan y hay un test estructural que lo verifica.
+
+**Archivar en vez de borrar** (decidido por Fran el 07/10). Nada que tenga
+historia se borra: se archiva. Los registros legales guardan snapshot y sueltan
+la FK; las entidades operativas se archivan; sólo lo que no tiene nada colgado
+se borra de verdad. Un tripulante archivado pierde el acceso salvo que lo
+reactiven (la gente vuelve la temporada siguiente). El plan completo y qué
+falta, en `Decisiones/Archivar en vez de borrar.md`.
+
+Hecho: las **salidas**. `trips.archived_at`, y quitar una salida es una sola
+llamada atómica a `trip_archive_or_delete()` — la regla de qué se puede borrar
+vive ahí, del lado del servidor, y su modo consulta es el que arma el aviso
+para que no haya dos cuentas distintas de lo mismo. Es sólo de dueño o
+encargado. Pendiente: el paso 2 (que todos los borrados miren el error) y el
+paso 3 (tripulantes, barcos, locales, huéspedes).
+
+**Las ocho consultas que listan salidas pasan por `tripsVigentes()`.** Es el
+único lugar donde vive el filtro de archivadas. Dos excepciones deliberadas y
+comentadas: `openTrip(id)` busca una por id, y `exportAllShopRecords()` es el
+historial completo y las archivadas tienen que estar. Archivar saca algo del
+uso diario, no del registro.
+
+**Cinco `await sb.from(…).delete()` seguidos NO son una transacción.** Cada uno
+es su propio pedido y commitea solo, así que una secuencia puede fallar a mitad
+y dejar un estado roto — eso es exactamente lo que hacía el borrado de una
+salida. Lo que borre en varios pasos va del lado del servidor, en una sola
+transacción. Ver `Errores y aprendizajes/El borrado que perdía la mitad.md`.
 
 **Edge functions** (`supabase/functions/`): `paddle-webhook`, `paddle-portal`,
 `waiver-remote-signing`, `send-booking-confirmation`, `send-staff-invite`,
