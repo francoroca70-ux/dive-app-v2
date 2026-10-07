@@ -72,6 +72,54 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   chk('y cada faltante se lee solo, sin la plantilla al lado',
       faltantes.every(i=>typeof i.text==='string' && i.text.length>5), JSON.stringify(faltantes[0]));
 
+  // ── Una checklist firmada muestra lo que se revisó y lo que NO ──
+  // Antes, al abrir una ya firmada se veía el cartel «completa» arriba de una
+  // lista con nada tildado: firmar cierra la instancia y borra el trabajo en
+  // curso (correcto), pero la pantalla seguía dibujando la lista viva, vacía.
+  // Para el capitán que entra después eso no se lee como «ya está hecho», se
+  // lee como que no se hizo nada — y lo que necesita ver es justamente que las
+  // toallas NO se cargaron, para poder preguntar por qué.
+  const contActa=doc.createElement('div'); contActa.id='acta-prueba';
+  doc.body.appendChild(contActa);
+  window.renderActaItems('acta-prueba', [
+    {id:'a', text:'Toallas a bordo', done:false},
+    {id:'b', text:'Tanques cargados', done:true}
+  ], null);
+  const html2=contActa.innerHTML;
+  chk('el acta muestra los ítems que se revisaron', /Tanques cargados/.test(html2));
+  chk('y también los que NO', /Toallas a bordo/.test(html2));
+  const filas=[...contActa.querySelectorAll('.cl-item')];
+  chk('lo hecho se ve tachado', filas[1].classList.contains('checked'), filas[1].className);
+  chk('lo que faltó NO se ve tachado', !filas[0].classList.contains('checked'), filas[0].className);
+  chk('y lo que faltó queda señalado, no sólo sin tilde',
+      /cl-role-badge warn/.test(filas[0].innerHTML), filas[0].innerHTML.slice(0,120));
+  chk('el acta no se puede tildar: no tiene onclick',
+      filas.every(f=>!f.getAttribute('onclick')), 'sin onclick');
+  chk('y se marca como acta para no parecer clicable',
+      filas.every(f=>f.classList.contains('acta')));
+  chk('dice que es un acta firmada y cómo hacer una pasada nueva',
+      /cl-acta-nota/.test(html2) && /Reset|Reiniciar/i.test(html2), 'nota presente');
+
+  // El texto del ítem lo escribe una persona y termina insertado como HTML.
+  window.renderActaItems('acta-prueba', [{id:'x', text:'<img src=x onerror=alert(1)>', done:true}], null);
+  chk('el texto del ítem se escapa',
+      !/<img/.test(contActa.innerHTML) && /&lt;img/.test(contActa.innerHTML), contActa.innerHTML.slice(0,90));
+
+  // Actas de antes del 06/10: no tienen detalle y no se puede reconstruir
+  // (son inmutables). Tiene que decirlo, no mentir con una lista vacía.
+  contActa.innerHTML='<div class="cl-item">algo</div>';
+  window.mostrarActaSiHay('acta-prueba', {items_snapshot:null}, null);
+  chk('un acta vieja sin detalle lo dice en vez de mostrar una lista vacía',
+      /cl-acta-nota/.test(contActa.innerHTML), contActa.innerHTML.slice(0,110));
+
+  // Los dos caminos que muestran una firmada usan la misma función.
+  chk('la salida y la rutina de departamento comparten el arreglo',
+      (html.match(/mostrarActaSiHay\(/g)||[]).length===3, // 1 declaración + 2 usos
+      (html.match(/mostrarActaSiHay\(/g)||[]).length+' menciones');
+  chk('y las dos consultas piden items_snapshot',
+      (html.match(/signed_by, signed_at, completed_items, total_items, items_snapshot/g)||[]).length===2,
+      'dos selects con el detalle');
+
   // ── Sin conexión: el acta también viaja en la cola ──
   const cola=[]; window.queueOfflineAction=(tipo,payload)=>cola.push({tipo,payload});
   window.__t.offline(true);

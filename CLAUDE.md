@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 188 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 200 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -201,6 +201,19 @@ Ver `Errores y aprendizajes/La clave que sostenía un join.md`.
 **Y para cambios de esquema, jsdom no alcanza.** La suite estaba en verde: un
 stub de Supabase no sabe que PostgREST necesita una FK para incrustar. Hay que
 pegarle a la API real con la consulta que usa la app.
+
+**Una checklist firmada muestra el acta, no la lista viva.** Firmar cierra la
+instancia y borra el trabajo en curso, así que antes se veía «completa» arriba
+de una lista vacía — que para el capitán que entra después se lee como que no
+se hizo nada, cuando lo que necesita ver es que las toallas NO se cargaron.
+`mostrarActaSiHay()` dibuja `items_snapshot` de sólo lectura en los dos caminos
+(salida y rutina de departamento). Para otra pasada está «Reset», que firma un
+acta aparte — nunca se edita la vieja.
+
+**Qué cuenta como historia al quitar una salida** (afinado el 07/10): una
+reserva sólo cuenta si tiene participantes o pagos. El formulario crea una
+reserva junto con la salida, así que contar cualquiera hacía que **toda** salida
+se archivara. Una reserva vacía se borra con la salida, en la misma transacción.
 
 **Los tildes se pintan antes de guardar**, vía `marcarTilde()`. Los tres
 toggles esperaban el viaje a São Paulo antes de dibujar (más otro por

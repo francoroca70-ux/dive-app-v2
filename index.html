@@ -764,6 +764,12 @@ body { background: var(--navy); color: var(--text); }
 .cl-item:last-child { border-bottom: none; }
 .cl-item:hover { background: var(--foam); padding-left: 6px; }
 .cl-item.checked .cl-item-text { color: var(--muted); text-decoration: line-through; }
+/* Un acta ya firmada se muestra pero no se tilda: para empezar otra pasada
+   está «Reset», que abre una instancia nueva y firma un acta aparte. Sin esto
+   los ítems parecían clicables y no pasaba nada al tocarlos. */
+.cl-item.acta { cursor: default; }
+.cl-item.acta:hover { background: none; padding-left: 0; }
+.cl-acta-nota { font-size: 0.78rem; color: var(--muted); padding: 6px 0 2px; }
 .cl-checkbox {
   width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
   border: 2px solid var(--border); display: flex; align-items: center;
@@ -4493,6 +4499,8 @@ const TRANSLATIONS = {
     cl_logged_title: 'Logged Checklists', cl_logged_sub: 'Every gear and vessel sign-off, organized by day.',
     cl_logged_search_date: 'Search a date', cl_logged_clear: 'Clear', cl_logged_none: 'No checklists logged yet.',
     cl_tick_failed: "That tick couldn't be saved, so it's been undone. Check your connection and try again.",
+    cl_acta_nota: 'Signed record — what was checked and what was missed. Tap Reset to run a fresh check.',
+    cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
     cl_logged_vessel_check: 'Vessel safety check',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
@@ -5200,6 +5208,8 @@ const TRANSLATIONS = {
     cl_logged_title: 'Checklists Logueadas', cl_logged_sub: 'Cada confirmación de equipo y de embarcación, organizada por día.',
     cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
     cl_tick_failed: 'Ese tilde no se pudo guardar, así que se deshizo. Revisá la conexión y probá de nuevo.',
+    cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
+    cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
@@ -8318,7 +8328,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-07b');
+  console.info('[Seven Seas] build 2026-10-07c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14870,15 +14880,32 @@ async function renderInstructorChecklistForTrip(tripId) {
 
   if (!currentOrgId) return;
   const { data: existing } = await sb.from('checklist_completions')
-    .select('signed_by, signed_at, completed_items, total_items')
+    .select('signed_by, signed_at, completed_items, total_items, items_snapshot')
     .eq('trip_id', tripId).eq('role', 'instructor')
     .order('signed_at', { ascending: false }).limit(1);
   if (existing && existing.length) {
     const s = existing[0];
     if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
-    doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${s.signed_by}</strong> ${new Date(s.signed_at).toLocaleString()}`;
+    doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ` +
+      `${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
     doneBanner.style.display = 'block';
+    mostrarActaSiHay('cl-instructor-items', s, null);
   }
+}
+
+// Si el acta trae el detalle ítem por ítem, se muestra el acta en vez de la
+// lista viva. Si es de antes del 06/10 no lo trae, y ahí se dice justamente
+// eso: el acta es inmutable, así que ese detalle no se puede reconstruir.
+//
+// Un solo lugar lo decide, porque los dos caminos que muestran una checklist
+// firmada —la de una salida y la rutina de departamento— tenían el mismo
+// problema y tienen que quedar con el mismo arreglo.
+function mostrarActaSiHay(containerId, acta, progressId) {
+  const detalle = Array.isArray(acta.items_snapshot) ? acta.items_snapshot : [];
+  if (detalle.length) { renderActaItems(containerId, detalle, progressId); return; }
+  const el = document.getElementById(containerId);
+  if (el) el.insertAdjacentHTML('afterbegin',
+    `<div class="cl-acta-nota">${escapeHtml(t('cl_acta_sin_detalle'))}</div>`);
 }
 
 // ─── Quién firma una checklist ───
@@ -15217,6 +15244,42 @@ function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
   if (progressId) {
     const prog = document.getElementById(progressId);
     if (prog) prog.style.width = (done/items.length*100)+'%';
+  }
+}
+
+// Dibuja un acta ya firmada: lo que se revisó y lo que NO, tal como quedó al
+// firmar.
+//
+// Antes, al abrir una checklist ya firmada se veía el cartel «completa» arriba
+// de una lista con nada tildado. Pasaba porque firmar cierra la instancia y
+// borra el trabajo en curso —correcto— pero la pantalla seguía dibujando la
+// lista viva, que ya estaba vacía. Para el capitán que entra después, eso no
+// se lee como «ya está hecho»: se lee como que no se hizo nada.
+//
+// Lo que necesita ver es lo contrario: que las toallas NO se cargaron, para
+// poder preguntar por qué. Eso ya está en `items_snapshot`.
+//
+// No se puede tildar: el acta es inmutable. Para una pasada nueva está
+// «Reset», que abre otra instancia y termina en un acta aparte — las dos
+// quedan en el historial.
+function renderActaItems(containerId, snapshot, progressId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const items = Array.isArray(snapshot) ? snapshot : [];
+  const hechos = items.filter(i => i.done).length;
+
+  el.innerHTML =
+    `<div class="cl-acta-nota">${escapeHtml(t('cl_acta_nota'))}</div>` +
+    items.map(item => `
+    <div class="cl-item acta ${item.done ? 'checked' : ''}">
+      <div class="cl-checkbox">${item.done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
+      <div class="cl-item-text">${escapeHtml(item.text || '')}</div>
+      ${item.done ? '' : `<span class="cl-role-badge warn">${escapeHtml(t('cl_acta_missed'))}</span>`}
+    </div>`).join('');
+
+  if (progressId) {
+    const prog = document.getElementById(progressId);
+    if (prog) prog.style.width = (items.length ? (hechos / items.length * 100) : 0) + '%';
   }
 }
 
@@ -15604,7 +15667,7 @@ async function renderDeptRoutine() {
   if (!currentOrgId) return;
   const period = deptRoutinePeriodRange(currentCadenceKey);
   const { data: existing } = await sb.from('checklist_completions')
-    .select('signed_by, signed_at, completed_items, total_items')
+    .select('signed_by, signed_at, completed_items, total_items, items_snapshot')
     .eq('org_id', currentOrgId).eq('role', roleKey)
     .gte('signed_at', period.start).lte('signed_at', period.end)
     .order('signed_at', { ascending: false }).limit(1);
@@ -15615,9 +15678,10 @@ async function renderDeptRoutine() {
     const s = existing[0];
     if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
     if (doneBanner) {
-      doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${s.signed_by}</strong> ${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
+      doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
       doneBanner.style.display = 'block';
     }
+    mostrarActaSiHay('dept-list', s, 'dept-routine-progress');
   }
 }
 
