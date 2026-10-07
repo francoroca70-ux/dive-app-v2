@@ -191,6 +191,13 @@ tipo de salida, no por fila, porque hay centros con tipos duplicados
 históricos. Contenido completo en
 `Seven Seas Ops/Checklists sembradas por tipo de salida.md`.
 
+**El español de los textos es neutro latinoamericano, no rioplatense** (pedido
+por Fran el 07/10: hay muy pocos centros de buceo acá y los clientes van a
+estar repartidos por la región). Cooler y no conservadora, leash y no invento,
+wax y no parafina —en Chile y Perú parafina es kerosene—, spot y no pico, gaff
+y no rebenque. **Se mantienen «huéspedes» y «licra»** porque la app ya los usa
+en todo el producto: coincidir con el resto pesa más que la preferencia.
+
 **El acta no tiene FK a local, salida ni persona, y es a propósito.** Un acta
 es inmutable, así que una cascada —que la borraría— o un `SET NULL` —que la
 modificaría— chocan con el trigger y rompen la operación del vecino: borrar un
