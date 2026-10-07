@@ -172,11 +172,24 @@ real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 tabla conservar o borrar está en `Seven Seas Ops/Plantillas y actas.md` del
 vault — **leerlo antes de tocar este módulo.**
 
-Hecho: bloque 0 (actas inmutables), etapa 0.5 (`checklist_progress`, una fila
-por tilde) y etapa 1 (el esquema: `checklist_templates` +
-`checklist_template_items`, con `scope` y una restricción de coherencia).
-Sigue: **etapa 2** — semillas de los 17 tipos de salida, sembradas al activar
-cada categoría. `custom_checklists` sigue viva a propósito hasta la etapa 3.
+Hecho: bloque 0 (actas inmutables), etapa 0.5 (`checklist_progress`), etapa 1
+(el esquema) y **etapa 2** (las semillas: 16 tipos de salida, 270 ítems, en
+`checklist_seeds`, sembradas por un disparador al activar una categoría).
+Sigue: **etapa 3** — leer de la base en vez del código. Es la peligrosa porque
+cambia la fuente de datos de algo que ya funciona; las dos fuentes conviven
+hasta que esté probada. `custom_checklists` también se fusiona ahí.
+
+**Los ítems de plantilla son bilingües en la base** (`text_en` + `text_es`),
+decidido por Fran el 07/10: al pasar a ser dato del centro un ítem sería un
+solo texto, y `organizations` no tiene idioma — lo elige cada persona. El acta
+NO hereda esto: guarda el texto ya resuelto en el idioma que vio quien firmó.
+
+**Las semillas son datos, no código**: `checklist_seeds` es una tabla global de
+la que se COPIA. Corregir una semilla no cambia lo que un centro ya recibió, y
+eso es lo correcto. La siembra es idempotente y va **una lista por nombre** de
+tipo de salida, no por fila, porque hay centros con tipos duplicados
+históricos. Contenido completo en
+`Seven Seas Ops/Checklists sembradas por tipo de salida.md`.
 
 **El acta no tiene FK a local, salida ni persona, y es a propósito.** Un acta
 es inmutable, así que una cascada —que la borraría— o un `SET NULL` —que la
