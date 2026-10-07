@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 230 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 247 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -191,6 +191,20 @@ es la que borra lo cableado; mientras siga ahí, nadie queda sin lista.
 quien mira, no de cuando se guardó. La clave lleva el org id (un navegador tiene
 varias cuentas guardadas) y versión de esquema. Todo acceso a `localStorage` va
 envuelto en try/catch.
+
+**Un fallo de red y un rechazo del servidor piden lo contrario.** Medido:
+red → `code: ''` y `TypeError: Failed to fetch`; servidor → `code: '42501'`.
+`pareceFalloDeRed()` lo decide en un solo lugar. Sin red se ENCOLA (nunca
+llegamos, hay que reintentar); con rechazo NO se encola, porque reintentar no
+lo va a hacer entrar y **trancaría la cola**, que se detiene en el primer
+fallo. Esto apareció probando modo avión: `navigator.onLine` todavía decía que
+había señal, así que los tildes se deshacían con un error espurio.
+
+**El acta se guarda sólo en `guardarActa()`**, y el progreso se borra SÓLO si
+entró. Antes los tres firmados insertaban sin mirar el error y limpiaban igual:
+si se cortaba la señal al firmar, el acta no existía, los tildes se borraban y
+el cartel decía «firmada». Ver
+`Errores y aprendizajes/La señal que se corta antes de que el navegador se entere.md`.
 
 **Al recuperar la señal se vacía `progressCache` y se redibuja**
 (`refrescarChecklistVisible`). Antes sólo se vaciaba al firmar, así que después

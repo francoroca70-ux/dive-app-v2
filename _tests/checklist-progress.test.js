@@ -14,6 +14,10 @@ const {window}=dom;
 // "Base de datos": filas de checklist_progress, con su restricción única.
 let filas=[];
 const borrados=[];
+// Permite forzar el error que devuelve la escritura, para distinguir un fallo
+// de red de un rechazo del servidor. Las formas están medidas contra la API
+// real: red -> code:'' ; servidor -> code:'42501'.
+let errorAlEscribir=null;
 function tablaProgress(){
   let filtros={};
   const h={get(t,prop){
@@ -23,6 +27,7 @@ function tablaProgress(){
     };
     if(prop==='eq') return (col,val)=>{ filtros[col]=val; return new Proxy({},h); };
     if(prop==='upsert') return (p)=>{
+      if(errorAlEscribir) return Promise.resolve({error:errorAlEscribir});
       const i=filas.findIndex(f=>f.org_id===p.org_id&&f.scope_key===p.scope_key&&f.item_id===p.item_id);
       if(i>=0) filas[i]=p; else filas.push(p);     // la restricción única
       return Promise.resolve({error:null});
@@ -30,6 +35,7 @@ function tablaProgress(){
     if(prop==='delete') return ()=>{ filtros={}; const d={get(t2,p2){
         if(p2==='eq') return (c,v)=>{ filtros[c]=v; return new Proxy({},d); };
         if(p2==='then') return (res)=>{
+          if(errorAlEscribir) return Promise.resolve({error:errorAlEscribir}).then(res);
           const antes=filas.length;
           filas=filas.filter(f=>!Object.entries(filtros).every(([k,v])=>f[k]===v));
           borrados.push(antes-filas.length);
@@ -163,6 +169,44 @@ window.__t.setUser('u-ana');   // lo que initAuthInner() hace desde la sesión
       checks2.i10===undefined, JSON.stringify(checks2));
   chk('y se le avisa a quien estaba tildando', avisos.length===1, avisos[0]||'(ningún aviso)');
   window.saveChecklistTick=saveOriginal;
+
+  // ── Señal cortada que el navegador todavía no notó ──
+  // Lo encontró Fran probando: puso el celular en modo avión, tildó, y los
+  // tildes SE BORRARON con un aviso de error. `navigator.onLine` seguía
+  // diciendo que había señal, así que el tilde intentó escribir, falló, y el
+  // código lo trató como un rechazo del servidor. En un barco con señal mala
+  // ése no es un caso raro: es el caso normal.
+  //
+  // Las formas de error están medidas contra la API real, no inventadas.
+  const errRed = { code: '', message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch' };
+  const errServidor = { code: '42501', message: 'new row violates row-level security policy for table "checklist_progress"' };
+
+  chk('un fallo de red se reconoce por no tener code', window.pareceFalloDeRed(errRed)===true);
+  chk('un rechazo del servidor NO se confunde con red', window.pareceFalloDeRed(errServidor)===false, errServidor.code);
+  chk('sin error no hay fallo de red', window.pareceFalloDeRed(null)===false);
+
+  // Con la red caída pero isOffline todavía en false: el tilde va a la cola y
+  // NO se deshace.
+  const cola2=[]; window.queueOfflineAction=(tipo,payload)=>cola2.push({tipo,payload});
+  window.__t.offline(false);
+  errorAlEscribir=errRed;
+  const checks3={};
+  avisos=[];
+  await window.marcarTilde({ scopeKey:mensual, meta, itemId:'i11', checks:checks3, dibujar:()=>{} });
+  chk('señal cortada sin avisar: el tilde NO se deshace', checks3.i11===true, JSON.stringify(checks3));
+  chk('y se encola para cuando vuelva la señal',
+      cola2.length===1 && cola2[0].tipo==='checklist_tick', JSON.stringify(cola2[0]||{}).slice(0,70));
+  chk('y NO se le muestra un error que no corresponde', avisos.length===0, avisos[0]||'(ningún aviso, bien)');
+
+  // Un rechazo real del servidor sí se deshace y sí se avisa.
+  errorAlEscribir=errServidor;
+  cola2.length=0; avisos=[];
+  const checks4={};
+  await window.marcarTilde({ scopeKey:mensual, meta, itemId:'i12', checks:checks4, dibujar:()=>{} });
+  chk('un rechazo del servidor sí deshace el tilde', checks4.i12===undefined, JSON.stringify(checks4));
+  chk('y sí avisa', avisos.length===1, avisos[0]||'(ningún aviso)');
+  chk('y NO lo encola, para no trancar la cola para siempre', cola2.length===0, cola2.length+'');
+  errorAlEscribir=null;
 
   // ── El id del usuario no se pide por red en cada tilde ──
   chk('el tilde no pide el usuario por red: usa currentUserId',

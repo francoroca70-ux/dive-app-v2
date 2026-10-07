@@ -4499,6 +4499,7 @@ const TRANSLATIONS = {
     cl_logged_title: 'Logged Checklists', cl_logged_sub: 'Every gear and vessel sign-off, organized by day.',
     cl_logged_search_date: 'Search a date', cl_logged_clear: 'Clear', cl_logged_none: 'No checklists logged yet.',
     cl_tick_failed: "That tick couldn't be saved, so it's been undone. Check your connection and try again.",
+    cl_acta_failed: "The signed record couldn't be saved: {error}. Nothing was cleared — try signing again.",
     cl_acta_nota: 'Signed record — what was checked and what was missed. Tap Reset to run a fresh check.',
     cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
     cl_logged_vessel_check: 'Vessel safety check',
@@ -5208,6 +5209,7 @@ const TRANSLATIONS = {
     cl_logged_title: 'Checklists Logueadas', cl_logged_sub: 'Cada confirmación de equipo y de embarcación, organizada por día.',
     cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
     cl_tick_failed: 'Ese tilde no se pudo guardar, así que se deshizo. Revisá la conexión y probá de nuevo.',
+    cl_acta_failed: 'El acta no se pudo guardar: {error}. No se borró nada — probá firmar de nuevo.',
     cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
@@ -8341,7 +8343,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-07d');
+  console.info('[Seven Seas] build 2026-10-07e');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15178,6 +15180,31 @@ async function loadChecklistProgress(scopeKey) {
 // Sin conexión va a la cola: la restricción única (org, scope_key, item_id)
 // hace que reenviar sea seguro — el segundo intento actualiza en vez de
 // duplicar.
+// ¿El servidor contestó, o nunca llegamos?
+//
+// Medido contra la API real el 07/10, no deducido:
+//
+//   fallo de RED      code: ""       message: "TypeError: Failed to fetch"
+//   rechazo del SERVER code: "42501"  message: "new row violates row-level
+//                                              security policy…"
+//
+// La diferencia importa porque las consecuencias son opuestas. Si nunca
+// llegamos, el dato hay que guardarlo y reintentar. Si el servidor dijo no,
+// reintentar para siempre no lo va a hacer decir sí — y además trancaría la
+// cola, que se detiene en el primer fallo y conserva el resto.
+//
+// Esto apareció probando: Fran puso el celular en modo avión, tildó, y los
+// tildes se borraron con un aviso de error. `navigator.onLine` todavía decía
+// que había señal, así que el tilde intentó escribir de verdad, falló, y el
+// código lo trató como un rechazo del servidor. En un barco con señal mala ése
+// no es un caso raro: es el caso normal.
+function pareceFalloDeRed(error) {
+  if (!error) return false;
+  if (error.code) return false;              // el servidor contestó algo
+  return /failed to fetch|networkerror|network request failed|load failed|timeout|aborted/i
+    .test(String(error.message || '') + ' ' + String(error.details || ''));
+}
+
 // Guarda un tilde. La llaman los tres toggles DESPUÉS de haber pintado la
 // pantalla, no antes: ver el comentario en marcarTilde().
 //
@@ -15215,6 +15242,15 @@ async function saveChecklistTick(scopeKey, meta, itemId, checked) {
     ? await sb.from('checklist_progress').upsert(payload, { onConflict: 'org_id,scope_key,item_id' })
     : await sb.from('checklist_progress').delete()
         .eq('org_id', currentOrgId).eq('scope_key', scopeKey).eq('item_id', String(itemId));
+  if (error && pareceFalloDeRed(error)) {
+    // Se cortó la señal y el navegador todavía no se dio cuenta. El tilde NO
+    // se pierde ni se deshace: va a la cola como si hubiéramos estado offline
+    // desde el principio, que es lo que realmente pasó.
+    console.warn('[CHECKLIST] sin red al guardar el tilde, va a la cola', error);
+    queueOfflineAction(checked ? 'checklist_tick' : 'checklist_untick', payload);
+    updateOfflineBanner();
+    return true;
+  }
   if (error) {
     console.error('[CHECKLIST] no se pudo guardar el tilde:', error);
     // Acá NO se deshace nada: deshacer es de marcarTilde(), que es quien tiene
@@ -15351,6 +15387,37 @@ function tripLabelDeActa(r, { conFecha = false } = {}) {
   return `${hora ? hora + ' — ' : ''}${nombre}`;
 }
 
+// Guarda el acta. Devuelve true si quedó guardada o encolada, false si el
+// servidor la rechazó.
+//
+// Antes los tres lugares que firman hacían
+//
+//     await sb.from('checklist_completions').insert(payload);
+//     await clearChecklistProgress(...);
+//
+// sin mirar el error. Si la señal se cortaba justo al firmar, el insert
+// fallaba en silencio, el progreso se borraba igual, y el cartel decía
+// «firmada por Franco a las 09:14». Resultado: el acta no existía, los tildes
+// tampoco, y la persona creía que había quedado registrado.
+//
+// Para un registro con valor legal eso es lo peor que puede pasar — peor que
+// un error visible. Y el progreso ahora se borra SÓLO si el acta se guardó.
+async function guardarActa(payload) {
+  const { error } = await sb.from('checklist_completions').insert(payload);
+  if (!error) return true;
+
+  if (pareceFalloDeRed(error)) {
+    console.warn('[ACTA] sin red al firmar, va a la cola', error);
+    queueOfflineAction('checklist_completion', payload);
+    updateOfflineBanner();
+    return true;
+  }
+
+  console.error('[ACTA] el servidor rechazó el acta:', error);
+  await showAlertModal(t('cl_acta_failed').replace('{error}', error.message || ''));
+  return false;
+}
+
 // Devuelve {staff_id, name} o null. Un solo lector para los tres lugares que
 // firman, para que no puedan divergir.
 function readSigner(selectId) {
@@ -15385,7 +15452,8 @@ async function instructorSignOff() {
       queueOfflineAction('checklist_completion', payload);
       document.getElementById('cl-instructor-done').innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
     } else {
-      await sb.from('checklist_completions').insert(payload);
+      // El progreso se borra SÓLO si el acta quedó guardada o encolada.
+      if (!(await guardarActa(payload))) return;
       // Firmada: la instancia se cierra. El acta pasa a ser el registro y el
       // trabajo en curso deja de existir, para que nadie siga tildando sobre
       // algo ya firmado.
@@ -15681,7 +15749,7 @@ async function customChecklistSignOff(checklistId) {
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
     } else {
-      await sb.from('checklist_completions').insert(payload);
+      if (!(await guardarActa(payload))) return;
       await clearChecklistProgress(customScope(cc).scopeKey);
     }
   }
@@ -15898,7 +15966,7 @@ async function deptRoutineSignOff() {
       queueOfflineAction('checklist_completion', payload);
       doneBanner.innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
     } else {
-      await sb.from('checklist_completions').insert(payload);
+      if (!(await guardarActa(payload))) return;
       await clearChecklistProgress(deptScope().scopeKey);
     }
   }

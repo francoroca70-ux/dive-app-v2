@@ -13,10 +13,23 @@ const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasop
 const {window}=dom;
 const TRIPULACION=[{id:'u-ana',full_name:'Ana Diaz',role:'instructor',custom_role_name:null}];
 let insertados=[];
+// Para forzar el error del insert del acta y distinguir un fallo de red de un
+// rechazo del servidor. Formas medidas contra la API real.
+let errorAlInsertar=null;
+// Qué scope_key se limpió: el progreso NO debe borrarse si el acta no entró.
+let limpiados=[];
 function tabla(n){
   const h={get(t,prop){
     if(prop==='then') return (res,rej)=>Promise.resolve({data:n==='staff'?TRIPULACION:[],count:0,error:null}).then(res,rej);
-    if(prop==='insert') return (p)=>{ insertados.push(p); return Promise.resolve({error:null}); };
+    if(prop==='insert') return (p)=>{
+      if(n==='checklist_completions'&&errorAlInsertar) return Promise.resolve({error:errorAlInsertar});
+      insertados.push(p); return Promise.resolve({error:null});
+    };
+    if(prop==='delete') return ()=>{ const d={get(t2,p2){
+        if(p2==='eq') return (c,v)=>{ if(c==='scope_key') limpiados.push(v); return new Proxy({},d); };
+        if(p2==='then') return (res)=>Promise.resolve({error:null}).then(res);
+        return ()=>new Proxy({},d);
+      }}; return new Proxy({},d); };
     return ()=>new Proxy({},h);
   }};
   return new Proxy({},h);
@@ -119,6 +132,53 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   chk('y las dos consultas piden items_snapshot',
       (html.match(/signed_by, signed_at, completed_items, total_items, items_snapshot/g)||[]).length===2,
       'dos selects con el detalle');
+
+  // ── Si se corta la señal al firmar, el acta NO se pierde ──
+  // Esto era lo más grave de la familia que destapó Fran probando el modo
+  // avión. Los tres lugares que firman hacían el insert SIN mirar el error y
+  // después borraban el progreso igual. Si la señal se cortaba justo al
+  // firmar: el acta no existía, los tildes se borraban, y el cartel decía
+  // «firmada por Franco a las 09:14». Para un registro con valor legal es lo
+  // peor que puede pasar — peor que un error visible.
+  //
+  // Las formas de error están medidas contra la API real.
+  const errRedActa = { code: '', message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch' };
+  const errServidorActa = { code: '42501', message: 'new row violates row-level security policy' };
+  const colaActa=[]; window.queueOfflineAction=(tipo,payload)=>colaActa.push({tipo,payload});
+  let avisosActa=[]; window.showAlertModal=async(m)=>{avisosActa.push(String(m));};
+
+  window.__t.setTrip('trip-1'); window.__t.marcar('trip-1',tildados);
+  errorAlInsertar=errRedActa; insertados=[]; colaActa.length=0; avisosActa=[]; limpiados=[];
+  await window.instructorSignOff();
+  chk('señal cortada al firmar: el acta va a la cola',
+      colaActa.length===1 && colaActa[0].tipo==='checklist_completion', JSON.stringify(colaActa[0]||{}).slice(0,60));
+  chk('y NO se le muestra un error que no corresponde', avisosActa.length===0, avisosActa[0]||'(ningún aviso, bien)');
+
+  // Rechazo real del servidor: no se borra el progreso y se avisa.
+  errorAlInsertar=errServidorActa; colaActa.length=0; avisosActa=[]; limpiados=[];
+  window.__t.marcar('trip-1',tildados);
+  await window.instructorSignOff();
+  chk('si el servidor rechaza el acta, se avisa',
+      avisosActa.length===1 && /acta|record/i.test(avisosActa[0]), avisosActa[0]||'(ningún aviso)');
+  chk('y NO se borra el trabajo en curso: lo tildado no se pierde',
+      limpiados.length===0, JSON.stringify(limpiados));
+  chk('y NO se encola algo que el servidor ya rechazó', colaActa.length===0, colaActa.length+'');
+  errorAlInsertar=null;
+
+  // Un solo lugar guarda el acta, y los tres firmados lo usan.
+  chk('el acta se guarda en un solo lugar',
+      (html.match(/async function guardarActa\(/g)||[]).length===1 &&
+      (html.match(/await guardarActa\(payload\)/g)||[]).length===3,
+      (html.match(/await guardarActa\(payload\)/g)||[]).length+' usos');
+  // El patrón viejo era el insert suelto, sin recoger el error. El que queda
+  // dentro de guardarActa() sí lo recoge, y hay una mención en un comentario.
+  chk('y ninguno inserta el acta por su cuenta',
+      !/\n\s+await sb\.from\('checklist_completions'\)\.insert\(payload\);/.test(html) &&
+      /const \{ error \} = await sb\.from\('checklist_completions'\)\.insert\(payload\);/.test(html),
+      'el único insert recoge el error');
+  chk('el progreso se borra sólo si el acta quedó guardada',
+      (html.match(/if \(!\(await guardarActa\(payload\)\)\) return;/g)||[]).length===3,
+      'los tres cortan antes de limpiar');
 
   // ── Sin conexión: el acta también viaja en la cola ──
   const cola=[]; window.queueOfflineAction=(tipo,payload)=>cola.push({tipo,payload});

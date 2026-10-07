@@ -222,8 +222,14 @@ window.queueOfflineAction=(tipo,payload)=>{ encolados.push({tipo,payload}); };
       llamadasAlConstructor===3, llamadasAlConstructor+' llamadas');
   chk('y no quedó ningún acta armada a mano',
       !/signed_by:\s*name,\s*completed_by:/.test(html), 'patrón viejo ausente');
-  chk('sigue habiendo exactamente un insert de acta por camino (+1 la cola offline)',
-      insertsDeActa===4, insertsDeActa+' inserts');
+  // Antes había un insert por cada camino que firma (3) más el de la cola.
+  // Desde que el acta se guarda en un solo lugar quedan dos reales:
+  // guardarActa() y el replay de la cola. El tercero es una mención en un
+  // comentario que explica el patrón viejo.
+  chk('el acta se inserta en dos lugares reales: guardarActa y la cola',
+      insertsDeActa===3 &&
+      (html.match(/const \{ error \} = await sb\.from\('checklist_completions'\)\.insert\(payload\)/g)||[]).length===1,
+      insertsDeActa+' menciones');
 
   // El acta no puede quedar sin firmante: `signer` es obligatorio y los tres
   // caminos cortan antes si no hay. Verificamos que el constructor no invente.
