@@ -6611,7 +6611,20 @@ async function flushOfflineQueue() {
 }
 
 window.addEventListener('offline', () => { isOffline = true; updateOfflineBanner(); });
-window.addEventListener('online', () => { isOffline = false; updateOfflineBanner(); flushOfflineQueue(); });
+window.addEventListener('online', async () => {
+  isOffline = false;
+  updateOfflineBanner();
+  await flushOfflineQueue();
+  // Los tildes propios ya salieron con la cola, pero la pantalla seguía
+  // mostrando la copia en memoria de ANTES de perder la señal — así que no se
+  // veía nada de lo que tildó el resto de la tripulación mientras tanto, y
+  // sólo se arreglaba recargando la página entera.
+  //
+  // `progressCache` se vaciaba únicamente al firmar. Esto cierra la otra mitad
+  // de lo que prometía el trabajo en curso compartido: tus tildes salen Y los
+  // de los demás entran.
+  refrescarChecklistVisible();
+});
 
 // ─── ACCEPT INVITE ───
 // Reached via ?invite=TOKEN in the staff invite email. Runs before any
@@ -8328,7 +8341,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-07c');
+  console.info('[Seven Seas] build 2026-10-07d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14423,6 +14436,159 @@ const INSTRUCTOR_ITEMS_I18N = [
   { id:'i14', en:'Briefing materials ready', es:'Materiales de briefing listos' },
 ];
 function INSTRUCTOR_ITEMS_get() { return INSTRUCTOR_ITEMS_I18N.map(i => ({ id: i.id, text: currentLanguage === 'es' ? i.es : i.en })); }
+
+// ─── De dónde salen las listas de una checklist ───
+//
+// Hoy salen de las constantes de arriba, cableadas en este archivo. Y eso NO
+// es un accidente: es la única razón por la que las checklists funcionan sin
+// señal. El service worker guarda este archivo en caché y no toca los pedidos
+// a Supabase, y `localStorage` no guarda ningún dato de la app. O sea que si
+// las listas pasaran a leerse de la base sin más, un instructor en un barco
+// sin señal no tendría una lista vacía: no tendría NADA. Y ese es el escenario
+// normal de un centro de buceo.
+//
+// Así que la etapa 3 va en dos mitades. Esta —la 3a— construye el camino con
+// sus tres capas y lo deja probado, sin cambiar todavía de dónde lee la app.
+// La 3b mueve el interruptor, y volver atrás es una línea.
+//
+//   1. la base        cuando hay señal, y se guarda en la caché local
+//   2. la caché local sin señal
+//   3. lo cableado    si nunca hubo una lectura exitosa — un tripulante nuevo
+//                     que abre la app por primera vez justo en el barco
+//
+// La capa 3 existe gratis hasta la etapa 5, que es la que borra lo cableado.
+// Mientras siga ahí, este camino no puede dejar a nadie sin lista.
+//
+// El costo aceptado (hablado con Fran el 07/10): si el dueño edita una lista,
+// la copia de la tripulación queda vieja hasta que alguien abra la app con
+// señal. Mejor una lista de la semana pasada que ninguna.
+let FUENTE_PLANTILLAS = 'cableado';   // 'cableado' | 'base' — la 3b lo pasa a 'base'
+
+// ─── Caché local ───
+//
+// La clave lleva el id del centro a propósito. Un navegador puede tener varias
+// cuentas guardadas (`ss_saved_accounts`), así que sin el centro en la clave un
+// tripulante que cambia de centro vería offline las checklists del otro.
+//
+// Y lleva versión de esquema: si mañana cambia la forma de lo que se guarda,
+// una copia vieja no se interpreta mal — simplemente no se encuentra.
+const CACHE_LOCAL_VERSION = 1;
+
+function cacheLocalClave(nombre) {
+  return `ss_cache_v${CACHE_LOCAL_VERSION}_${currentOrgId || 'sin_org'}_${nombre}`;
+}
+
+// localStorage puede lanzar: modo privado, cuota llena, permisos. Un fallo de
+// caché nunca puede voltear la app, así que todo va envuelto.
+function cacheLocalGuardar(nombre, dato) {
+  try {
+    localStorage.setItem(cacheLocalClave(nombre), JSON.stringify({ guardado: Date.now(), dato }));
+    return true;
+  } catch (e) {
+    console.warn('[CACHE] no se pudo guardar', nombre, e);
+    return false;
+  }
+}
+
+function cacheLocalLeer(nombre) {
+  try {
+    const crudo = localStorage.getItem(cacheLocalClave(nombre));
+    if (!crudo) return null;
+    const obj = JSON.parse(crudo);
+    return obj && 'dato' in obj ? obj.dato : null;
+  } catch (e) {
+    console.warn('[CACHE] copia ilegible, se ignora', nombre, e);
+    return null;
+  }
+}
+
+// Vuelve a leer el trabajo en curso y redibuja la checklist que esté a la
+// vista. Se llama al recuperar la señal.
+//
+// Vacía `progressCache` primero: mientras no se vacíe, loadChecklistProgress()
+// devuelve la copia en memoria y nunca vuelve a preguntarle a la base, así que
+// lo que tildó el resto de la tripulación no aparece.
+//
+// Un solo lugar decide qué vista está abierta, para que agregar una cuarta
+// mañana no signifique acordarse de este archivo.
+function refrescarChecklistVisible() {
+  for (const k in progressCache) delete progressCache[k];
+
+  const visible = (id) => {
+    const el = document.getElementById(id);
+    return el && el.style.display !== 'none';
+  };
+
+  if (visible('cl-tripprep') && currentChecklistTripId) {
+    renderInstructorChecklistForTrip(currentChecklistTripId);
+  }
+  if (visible('cl-department')) {
+    renderDeptRoutine();
+  }
+}
+
+// Las tres capas, en un solo lugar. `leerDeLaBase` es lo único que cambia
+// entre una lista de tipo de salida y una rutina de departamento.
+//
+// Se guarda en caché la FILA BILINGÜE, no el texto ya resuelto. La primera
+// versión guardaba el texto resuelto y el test la agarró: alguien que guardaba
+// la lista en español y después cambiaba la app a inglés seguía viendo español
+// sin señal. El idioma es de quien mira, no de cuando se guardó.
+async function cargarConTresCapas({ nombreEnCache, leerDeLaBase, cableado, convertir }) {
+  if (FUENTE_PLANTILLAS !== 'base') return cableado();
+
+  if (!isOffline && currentOrgId) {
+    try {
+      const filas = await leerDeLaBase();
+      if (filas && filas.length) {
+        cacheLocalGuardar(nombreEnCache, filas);
+        return convertir(filas);
+      }
+    } catch (e) {
+      console.warn('[PLANTILLAS] no se pudo leer de la base, se usa la caché', e);
+    }
+  }
+
+  const guardadas = cacheLocalLeer(nombreEnCache);
+  if (guardadas && guardadas.length) return convertir(guardadas);
+
+  return cableado();
+}
+
+// Convierte las filas bilingües de la base al {id, text} que dibuja la
+// pantalla, resolviendo el idioma de quien está mirando. El id es el uuid del
+// ítem, que es estable — a diferencia de los índices posicionales que usan las
+// listas cableadas, donde insertar un ítem corre todos los tildes en curso.
+function itemsDePlantilla(filas) {
+  return (filas || []).map(f => ({
+    id: String(f.id),
+    text: (currentLanguage === 'es' ? f.text_es : f.text_en) || f.text_en || f.text_es || ''
+  }));
+}
+
+// La lista de preparación de una salida, por tipo de salida.
+async function itemsDeInstructorParaTipo(tripTypeId) {
+  return cargarConTresCapas({
+    nombreEnCache: `plantilla_tipo_${tripTypeId || 'sin_tipo'}`,
+    cableado: () => INSTRUCTOR_ITEMS_get(),
+    convertir: itemsDePlantilla,
+    leerDeLaBase: async () => {
+      if (!tripTypeId) return null;
+      const { data, error } = await sb.from('checklist_templates')
+        .select('id, checklist_template_items(id, order_index, text_en, text_es, active)')
+        .eq('org_id', currentOrgId).eq('trip_type_id', tripTypeId)
+        .eq('scope', 'trip_type').eq('active', true).limit(1);
+      if (error) throw error;
+      const plantilla = (data || [])[0];
+      if (!plantilla) return null;
+      // Se devuelven las filas crudas: el filtrado y el orden sí van acá
+      // (son propiedades de la plantilla), pero el idioma no.
+      return (plantilla.checklist_template_items || [])
+        .filter(i => i.active !== false)
+        .sort((a, b) => a.order_index - b.order_index);
+    }
+  });
+}
 
 // One entry per department, each with up to four cadences (morning/eod/monthly/yearly).
 // `role` on each cadence is the exact string stored in checklist_completions.role, so

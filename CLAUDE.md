@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 200 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 230 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -175,9 +175,27 @@ vault — **leerlo antes de tocar este módulo.**
 Hecho: bloque 0 (actas inmutables), etapa 0.5 (`checklist_progress`), etapa 1
 (el esquema) y **etapa 2** (las semillas: 16 tipos de salida, 270 ítems, en
 `checklist_seeds`, sembradas por un disparador al activar una categoría).
-Sigue: **etapa 3** — leer de la base en vez del código. Es la peligrosa porque
-cambia la fuente de datos de algo que ya funciona; las dos fuentes conviven
-hasta que esté probada. `custom_checklists` también se fusiona ahí.
+Hecho también **etapa 3a**: el camino de tres capas que el offline necesita,
+construido y probado, con el interruptor `FUENTE_PLANTILLAS` todavía en
+`'cableado'`. Sigue: **3b**, pasarlo a `'base'` — una línea, y volver atrás
+también. `custom_checklists` se fusiona ahí.
+
+**Las checklists funcionan sin señal SÓLO porque las listas están cableadas en
+`index.html`**, que es lo que el service worker cachea: no toca los pedidos a
+Supabase y `localStorage` no guarda datos de la app. Leer de la base sin más
+dejaría a un instructor en un barco **sin ninguna lista**. De ahí las tres
+capas: base → caché local → cableado. La capa 3 es gratis hasta la etapa 5, que
+es la que borra lo cableado; mientras siga ahí, nadie queda sin lista.
+
+**La caché guarda las filas bilingües, no el texto resuelto** — el idioma es de
+quien mira, no de cuando se guardó. La clave lleva el org id (un navegador tiene
+varias cuentas guardadas) y versión de esquema. Todo acceso a `localStorage` va
+envuelto en try/catch.
+
+**Al recuperar la señal se vacía `progressCache` y se redibuja**
+(`refrescarChecklistVisible`). Antes sólo se vaciaba al firmar, así que después
+de reconectar no se veía lo que tildó el resto de la tripulación hasta recargar
+la página — y lo mismo con dos personas tildando a la vez.
 
 **Los ítems de plantilla son bilingües en la base** (`text_en` + `text_es`),
 decidido por Fran el 07/10: al pasar a ser dato del centro un ítem sería un
