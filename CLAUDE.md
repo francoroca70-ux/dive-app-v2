@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 273 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 287 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -211,6 +211,22 @@ entró. Antes los tres firmados insertaban sin mirar el error y limpiaban igual:
 si se cortaba la señal al firmar, el acta no existía, los tildes se borraban y
 el cartel decía «firmada». Ver
 `Errores y aprendizajes/La señal que se corta antes de que el navegador se entere.md`.
+
+**Mientras la checklist está abierta, el progreso se relee cada 10 segundos**
+(`arrancarRefrescoDeProgreso`), más un refresco al volver a la app. Antes se
+leía una vez por sesión y se cacheaba, así que los tildes de un compañero no
+aparecían ni saliendo y volviendo a entrar. Diez segundos y no Realtime,
+decidido con Fran el 08/10: cargando un barco es indistinguible de «en vivo» y
+un websocket se caería todo el tiempo con señal de barco. **Realtime está
+agendado** para cuando haya clientes — la publicación `supabase_realtime` existe
+sin tablas, así que es una migración.
+
+**Y la parte difícil no es el refresco: es no pisar tu propio tilde.**
+`tildesPendientes` guarda lo marcado o desmarcado que el servidor no confirmó,
+y lo del servidor es la base con lo pendiente ENCIMA. Destildar también es
+pendiente (si no, un refresco lo resucita). Un tilde encolado sigue pendiente
+hasta que la cola se vacíe entera. Si el refresco falla, se conserva lo que ya
+estaba en pantalla.
 
 **Al recuperar la señal se vacía `progressCache` y se redibuja**
 (`refrescarChecklistVisible`). Antes sólo se vaciaba al firmar, así que después

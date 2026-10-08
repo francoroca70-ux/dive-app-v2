@@ -182,8 +182,8 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
       /cl-role-badge warn cl-item-falta/.test(html));
 
   // ── El buscador de fecha ──
-  chk('el campo de fecha tiene ancho a medida, no 100%',
-      /\.sf-input\.sf-input-fecha \{ width: auto; min-width: 150px; \}/.test(html));
+  chk('el campo de fecha tiene ancho a medida, no 100%, y el texto centrado',
+      /\.sf-input\.sf-input-fecha \{ width: auto; min-width: 150px; text-align: center; \}/.test(html));
   chk('y la fila dejó de tener el padding grande de inline-form',
       /id="cl-logged-search-row" style="margin:0 0 16px;padding:12px 14px;/.test(html));
   chk('el grupo ya no se estira a 220px',

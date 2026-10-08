@@ -264,6 +264,80 @@ window.__t.setUser('u-ana');   // lo que initAuthInner() hace desde la sesión
   chk('y NO lo encola, para no trancar la cola para siempre', cola2.length===0, cola2.length+'');
   errorAlEscribir=null;
 
+  // ── Los tildes del resto aparecen solos, sin pisar los tuyos ──
+  // El caso de Fran: tres personas cargando el barco, cada una tildando en su
+  // celular. Antes el progreso se leia UNA vez por sesion y se cacheaba, asi
+  // que los tildes de un compañero no aparecian ni saliendo y volviendo a
+  // entrar a la checklist.
+  errorAlEscribir=null; window.__t.offline(false);
+  const scopeFus='loc-a:deck_morning:2026-10-08';
+
+  // Lo que hay en el servidor lo puso otro tripulante.
+  filas.length=0;
+  filas.push({org_id:'org-1', scope_key:scopeFus, item_id:'reguladores', checked:true});
+  window.__t.limpiarCache();
+  let mapa=await window.loadChecklistProgress(scopeFus);
+  chk('se ve lo que tildo un compañero', mapa.reguladores===true, JSON.stringify(mapa));
+
+  // Y ahora el caso que importa: tildo algo, y un refresco llega ANTES de que
+  // la escritura confirme. Mi tilde no puede desaparecer.
+  window.anotarPendiente(scopeFus, 'chalecos', true);
+  const fusionado=window.fusionarConPendientes(scopeFus, {reguladores:true});
+  chk('un refresco no pisa el tilde que acabo de hacer',
+      fusionado.chalecos===true && fusionado.reguladores===true, JSON.stringify(fusionado));
+
+  // Destildar tambien es pendiente: el refresco no puede resucitarlo.
+  window.anotarPendiente(scopeFus, 'reguladores', false);
+  const fus2=window.fusionarConPendientes(scopeFus, {reguladores:true});
+  chk('ni resucita uno que acabo de destildar',
+      fus2.reguladores===undefined, JSON.stringify(fus2));
+
+  // Confirmado por el servidor, deja de estar pendiente.
+  window.olvidarPendiente(scopeFus, 'chalecos');
+  window.olvidarPendiente(scopeFus, 'reguladores');
+  const fus3=window.fusionarConPendientes(scopeFus, {reguladores:true});
+  chk('confirmado, manda el servidor',
+      fus3.reguladores===true && fus3.chalecos===undefined, JSON.stringify(fus3));
+
+  // forzar salta la cache: sin eso no se volvia a preguntar nunca.
+  filas.push({org_id:'org-1', scope_key:scopeFus, item_id:'tanques', checked:true});
+  mapa=await window.loadChecklistProgress(scopeFus);
+  chk('sin forzar sigue devolviendo la copia en memoria', mapa.tanques===undefined);
+  mapa=await window.loadChecklistProgress(scopeFus, {forzar:true});
+  chk('forzando aparece lo nuevo del compañero', mapa.tanques===true, JSON.stringify(mapa));
+
+  // Un tilde encolado SIGUE pendiente hasta que la cola se vacie: si no,
+  // un refresco lo borraria de la pantalla mientras espera señal.
+  window.anotarPendiente(scopeFus, 'plomos', true);
+  mapa=await window.loadChecklistProgress(scopeFus, {forzar:true});
+  chk('un tilde encolado sobrevive a un refresco', mapa.plomos===true, JSON.stringify(mapa));
+  window.olvidarTodosLosPendientes();
+  mapa=await window.loadChecklistProgress(scopeFus, {forzar:true});
+  chk('y al vaciarse la cola deja de estar pendiente', mapa.plomos===undefined, JSON.stringify(mapa));
+
+  // Si la lectura falla, no se vacia la pantalla.
+  filas.length=0;
+  filas.push({org_id:'org-1', scope_key:scopeFus, item_id:'x', checked:true});
+  await window.loadChecklistProgress(scopeFus, {forzar:true});
+  const leerOriginal=window.leerProgresoDelServidor;
+  window.leerProgresoDelServidor=async()=>{ throw new Error('se cayo'); };
+  mapa=await window.loadChecklistProgress(scopeFus, {forzar:true});
+  chk('si el refresco falla, se conserva lo que ya estaba en pantalla',
+      mapa.x===true, JSON.stringify(mapa));
+  window.leerProgresoDelServidor=leerOriginal;
+
+  // ── El temporizador ──
+  chk('el refresco va cada 10 segundos',
+      /SEGUNDOS_ENTRE_REFRESCOS = 10/.test(html));
+  chk('no refresca sin señal ni en segundo plano',
+      /if \(isOffline \|\| document\.hidden\) return;/.test(html));
+  chk('y tambien refresca al volver a la app',
+      /visibilitychange[\s\S]{0,160}?refrescarProgresoVisible\(\)/.test(html));
+  chk('arranca al abrir la pagina de checklists',
+      /async function initChecklists\(\) \{[\s\S]{0,260}?arrancarRefrescoDeProgreso\(\)/.test(html));
+  chk('un solo temporizador, no uno por pantalla',
+      /if \(temporizadorDeProgreso\) return;/.test(html));
+
   // ── El id del usuario no se pide por red en cada tilde ──
   chk('el tilde no pide el usuario por red: usa currentUserId',
       /checked_by: currentUserId/.test(html) &&

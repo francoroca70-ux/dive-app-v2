@@ -783,7 +783,7 @@ body { background: var(--navy); color: var(--text); }
 /* Un campo de fecha necesita ~130px; a 100% de un contenedor de 220 queda el
    texto a la izquierda y el ícono de calendario lejos, a la derecha, y se lee
    como desalineado. */
-.sf-input.sf-input-fecha { width: auto; min-width: 150px; }
+.sf-input.sf-input-fecha { width: auto; min-width: 150px; text-align: center; }
 .cl-acta-nota { font-size: 0.78rem; color: var(--muted); padding: 6px 0 2px; }
 .cl-checkbox {
   width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
@@ -6623,6 +6623,8 @@ async function flushOfflineQueue() {
   }
   const remaining = queue.slice(i);
   setOfflineQueue(remaining);
+  // Vaciada entera, el servidor ya tiene todo: nada sigue pendiente.
+  if (remaining.length === 0) olvidarTodosLosPendientes();
   if (remaining.length === 0 && banner) {
     banner.querySelector('.offline-banner-text').textContent = t('offline_all_synced');
     setTimeout(() => { if (!isOffline && getOfflineQueue().length === 0) banner.style.display = 'none'; }, 2500);
@@ -8360,7 +8362,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-08a');
+  console.info('[Seven Seas] build 2026-10-08b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14521,6 +14523,74 @@ function cacheLocalLeer(nombre) {
   }
 }
 
+// ─── Refresco mientras la checklist está abierta ───
+//
+// El caso que esto resuelve, en palabras de Fran: tres personas cargando el
+// barco a la mañana, cada una tildando en su celular lo que sube. «Yo hice
+// algo y lo tildé, no tenés que preguntarme si lo hice, para algo está.»
+//
+// Antes el progreso se leía UNA vez por sesión y se cacheaba, así que los
+// tildes de un compañero no aparecían ni saliendo y volviendo a entrar a la
+// checklist — sólo recargando la página.
+//
+// Diez segundos y no un websocket, decidido con Fran el 08/10: cargando un
+// barco, diez segundos es indistinguible de «en vivo» —nadie lo nota mientras
+// acarrea tanques— y en la señal intermitente de un barco un websocket se
+// estaría cayendo y rearmando todo el tiempo. Realtime queda agendado para
+// cuando haya clientes andando; la parte difícil (fusionar lo del servidor con
+// lo que acabás de tildar) ya queda hecha acá y sirve para los dos.
+const SEGUNDOS_ENTRE_REFRESCOS = 10;
+let temporizadorDeProgreso = null;
+
+// Un solo temporizador que se pregunta cada vez si corresponde hacer algo, en
+// vez de arrancarlo y pararlo desde cada camino de navegación. Una comprobación
+// cada diez segundos no se siente, y olvidarse de pararlo en una pantalla
+// nueva sí se sentiría.
+function arrancarRefrescoDeProgreso() {
+  if (temporizadorDeProgreso) return;
+  temporizadorDeProgreso = setInterval(() => {
+    if (isOffline || document.hidden) return;   // ni sin señal ni en segundo plano
+    refrescarProgresoVisible();
+  }, SEGUNDOS_ENTRE_REFRESCOS * 1000);
+}
+
+// Al volver a la app desde el bolsillo, sin esperar los diez segundos.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !isOffline) refrescarProgresoVisible();
+});
+
+// Relee el progreso del scope que esté a la vista y redibuja. No toca el acta
+// ni el resto de la pantalla: sólo los tildes.
+async function refrescarProgresoVisible() {
+  const visible = (id) => {
+    const el = document.getElementById(id);
+    return el && el.style.display !== 'none';
+  };
+  const pagina = document.getElementById('page-checklists');
+  if (!pagina || pagina.style.display === 'none') return;
+  if (!currentOrgId) return;
+
+  if (visible('cl-tripprep') && currentChecklistTripId) {
+    const { scopeKey } = instructorScope();
+    const checks = await loadChecklistProgress(scopeKey, { forzar: true });
+    instructorChecksByTrip[currentChecklistTripId] = checks;
+    renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), checks, 'toggleInstructor', null);
+  }
+
+  if (visible('cl-department')) {
+    const { routine, scopeKey } = deptScope();
+    const checks = await loadChecklistProgress(scopeKey, { forzar: true });
+    deptRoutineChecks[routine.role] = checks;
+    renderCheckItems('dept-list', routine.items, checks, 'toggleDeptItem', 'dept-routine-progress');
+    // Las checklists propias del centro viven en la misma pestaña.
+    for (const cc of customChecklists) {
+      const sc = customScope(cc).scopeKey;
+      customChecklistChecks[cc.id] = await loadChecklistProgress(sc, { forzar: true });
+    }
+    renderCustomChecklistsForCurrentView();
+  }
+}
+
 // Vuelve a leer el trabajo en curso y redibuja la checklist que esté a la
 // vista. Se llama al recuperar la señal.
 //
@@ -14833,6 +14903,9 @@ let currentUserId = null;
 
 // ─── INIT ───
 async function initChecklists() {
+  // Mientras la checklist esté abierta, los tildes del resto de la tripulación
+  // aparecen solos. Ver arrancarRefrescoDeProgreso().
+  arrancarRefrescoDeProgreso();
   // Get current user role
   if (currentOrgId) {
     const { data: s } = await sb.from('staff').select('role').eq('id', (await sb.auth.getUser()).data.user.id).single();
@@ -15178,18 +15251,69 @@ function progressScopeKey(role, periodKey) {
 
 const progressCache = {};   // { [scopeKey]: { [itemId]: true } }
 
-async function loadChecklistProgress(scopeKey) {
-  if (progressCache[scopeKey]) return progressCache[scopeKey];
+// ─── Tildes todavía sin confirmar ───
+//
+// `{ [scopeKey]: { [itemId]: true|false } }` — lo que esta persona marcó o
+// desmarcó y el servidor todavía no confirmó.
+//
+// Existe por el refresco periódico. Cargando un barco entre tres personas, un
+// refresco puede llegar 200 ms después de que tocaste un ítem y antes de que
+// la escritura termine. Si el refresco reemplazara el mapa, tu tilde
+// desaparecería y volvería un instante después — y si la escritura se encoló
+// por falta de señal, desaparecería del todo mientras la cola espera.
+//
+// Así que lo del servidor es la base y lo pendiente se aplica ENCIMA.
+const tildesPendientes = {};
+
+function anotarPendiente(scopeKey, itemId, estado) {
+  (tildesPendientes[scopeKey] = tildesPendientes[scopeKey] || {})[String(itemId)] = !!estado;
+}
+function olvidarPendiente(scopeKey, itemId) {
+  if (tildesPendientes[scopeKey]) delete tildesPendientes[scopeKey][String(itemId)];
+}
+// Después de vaciar la cola con éxito el servidor ya tiene todo, así que nada
+// sigue pendiente.
+function olvidarTodosLosPendientes() {
+  for (const k in tildesPendientes) delete tildesPendientes[k];
+}
+
+function fusionarConPendientes(scopeKey, delServidor) {
+  const out = Object.assign({}, delServidor);
+  const pend = tildesPendientes[scopeKey] || {};
+  Object.keys(pend).forEach(id => {
+    if (pend[id]) out[id] = true; else delete out[id];
+  });
+  return out;
+}
+
+async function leerProgresoDelServidor(scopeKey) {
   const mapa = {};
-  if (currentOrgId && !isOffline) {
-    const { data } = await sb.from('checklist_progress')
-      .select('item_id, checked')
-      .eq('org_id', currentOrgId)
-      .eq('scope_key', scopeKey);
-    (data || []).forEach(r => { if (r.checked) mapa[r.item_id] = true; });
-  }
-  progressCache[scopeKey] = mapa;
+  if (!currentOrgId || isOffline) return mapa;
+  const { data, error } = await sb.from('checklist_progress')
+    .select('item_id, checked')
+    .eq('org_id', currentOrgId)
+    .eq('scope_key', scopeKey);
+  if (error) throw error;
+  (data || []).forEach(r => { if (r.checked) mapa[r.item_id] = true; });
   return mapa;
+}
+
+// `forzar` salta la caché. Sin eso, el mapa se leía una sola vez por sesión y
+// no se volvía a pedir nunca: los tildes de un compañero no aparecían ni
+// saliendo y volviendo a entrar a la checklist, sólo recargando la página.
+async function loadChecklistProgress(scopeKey, { forzar = false } = {}) {
+  if (!forzar && progressCache[scopeKey]) return progressCache[scopeKey];
+  let mapa = {};
+  try {
+    mapa = await leerProgresoDelServidor(scopeKey);
+  } catch (e) {
+    console.warn('[CHECKLIST] no se pudo leer el progreso', e);
+    // Si falla y ya había algo en pantalla, se conserva: mejor lo de hace un
+    // rato que vaciar la lista de golpe.
+    if (progressCache[scopeKey]) return progressCache[scopeKey];
+  }
+  progressCache[scopeKey] = fusionarConPendientes(scopeKey, mapa);
+  return progressCache[scopeKey];
 }
 
 // Un tilde. Se guarda o se borra la fila según el estado nuevo.
@@ -15305,16 +15429,19 @@ async function saveChecklistTick(scopeKey, meta, itemId, checked) {
     updateOfflineBanner();
     return true;
   }
-  if (error) {
-    console.error('[CHECKLIST] el servidor rechazó el tilde:', error);
-    // Acá NO se deshace nada: deshacer es de marcarTilde(), que es quien tiene
-    // en la mano el objeto que la pantalla está mostrando. Esta función veía
-    // `progressCache[scopeKey]`, que en el primer tilde de un scope nuevo es
-    // un objeto DISTINTO del que dibuja la pantalla — así que el revert tocaba
-    // el que nadie mira y el tilde quedaba marcado igual. Un dueño por estado.
-    return false;
+  if (!error) {
+    olvidarPendiente(scopeKey, itemId);   // confirmado por el servidor
+    return true;
   }
-  return true;
+  // Llegamos al servidor y dijo no.
+  console.error('[CHECKLIST] el servidor rechazó el tilde:', error);
+  // Acá NO se deshace el tilde en pantalla: deshacer es de marcarTilde(), que
+  // es quien tiene en la mano el objeto que la pantalla está mostrando. Esta
+  // función veía `progressCache[scopeKey]`, que en el primer tilde de un scope
+  // nuevo es un objeto DISTINTO del que dibuja la pantalla — así que el revert
+  // tocaba el que nadie mira y el tilde quedaba marcado igual. Un dueño por
+  // estado.
+  return false;
 }
 
 // Tilda o destilda un ítem: pinta primero, guarda después.
@@ -15339,6 +15466,9 @@ async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
   const estabaTildado = !!checks[itemId];
   if (estabaTildado) delete checks[itemId]; else checks[itemId] = true;
   const quedoTildado = !!checks[itemId];
+  // Queda anotado como pendiente para que un refresco que llegue en el medio
+  // no lo pise. Ver tildesPendientes.
+  anotarPendiente(scopeKey, itemId, quedoTildado);
   dibujar();
 
   const ok = await saveChecklistTick(scopeKey, meta, itemId, quedoTildado);
@@ -15346,6 +15476,7 @@ async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
     // Vuelve a como estaba. Un tilde que no se guardó no puede verse igual
     // que uno que sí: alguien está revisando un barco contra esta lista.
     if (estabaTildado) checks[itemId] = true; else delete checks[itemId];
+    olvidarPendiente(scopeKey, itemId);
     dibujar();
     await showAlertModal(t('cl_tick_failed'));
   }
