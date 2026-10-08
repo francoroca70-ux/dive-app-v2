@@ -342,6 +342,15 @@ transacción. Ver `Errores y aprendizajes/El borrado que perdía la mitad.md`.
 `waiver-remote-signing`, `send-booking-confirmation`, `send-staff-invite`,
 `send-waiver-reminder`, `invite-accept`, `leave-org`, `close-shop`.
 
+**Permisos de funciones: revocar a `anon`/`authenticated` por nombre NO sirve.**
+Postgres concede EXECUTE a **PUBLIC** por defecto (el ACL lo muestra como
+`=X/postgres`, la cadena vacía ES PUBLIC) y los dos roles lo heredan de ahí. Va
+`revoke execute … from public`. Revocado así, **los triggers siguen disparando**
+— verificado. Y `my_staff_org_and_role()` **no se toca**: la usan 11 políticas
+de RLS, que se evalúan con el rol que consulta, así que revocarla rompe la app
+(medido: 4 filas → «permission denied»). Ver
+`Errores y aprendizajes/El permiso que nunca estuvo revocado.md`.
+
 **Seguridad, dos principios que costaron caro:**
 - El webhook de Paddle **deriva el plan del price ID de Paddle**, nunca de lo
   que dice el navegador. Una firma válida autentica al mensajero, no al
