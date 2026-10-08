@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 257 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 273 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -259,6 +259,13 @@ Ver `Errores y aprendizajes/La clave que sostenía un join.md`.
 **Y para cambios de esquema, jsdom no alcanza.** La suite estaba en verde: un
 stub de Supabase no sabe que PostgREST necesita una FK para incrustar. Hay que
 pegarle a la API real con la consulta que usa la app.
+
+**El verde con tilde significa 100% tildada, y nada más.** `estadoDeActa()` lo
+decide en un solo lugar y lo usan cinco: las dos burbujas al dibujar una ya
+firmada, las dos al firmarla, y la insignia de la lista de actas. Antes firmar
+ponía «Completo ✓» sin mirar cuánto se había tildado — Fran firmó una con 6 de
+16 y la pantalla le dijo que estaba completa. Lo que falta va en ámbar y con
+los números («Firmada 6/16»), que es lo que un capitán necesita.
 
 **Una checklist firmada muestra el acta, no la lista viva.** Firmar cierra la
 instancia y borra el trabajo en curso, así que antes se veía «completa» arriba

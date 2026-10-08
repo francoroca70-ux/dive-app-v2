@@ -133,6 +133,62 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
       (html.match(/signed_by, signed_at, completed_items, total_items, items_snapshot/g)||[]).length===2,
       'dos selects con el detalle');
 
+  // ── El estado de una firmada dice la verdad ──
+  // Fran firmó una checklist a medias y la pantalla le dijo «Completo ✓» en
+  // verde. El verde con tilde es justamente la señal de que no hay nada que
+  // revisar, así que decirlo sobre una lista con huecos es lo contrario de lo
+  // que sirve.
+  chk('100% tildada queda verde y con tilde',
+      window.estadoDeActa({completed_items:16,total_items:16}).clase==='done',
+      window.estadoDeActa({completed_items:16,total_items:16}).texto);
+  const parcial=window.estadoDeActa({completed_items:6,total_items:16});
+  chk('firmada a medias NO queda verde', parcial.clase==='warn', parcial.clase);
+  chk('y dice los números, que es lo que el capitán necesita',
+      /6/.test(parcial.texto) && /16/.test(parcial.texto), parcial.texto);
+  chk('una sin ítems no se declara completa',
+      window.estadoDeActa({completed_items:0,total_items:0}).clase==='warn');
+  chk('más tildados que el total tampoco rompe',
+      window.estadoDeActa({completed_items:20,total_items:16}).clase==='done');
+
+  // Pinta la burbuja y limpia la clase anterior, para que no queden las dos.
+  const burbuja=doc.createElement('div'); burbuja.id='burbuja-prueba';
+  burbuja.className='cl-role-badge done'; doc.body.appendChild(burbuja);
+  window.pintarEstadoDeActa('burbuja-prueba',{completed_items:6,total_items:16});
+  chk('al repintar no quedan las dos clases a la vez',
+      burbuja.classList.contains('warn') && !burbuja.classList.contains('done'),
+      burbuja.className);
+
+  // Un solo lugar decide, y lo usan los tres.
+  chk('el estado se decide en un solo lugar',
+      (html.match(/function estadoDeActa\(/g)||[]).length===1);
+  // Cuatro: al dibujar una ya firmada (2) y al firmarla (2). Este ultimo par
+  // lo encontro el test: los firmados ponian «Completo» apenas firmabas,
+  // antes de volver a dibujar.
+  chk('lo usan los cuatro lugares que pintan estado, mas la lista de actas',
+      (html.match(/pintarEstadoDeActa\('/g)||[]).length===4 &&
+      (html.match(/estadoDeActa\(r\)/g)||[]).length===2,
+      (html.match(/pintarEstadoDeActa\('/g)||[]).length+' burbujas + la lista');
+  chk('ya nadie pone «Completo» a mano sin mirar si está completa',
+      !/textContent = t\('cl_complete_check'\)/.test(html), 'patrón viejo ausente');
+
+  // ── El marcador de «sin hacer»: mismo ancho, centrado y a la derecha ──
+  chk('el marcador va pegado a la derecha con margin-left:auto',
+      /\.cl-item \.cl-item-falta \{[\s\S]{0,200}?margin-left: auto/.test(html));
+  chk('todos del mismo ancho y con el texto centrado',
+      /\.cl-item \.cl-item-falta \{[\s\S]{0,200}?min-width: 86px[\s\S]{0,60}?text-align: center/.test(html));
+  chk('y centrado verticalmente en el renglón',
+      /\.cl-item \.cl-item-falta \{[\s\S]{0,250}?align-self: center/.test(html));
+  chk('el acta usa esa clase en sus marcadores',
+      /cl-role-badge warn cl-item-falta/.test(html));
+
+  // ── El buscador de fecha ──
+  chk('el campo de fecha tiene ancho a medida, no 100%',
+      /\.sf-input\.sf-input-fecha \{ width: auto; min-width: 150px; \}/.test(html));
+  chk('y la fila dejó de tener el padding grande de inline-form',
+      /id="cl-logged-search-row" style="margin:0 0 16px;padding:12px 14px;/.test(html));
+  chk('el grupo ya no se estira a 220px',
+      !/max-width:220px;flex:1 1 160px/.test(html), 'flex:0 0 auto');
+
   // ── Si se corta la señal al firmar, el acta NO se pierde ──
   // Esto era lo más grave de la familia que destapó Fran probando el modo
   // avión. Los tres lugares que firman hacían el insert SIN mirar el error y

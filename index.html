@@ -769,6 +769,21 @@ body { background: var(--navy); color: var(--text); }
    los ítems parecían clicables y no pasaba nada al tocarlos. */
 .cl-item.acta { cursor: default; }
 .cl-item.acta:hover { background: none; padding-left: 0; }
+/* El marcador de «sin hacer» va siempre pegado a la derecha y todos del mismo
+   ancho, sin importar cuán largo sea el renglón. Si cada burbuja se acomoda
+   detrás de su texto, la columna queda irregular y cuesta barrer la lista con
+   la vista para encontrar lo que faltó — que es justo para lo que se mira.
+   `margin-left:auto` empuja a la derecha; el ancho fijo las iguala; y como
+   `.cl-item` es flex, la burbuja es un flex item y el ancho mínimo aplica. */
+.cl-item .cl-item-falta {
+  margin-left: auto; flex: 0 0 auto;
+  min-width: 86px; text-align: center;
+  align-self: center; white-space: nowrap;
+}
+/* Un campo de fecha necesita ~130px; a 100% de un contenedor de 220 queda el
+   texto a la izquierda y el ícono de calendario lejos, a la derecha, y se lee
+   como desalineado. */
+.sf-input.sf-input-fecha { width: auto; min-width: 150px; }
 .cl-acta-nota { font-size: 0.78rem; color: var(--muted); padding: 6px 0 2px; }
 .cl-checkbox {
   width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
@@ -3246,10 +3261,10 @@ body { background: var(--navy); color: var(--text); }
           <div class="card">
             <div class="card-section-title" style="margin-bottom:4px;" data-i18n="cl_logged_title">Logged Checklists</div>
             <p class="card-desc" style="margin-bottom:14px;" data-i18n="cl_logged_sub">Every gear and vessel sign-off, organized by day.</p>
-            <div class="inline-form" id="cl-logged-search-row" style="margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;">
-              <div class="sf-group" style="max-width:220px;flex:1 1 160px;margin-bottom:0;">
+            <div class="inline-form" id="cl-logged-search-row" style="margin:0 0 16px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;">
+              <div class="sf-group" style="flex:0 0 auto;margin-bottom:0;">
                 <label class="sf-label" data-i18n="cl_logged_search_date">Search a date</label>
-                <input class="sf-input" type="date" id="cl-logged-date-search">
+                <input class="sf-input sf-input-fecha" type="date" id="cl-logged-date-search">
               </div>
               <button class="btn-cancel" id="cl-logged-clear-search" style="flex:0 0 auto;" data-i18n="cl_logged_clear">Clear</button>
               <button class="btn-save" id="btn-export-checklists" style="flex:0 0 auto;" data-i18n="wv_export_day_checklists">Export day's checklists</button>
@@ -4500,6 +4515,7 @@ const TRANSLATIONS = {
     cl_logged_search_date: 'Search a date', cl_logged_clear: 'Clear', cl_logged_none: 'No checklists logged yet.',
     cl_tick_failed: "That tick couldn't be saved, so it's been undone. Check your connection and try again.",
     cl_acta_failed: "The signed record couldn't be saved: {error}. Nothing was cleared — try signing again.",
+    cl_signed_partial: 'Signed {hechos}/{total}',
     cl_acta_nota: 'Signed record — what was checked and what was missed. Tap Reset to run a fresh check.',
     cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
     cl_logged_vessel_check: 'Vessel safety check',
@@ -5210,6 +5226,7 @@ const TRANSLATIONS = {
     cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
     cl_tick_failed: 'Ese tilde no se pudo guardar, así que se deshizo. Revisá la conexión y probá de nuevo.',
     cl_acta_failed: 'El acta no se pudo guardar: {error}. No se borró nada — probá firmar de nuevo.',
+    cl_signed_partial: 'Firmada {hechos}/{total}',
     cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
@@ -8343,7 +8360,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-07g');
+  console.info('[Seven Seas] build 2026-10-08a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15053,7 +15070,7 @@ async function renderInstructorChecklistForTrip(tripId) {
     .order('signed_at', { ascending: false }).limit(1);
   if (existing && existing.length) {
     const s = existing[0];
-    if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
+    pintarEstadoDeActa('cl-instructor-status', s);
     doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ` +
       `${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
     doneBanner.style.display = 'block';
@@ -15400,6 +15417,41 @@ function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos }
   };
 }
 
+// Cómo se muestra el estado de una checklist ya firmada.
+//
+// Antes decía «Completo ✓» en verde en cuanto existía un acta, sin mirar si
+// estaba completa. Una firmada con 6 de 16 se veía igual que una impecable —
+// y el verde con tilde es justamente la señal de que no hay nada que revisar.
+// Lo encontró Fran: firmó una parcialmente y la pantalla le dijo que estaba
+// completa.
+//
+// El verde queda **sólo** cuando se tildó todo. Si falta algo, ámbar y con los
+// números, porque «firmada 6/16» le dice al capitán lo que necesita saber en
+// el mismo espacio que ocupaba la mentira.
+//
+// Un solo lugar lo decide, y lo usan los tres: la checklist de una salida, la
+// rutina de departamento y la lista de actas.
+function estadoDeActa(acta) {
+  const hechos = acta.completed_items || 0;
+  const total  = acta.total_items || 0;
+  const completa = total > 0 && hechos >= total;
+  if (completa) return { texto: t('cl_complete_check'), clase: 'done' };
+  return {
+    texto: t('cl_signed_partial').replace('{hechos}', hechos).replace('{total}', total),
+    clase: 'warn'
+  };
+}
+
+// Pinta ese estado en una de las dos burbujas de estado.
+function pintarEstadoDeActa(elementoId, acta) {
+  const el = document.getElementById(elementoId);
+  if (!el) return;
+  const { texto, clase } = estadoDeActa(acta);
+  el.textContent = texto;
+  el.classList.remove('done', 'warn');
+  el.classList.add(clase);
+}
+
 // Etiqueta de la salida de un acta, leída del SNAPSHOT DEL ACTA y no de la
 // tabla `trips`.
 //
@@ -15477,8 +15529,9 @@ async function instructorSignOff() {
   const ts = new Date().toLocaleString();
   document.getElementById('cl-instructor-done').innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
   document.getElementById('cl-instructor-done').style.display = 'block';
-  const status = document.getElementById('cl-instructor-status');
-  if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
+  // El estado lo decide estadoDeActa(), no el hecho de haber firmado: firmar
+  // una lista con huecos no la completa.
+  pintarEstadoDeActa('cl-instructor-status', { completed_items: done, total_items: instructorItems.length });
   if (currentOrgId) {
     const payload = buildRecordPayload({
       role: 'instructor', tripId: currentChecklistTripId,
@@ -15545,7 +15598,7 @@ function renderActaItems(containerId, snapshot, progressId) {
     <div class="cl-item acta ${item.done ? 'checked' : ''}">
       <div class="cl-checkbox">${item.done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
       <div class="cl-item-text">${escapeHtml(item.text || '')}</div>
-      ${item.done ? '' : `<span class="cl-role-badge warn">${escapeHtml(t('cl_acta_missed'))}</span>`}
+      ${item.done ? '' : `<span class="cl-role-badge warn cl-item-falta">${escapeHtml(t('cl_acta_missed'))}</span>`}
     </div>`).join('');
 
   if (progressId) {
@@ -15947,7 +16000,7 @@ async function renderDeptRoutine() {
   if (roleKey !== currentDeptRoutine().role) return;
   if (existing && existing.length) {
     const s = existing[0];
-    if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
+    pintarEstadoDeActa('dept-routine-status', s);
     if (doneBanner) {
       doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
       doneBanner.style.display = 'block';
@@ -15991,8 +16044,7 @@ async function deptRoutineSignOff() {
   const doneBanner = document.getElementById('dept-routine-done');
   doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
   doneBanner.style.display = 'block';
-  const status = document.getElementById('dept-routine-status');
-  if (status) { status.textContent = t('cl_complete_check'); status.classList.add('done'); }
+  pintarEstadoDeActa('dept-routine-status', { completed_items: done, total_items: routine.items.length });
   if (currentOrgId) {
     const payload = buildRecordPayload({
       role: routine.role, tripId: null,
@@ -16071,9 +16123,9 @@ async function loadLoggedChecklists() {
       const etiquetaActa = tripLabelDeActa(r);
       const tripLabel = etiquetaActa ? escapeHtml(etiquetaActa) : t('cl_logged_vessel_check');
       const roleLabel = crewRoleLabel(r.role) || r.role;
-      const faltaron = (r.completed_items || 0) < (r.total_items || 0);
-      // Un registro firmado completo y uno con huecos no pueden verse igual.
-      const badge = faltaron ? 'cl-role-badge warn' : 'cl-role-badge done';
+      // Mismo criterio que las dos burbujas de estado: un registro firmado
+      // completo y uno con huecos no pueden verse igual.
+      const badge = 'cl-role-badge ' + estadoDeActa(r).clase;
 
       // El acta sólo existe desde el 06/10. Las firmas anteriores guardaron
       // los dos números y nada más, así que para ésas se dice justamente eso
@@ -16091,7 +16143,7 @@ async function loadLoggedChecklists() {
           <div class="cl-logged-row-title">${tripLabel}${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}</div>
           <div class="cl-logged-row-meta">${roleLabel} · ${t('cl_signed_by')}${escapeHtml(r.signed_by || '—')} · ${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
         </div>
-        <div class="${badge}">${r.completed_items}/${r.total_items} ${faltaron ? '' : '✓'}</div>
+        <div class="${badge}">${r.completed_items}/${r.total_items} ${estadoDeActa(r).clase === 'done' ? '✓' : ''}</div>
       </div>
       <div class="cl-logged-detail" id="cl-logged-detail-${r.id}" style="display:none;">${detalle}</div>`;
     }).join('');
