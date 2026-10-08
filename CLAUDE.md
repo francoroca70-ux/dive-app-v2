@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 247 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 257 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -192,13 +192,19 @@ quien mira, no de cuando se guardó. La clave lleva el org id (un navegador tien
 varias cuentas guardadas) y versión de esquema. Todo acceso a `localStorage` va
 envuelto en try/catch.
 
-**Un fallo de red y un rechazo del servidor piden lo contrario.** Medido:
-red → `code: ''` y `TypeError: Failed to fetch`; servidor → `code: '42501'`.
-`pareceFalloDeRed()` lo decide en un solo lugar. Sin red se ENCOLA (nunca
-llegamos, hay que reintentar); con rechazo NO se encola, porque reintentar no
-lo va a hacer entrar y **trancaría la cola**, que se detiene en el primer
-fallo. Esto apareció probando modo avión: `navigator.onLine` todavía decía que
-había señal, así que los tildes se deshacían con un error espurio.
+**Un fallo de red y un rechazo del servidor piden lo contrario.** Sin red se
+ENCOLA (nunca llegamos, hay que reintentar); con rechazo NO se encola, porque
+reintentar no lo va a hacer entrar y **trancaría la cola**, que se detiene en
+el primer fallo.
+
+**Y la forma del error NO alcanza para distinguirlos: hay que medir la red.**
+Cada navegador la redacta distinto y un corte lento puede traer un `code`
+inesperado — clasificar por mensaje falló en producción con Fran probando modo
+avión. Si una escritura falla, `hayRedDeVerdad()` manda un **HEAD** al propio
+origen (HEAD porque el service worker sólo intercepta GET; con GET lo
+contestaría la caché y no mediría nada). La forma del error es una pista, la
+red es un hecho. `pareceFalloDeRed()` quedó reducido a lo único que la medición
+respalda: la ausencia de `code`.
 
 **El acta se guarda sólo en `guardarActa()`**, y el progreso se borra SÓLO si
 entró. Antes los tres firmados insertaban sin mirar el error y limpiaban igual:

@@ -8343,7 +8343,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-07e');
+  console.info('[Seven Seas] build 2026-10-07g');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15198,11 +15198,46 @@ async function loadChecklistProgress(scopeKey) {
 // que había señal, así que el tilde intentó escribir de verdad, falló, y el
 // código lo trató como un rechazo del servidor. En un barco con señal mala ése
 // no es un caso raro: es el caso normal.
+// La regla es **sólo** si hay `code`, y eso es a propósito.
+//
+// La primera versión exigía además que el mensaje coincidiera con una lista de
+// textos conocidos («failed to fetch», «network request failed»…). Eso es
+// frágil y en la dirección peligrosa: cada navegador redacta distinto —Safari
+// dice «Load failed», Firefox «NetworkError when attempting to fetch
+// resource»— y un corte lento puede terminar en un AbortError o en un texto
+// que no previmos. Si el mensaje no coincidía, un fallo de red se trataba como
+// rechazo del servidor y el tilde se deshacía: justo el bug que esto venía a
+// arreglar.
+//
+// PostgREST **siempre** devuelve un `code` cuando contesta. Así que la
+// ausencia de `code` es, por sí sola, la prueba de que nunca llegamos. No hace
+// falta adivinar cómo se redacta el error, y deja de importar en qué navegador
+// o sistema esté el tripulante.
 function pareceFalloDeRed(error) {
-  if (!error) return false;
-  if (error.code) return false;              // el servidor contestó algo
-  return /failed to fetch|networkerror|network request failed|load failed|timeout|aborted/i
-    .test(String(error.message || '') + ' ' + String(error.details || ''));
+  return !!error && !error.code;
+}
+
+// ¿Hay red de verdad, ahora?
+//
+// Esto existe porque clasificar el error no alcanzó. Fran probó modo avión con
+// el arreglo desplegado y el tilde se deshizo igual, así que su error traía un
+// `code` que yo no había previsto. Seguir adivinando cómo se redacta o se
+// codifica un fallo de red es el camino equivocado: hay una medición directa
+// disponible y es más barata que el error.
+//
+// `HEAD` a propósito: el service worker sólo intercepta `GET`, así que un HEAD
+// pasa derecho a la red y no lo contesta la caché. Con un GET esto devolvería
+// `ok` incluso en modo avión y la medición no mediría nada.
+async function hayRedDeVerdad() {
+  if (!navigator.onLine) return false;
+  try {
+    const r = await fetch('/manifest.json?ping=' + Date.now(), {
+      method: 'HEAD', cache: 'no-store'
+    });
+    return r.ok;
+  } catch (e) {
+    return false;
+  }
 }
 
 // Guarda un tilde. La llaman los tres toggles DESPUÉS de haber pintado la
@@ -15242,7 +15277,9 @@ async function saveChecklistTick(scopeKey, meta, itemId, checked) {
     ? await sb.from('checklist_progress').upsert(payload, { onConflict: 'org_id,scope_key,item_id' })
     : await sb.from('checklist_progress').delete()
         .eq('org_id', currentOrgId).eq('scope_key', scopeKey).eq('item_id', String(itemId));
-  if (error && pareceFalloDeRed(error)) {
+  // Si falló, se pregunta si hay red ANTES de decidir. La forma del error es
+  // una pista; la red es un hecho.
+  if (error && (pareceFalloDeRed(error) || !(await hayRedDeVerdad()))) {
     // Se cortó la señal y el navegador todavía no se dio cuenta. El tilde NO
     // se pierde ni se deshace: va a la cola como si hubiéramos estado offline
     // desde el principio, que es lo que realmente pasó.
@@ -15252,7 +15289,7 @@ async function saveChecklistTick(scopeKey, meta, itemId, checked) {
     return true;
   }
   if (error) {
-    console.error('[CHECKLIST] no se pudo guardar el tilde:', error);
+    console.error('[CHECKLIST] el servidor rechazó el tilde:', error);
     // Acá NO se deshace nada: deshacer es de marcarTilde(), que es quien tiene
     // en la mano el objeto que la pantalla está mostrando. Esta función veía
     // `progressCache[scopeKey]`, que en el primer tilde de un scope nuevo es
@@ -15406,7 +15443,7 @@ async function guardarActa(payload) {
   const { error } = await sb.from('checklist_completions').insert(payload);
   if (!error) return true;
 
-  if (pareceFalloDeRed(error)) {
+  if (pareceFalloDeRed(error) || !(await hayRedDeVerdad())) {
     console.warn('[ACTA] sin red al firmar, va a la cola', error);
     queueOfflineAction('checklist_completion', payload);
     updateOfflineBanner();

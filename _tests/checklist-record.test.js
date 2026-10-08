@@ -146,16 +146,20 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   const errServidorActa = { code: '42501', message: 'new row violates row-level security policy' };
   const colaActa=[]; window.queueOfflineAction=(tipo,payload)=>colaActa.push({tipo,payload});
   let avisosActa=[]; window.showAlertModal=async(m)=>{avisosActa.push(String(m));};
+  // En jsdom no hay red, asi que la medicion real diria siempre "sin red" y
+  // todo se encolaria. Se simula para poder probar los dos lados.
+  let redDeVerdad=true; window.hayRedDeVerdad=async()=>redDeVerdad;
 
   window.__t.setTrip('trip-1'); window.__t.marcar('trip-1',tildados);
-  errorAlInsertar=errRedActa; insertados=[]; colaActa.length=0; avisosActa=[]; limpiados=[];
+  errorAlInsertar=errRedActa; redDeVerdad=false; insertados=[]; colaActa.length=0; avisosActa=[]; limpiados=[];
   await window.instructorSignOff();
   chk('señal cortada al firmar: el acta va a la cola',
       colaActa.length===1 && colaActa[0].tipo==='checklist_completion', JSON.stringify(colaActa[0]||{}).slice(0,60));
   chk('y NO se le muestra un error que no corresponde', avisosActa.length===0, avisosActa[0]||'(ningún aviso, bien)');
 
   // Rechazo real del servidor: no se borra el progreso y se avisa.
-  errorAlInsertar=errServidorActa; colaActa.length=0; avisosActa=[]; limpiados=[];
+  // Rechazo del servidor CON red: ahi si se avisa y no se encola.
+  errorAlInsertar=errServidorActa; redDeVerdad=true; colaActa.length=0; avisosActa=[]; limpiados=[];
   window.__t.marcar('trip-1',tildados);
   await window.instructorSignOff();
   chk('si el servidor rechaza el acta, se avisa',
@@ -163,7 +167,22 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   chk('y NO se borra el trabajo en curso: lo tildado no se pierde',
       limpiados.length===0, JSON.stringify(limpiados));
   chk('y NO se encola algo que el servidor ya rechazó', colaActa.length===0, colaActa.length+'');
-  errorAlInsertar=null;
+  errorAlInsertar=null; redDeVerdad=true;
+
+  // Un error raro CON red se trata como rechazo; SIN red, se encola. La forma
+  // del error es una pista, la red es un hecho.
+  errorAlInsertar={ code:'ALGO_RARO', message:'vaya a saber' };
+  redDeVerdad=false; colaActa.length=0; avisosActa=[]; limpiados=[];
+  window.__t.marcar('trip-1',tildados);
+  await window.instructorSignOff();
+  chk('un error raro SIN red: el acta se encola en vez de perderse',
+      colaActa.length===1 && avisosActa.length===0, 'cola '+colaActa.length+' / avisos '+avisosActa.length);
+  // Encolada SI se limpia el progreso, y esta bien: el acta ya esta a salvo en
+  // la cola con su items_snapshot completo. Lo que no se puede limpiar es
+  // cuando el servidor la RECHAZA, porque ahi no queda registro de nada.
+  chk('encolada, el progreso si se limpia: el acta ya esta a salvo',
+      limpiados.length===1, JSON.stringify(limpiados));
+  errorAlInsertar=null; redDeVerdad=true;
 
   // Un solo lugar guarda el acta, y los tres firmados lo usan.
   chk('el acta se guarda en un solo lugar',

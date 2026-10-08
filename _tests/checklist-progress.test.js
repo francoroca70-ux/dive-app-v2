@@ -185,6 +185,62 @@ window.__t.setUser('u-ana');   // lo que initAuthInner() hace desde la sesión
   chk('un rechazo del servidor NO se confunde con red', window.pareceFalloDeRed(errServidor)===false, errServidor.code);
   chk('sin error no hay fallo de red', window.pareceFalloDeRed(null)===false);
 
+  // La regla es SOLO la ausencia de code, y eso importa: cada navegador
+  // redacta el error de red distinto, y un corte lento puede terminar en un
+  // AbortError. La primera version exigia que el mensaje coincidiera con una
+  // lista de textos conocidos, y cualquier redaccion inesperada volvia a
+  // deshacer el tilde -- el bug que esto venia a arreglar.
+  const otrasRedacciones=[
+    { code:'', message:'Load failed' },                                      // Safari
+    { code:'', message:'NetworkError when attempting to fetch resource.' },  // Firefox
+    { code:'', message:'network request failed' },                           // RN / webview
+    { code:undefined, message:'The operation was aborted.' },                // corte lento
+    { code:'', message:'' },                                                 // sin mensaje
+    { code:null, message:'algo que nadie previo' }
+  ];
+  chk('cualquier redaccion de un error de red cuenta como red',
+      otrasRedacciones.every(e=>window.pareceFalloDeRed(e)===true),
+      otrasRedacciones.filter(e=>!window.pareceFalloDeRed(e)).map(e=>e.message).join(' | ')||'las seis');
+  const otrosDelServidor=[
+    { code:'42501', message:'row-level security' },
+    { code:'23505', message:'duplicate key value' },
+    { code:'PGRST204', message:'column not found' }
+  ];
+  chk('y cualquier code del servidor NO cuenta como red',
+      otrosDelServidor.every(e=>window.pareceFalloDeRed(e)===false), 'tres codigos');
+
+  // ── El caso que el clasificador NO atrapaba ──
+  // Fran probó modo avión con el arreglo desplegado y el tilde se deshizo
+  // igual: su error traía un `code` que no habíamos previsto. Seguir
+  // adivinando la forma del error era el camino equivocado — hay una medición
+  // directa disponible. Ahora, si la escritura falla, se PREGUNTA si hay red
+  // antes de deshacer nada.
+  let redDeVerdad=true;
+  window.hayRedDeVerdad=async()=>redDeVerdad;
+  const errRaro={ code:'ALGO_QUE_NO_PREVIMOS', message:'vaya a saber' };
+  const cola3=[]; window.queueOfflineAction=(tipo,payload)=>cola3.push({tipo,payload});
+  window.__t.offline(false);
+  errorAlEscribir=errRaro; redDeVerdad=false; avisos=[];
+  const checks5={};
+  await window.marcarTilde({ scopeKey:mensual, meta, itemId:'i13', checks:checks5, dibujar:()=>{} });
+  chk('un error con code desconocido pero SIN red: el tilde no se deshace',
+      checks5.i13===true, JSON.stringify(checks5));
+  chk('se encola igual, porque la red es un hecho y el error sólo una pista',
+      cola3.length===1, cola3.length+' encolados');
+  chk('y no se avisa de un error que no corresponde', avisos.length===0, avisos[0]||'(ninguno, bien)');
+
+  // El mismo error raro, pero CON red: ahí sí fue el servidor.
+  errorAlEscribir=errRaro; redDeVerdad=true; cola3.length=0; avisos=[];
+  const checks6={};
+  await window.marcarTilde({ scopeKey:mensual, meta, itemId:'i14', checks:checks6, dibujar:()=>{} });
+  chk('el mismo error CON red sí se trata como rechazo del servidor',
+      checks6.i14===undefined && avisos.length===1, JSON.stringify(checks6));
+  chk('y no se encola, para no trancar la cola', cola3.length===0, cola3.length+'');
+  errorAlEscribir=null; redDeVerdad=true;
+
+  chk('la medición usa HEAD, que el service worker no intercepta',
+      /method: 'HEAD'/.test(html) && /sólo intercepta `GET`/.test(html), 'HEAD pasa derecho a la red');
+
   // Con la red caída pero isOffline todavía en false: el tilde va a la cola y
   // NO se deshace.
   const cola2=[]; window.queueOfflineAction=(tipo,payload)=>cola2.push({tipo,payload});
