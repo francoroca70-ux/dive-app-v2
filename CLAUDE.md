@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 287 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 303 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -309,6 +309,15 @@ la FK; las entidades operativas se archivan; sólo lo que no tiene nada colgado
 se borra de verdad. Un tripulante archivado pierde el acceso salvo que lo
 reactiven (la gente vuelve la temporada siguiente). El plan completo y qué
 falta, en `Decisiones/Archivar en vez de borrar.md`.
+
+**Todo borrado pasa por `borrarOAvisar()`** (paso 2, hecho el 08/10). Había 32
+borrados y sólo 4 miraban el error; los otros 28 fallaban en silencio. La regla
+—mirar, registrar, avisar y **cortar**— vive en una función, y el motivo se
+traduce: `23503` → «tiene registros asociados», `42501` → «sin permiso», sin
+red → «sin conexión». Las secuencias se detienen al primer fallo, que es lo que
+dejaba estados a medias. Dos excepciones: el replay de la cola **lanza** (su
+trabajo es reintentar) y la limpieza post-firma sólo registra (el acta ya entró;
+un cartel ahí haría dudar de una firma válida).
 
 Hecho: las **salidas**. `trips.archived_at`, y quitar una salida es una sola
 llamada atómica a `trip_archive_or_delete()` — la regla de qué se puede borrar

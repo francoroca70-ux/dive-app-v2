@@ -4515,6 +4515,10 @@ const TRANSLATIONS = {
     cl_logged_search_date: 'Search a date', cl_logged_clear: 'Clear', cl_logged_none: 'No checklists logged yet.',
     cl_tick_failed: "That tick couldn't be saved, so it's been undone. Check your connection and try again.",
     cl_acta_failed: "The signed record couldn't be saved: {error}. Nothing was cleared — try signing again.",
+    del_sin_conexion: "No connection, so nothing was deleted. Try again once you're back online.",
+    del_tiene_historia: 'This can\'t be deleted because there are records attached to it — bookings, payments, logs or signed paperwork. Nothing was removed.',
+    del_sin_permiso: "You don't have permission to delete this.",
+    del_otro_motivo: "Couldn't delete that: {error}",
     cl_signed_partial: 'Signed {hechos}/{total}',
     cl_acta_nota: 'Signed record — what was checked and what was missed. Tap Reset to run a fresh check.',
     cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
@@ -5226,6 +5230,10 @@ const TRANSLATIONS = {
     cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
     cl_tick_failed: 'Ese tilde no se pudo guardar, así que se deshizo. Revisá la conexión y probá de nuevo.',
     cl_acta_failed: 'El acta no se pudo guardar: {error}. No se borró nada — probá firmar de nuevo.',
+    del_sin_conexion: 'Sin conexión, así que no se borró nada. Probá de nuevo cuando vuelva la señal.',
+    del_tiene_historia: 'Esto no se puede borrar porque tiene registros asociados — reservas, pagos, logs o documentación firmada. No se borró nada.',
+    del_sin_permiso: 'No tenés permiso para borrar esto.',
+    del_otro_motivo: 'No se pudo borrar: {error}',
     cl_signed_partial: 'Firmada {hechos}/{total}',
     cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
@@ -8060,7 +8068,9 @@ function closeRosterCellModal() {
 document.getElementById('btn-save-roster-location').addEventListener('click', async () => {
   const locationId = document.getElementById('roster-cell-location').value;
   const { data: { user } } = await sb.auth.getUser();
-  await sb.from('staff_availability').delete().eq('staff_id', rosterCellStaffId).eq('start_date', rosterCellDate).eq('end_date', rosterCellDate);
+  // El borrado es requisito del upsert: si falla y seguimos, el día queda con
+  // disponibilidad Y local a la vez, que se contradicen.
+  if (!(await borrarOAvisar(sb.from('staff_availability').delete().eq('staff_id', rosterCellStaffId).eq('start_date', rosterCellDate).eq('end_date', rosterCellDate)))) return;
   await sb.from('staff_daily_location').upsert({
     org_id: currentOrgId, staff_id: rosterCellStaffId, location_id: locationId, work_date: rosterCellDate, set_by: user.email
   }, { onConflict: 'staff_id,work_date' });
@@ -8069,7 +8079,7 @@ document.getElementById('btn-save-roster-location').addEventListener('click', as
 });
 async function setRosterCellStatus(status) {
   const { data: { user } } = await sb.auth.getUser();
-  await sb.from('staff_daily_location').delete().eq('staff_id', rosterCellStaffId).eq('work_date', rosterCellDate);
+  if (!(await borrarOAvisar(sb.from('staff_daily_location').delete().eq('staff_id', rosterCellStaffId).eq('work_date', rosterCellDate)))) return;
   await sb.from('staff_availability').insert({
     org_id: currentOrgId, staff_id: rosterCellStaffId, status, start_date: rosterCellDate, end_date: rosterCellDate, set_by: user.email
   });
@@ -8077,8 +8087,8 @@ async function setRosterCellStatus(status) {
   renderRosterGrid();
 }
 async function clearRosterCell() {
-  await sb.from('staff_daily_location').delete().eq('staff_id', rosterCellStaffId).eq('work_date', rosterCellDate);
-  await sb.from('staff_availability').delete().eq('staff_id', rosterCellStaffId).eq('start_date', rosterCellDate).eq('end_date', rosterCellDate);
+  if (!(await borrarOAvisar(sb.from('staff_daily_location').delete().eq('staff_id', rosterCellStaffId).eq('work_date', rosterCellDate)))) return;
+  if (!(await borrarOAvisar(sb.from('staff_availability').delete().eq('staff_id', rosterCellStaffId).eq('start_date', rosterCellDate).eq('end_date', rosterCellDate)))) return;
   closeRosterCellModal();
   renderRosterGrid();
 }
@@ -8284,7 +8294,7 @@ async function toggleTaskItem(itemId) {
 
   const { data: existing } = await sb.from('task_item_completions').select('id').eq('task_list_item_id', itemId).eq('staff_id', currentTaskStaffId).maybeSingle();
   if (existing) {
-    await sb.from('task_item_completions').delete().eq('id', existing.id);
+    if (!(await borrarOAvisar(sb.from('task_item_completions').delete().eq('id', existing.id)))) return;
   } else {
     await sb.from('task_item_completions').insert({ task_list_item_id: itemId, staff_id: currentTaskStaffId });
   }
@@ -8362,7 +8372,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-08b');
+  console.info('[Seven Seas] build 2026-10-08c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9502,7 +9512,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
       await seedInspectionChecklistForCategory(cat);
     }
     for (const cat of toRemove) {
-      await sb.from('org_operation_categories').delete().eq('org_id', currentOrgId).eq('category', cat);
+      if (!(await borrarOAvisar(sb.from('org_operation_categories').delete().eq('org_id', currentOrgId).eq('category', cat)))) return;
     }
     if (toAdd.length || toRemove.length) {
       await syncCategoryCheckboxes();
@@ -9584,7 +9594,7 @@ document.getElementById('btn-save-location').addEventListener('click', async () 
 // Delete location
 async function deleteLocation(id) {
   if (!(await showConfirmModal('Remove this location?'))) return;
-  await sb.from('locations').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('locations').delete().eq('id', id)))) return;
   await loadLocations();
 }
 
@@ -10794,9 +10804,12 @@ document.getElementById('btn-add-group').addEventListener('click', async () => {
 async function removeGroup(groupId) {
   if (tripGroups_cache.length <= 1) return;
   if (!(await showConfirmModal('Remove this group and its guests/payments? This cannot be undone.', { danger: true }))) return;
-  await sb.from('payments').delete().eq('group_id', groupId);
-  await sb.from('participants').delete().eq('group_id', groupId);
-  await sb.from('trip_groups').delete().eq('id', groupId);
+  // En orden, y cortando al primer fallo. Seguir después de un error es lo
+  // que dejaba el grupo borrado a medias — el mismo patrón que perdía datos al
+  // borrar una salida.
+  if (!(await borrarOAvisar(sb.from('payments').delete().eq('group_id', groupId)))) return;
+  if (!(await borrarOAvisar(sb.from('participants').delete().eq('group_id', groupId)))) return;
+  if (!(await borrarOAvisar(sb.from('trip_groups').delete().eq('id', groupId)))) return;
   tripGroups_cache = tripGroups_cache.filter(g => g.id !== groupId);
   delete groupParticipants_cache[groupId];
   await recalcTripGuestCount(currentTripId);
@@ -11122,7 +11135,7 @@ async function confirmAddExpense(date) {
 }
 async function removeCashExpense(id) {
   if (!(await showConfirmModal(t('cu_remove_expense_confirm')))) return;
-  await sb.from('cash_expenses').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('cash_expenses').delete().eq('id', id)))) return;
   await loadCashUp();
 }
 async function saveCashUp(date, cashTotal, cardTotal, transferTotal, paidOut) {
@@ -12001,7 +12014,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     await sb.from('trips').update(payload).eq('id', currentTripId);
   }
 
-  await sb.from('trip_crew').delete().eq('trip_id', tripId);
+  if (!(await borrarOAvisar(sb.from('trip_crew').delete().eq('trip_id', tripId)))) return;
   if (tripCrewCache.length) {
     await sb.from('trip_crew').insert(tripCrewCache.map(c => ({ trip_id: tripId, staff_id: c.staff_id, role: 'crew' })));
   }
@@ -13917,7 +13930,7 @@ async function confirmLogPayment(groupId, total, paid) {
 }
 async function removeGroupPayment(id, groupId) {
   if (!(await showConfirmModal('Remove this payment record?'))) return;
-  await sb.from('payments').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('payments').delete().eq('id', id)))) return;
   await refreshGroupPaymentSection(groupId);
 }
 
@@ -14427,7 +14440,7 @@ async function saveGroupParticipant(groupId) {
 async function removeGroupParticipant(participantId, groupId) {
   if (isOffline) { await showAlertModal(t('guest_offline')); return; }
   if (!(await showConfirmModal('Remove this guest?'))) return;
-  await sb.from('participants').delete().eq('id', participantId);
+  if (!(await borrarOAvisar(sb.from('participants').delete().eq('id', participantId)))) return;
   await loadGroupParticipants(groupId);
   await recalcTripGuestCount(currentTripId);
   await renderGroupsPanel();
@@ -15381,6 +15394,40 @@ async function hayRedDeVerdad() {
   }
 }
 
+// ─── Borrar y decir si no se pudo ───
+//
+// Había 32 borrados en este archivo y **sólo 4 miraban el error**. Los otros 28
+// fallaban en silencio: el usuario apretaba, la lista se recargaba, y la cosa
+// seguía ahí. Lo vivió Fran con el botón de dar de baja un tripulante y con el
+// de borrar una salida.
+//
+// No se arregla escribiendo `if (error)` veintiocho veces — eso es la regla
+// copiada, y el defecto aparece donde la copia falta. La regla (mirar, dejar
+// rastro, decírselo a la persona y NO seguir) vive acá; cada lugar sólo dice
+// qué está borrando.
+//
+// Y lo importante para un centro de buceo: el motivo traducido. Un
+// `23503 foreign_key_violation` no le dice nada a nadie; «tiene historia
+// asociada» sí, y es justo la conversación de archivar en vez de borrar.
+async function motivoDeFalloAlBorrar(error) {
+  // La red primero: si nunca llegamos, el código de Postgres no significa nada.
+  if (pareceFalloDeRed(error) || !(await hayRedDeVerdad())) return t('del_sin_conexion');
+  if (error.code === '23503') return t('del_tiene_historia');
+  if (error.code === '42501') return t('del_sin_permiso');
+  return t('del_otro_motivo').replace('{error}', error.message || '');
+}
+
+// Devuelve true si se borró. Si no, avisa y devuelve false para que quien
+// llamó pueda cortar — importante en las secuencias de varios borrados, donde
+// seguir después de un fallo es lo que dejaba estados a medias.
+async function borrarOAvisar(consulta) {
+  const { error } = await consulta;
+  if (!error) return true;
+  console.error('[BORRAR] falló:', error);
+  await showAlertModal(await motivoDeFalloAlBorrar(error));
+  return false;
+}
+
 // Guarda un tilde. La llaman los tres toggles DESPUÉS de haber pintado la
 // pantalla, no antes: ver el comentario en marcarTilde().
 //
@@ -15488,8 +15535,11 @@ async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
 async function clearChecklistProgress(scopeKey) {
   delete progressCache[scopeKey];
   if (!currentOrgId || isOffline) return;
-  await sb.from('checklist_progress').delete()
+  const { error } = await sb.from('checklist_progress').delete()
     .eq('org_id', currentOrgId).eq('scope_key', scopeKey);
+  // Registra pero NO avisa: el acta ya quedó guardada y esto es limpieza. Un
+  // cartel de error acá le haría dudar de una firma que sí entró.
+  if (error) console.warn('[CHECKLIST] no se pudo limpiar el trabajo en curso', error);
 }
 
 // ─── El acta de lo que se firmó ───
@@ -15917,7 +15967,7 @@ async function saveNewCustomChecklist() {
 
 async function deleteCustomChecklist(id) {
   if (!(await showConfirmModal(t('cl_delete_checklist_confirm')))) return;
-  await sb.from('custom_checklists').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('custom_checklists').delete().eq('id', id)))) return;
   await loadCustomChecklists();
   renderDeptRoutine();
 }
@@ -16663,14 +16713,18 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
 
 async function removeStaff(id, name) {
   if (!(await showConfirmModal(t('crew_remove_confirm').replace('{name}', name)))) return;
-  await sb.from('staff_locations').delete().eq('staff_id', id);
-  await sb.from('staff').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('staff_locations').delete().eq('staff_id', id)))) return;
+  // Hoy esto falla para casi cualquier tripulante con historia: 15 tablas lo
+  // bloquean. Antes fallaba en silencio y el botón parecía no hacer nada;
+  // ahora al menos dice por qué. El arreglo de fondo es archivar en vez de
+  // borrar — ver Decisiones/Archivar en vez de borrar.md.
+  if (!(await borrarOAvisar(sb.from('staff').delete().eq('id', id)))) return;
   await loadCrew();
 }
 
 async function cancelInvite(id) {
   if (!(await showConfirmModal(t('crew_cancel_invite_confirm')))) return;
-  await sb.from('invites').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('invites').delete().eq('id', id)))) return;
   await loadPendingInvites();
 }
 // ─── END CREW ───
@@ -16872,7 +16926,7 @@ async function toggleBoat(id, currentActive) {
 
 async function deleteBoat(id) {
   if (!(await showConfirmModal(t('fleet_remove_confirm')))) return;
-  await sb.from('boats').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('boats').delete().eq('id', id)))) return;
   await loadFleet();
 }
 // ─── END FLEET ───
@@ -17254,8 +17308,8 @@ async function resetEngine(id) {
 
 async function deleteEngine(id) {
   if (!(await showConfirmModal(t('fleet_remove_engine_confirm')))) return;
-  await sb.from('engine_hour_logs').delete().eq('engine_id', id);
-  await sb.from('engines').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('engine_hour_logs').delete().eq('engine_id', id)))) return;
+  if (!(await borrarOAvisar(sb.from('engines').delete().eq('id', id)))) return;
   await loadBoatDetailEngines(window.currentBoatDetailId);
   await loadFleet();
 }
@@ -18270,8 +18324,8 @@ async function resetCompressor(id) {
 
 async function deleteCompressor(id) {
   if (!(await showConfirmModal('Remove this compressor and its history?'))) return;
-  await sb.from('compressor_fill_logs').delete().eq('compressor_id', id);
-  await sb.from('compressors').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('compressor_fill_logs').delete().eq('compressor_id', id)))) return;
+  if (!(await borrarOAvisar(sb.from('compressors').delete().eq('id', id)))) return;
   await loadCompressors();
 }
 // ─── END COMPRESSORS ───
@@ -18280,7 +18334,7 @@ async function deleteCompressor(id) {
 
 async function deleteMaintenanceLog(id, fromBoatModal, fromGearModal) {
   if (!(await showConfirmModal('Remove this maintenance entry?'))) return;
-  await sb.from('maintenance_logs').delete().eq('id', id);
+  if (!(await borrarOAvisar(sb.from('maintenance_logs').delete().eq('id', id)))) return;
   if (fromGearModal && window.currentGearDetailId) {
     await loadGearDetailMaintenance(window.currentGearDetailId);
   } else if (fromBoatModal && window.currentBoatDetailId) {
@@ -18566,8 +18620,8 @@ async function addInspectionItem() {
 }
 async function deleteInspectionItem(itemId) {
   if (!(await showConfirmModal('Remove this checklist item? This also deletes its history.', { danger: true }))) return;
-  await sb.from('gear_inspection_completions').delete().eq('checklist_item_id', itemId);
-  await sb.from('gear_inspection_checklist_items').delete().eq('id', itemId);
+  if (!(await borrarOAvisar(sb.from('gear_inspection_completions').delete().eq('checklist_item_id', itemId)))) return;
+  if (!(await borrarOAvisar(sb.from('gear_inspection_checklist_items').delete().eq('id', itemId)))) return;
   await loadInspectionChecklist();
 }
 async function tickInspectionItem(itemId, status) {
@@ -18849,7 +18903,7 @@ async function updateTripTypeGearField(tripTypeId, gearFieldId, checked, existin
     const { data } = await sb.from('trip_type_gear_fields').insert({ trip_type_id: tripTypeId, gear_field_id: gearFieldId }).select().single();
     if (data && checkboxEl) checkboxEl.setAttribute('onchange', `updateTripTypeGearField('${tripTypeId}', '${gearFieldId}', this.checked, '${data.id}', this)`);
   } else if (existingTtgfId) {
-    await sb.from('trip_type_gear_fields').delete().eq('id', existingTtgfId);
+    if (!(await borrarOAvisar(sb.from('trip_type_gear_fields').delete().eq('id', existingTtgfId)))) return;
     if (checkboxEl) checkboxEl.setAttribute('onchange', `updateTripTypeGearField('${tripTypeId}', '${gearFieldId}', this.checked, '', this)`);
   }
 }
