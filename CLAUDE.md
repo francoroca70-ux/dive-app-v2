@@ -416,7 +416,10 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
 - Casilla de correo para reemplazar el domicilio particular publicado en la
   ficha europea del App Store
 - Contactar los 10 centros de la investigación — **no depende de nada**
-- Supabase Pro (destraba las páginas SEO)
+- Supabase Pro — destraba **dos** cosas: las páginas SEO y la protección de
+  contraseñas filtradas (el chequeo contra HaveIBeenPwned es función de Pro, no
+  un interruptor del plan gratis; medido el 08/10, org `sevenseas` en `free`).
+  Hasta que se pague, ese aviso del linter de seguridad **no se puede cerrar**.
 - Service con sello inalterable en `maintenance_logs`, mismo patrón que el
   certificado de autenticidad de los waivers
 
