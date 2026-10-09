@@ -92,6 +92,18 @@ normales), no CMD ni PowerShell.
 código anda: está terminado cuando la nota dice lo mismo que el código. Es una
 instrucción permanente de Fran. Ver `Operativa/Cerrar un cambio.md`.
 
+**Y el paso que más se saltea es correr `python3 _scripts/chequeo_vault.py`.**
+Está en el procedimiento desde el 24/09. La primera vez que se corrió en serio
+(09/10) encontró tres hallazgos de una sola sesión: un enlace roto, una nota
+huérfana y un `type` inventado (`referencia` no existe — los válidos son `moc`,
+`note`, `decision`, `procedimiento`, `postmortem`, `person`, `project`).
+
+**Dos skills guardadas encapsulan este flujo** y conviene usarlas en vez de
+reconstruirlo de memoria, que es lo que lo hacía distinto cada vez:
+`seven-seas-investigar` (antes de tocar algo: leer el vault, medir el sistema
+vivo, tratar la nota como hipótesis) y `seven-seas-cerrar-cambio` (después: qué
+nota toca, frontmatter, versiones, chequeo, mensaje de commit).
+
 **5 · Al tocar `index.html`, subir dos números:**
 - `sw.js` → `CACHE_VERSION = 'seven-seas-vN'`
 - `index.html` → el `console.info('[Seven Seas] build …')`
@@ -224,9 +236,10 @@ tuviera, porque la FK de `checklist_templates` es **CASCADE** y borrar esa copia
 se llevaría la plantilla en silencio. Repunta antes de borrar: las FK de `trips`
 y `trip_groups` son NO ACTION y frenan el borrado hasta entonces.
 
-Previsto: 111 tipos → **51**, salidas con plantilla 32 → **44**, plantillas
-**43 → 43**. Lo corre Fran:
-`select * from trip_types_merge_duplicates(null, true);`
+**Aplicado el 09/10 y dio exactamente la predicción**: 111 tipos → **51**, 17
+grupos duplicados → **0**, salidas con plantilla 32 → **44**, plantillas
+**43 → 43**. Escribir la predicción antes es lo que hace que «dio 51» signifique
+algo; sin ella cualquier número parece razonable.
 
 **Y el supuesto que tuve que corregir midiendo:** supuse que algo seguía creando
 duplicados. No. La siembra no era idempotente y se le puso un guardián el
