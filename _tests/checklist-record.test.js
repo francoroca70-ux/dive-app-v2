@@ -133,9 +133,13 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   chk('la salida y la rutina de departamento comparten el arreglo',
       (html.match(/mostrarActaSiHay\(/g)||[]).length===3, // 1 declaración + 2 usos
       (html.match(/mostrarActaSiHay\(/g)||[]).length+' menciones');
-  chk('y las dos consultas piden items_snapshot',
-      (html.match(/signed_by, signed_at, completed_items, total_items, items_snapshot/g)||[]).length===2,
-      'dos selects con el detalle');
+  // Desde el 09/10 las columnas están en UNA constante y la consulta en UNA
+  // función: eran tres listas idénticas escritas a mano, así que agregarle una
+  // columna al acta pedía acordarse de tocar las tres.
+  chk('las columnas del acta se piden desde un solo lugar',
+      (html.match(/const COLUMNAS_DE_ACTA = '[^']*items_snapshot'/g)||[]).length===1 &&
+      (html.match(/select\(COLUMNAS_DE_ACTA\)/g)||[]).length===1,
+      'una constante, una consulta');
 
   // ── El estado de una firmada dice la verdad ──
   // Fran firmó una checklist a medias y la pantalla le dijo «Completo ✓» en
@@ -255,8 +259,11 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
       !/\n\s+await sb\.from\('checklist_completions'\)\.insert\(payload\);/.test(html) &&
       /const \{ error \} = await sb\.from\('checklist_completions'\)\.insert\(payload\);/.test(html),
       'el único insert recoge el error');
+  // Desde el 09/10 los tres firmados corren dentro de `firmarUnaSolaVez()`, así
+  // que cortan devolviendo `false` en vez de `return;` — pero la regla es la
+  // misma: si el acta no entró, el trabajo en curso NO se borra.
   chk('el progreso se borra sólo si el acta quedó guardada',
-      (html.match(/if \(!\(await guardarActa\(payload\)\)\) return;/g)||[]).length===3,
+      (html.match(/if \(!\(await guardarActa\(payload\)\)\) return false;/g)||[]).length===3,
       'los tres cortan antes de limpiar');
 
   // ── Sin conexión: el acta también viaja en la cola ──

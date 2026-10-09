@@ -3182,7 +3182,7 @@ body { background: var(--navy); color: var(--text); }
               <select class="sf-input signer-select" id="cl-instructor-name"></select>
               <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
-                <button class="btn-save" onclick="instructorSignOff()" data-i18n="cl_sign_off_gear">Sign Off — Gear Ready</button>
+                <button class="btn-save" id="cl-instructor-signoff-btn" onclick="instructorSignOff()" data-i18n="cl_sign_off_gear">Sign Off — Gear Ready</button>
                 <button class="btn-cancel" onclick="resetInstructorChecklist()" data-i18n="cl_reset">Reset</button>
               </div>
             </div>
@@ -3264,7 +3264,7 @@ body { background: var(--navy); color: var(--text); }
               <select class="sf-input signer-select" id="dept-routine-name"></select>
               <div class="cl-done-banner" id="dept-routine-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
-                <button class="btn-save" onclick="deptRoutineSignOff()" data-i18n="cl_sign_off_routine">Sign Off</button>
+                <button class="btn-save" id="dept-routine-signoff-btn" onclick="deptRoutineSignOff()" data-i18n="cl_sign_off_routine">Sign Off</button>
                 <button class="btn-cancel" onclick="resetDeptRoutine()" data-i18n="cl_reset">Reset</button>
               </div>
             </div>
@@ -4542,6 +4542,7 @@ const TRANSLATIONS = {
     cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
     cl_autor_title: 'Ticked from this crew member’s account',
     cl_participantes: 'Filled in together by {names}.',
+    cl_ya_firmada: 'This checklist was already signed by {name} at {time}, so nothing was added. Signed records are never replaced — use Reset if you need to run it again.',
     cl_logged_vessel_check: 'Vessel safety check',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
@@ -5259,6 +5260,7 @@ const TRANSLATIONS = {
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
     cl_autor_title: 'Tildado desde la cuenta de esta persona',
     cl_participantes: 'La completaron entre {names}.',
+    cl_ya_firmada: 'Esta checklist ya la firmó {name} a las {time}, así que no se agregó nada. Las actas firmadas no se reemplazan — si hay que hacerla de nuevo, usá Reset.',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
@@ -8394,7 +8396,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-09b');
+  console.info('[Seven Seas] build 2026-10-09c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15171,18 +15173,21 @@ async function renderInstructorChecklistForTrip(tripId) {
   const status = document.getElementById('cl-instructor-status');
   if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
 
+  // Mientras no haya acta, se puede firmar. La zona se repinta siempre, no sólo
+  // cuando hay acta: si no, volver a una checklist sin firmar después de ver una
+  // firmada dejaba el botón escondido.
+  pintarZonaDeFirma({ selectId: 'cl-instructor-name', botonId: 'cl-instructor-signoff-btn', acta: null });
   if (!currentOrgId) return;
-  const { data: existing } = await sb.from('checklist_completions')
-    .select('signed_by, signed_at, completed_items, total_items, items_snapshot')
-    .eq('trip_id', tripId).eq('role', 'instructor')
-    .order('signed_at', { ascending: false }).limit(1);
-  if (existing && existing.length) {
-    const s = existing[0];
+  const s = await buscarActaVigente({ role: 'instructor', tripId });
+  if (s) {
     pintarEstadoDeActa('cl-instructor-status', s);
     doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ` +
       `${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
     doneBanner.style.display = 'block';
     mostrarActaSiHay('cl-instructor-items', s, null);
+    // Firmada: no se vuelve a firmar. Antes el botón seguía ahí ARRIBA del acta
+    // ya dibujada, así que se podía duplicar entrando al día siguiente.
+    pintarZonaDeFirma({ selectId: 'cl-instructor-name', botonId: 'cl-instructor-signoff-btn', acta: s });
   }
 }
 
@@ -15193,6 +15198,78 @@ async function renderInstructorChecklistForTrip(tripId) {
 // Un solo lugar lo decide, porque los dos caminos que muestran una checklist
 // firmada —la de una salida y la rutina de departamento— tenían el mismo
 // problema y tienen que quedar con el mismo arreglo.
+// Las columnas que necesita cualquier pantalla que muestre un acta ya firmada.
+// En un solo lugar: eran tres listas idénticas escritas a mano, y agregarle una
+// columna al acta significaba acordarse de tocar las tres.
+const COLUMNAS_DE_ACTA = 'signed_by, signed_at, completed_items, total_items, items_snapshot';
+
+// ¿Esta instancia ya tiene acta? Una consulta, dos formas de identificar la
+// instancia: por salida (la del instructor) o por período (las rutinas de
+// departamento, que son una por día o por mes).
+//
+// La usan los dos momentos que tienen que coincidir: al dibujar la pantalla y
+// **justo antes de insertar**. Lo segundo es lo que hacía falta y no estaba —
+// ver el comentario de `firmarUnaSolaVez()`.
+async function buscarActaVigente({ role, tripId = null, periodo = null }) {
+  if (!currentOrgId) return null;
+  let q = sb.from('checklist_completions').select(COLUMNAS_DE_ACTA)
+    .eq('org_id', currentOrgId).eq('role', role);
+  if (tripId) q = q.eq('trip_id', tripId);
+  if (periodo) q = q.gte('signed_at', periodo.start).lte('signed_at', periodo.end);
+  const { data, error } = await q.order('signed_at', { ascending: false }).limit(1);
+  if (error) { console.warn('[ACTA] no se pudo comprobar si ya hay acta', error); return null; }
+  return (data && data[0]) || null;
+}
+
+// Una checklist firmada NO se puede volver a firmar: se esconden el selector de
+// firmante y el botón. Para otra pasada está Reset, que es un acto deliberado.
+//
+// Esto es lo que faltaba el 09/10 y costó un acta duplicada. El arreglo del
+// 08/10 —«una checklist firmada muestra el acta, no la lista viva»— se aplicó
+// SÓLO al camino de cargar la pantalla, no al de firmar. Así que al firmar la
+// pantalla se quedaba con la lista viva tildada y el botón ahí, y lo único que
+// cambiaba era el cartel. Fran apretó, no vio que cambiara nada, apretó otra
+// vez: dos actas idénticas de 4/4 separadas por 1,7 segundos.
+//
+// Y el botón quedaba disponible incluso ARRIBA del acta ya dibujada, así que el
+// mismo error se podía cometer al día siguiente entrando de nuevo.
+function pintarZonaDeFirma({ selectId, botonId, acta }) {
+  const firmada = !!acta;
+  const sel = document.getElementById(selectId);
+  const btn = document.getElementById(botonId);
+  if (sel) sel.style.display = firmada ? 'none' : '';
+  if (btn) btn.style.display = firmada ? 'none' : '';
+}
+
+// Firmar es irreversible y el botón se aprieta con el pulgar en un barco que se
+// mueve. Dos cosas distintas lo protegen:
+//
+//  · este candado, para el doble toque mientras el primer insert viaja, y
+//  · la comprobación contra el servidor de más abajo, para el caso de dos
+//    celulares: ahora el progreso es compartido, así que Juanma puede firmar en
+//    el suyo sin que el mío se entere hasta el refresco de diez segundos. Sin
+//    eso, los dos firman y quedan dos actas de la misma lista.
+const firmasEnCurso = new Set();
+
+async function firmarUnaSolaVez(claveDeInstancia, instancia, hacerlo) {
+  if (firmasEnCurso.has(claveDeInstancia)) return false;
+  firmasEnCurso.add(claveDeInstancia);
+  try {
+    const yaHay = await buscarActaVigente(instancia);
+    if (yaHay) {
+      // No se inserta nada. El acta de quien llegó primero queda, que es lo
+      // correcto: las actas no se tocan ni se reemplazan.
+      await showAlertModal(t('cl_ya_firmada')
+        .replace('{name}', yaHay.signed_by || '')
+        .replace('{time}', new Date(yaHay.signed_at).toLocaleString()));
+      return false;
+    }
+    return await hacerlo();
+  } finally {
+    firmasEnCurso.delete(claveDeInstancia);
+  }
+}
+
 function mostrarActaSiHay(containerId, acta, progressId) {
   const detalle = Array.isArray(acta.items_snapshot) ? acta.items_snapshot : [];
   if (detalle.length) { renderActaItems(containerId, detalle, progressId); return; }
@@ -15960,39 +16037,56 @@ function readSigner(selectId) {
 async function instructorSignOff() {
   if (!currentChecklistTripId) { await showAlertModal(t('cl_select_trip_first')); return; }
   const signer = readSigner('cl-instructor-name');
-  const name = signer ? signer.name : '';
   const instructorItems = INSTRUCTOR_ITEMS_get();
   const checks = instructorChecksByTrip[currentChecklistTripId] || {};
   const done = instructorItems.filter(i => checks[i.id]).length;
   if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
   if (done < instructorItems.length && !(await showConfirmModal(`${instructorItems.length - done}${t('cl_items_incomplete')}`))) return;
-  const ts = new Date().toLocaleString();
-  document.getElementById('cl-instructor-done').innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
-  document.getElementById('cl-instructor-done').style.display = 'block';
-  // El estado lo decide estadoDeActa(), no el hecho de haber firmado: firmar
-  // una lista con huecos no la completa.
-  pintarEstadoDeActa('cl-instructor-status', { completed_items: done, total_items: instructorItems.length });
-  if (currentOrgId) {
+
+  const tripId = currentChecklistTripId;
+  await firmarUnaSolaVez(`instructor:${tripId}`, { role: 'instructor', tripId }, async () => {
+    if (!currentOrgId) { pintarFirmaDelInstructor(signer.name, done, instructorItems.length); return true; }
     const payload = buildRecordPayload({
-      role: 'instructor', tripId: currentChecklistTripId,
+      role: 'instructor', tripId,
       items: instructorItems, estaTildado: (it) => checks[it.id],
       signer, hechos: done, checks
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
-      document.getElementById('cl-instructor-done').innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
-    } else {
-      // El progreso se borra SÓLO si el acta quedó guardada o encolada.
-      if (!(await guardarActa(payload))) return;
-      // Firmada: la instancia se cierra. El acta pasa a ser el registro y el
-      // trabajo en curso deja de existir, para que nadie siga tildando sobre
-      // algo ya firmado.
-      await clearChecklistProgress(instructorScope().scopeKey);
-      if (['owner','manager','captain'].includes(currentUserRole)) {
-        await loadCrewStatus(currentChecklistTripId);
-      }
+      pintarFirmaDelInstructor(signer.name, done, instructorItems.length, t('cl_saved_offline_sync'));
+      return true;
     }
-  }
+    // El progreso se borra SÓLO si el acta quedó guardada o encolada.
+    if (!(await guardarActa(payload))) return false;
+    // Firmada: la instancia se cierra. El acta pasa a ser el registro y el
+    // trabajo en curso deja de existir, para que nadie siga tildando sobre
+    // algo ya firmado.
+    await clearChecklistProgress(instructorScope().scopeKey);
+    if (['owner','manager','captain'].includes(currentUserRole)) {
+      await loadCrewStatus(tripId);
+    }
+    // Y la pantalla pasa a mostrar el ACTA, no la lista viva. Esto es lo que
+    // faltaba: antes sólo cambiaba el cartel, la lista tildada se quedaba ahí
+    // con el botón disponible, y volver a apretar insertaba una segunda acta.
+    await renderInstructorChecklistForTrip(tripId);
+    return true;
+  });
+}
+
+// El cartel de «firmada» se pinta DESPUÉS de que el acta entró, no antes.
+// Antes se pintaba primero y, si el servidor rechazaba, quedaba diciendo
+// «✓ firmada por Franco» arriba de un acta que no existía — el mismo error que
+// costó la pérdida de tildes del 08/10, en otra forma.
+function pintarFirmaDelInstructor(nombre, hechos, total, extra) {
+  const el = document.getElementById('cl-instructor-done');
+  if (!el) return;
+  el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(nombre)}</strong> at ${new Date().toLocaleString()}` +
+    (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
+  el.style.display = 'block';
+  // El estado lo decide estadoDeActa(), no el hecho de haber firmado: firmar
+  // una lista con huecos no la completa.
+  pintarEstadoDeActa('cl-instructor-status', { completed_items: hechos, total_items: total });
+  pintarZonaDeFirma({ selectId: 'cl-instructor-name', botonId: 'cl-instructor-signoff-btn', acta: true });
 }
 
 // ─── SHARED RENDER ───
@@ -16306,13 +16400,19 @@ async function customChecklistSignOff(checklistId) {
   const done = cc.items.filter((_, idx) => checks[idx]).length;
   if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
   if (done < cc.items.length && !(await showConfirmModal(`${cc.items.length - done}${t('cl_items_incomplete')}`))) return;
-  const ts = new Date().toLocaleString();
-  const doneBanner = document.getElementById(`custom-cl-done-${checklistId}`);
-  if (doneBanner) {
-    doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
-    doneBanner.style.display = 'block';
-  }
-  if (currentOrgId) {
+
+  const pintar = (extra) => {
+    const el = document.getElementById(`custom-cl-done-${checklistId}`);
+    if (!el) return;
+    el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(name)}</strong> at ${new Date().toLocaleString()}` +
+      (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
+    el.style.display = 'block';
+  };
+
+  const { scopeKey } = customScope(cc);
+  await firmarUnaSolaVez(scopeKey,
+    { role: `custom_${checklistId}`, periodo: deptRoutinePeriodRange(cc.cadence) }, async () => {
+    if (!currentOrgId) { pintar(); return true; }
     const payload = buildRecordPayload({
       role: `custom_${checklistId}`, tripId: null,
       // Acá los ítems son texto suelto y `checks` va por índice, no por id:
@@ -16324,11 +16424,20 @@ async function customChecklistSignOff(checklistId) {
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
-    } else {
-      if (!(await guardarActa(payload))) return;
-      await clearChecklistProgress(customScope(cc).scopeKey);
+      pintar(t('cl_saved_offline_sync'));
+      return true;
     }
-  }
+    if (!(await guardarActa(payload))) return false;
+    await clearChecklistProgress(scopeKey);
+    pintar();
+    // OJO: a diferencia de las otras dos, una checklist propia firmada todavía
+    // NO muestra su acta al volver a entrar — `renderCustomChecklistsForCurrentView`
+    // nunca consulta `checklist_completions`. El candado y la comprobación
+    // contra el servidor sí la cubren, así que no se puede duplicar; lo que
+    // falta es la vista. Anotado en `Decisiones/Quién tildó cada ítem.md`.
+    await renderCustomChecklistsForCurrentView();
+    return true;
+  });
 }
 
 // Renders every custom checklist that belongs to the department tab + cadence
@@ -16481,24 +16590,20 @@ async function renderDeptRoutine() {
   renderCheckItems('dept-list', routine.items, deptRoutineChecks[roleKey], 'toggleDeptItem', 'dept-routine-progress');
   renderCustomChecklistsForCurrentView();
 
+  pintarZonaDeFirma({ selectId: 'dept-routine-name', botonId: 'dept-routine-signoff-btn', acta: null });
   if (!currentOrgId) return;
-  const period = deptRoutinePeriodRange(currentCadenceKey);
-  const { data: existing } = await sb.from('checklist_completions')
-    .select('signed_by, signed_at, completed_items, total_items, items_snapshot')
-    .eq('org_id', currentOrgId).eq('role', roleKey)
-    .gte('signed_at', period.start).lte('signed_at', period.end)
-    .order('signed_at', { ascending: false }).limit(1);
+  const s = await buscarActaVigente({ role: roleKey, periodo: deptRoutinePeriodRange(currentCadenceKey) });
   // Guard against a stale response landing after the user already switched
   // to a different department/cadence tab while this was in flight.
   if (roleKey !== currentDeptRoutine().role) return;
-  if (existing && existing.length) {
-    const s = existing[0];
+  if (s) {
     pintarEstadoDeActa('dept-routine-status', s);
     if (doneBanner) {
       doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
       doneBanner.style.display = 'block';
     }
     mostrarActaSiHay('dept-list', s, 'dept-routine-progress');
+    pintarZonaDeFirma({ selectId: 'dept-routine-name', botonId: 'dept-routine-signoff-btn', acta: s });
   }
 }
 
@@ -16529,16 +16634,16 @@ async function deptRoutineSignOff() {
   const routine = currentDeptRoutine();
   const checks = deptRoutineChecks[routine.role] || {};
   const signer = readSigner('dept-routine-name');
-  const name = signer ? signer.name : '';
   const done = routine.items.filter(i => checks[i.id]).length;
   if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
   if (done < routine.items.length && !(await showConfirmModal(`${routine.items.length - done}${t('cl_items_incomplete')}`))) return;
-  const ts = new Date().toLocaleString();
-  const doneBanner = document.getElementById('dept-routine-done');
-  doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${name}</strong> at ${ts}`;
-  doneBanner.style.display = 'block';
-  pintarEstadoDeActa('dept-routine-status', { completed_items: done, total_items: routine.items.length });
-  if (currentOrgId) {
+
+  // La instancia de una rutina es su rol + su período: la de mañana es una por
+  // día, el control mensual es uno por mes. Esa es la unidad que no puede tener
+  // dos actas.
+  const periodo = deptRoutinePeriodRange(currentCadenceKey);
+  await firmarUnaSolaVez(deptScope().scopeKey, { role: routine.role, periodo }, async () => {
+    if (!currentOrgId) { pintarFirmaDeRutina(signer.name, done, routine.items.length); return true; }
     const payload = buildRecordPayload({
       role: routine.role, tripId: null,
       items: routine.items, estaTildado: (it) => checks[it.id],
@@ -16546,12 +16651,26 @@ async function deptRoutineSignOff() {
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
-      doneBanner.innerHTML += `<span style="opacity:0.75;">${t('cl_saved_offline_sync')}</span>`;
-    } else {
-      if (!(await guardarActa(payload))) return;
-      await clearChecklistProgress(deptScope().scopeKey);
+      pintarFirmaDeRutina(signer.name, done, routine.items.length, t('cl_saved_offline_sync'));
+      return true;
     }
-  }
+    if (!(await guardarActa(payload))) return false;
+    await clearChecklistProgress(deptScope().scopeKey);
+    // Redibuja para mostrar el ACTA en vez de la lista viva, y con eso
+    // desaparece el botón. Sin esto, firmar sólo cambiaba el cartel.
+    await renderDeptRoutine();
+    return true;
+  });
+}
+
+function pintarFirmaDeRutina(nombre, hechos, total, extra) {
+  const el = document.getElementById('dept-routine-done');
+  if (!el) return;
+  el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(nombre)}</strong> at ${new Date().toLocaleString()}` +
+    (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
+  el.style.display = 'block';
+  pintarEstadoDeActa('dept-routine-status', { completed_items: hechos, total_items: total });
+  pintarZonaDeFirma({ selectId: 'dept-routine-name', botonId: 'dept-routine-signoff-btn', acta: true });
 }
 
 // ─── NAV ───

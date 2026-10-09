@@ -164,7 +164,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `_tests/*.test.js` — 357 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 384 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -328,6 +328,35 @@ firmada, las dos al firmarla, y la insignia de la lista de actas. Antes firmar
 ponía «Completo ✓» sin mirar cuánto se había tildado — Fran firmó una con 6 de
 16 y la pantalla le dijo que estaba completa. Lo que falta va en ámbar y con
 los números («Firmada 6/16»), que es lo que un capitán necesita.
+
+**Una checklist firmada no se puede volver a firmar, y eso se cubre en CINCO
+momentos, no en uno.** El arreglo del 08/10 («firmada muestra el acta») se había
+aplicado sólo al camino de **cargar** la pantalla, no al de **firmar** — así que
+firmar dejaba la lista viva tildada con el botón ahí y sólo cambiaba el cartel.
+Fran apretó, no vio cambio, apretó otra vez: **dos actas idénticas de 4/4
+separadas por 1,7 segundos.** Lo que lo cubre ahora:
+
+- los tres firmados **redibujan** al terminar, así que la pantalla pasa al acta
+- `pintarZonaDeFirma()` esconde selector y botón cuando hay acta, y los
+  **devuelve** cuando no (pintarla sólo al haber acta dejaba el botón escondido
+  para siempre al volver a una sin firmar)
+- `firmasEnCurso`, un candado por instancia, para el doble toque en vuelo
+- y **antes de insertar** se pregunta al servidor si la instancia ya tiene acta
+  (`buscarActaVigente()`): con el progreso compartido, Juanma puede firmar en su
+  celular y el mío no se entera hasta el refresco. Si ya hay, no se inserta y se
+  dice quién firmó — **el acta de quien llegó primero queda.**
+
+El cartel de «firmada» se pinta **después** del insert, no antes: antes quedaba
+diciendo «✓ firmada por Franco» arriba de un acta que el servidor había
+rechazado. Ver
+`Errores y aprendizajes/El arreglo que no cubrió el momento de firmar.md`.
+
+**Pendiente de ahí:** una checklist **propia** firmada todavía no muestra su
+acta (`renderCustomChecklistsForCurrentView` nunca consulta
+`checklist_completions`); no se puede duplicar, pero falta la vista. Y **Reset
+quedó ambiguo**: vacía los tildes y el redibujo vuelve a encontrar el acta del
+período, así que no abre visiblemente una pasada nueva. Hay que decidirlo con
+Fran.
 
 **Una checklist firmada muestra el acta, no la lista viva.** Firmar cierra la
 instancia y borra el trabajo en curso, así que antes se veía «completa» arriba

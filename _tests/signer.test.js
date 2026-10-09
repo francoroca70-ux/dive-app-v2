@@ -134,7 +134,20 @@ window.showConfirmModal = async()=>true;
 
   // Ana sí tildó, así que sí puede figurar firmando — con la cuenta de Franco
   // registrada al lado, que es lo que lo hace auditable en vez de prevenido.
+  //
+  // Hay que rearmar la instancia: firmar borra el trabajo en curso y redibuja,
+  // así que después de la firma anterior Ana ya no es participante de nada. Es
+  // el comportamiento correcto, y antes del 09/10 este test podía firmar dos
+  // veces seguidas porque firmar no redibujaba — que es justo el bug que dejó
+  // dos actas idénticas en la base.
+  window.__t.setTrip('trip-2');
+  const checks2={ '0':true };
+  window.__t.tildes('instructor:trip-2', checks2,
+    { '0': { id:'u-ana', name:'Ana Diaz', at:'2026-10-09T10:00:00Z' } });
+  window.__t.checksInstructor('trip-2', checks2);
+  window.poblarFirmantesDe('cl-instructor-name', checks2);
   sel.value='u-ana';
+  chk('rearmada la instancia, Ana vuelve a ser firmante posible', sel.value==='u-ana', 'quedó: '+sel.value);
   insertados=[];
   await window.instructorSignOff();
   const g=insertados[0]||{};
@@ -157,6 +170,12 @@ window.showConfirmModal = async()=>true;
   const cola=[];
   window.queueOfflineAction=(tipo,payload)=>cola.push({tipo,payload});
   window.__t.offline(true);
+  window.__t.setTrip('trip-3');
+  const checks3={ '0':true };
+  window.__t.tildes('instructor:trip-3', checks3,
+    { '0': { id:'u-ana', name:'Ana Diaz', at:'2026-10-09T10:00:00Z' } });
+  window.__t.checksInstructor('trip-3', checks3);
+  window.poblarFirmantesDe('cl-instructor-name', checks3);
   sel.value='u-ana';
   await window.instructorSignOff();
   chk('offline: encola en vez de insertar', cola.length===1);
