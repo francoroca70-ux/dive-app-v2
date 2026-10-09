@@ -200,9 +200,30 @@ Hecho: bloque 0 (actas inmutables), etapa 0.5 (`checklist_progress`), etapa 1
 (el esquema) y **etapa 2** (las semillas: 16 tipos de salida, 270 ítems, en
 `checklist_seeds`, sembradas por un disparador al activar una categoría).
 Hecho también **etapa 3a**: el camino de tres capas que el offline necesita,
-construido y probado, con el interruptor `FUENTE_PLANTILLAS` todavía en
-`'cableado'`. Sigue: **3b**, pasarlo a `'base'` — una línea, y volver atrás
-también. `custom_checklists` se fusiona ahí.
+construido y probado, con el interruptor `FUENTE_PLANTILLAS` en `'cableado'`.
+
+**La 3b NO es «pasar el interruptor a `base`, una línea».** Eso decía esta nota
+y era falso; medido el 09/10: `cargarConTresCapas()` la llama sólo
+`itemsDeInstructorParaTipo()`, y a **esa no la llama nadie**. El camino está
+construido, probado y **desconectado de la pantalla**, así que mover el
+interruptor hoy no cambia nada. Los 6 lugares que piden la lista
+(`INSTRUCTOR_ITEMS_get()`) son sincrónicos y la fuente nueva es asíncrona.
+
+Y el dato no alcanza para todas: de **51** salidas vigentes, las 51 tienen
+`trip_type_id` pero sólo **32** apuntan a un tipo con plantilla. Las otras 19
+caen a lo cableado (la capa 3 funciona), y el motivo es el de los **tipos de
+salida duplicados** — de nueve nombres afectados, seis tienen un gemelo que sí
+tiene plantilla, porque la siembra va una lista por nombre. Ese cabo suelto es
+carga estructural de la 3b.
+
+La 3b de verdad: (1) limpiar los tipos duplicados, (2) conectar
+`itemsDeInstructorParaTipo()` a la pantalla, (3) decidir qué lista gana cuando
+`trip_groups.trip_type_id` pisa el tipo de la salida (hoy 0 de 53 reservas lo
+usan, así que el caso no apareció), (4) recién entonces el interruptor.
+`custom_checklists` está **vacía** (0 filas), así que su fusión es trivial.
+
+Detalle y la lección —leí mi propia nota en vez de medir el código, cuatro
+veces— en `Seven Seas Ops/Plantillas y actas.md`.
 
 **Las checklists funcionan sin señal SÓLO porque las listas están cableadas en
 `index.html`**, que es lo que el service worker cachea: no toca los pedidos a
