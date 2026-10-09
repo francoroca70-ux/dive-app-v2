@@ -50,6 +50,10 @@ const hook=main+"\n;window.__t={"+
   "  const r=departmentRoutinesGet()[k].cadences[c]; deptRoutineChecks[r.role]=checks; return r;},"+
   "propias:(arr)=>{customChecklists=arr;},"+
   "marcarPropia:(id,obj)=>{customChecklistChecks[id]=obj;},"+
+  // Desde el 09/10 el selector de firmante sale de `currentUserId` y de quién
+  // tildó, no de un `await sb.auth.getUser()` por dibujo. El arnés tiene que
+  // decir quién es la sesión; si no, no hay firmante posible y no se firma nada.
+  "yo:(id)=>{currentUserId=id;},tripulacion:(xs)=>{signerStaffCache=xs;},"+
   "cola:()=>offlineQueueGet?offlineQueueGet():null};";
 let boot=null; try{window.eval(hook);}catch(e){boot=e;}
 const doc=window.document;
@@ -58,6 +62,7 @@ function chk(n,ok,x){console.log((ok?'PASS  ':'FAIL  ')+n+(x?'  '+x:'')); if(!ok
 chk('arranca sin excepción',!boot,boot?String(boot).slice(0,200):'');
 
 window.__t.setOrg('org-1'); window.__t.setRole('owner'); window.__t.offline(false);
+window.__t.yo('u-ana'); window.__t.tripulacion(TRIPULACION);
 window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
 window.queueOfflineAction=(tipo,payload)=>{ encolados.push({tipo,payload}); };
 

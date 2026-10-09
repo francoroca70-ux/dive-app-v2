@@ -159,10 +159,12 @@ Tres cuidados concretos al tocar esta zona:
 - `DEPT_ROUTINE_VISIBILITY_BY_ROLE` (qué pestañas ve un rol) y
   `deptKeyForRole()` (bajo qué pestaña se archivan sus checklists propias) se
   ven casi iguales y dicen cosas distintas. No editar las dos a la vez.
-- Quien firma sale de un selector de la tripulación, no de texto libre, y se
-  guarda en `completed_by`. Ver `Quién firma una checklist.md`.
+- Quien firma sale de un selector, no de texto libre, y se guarda en
+  `completed_by`. Desde el 09/10 el selector ofrece **sólo a quienes tildaron
+  algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
+  `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `_tests/*.test.js` — 344 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 357 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -250,11 +252,32 @@ es el hecho y el nombre la comodidad, y si se firmó sin señal sin la lista de
 tripulación cargada, el nombre se resuelve al dibujar desde el id.
 «La completaron entre Pau, Guido y Meli» se **deriva**, no se guarda aparte.
 
-**OJO, sin resolver:** `checked_by` es la **cuenta del dispositivo**, no las
-manos. Fran dijo que cada uno usa su celular (09/10), pero el comentario de
-`signerStaffCache` afirma lo contrario —la tablet compartida— y es la razón de
-que el firmante sea un selector. Hasta que se resuelva, los textos dicen «desde
-la cuenta de» y no «hecho por». Ver `Decisiones/Quién tildó cada ítem.md`.
+`checked_by` es la **cuenta del dispositivo**, no las manos, y eso está
+resuelto: los dos modos conviven (cada uno su celular, o una tablet del barco
+logueada con una cuenta que el centro conoce). La app no miente en ninguno
+porque dice de qué cuenta salió el tilde — de ahí que los textos digan «desde
+la cuenta de» y no «hecho por».
+
+**Y sólo puede firmar quien participó** (09/10). El selector del 03/10 ofrecía
+toda la tripulación activa, así que un marinero podía firmar la revisión de
+seguridad **como el capitán, que ni estuvo**. Ahora ofrece a los que tildaron
+algo **más vos siempre** (estás presente y autenticado, y sin eso una checklist
+sin un solo tilde no se podría firmar nunca). Se repuebla en cada dibujo, porque
+la lista crece a medida que la tripulación tilda, y conserva lo ya elegido si
+sigue valiendo. En la tablet compartida queda un solo nombre, que es correcto.
+
+Queda abierto firmar como alguien que **sí** participó, y no se previene porque
+rompe un caso real (se le muere el celular a uno y el otro termina y firma): se
+**registra** en `signed_by_account`, la cuenta que apretó firmar, que puede
+diferir de `completed_by`. Mismo principio que el certificado de autenticidad de
+los waivers, y **sin FK** como el resto del acta.
+
+`FIRMANTE_SELECT_POR_LISTA` mapea lista → selector en un solo lugar, para no
+agregarle un séptimo parámetro a `renderCheckItems`.
+
+**Pendiente, pedido el 09/10:** un **motivo por ítem que faltó**, tipeado al
+firmar («no pudimos poner toallas»). Va en `items_snapshot`, sin cambio de
+esquema. Ver `Decisiones/Quién tildó cada ítem.md`.
 
 **Los ítems de plantilla son bilingües en la base** (`text_en` + `text_es`),
 decidido por Fran el 07/10: al pasar a ser dato del centro un ítem sería un

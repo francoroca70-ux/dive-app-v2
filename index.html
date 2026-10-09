@@ -8394,7 +8394,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-09a');
+  console.info('[Seven Seas] build 2026-10-09b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15241,16 +15241,74 @@ function clearSignerStaffCache() { signerStaffCache = null; }
 async function populateSignerSelects(root) {
   const selects = (root || document).querySelectorAll('select.signer-select');
   if (!selects.length) return;
-  const staff = await loadSignerStaff();
-  const { data: { user } } = await sb.auth.getUser();
-  const myId = user && user.id;
-  const opciones = [`<option value="">${t('cl_pick_signer')}</option>`]
-    .concat(staff.map(s => {
+  await loadSignerStaff();
+  selects.forEach(sel => { sel.innerHTML = opcionesDeFirmante(null); });
+}
+
+// Quién puede firmar: **los que tildaron algo en ESTA checklist, más vos.**
+//
+// Pedido por Fran el 09/10, y cierra un agujero que el selector tenía abierto
+// desde el 03/10: ofrecía a toda la tripulación del local, así que un marinero
+// podía firmar la revisión de seguridad de la embarcación como el capitán, que
+// ni estuvo. En un documento de responsabilidad esa firma es falsificable.
+//
+// En palabras de Fran: «nadie puede firmar por alguien que no participó en ese
+// checklist».
+//
+// **Vos siempre estás en la lista, hayas tildado o no.** Dos razones: estás
+// presente y autenticado, que es más de lo que se puede decir de cualquier otro
+// nombre; y sin eso una checklist que nadie tildó no se podría firmar nunca —
+// y «la revisamos y no se hizo nada» es un registro legítimo.
+//
+// Casos en los que degrada bien:
+// - Tablet compartida: el único que tildó es la cuenta de la tablet, así que la
+//   lista queda con un nombre. Que es exactamente lo que el centro ya sabe.
+// - Trabajé solo: queda un nombre, vos. El desplegable deja de ser una decisión
+//   y es justo donde Fran quería llegar con «sacarlo y poner firmar».
+//
+// Lo que NO cierra: firmar como alguien que sí participó. Prevenirlo del todo
+// obliga a que el firmante sea siempre la cuenta logueada, y eso rompe un caso
+// real —a Juanma se le muere el celular y Franco termina y firma—. Así que no se
+// previene: se REGISTRA en `signed_by_account`, y queda auditable. Mismo
+// principio que el certificado de autenticidad de los waivers.
+function opcionesDeFirmante(autores) {
+  const staff = signerStaffCache || [];
+  const participaron = Object.keys(autores || {})
+    .map(id => autores[id] && autores[id].id)
+    .filter(Boolean);
+  // `currentUserId` primero: es el preseleccionado y el caso normal.
+  const ids = [];
+  if (currentUserId) ids.push(currentUserId);
+  participaron.forEach(id => { if (!ids.includes(id)) ids.push(id); });
+
+  const filas = ids
+    .map(id => staff.find(s => s.id === id))
+    // Un tripulante archivado a mitad del día no está en la caché de activos.
+    // Mejor no ofrecerlo que ofrecer un nombre que ya no trabaja ahí.
+    .filter(Boolean);
+
+  // Con un solo firmante posible no se pregunta nada: se preselecciona y listo.
+  // Igual queda el <select> para no tener dos caminos de lectura en readSigner().
+  return [`<option value="">${t('cl_pick_signer')}</option>`]
+    .concat(filas.map(s => {
       const etiqueta = s.custom_role_name || crewRoleLabel(s.role) || '';
-      return `<option value="${s.id}"${s.id === myId ? ' selected' : ''}>` +
+      return `<option value="${s.id}"${s.id === currentUserId ? ' selected' : ''}>` +
         `${escapeHtml(s.full_name || '')}${etiqueta ? ' — ' + escapeHtml(etiqueta) : ''}</option>`;
     })).join('');
-  selects.forEach(sel => { sel.innerHTML = opciones; });
+}
+
+// Rellena UN selector con los firmantes posibles de SU instancia. Se llama al
+// dibujar la checklist y al refrescar, porque la lista cambia a medida que la
+// tripulación tilda: si Juanma tilda algo a los dos minutos, tiene que aparecer.
+//
+// Conserva lo que ya estaba elegido si sigue siendo válido — si no, cada
+// refresco de diez segundos le movía la elección a quien estuviera firmando.
+function poblarFirmantesDe(selectId, checks) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const elegido = sel.value;
+  sel.innerHTML = opcionesDeFirmante(autoriaDe(checks));
+  if (elegido && sel.querySelector(`option[value="${elegido}"]`)) sel.value = elegido;
 }
 
 // ─── El trabajo en curso de una checklist ───
@@ -15783,6 +15841,14 @@ function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, 
     role,                               // qué checklist, NO quién firmó
     signed_by: signer.name,
     completed_by: signer.staff_id,
+    // Quién APRETÓ firmar, que puede no ser quien figura firmando: el firmante
+    // sale de un desplegable. Desde el 09/10 ese desplegable sólo ofrece a
+    // quienes tildaron algo, así que ya no se puede firmar como el capitán que
+    // no estuvo — pero sí como alguien que sí participó, y eso no se previene
+    // porque rompe un caso real (a Juanma se le muere el celular y Franco
+    // termina y firma). Se registra, y queda auditable. Mismo principio que el
+    // certificado de autenticidad de los waivers.
+    signed_by_account: currentUserId || null,
     completed_items: hechos,
     total_items: items.length,
     items_snapshot: buildItemsSnapshot(items, estaTildado,
@@ -15952,6 +16018,16 @@ function lineaDeParticipantes(nombres) {
   return `<div class="cl-participantes">${escapeHtml(t('cl_participantes').replace('{names}', nombres.join(', ')))}</div>`;
 }
 
+// Qué selector de firmante le corresponde a cada lista. Una tabla en UN lugar
+// y no un parámetro más: `renderCheckItems` lo llaman siete lugares, y agregarle
+// un argumento eran siete ediciones con un hueco garantizado en la que me
+// olvidara. Las checklists propias no están acá porque su selector es uno por
+// tarjeta y lo rellena su propio dibujo.
+const FIRMANTE_SELECT_POR_LISTA = {
+  'cl-instructor-items': 'cl-instructor-name',
+  'dept-list': 'dept-routine-name'
+};
+
 function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -15965,6 +16041,11 @@ function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
       <div class="cl-item-text">${item.text}</div>
       ${checks[item.id] ? chipDeAutor(autores[item.id]) : ''}
     </div>`).join('');
+  // El selector de firmante se rellena en cada dibujo, porque la lista de quién
+  // puede firmar crece a medida que la tripulación tilda: si Juanma tilda algo a
+  // los dos minutos, tiene que aparecer como firmante posible sin recargar.
+  const selFirmante = FIRMANTE_SELECT_POR_LISTA[containerId];
+  if (selFirmante) poblarFirmantesDe(selFirmante, checks);
   if (progressId) {
     const prog = document.getElementById(progressId);
     if (prog) prog.style.width = (done/items.length*100)+'%';
@@ -16294,8 +16375,12 @@ async function renderCustomChecklistsForCurrentView() {
     </div>`;
   }).join('');
   // Los selectores de estas tarjetas nacen vacíos: se llenan acá, después
-  // de inyectar el HTML.
-  await populateSignerSelects(container);
+  // de inyectar el HTML. Uno por tarjeta, y cada uno con los firmantes de SU
+  // instancia — no los de toda la tripulación, y no los de la tarjeta vecina.
+  await loadSignerStaff();
+  matching.forEach(cc => {
+    poblarFirmantesDe(`custom-cl-name-${cc.id}`, customChecklistChecks[cc.id]);
+  });
 }
 
 document.getElementById('btn-show-new-checklist').addEventListener('click', () => {

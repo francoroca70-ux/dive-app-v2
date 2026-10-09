@@ -44,6 +44,9 @@ const scripts=[...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script
 const main=scripts.find(s=>s.includes('[Seven Seas] build'));
 const hook=main+"\n;window.__t={setOrg:(id)=>{currentOrgId=id;},setRole:(r)=>{currentUserRole=r;},"+
   "setTrip:(id)=>{currentChecklistTripId=id;},offline:(v)=>{isOffline=v;},sb:()=>sb,"+
+  // Desde el 09/10 el firmante sale de `currentUserId` y de quién tildó, no de
+  // un `await sb.auth.getUser()` por dibujo.
+  "yo:(id)=>{currentUserId=id;},tripulacion:(xs)=>{signerStaffCache=xs;},"+
   "marcar:(tripId,obj)=>{instructorChecksByTrip[tripId]=obj;},items:()=>INSTRUCTOR_ITEMS_get()};";
 let boot=null; try{window.eval(hook);}catch(e){boot=e;}
 const doc=window.document;
@@ -52,6 +55,7 @@ function chk(n,ok,x){console.log((ok?'PASS  ':'FAIL  ')+n+(x?'  '+x:'')); if(!ok
 chk('arranca sin excepción',!boot,boot?String(boot).slice(0,200):'');
 
 window.__t.setOrg('org-1'); window.__t.setRole('instructor'); window.__t.offline(false);
+window.__t.yo('u-ana'); window.__t.tripulacion(TRIPULACION);
 window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
 
 (async()=>{ try {
