@@ -785,6 +785,24 @@ body { background: var(--navy); color: var(--text); }
    como desalineado. */
 .sf-input.sf-input-fecha { width: auto; min-width: 150px; text-align: center; }
 .cl-acta-nota { font-size: 0.78rem; color: var(--muted); padding: 6px 0 2px; }
+/* Quién tildó el ítem. A la derecha y en la misma columna que el marcador de
+   «sin hacer», porque en un renglón nunca aparecen los dos: tildado lleva
+   nombre, sin tildar lleva el aviso. Discreto a propósito — lo que se lee
+   barriendo la lista es qué falta, no quién hizo qué; el nombre se busca
+   cuando hace falta. Sin ancho mínimo: un nombre corto no tiene por qué
+   ocupar lo mismo que uno largo, y acá no hay columna que alinear. */
+.cl-item .cl-autor {
+  margin-left: auto; flex: 0 0 auto; align-self: center;
+  font-size: 0.7rem; color: var(--muted); white-space: nowrap;
+  max-width: 40%; overflow: hidden; text-overflow: ellipsis;
+}
+/* «La llenaron entre Pau, Guido y Meli.» Arriba de la lista, porque es lo que
+   contesta de un vistazo la pregunta que importa cuando algo salió mal: quién
+   estuvo. */
+.cl-participantes {
+  font-size: 0.78rem; color: var(--muted);
+  padding: 6px 0 2px; font-style: italic;
+}
 .cl-checkbox {
   width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
   border: 2px solid var(--border); display: flex; align-items: center;
@@ -4522,6 +4540,8 @@ const TRANSLATIONS = {
     cl_signed_partial: 'Signed {hechos}/{total}',
     cl_acta_nota: 'Signed record — what was checked and what was missed. Tap Reset to run a fresh check.',
     cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
+    cl_autor_title: 'Ticked from this crew member’s account',
+    cl_participantes: 'Filled in together by {names}.',
     cl_logged_vessel_check: 'Vessel safety check',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
@@ -5237,6 +5257,8 @@ const TRANSLATIONS = {
     cl_signed_partial: 'Firmada {hechos}/{total}',
     cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
+    cl_autor_title: 'Tildado desde la cuenta de esta persona',
+    cl_participantes: 'La completaron entre {names}.',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
@@ -8372,7 +8394,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-08c');
+  console.info('[Seven Seas] build 2026-10-09a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15299,16 +15321,127 @@ function fusionarConPendientes(scopeKey, delServidor) {
   return out;
 }
 
+// ─── Quién tildó cada ítem ───
+//
+// Pedido por Fran el 09/10, después de cargar un barco con un amigo: en un acta
+// firma UNA persona, pero el barco lo cargan tres o cuatro. Esas tres o cuatro
+// quedaban fuera del registro, y con ellas la responsabilidad de lo que
+// cargaron. El mínimo que pidió era poder poner varios nombres; esto da el
+// ideal, que es por ítem.
+//
+// El dato ya se escribía: `checked_by` está en cada fila de `checklist_progress`
+// desde el refresco de diez segundos. Lo tirábamos dos veces — la lectura traía
+// sólo `item_id, checked`, y el acta guardaba `{id, text, done}`. O sea que la
+// atribución se destruía **justo al firmar**, que es el momento en que empieza a
+// tener valor legal. Las actas firmadas antes de hoy la perdieron y no se
+// recupera.
+//
+// **Lo que el dato significa, con precisión: la cuenta desde la que se tildó.**
+// No las manos. Si la tripulación tilda en el teléfono del capitán, los
+// dieciséis ítems van a decir «capitán». Fran dice que cada uno usa el suyo
+// (09/10), así que hoy es fiable — pero el comentario de `signerStaffCache`
+// afirma lo contrario («la tablet compartida del barco: un solo login para toda
+// la tripulación es lo normal en un centro»), que es la razón por la que el
+// firmante es un selector y no un campo bloqueado. Las dos cosas no pueden ser
+// ciertas, y está sin resolver: ver
+// `Decisiones/Quién tildó cada ítem.md` del vault.
+//
+// Hasta que se resuelva, el acta guarda SIEMPRE `by_id` además de `by`. El id es
+// el hecho; el nombre es la comodidad. Si un día el nombre resultó mal
+// resuelto, el id permite reconstruirlo — y un acta es inmutable, así que un
+// nombre vacío guardado ahí sería vacío para siempre.
+
+// La autoría vive en un WeakMap indexado por el MISMO objeto de tildes que la
+// pantalla está dibujando, no en un mapa aparte por scope_key.
+//
+// Dos razones. Una: los ids de ítem son posicionales ('0', '1', …) y chocarían
+// entre la lista del instructor y una rutina de departamento, así que un mapa
+// plano global daría nombres cruzados. Dos: `renderCheckItems` es el único
+// dibujo compartido y lo llaman siete lugares — agregarle un parámetro eran
+// siete ediciones, y el defecto aparece donde la copia FALTA. Colgado del
+// objeto, la autoría viaja con los tildes sin que ningún llamador se entere.
+//
+// Y respeta el dueño único que estableció `marcarTilde()`: el objeto que la
+// pantalla muestra es el que manda.
+const autoresDeChecks = new WeakMap();
+
+function anotarAutoria(checks, autores) {
+  if (checks && typeof checks === 'object') autoresDeChecks.set(checks, autores || {});
+  return autores || {};
+}
+
+function autoriaDe(checks) {
+  return (checks && autoresDeChecks.get(checks)) || {};
+}
+
+// Un solo lugar traduce uuid a nombre, reusando la caché del selector de
+// firmantes — `staff.id` ES el `auth.uid()` (lo define
+// `my_staff_org_and_role()`), así que `checked_by` indexa `staff` directo y no
+// hace falta ninguna columna nueva.
+//
+// Devuelve '' si no lo encuentra, que pasa con un tripulante archivado: la
+// caché pide sólo activos. En el acta eso no importa porque el nombre queda
+// guardado al firmar; en la lista viva se muestra sin nombre antes que con uno
+// inventado.
+function nombreDeTripulante(staffId) {
+  if (!staffId) return '';
+  const s = (signerStaffCache || []).find(x => x.id === staffId);
+  return (s && s.full_name) || '';
+}
+
+// Los nombres distintos que participaron, en el orden en que tildaron.
+//
+// Es el mínimo que pidió Fran —que una checklist pueda estar «completada entre
+// Pau, Guido y Meli»— y sale derivado de la misma autoría, sin guardar una
+// segunda lista que pueda contradecir la primera. Una regla, una función: si
+// mañana cambia qué cuenta como participar, cambia acá.
+function participantesDeAutoria(autores) {
+  const vistos = [];
+  Object.keys(autores || {}).forEach(id => {
+    const nombre = autores[id] && autores[id].name;
+    if (nombre && !vistos.includes(nombre)) vistos.push(nombre);
+  });
+  return vistos;
+}
+
+// Los participantes de un acta ya firmada salen del snapshot, no de la base: el
+// acta se lee sola. Mismo principio que `tripLabelDeActa()`.
+// Si el nombre no quedó guardado —se firmó sin señal y la caché de tripulación
+// no había cargado— se resuelve desde `by_id`. Es exactamente para esto que el
+// acta guarda las dos cosas: el acta es inmutable, así que un nombre vacío ahí
+// sería vacío para siempre, pero el id sigue sirviendo.
+function nombreDeFilaDeActa(fila) {
+  return (fila && (fila.by || nombreDeTripulante(fila.by_id))) || '';
+}
+
+function participantesDeActa(snapshot) {
+  const vistos = [];
+  (Array.isArray(snapshot) ? snapshot : []).forEach(i => {
+    const nombre = nombreDeFilaDeActa(i);
+    if (nombre && !vistos.includes(nombre)) vistos.push(nombre);
+  });
+  return vistos;
+}
+
 async function leerProgresoDelServidor(scopeKey) {
   const mapa = {};
-  if (!currentOrgId || isOffline) return mapa;
+  const autores = {};
+  if (!currentOrgId || isOffline) return { mapa, autores };
   const { data, error } = await sb.from('checklist_progress')
-    .select('item_id, checked')
+    .select('item_id, checked, checked_by, checked_at')
     .eq('org_id', currentOrgId)
     .eq('scope_key', scopeKey);
   if (error) throw error;
-  (data || []).forEach(r => { if (r.checked) mapa[r.item_id] = true; });
-  return mapa;
+  (data || []).forEach(r => {
+    if (!r.checked) return;
+    mapa[r.item_id] = true;
+    autores[r.item_id] = {
+      id: r.checked_by || null,
+      name: nombreDeTripulante(r.checked_by),
+      at: r.checked_at || null
+    };
+  });
+  return { mapa, autores };
 }
 
 // `forzar` salta la caché. Sin eso, el mapa se leía una sola vez por sesión y
@@ -15317,15 +15450,32 @@ async function leerProgresoDelServidor(scopeKey) {
 async function loadChecklistProgress(scopeKey, { forzar = false } = {}) {
   if (!forzar && progressCache[scopeKey]) return progressCache[scopeKey];
   let mapa = {};
+  let autores = {};
   try {
-    mapa = await leerProgresoDelServidor(scopeKey);
+    const leido = await leerProgresoDelServidor(scopeKey);
+    mapa = leido.mapa;
+    autores = leido.autores;
   } catch (e) {
     console.warn('[CHECKLIST] no se pudo leer el progreso', e);
     // Si falla y ya había algo en pantalla, se conserva: mejor lo de hace un
-    // rato que vaciar la lista de golpe.
+    // rato que vaciar la lista de golpe. La autoría se conserva con ella,
+    // porque sigue colgada del mismo objeto.
     if (progressCache[scopeKey]) return progressCache[scopeKey];
   }
-  progressCache[scopeKey] = fusionarConPendientes(scopeKey, mapa);
+  const checks = fusionarConPendientes(scopeKey, mapa);
+  // La autoría se cuelga del objeto nuevo ANTES de publicarlo, para que no
+  // exista un instante en que la pantalla tenga tildes sin autor.
+  //
+  // Lo pendiente conserva el autor que ya tenía: un tilde encolado es mío y
+  // sigue siéndolo hasta que el servidor lo confirme. Sin esto, el refresco de
+  // diez segundos le borraba el nombre a mi propio tilde — el mismo error que
+  // `tildesPendientes` arregló para el tilde en sí.
+  const previos = autoriaDe(progressCache[scopeKey]);
+  Object.keys(tildesPendientes[scopeKey] || {}).forEach(id => {
+    if (checks[id] && previos[id]) autores[id] = previos[id];
+  });
+  anotarAutoria(checks, autores);
+  progressCache[scopeKey] = checks;
   return progressCache[scopeKey];
 }
 
@@ -15510,9 +15660,25 @@ async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
   // otro aparte: dos estados para la misma lista. Esto los une.
   progressCache[scopeKey] = checks;
 
+  // La autoría se pinta con el tilde, no cuando vuelve el servidor: si el
+  // nombre apareciera un segundo después, en una lista compartida se leería
+  // como que lo tildó otro. Misma razón por la que el tilde se pinta antes de
+  // guardar.
+  const autores = anotarAutoria(checks, autoriaDe(checks));
+  const autorPrevio = autores[itemId];
+
   const estabaTildado = !!checks[itemId];
   if (estabaTildado) delete checks[itemId]; else checks[itemId] = true;
   const quedoTildado = !!checks[itemId];
+  if (quedoTildado) {
+    autores[itemId] = {
+      id: currentUserId || null,
+      name: nombreDeTripulante(currentUserId),
+      at: new Date().toISOString()
+    };
+  } else {
+    delete autores[itemId];
+  }
   // Queda anotado como pendiente para que un refresco que llegue en el medio
   // no lo pise. Ver tildesPendientes.
   anotarPendiente(scopeKey, itemId, quedoTildado);
@@ -15523,6 +15689,10 @@ async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
     // Vuelve a como estaba. Un tilde que no se guardó no puede verse igual
     // que uno que sí: alguien está revisando un barco contra esta lista.
     if (estabaTildado) checks[itemId] = true; else delete checks[itemId];
+    // La autoría se deshace con el tilde. Si no, un tilde rechazado dejaba el
+    // nombre puesto y el ítem sin marcar: alguien figuraba responsable de algo
+    // que la base nunca registró.
+    if (autorPrevio) autores[itemId] = autorPrevio; else delete autores[itemId];
     olvidarPendiente(scopeKey, itemId);
     dibujar();
     await showAlertModal(t('cl_tick_failed'));
@@ -15556,12 +15726,29 @@ async function clearChecklistProgress(scopeKey) {
 //
 // `items` llega con la forma {id, text} y `checks` indexado por lo que use
 // cada pantalla (id o índice), así que el que llama resuelve el estado.
-function buildItemsSnapshot(items, estaTildado) {
-  return items.map((item, idx) => ({
-    id: String(item.id != null ? item.id : idx),
-    text: item.text != null ? item.text : String(item),
-    done: !!estaTildado(item, idx)
-  }));
+// `autorDe` devuelve {id, name, at} o nada. Sólo se guarda en los ítems
+// tildados: un ítem sin tildar no tiene autor, y escribir uno ahí afirmaría que
+// alguien lo revisó.
+//
+// Se guardan las dos cosas, `by_id` y `by`. El id es el hecho y el nombre es la
+// comodidad — un acta es inmutable, así que si el nombre se resolvió mal queda
+// mal para siempre, y el id es lo único que permite reconstruirlo.
+function buildItemsSnapshot(items, estaTildado, autorDe) {
+  return items.map((item, idx) => {
+    const done = !!estaTildado(item, idx);
+    const fila = {
+      id: String(item.id != null ? item.id : idx),
+      text: item.text != null ? item.text : String(item),
+      done
+    };
+    const autor = done && typeof autorDe === 'function' ? autorDe(item, idx) : null;
+    if (autor && (autor.id || autor.name)) {
+      fila.by_id = autor.id || null;
+      fila.by = autor.name || '';
+      if (autor.at) fila.by_at = autor.at;
+    }
+    return fila;
+  });
 }
 
 // Arma el acta. Un solo constructor para los tres lugares que firman
@@ -15578,8 +15765,13 @@ function buildItemsSnapshot(items, estaTildado) {
 // de ser cierto porque se borre la fila de al lado. Los ids quedan como
 // punteros históricos, sin foreign key, justamente para que el acta pueda
 // sobrevivir a lo que referencia.
-function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos }) {
+// `checks` llega para resolver la autoría: es el objeto del que cuelga, el
+// mismo que dibuja la pantalla. Quien firma NO es necesariamente quien tildó
+// —el firmante sale de un selector— así que el acta guarda las dos cosas:
+// `signed_by` (quién responde) y el autor por ítem (quién lo revisó).
+function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, checks }) {
   const salida = (tripId && checklistTripById[tripId]) || null;
+  const autores = autoriaDe(checks);
   return {
     org_id: currentOrgId,
     trip_id: tripId || null,
@@ -15593,7 +15785,8 @@ function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos }
     completed_by: signer.staff_id,
     completed_items: hechos,
     total_items: items.length,
-    items_snapshot: buildItemsSnapshot(items, estaTildado),
+    items_snapshot: buildItemsSnapshot(items, estaTildado,
+      (item, idx) => autores[String(item.id != null ? item.id : idx)]),
     signed_at: new Date().toISOString()
   };
 }
@@ -15717,7 +15910,7 @@ async function instructorSignOff() {
     const payload = buildRecordPayload({
       role: 'instructor', tripId: currentChecklistTripId,
       items: instructorItems, estaTildado: (it) => checks[it.id],
-      signer, hechos: done
+      signer, hechos: done, checks
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
@@ -15737,14 +15930,40 @@ async function instructorSignOff() {
 }
 
 // ─── SHARED RENDER ───
+
+// Cómo se muestra un autor. Un solo lugar, y lo usan los tres dibujos: la lista
+// viva compartida, las checklists propias y el acta firmada. Si mañana se
+// decide que hay que decir «desde la cuenta de» en vez del nombre pelado, se
+// cambia acá y cambia en los tres.
+//
+// Sin nombre no se dibuja nada: un tripulante archivado no está en la caché de
+// activos, y es mejor un ítem sin autor que un autor inventado.
+function chipDeAutor(autor) {
+  const nombre = autor && autor.name;
+  if (!nombre) return '';
+  return `<span class="cl-autor" title="${escapeHtml(t('cl_autor_title'))}">${escapeHtml(nombre)}</span>`;
+}
+
+// La línea de «lo llenaron entre varios». Se dibuja sólo cuando hay más de un
+// nombre: con uno solo no aporta nada que no diga ya cada ítem, y con cero
+// sería ruido en una lista vacía.
+function lineaDeParticipantes(nombres) {
+  if (!nombres || nombres.length < 2) return '';
+  return `<div class="cl-participantes">${escapeHtml(t('cl_participantes').replace('{names}', nombres.join(', ')))}</div>`;
+}
+
 function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const done = items.filter(i => checks[i.id]).length;
-  el.innerHTML = items.map(item => `
+  // La autoría viaja colgada del objeto de tildes, así que ninguno de los siete
+  // llamadores tuvo que cambiar.
+  const autores = autoriaDe(checks);
+  el.innerHTML = lineaDeParticipantes(participantesDeAutoria(autores)) + items.map(item => `
     <div class="cl-item ${checks[item.id]?'checked':''}" onclick="${toggleFn}('${item.id}')">
       <div class="cl-checkbox">${checks[item.id]?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>':''}</div>
       <div class="cl-item-text">${item.text}</div>
+      ${checks[item.id] ? chipDeAutor(autores[item.id]) : ''}
     </div>`).join('');
   if (progressId) {
     const prog = document.getElementById(progressId);
@@ -15773,13 +15992,18 @@ function renderActaItems(containerId, snapshot, progressId) {
   const items = Array.isArray(snapshot) ? snapshot : [];
   const hechos = items.filter(i => i.done).length;
 
+  // Las actas firmadas antes del 09/10 no tienen autor por ítem: el dato
+  // existía en el progreso y el snapshot lo tiraba. No se puede reconstruir —un
+  // acta es inmutable y el progreso se borra al firmar— así que se dibujan sin
+  // nombre, igual que antes, en vez de inventar uno.
   el.innerHTML =
     `<div class="cl-acta-nota">${escapeHtml(t('cl_acta_nota'))}</div>` +
+    lineaDeParticipantes(participantesDeActa(items)) +
     items.map(item => `
     <div class="cl-item acta ${item.done ? 'checked' : ''}">
       <div class="cl-checkbox">${item.done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
       <div class="cl-item-text">${escapeHtml(item.text || '')}</div>
-      ${item.done ? '' : `<span class="cl-role-badge warn cl-item-falta">${escapeHtml(t('cl_acta_missed'))}</span>`}
+      ${item.done ? chipDeAutor({ name: nombreDeFilaDeActa(item) }) : `<span class="cl-role-badge warn cl-item-falta">${escapeHtml(t('cl_acta_missed'))}</span>`}
     </div>`).join('');
 
   if (progressId) {
@@ -16015,7 +16239,7 @@ async function customChecklistSignOff(checklistId) {
       // por ítem. Eso se arregla en la etapa 3, cuando las checklists propias
       // pasen a checklist_templates y cada ítem tenga su uuid.
       items: cc.items, estaTildado: (_it, idx) => checks[idx],
-      signer, hechos: done
+      signer, hechos: done, checks
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
@@ -16043,10 +16267,13 @@ async function renderCustomChecklistsForCurrentView() {
   container.innerHTML = matching.map(cc => {
     const checks = customChecklistChecks[cc.id] = customChecklistChecks[cc.id] || {};
     const done = cc.items.filter((_, idx) => checks[idx]).length;
-    const itemsHtml = cc.items.map((text, idx) => `
+    const autores = autoriaDe(checks);
+    const itemsHtml = lineaDeParticipantes(participantesDeAutoria(autores)) +
+      cc.items.map((text, idx) => `
       <div class="cl-item ${checks[idx] ? 'checked' : ''}" onclick="toggleCustomChecklistItem('${cc.id}','${idx}')">
         <div class="cl-checkbox">${checks[idx] ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
         <div class="cl-item-text">${text}</div>
+        ${checks[idx] ? chipDeAutor(autores[idx]) : ''}
       </div>`).join('');
     const delBtn = canDeleteCustomChecklist(cc, myUserId)
       ? `<button class="btn-icon" onclick="deleteCustomChecklist('${cc.id}')" style="color:var(--error);">${t('cl_delete_checklist')}</button>` : '';
@@ -16230,7 +16457,7 @@ async function deptRoutineSignOff() {
     const payload = buildRecordPayload({
       role: routine.role, tripId: null,
       items: routine.items, estaTildado: (it) => checks[it.id],
-      signer, hechos: done
+      signer, hechos: done, checks
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);

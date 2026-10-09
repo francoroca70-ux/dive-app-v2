@@ -162,7 +162,7 @@ Tres cuidados concretos al tocar esta zona:
 - Quien firma sale de un selector de la tripulación, no de texto libre, y se
   guarda en `completed_by`. Ver `Quién firma una checklist.md`.
 
-**Pruebas**: `_tests/*.test.js` — 303 comprobaciones corriendo el `index.html`
+**Pruebas**: `_tests/*.test.js` — 344 comprobaciones corriendo el `index.html`
 real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
@@ -232,6 +232,29 @@ estaba en pantalla.
 (`refrescarChecklistVisible`). Antes sólo se vaciaba al firmar, así que después
 de reconectar no se veía lo que tildó el resto de la tripulación hasta recargar
 la página — y lo mismo con dos personas tildando a la vez.
+
+**Cada ítem guarda quién lo tildó, y el acta se lo lleva** (pedido por Fran el
+09/10: firma uno, el barco lo cargan cuatro). El dato ya se escribía
+(`checked_by`) y se tiraba dos veces — la lectura pedía sólo `item_id, checked`
+y el snapshot guardaba `{id, text, done}`, así que **la atribución se destruía
+justo al firmar**, el momento en que empieza a valer. Las actas anteriores al
+09/10 la perdieron y no se recupera.
+
+La autoría cuelga del **mismo objeto de tildes que la pantalla dibuja**
+(`autoresDeChecks`, un WeakMap): los ids de ítem son posicionales y un mapa
+global cruzaría el ítem 0 de dos listas distintas, y `renderCheckItems` lo
+llaman siete lugares. Se pinta con el tilde y se deshace con él. Un tilde
+pendiente conserva su nombre hasta que el servidor confirme, igual que
+`tildesPendientes` hace con el tilde. El acta guarda `by` **y** `by_id`: el id
+es el hecho y el nombre la comodidad, y si se firmó sin señal sin la lista de
+tripulación cargada, el nombre se resuelve al dibujar desde el id.
+«La completaron entre Pau, Guido y Meli» se **deriva**, no se guarda aparte.
+
+**OJO, sin resolver:** `checked_by` es la **cuenta del dispositivo**, no las
+manos. Fran dijo que cada uno usa su celular (09/10), pero el comentario de
+`signerStaffCache` afirma lo contrario —la tablet compartida— y es la razón de
+que el firmante sea un selector. Hasta que se resuelva, los textos dicen «desde
+la cuenta de» y no «hecho por». Ver `Decisiones/Quién tildó cada ítem.md`.
 
 **Los ítems de plantilla son bilingües en la base** (`text_en` + `text_es`),
 decidido por Fran el 07/10: al pasar a ser dato del centro un ítem sería un
