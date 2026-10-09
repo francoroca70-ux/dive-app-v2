@@ -216,7 +216,29 @@ salida duplicados** — de nueve nombres afectados, seis tienen un gemelo que s�
 tiene plantilla, porque la siembra va una lista por nombre. Ese cabo suelto es
 carga estructural de la 3b.
 
-La 3b de verdad: (1) limpiar los tipos duplicados, (2) conectar
+**Paso 1 de la 3b, listo y sin aplicar (09/10):** `trip_types_merge_duplicates(org, aplicar)`
+fusiona los tipos duplicados en una transacción, con **modo consulta** como
+`trip_archive_or_delete()`. Conserva la copia que tiene la plantilla (medido: no
+hay grupo con plantilla en dos copias) y **salta** cualquier grupo que la
+tuviera, porque la FK de `checklist_templates` es **CASCADE** y borrar esa copia
+se llevaría la plantilla en silencio. Repunta antes de borrar: las FK de `trips`
+y `trip_groups` son NO ACTION y frenan el borrado hasta entonces.
+
+Previsto: 111 tipos → **51**, salidas con plantilla 32 → **44**, plantillas
+**43 → 43**. Lo corre Fran:
+`select * from trip_types_merge_duplicates(null, true);`
+
+**Y el supuesto que tuve que corregir midiendo:** supuse que algo seguía creando
+duplicados. No. La siembra no era idempotente y se le puso un guardián el
+**07/09** (`b182b2e`); todos los duplicados son del 30/06 al 05/08 y después del
+guardián se crearon **0**. Esto es residuo, no una fuga activa.
+
+**Hueco aparte, encontrado ahí:** un centro puede crear salidas de una categoría
+que **no activó**, y las plantillas se siembran al activarla — así que *Blue
+water* tiene salidas de buceo y ninguna plantilla de buceo. Detalle en
+`Seven Seas Ops/Tipos de salida duplicados.md`.
+
+La 3b de verdad: (1) limpiar los tipos duplicados **← la función ya está**, (2) conectar
 `itemsDeInstructorParaTipo()` a la pantalla, (3) decidir qué lista gana cuando
 `trip_groups.trip_type_id` pisa el tipo de la salida (hoy 0 de 53 reservas lo
 usan, así que el caso no apareció), (4) recién entonces el interruptor.
