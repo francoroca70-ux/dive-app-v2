@@ -15,7 +15,7 @@
 // OJO (trampa del arnés, ya documentada en los otros tests): `const sb` y
 // `let currentOrgId` son léxicos y NO se ven desde `window` después de un eval
 // indirecto. Por eso todo entra y sale por window.__t.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
@@ -63,6 +63,9 @@ chk('arranca sin excepción',!boot,boot?String(boot).slice(0,200):'');
 
 window.__t.setOrg('org-1'); window.__t.setRole('owner'); window.__t.offline(false);
 window.__t.yo('u-ana'); window.__t.tripulacion(TRIPULACION);
+// Firmar incompleto abre el modal de motivos y espera. Sin esto el archivo se
+// corta a mitad en silencio. Ver `_tests/run-all.js`.
+window.pedirMotivos = async () => ({});
 window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
 window.queueOfflineAction=(tipo,payload)=>{ encolados.push({tipo,payload}); };
 

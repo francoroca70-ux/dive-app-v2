@@ -13,7 +13,7 @@
 // La 3a construye el camino y lo deja probado sin mover el interruptor. La app
 // sigue leyendo lo cableado; estos tests llaman al camino nuevo directamente,
 // que es lo que impide que sea código muerto.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});

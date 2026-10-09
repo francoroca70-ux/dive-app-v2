@@ -16,7 +16,7 @@
 // Este archivo cambió de opinión el 09/10: las dos comprobaciones que decían
 // «ofrece a los 3 tripulantes» y «tablet compartida: firma otro tripulante»
 // afirmaban justo lo que se cerró. Quedan abajo dadas vuelta, como guardián.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
@@ -65,6 +65,9 @@ window.__t.yo('u-fran');                 // la sesión es del gerente
 window.__t.tripulacion(TRIPULACION);
 window.showAlertModal = async(m)=>{ window.__ultimoAviso=m; };
 window.showConfirmModal = async()=>true;
+// Firmar incompleto abre el modal de motivos y espera. Sin esto el archivo se
+// corta a mitad en silencio. Ver `_tests/run-all.js`.
+window.pedirMotivos = async () => ({});
 
 (async()=>{ try {
   // ── El selector reemplazó al texto libre ──

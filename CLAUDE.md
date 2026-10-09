@@ -164,8 +164,30 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `_tests/*.test.js` — 384 comprobaciones corriendo el `index.html`
-real en jsdom. `npm i -D jsdom && node _tests/<archivo>.test.js`.
+**Pruebas**: `node _tests/run-all.js` — 415 comprobaciones corriendo el
+`index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
+podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
+que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
+regla «validar antes de pushear» la estaba ejecutando una sola de las dos
+personas. Ahora jsdom sale de `_tests/jsdom.js` (un solo lugar: `jsdom` del
+proyecto primero, el sandbox después, y `JSDOM_PATH` como atajo porque desde la
+carpeta montada tarda ~35 s por archivo). **Ninguna ruta absoluta en los
+tests.**
+
+**Correr la suite con `run-all.js`, no archivo por archivo.** Un test que queda
+esperando algo (un modal que nadie cierra) deja a node sin trabajo pendiente y
+**termina con código 0 sin imprimir nada más**: el `process.exit(fail)` del final
+nunca corre. Pasó el 09/10 — `checklist-record` bajó de 54 comprobaciones a 6 y
+reportó **cero fallos**, y lo agarré de casualidad mirando el número. `run-all.js`
+tiene un mínimo por archivo, una cuenta final y un reloj de 90s, y **sale con 1
+si un archivo corrió menos de lo que corría**. Los mínimos sólo se tocan para
+arriba.
+
+**Y distingue «no arrancó» de «se cortó a mitad»**, porque la primera vez
+diagnosticó mal: trece archivos con cero comprobaciones por una dependencia
+faltante decían «se cortó a mitad» y mandaron a buscar un corte inexistente. Un
+guardián que describe mal el problema cuesta lo mismo que no tenerlo. Ver
+`Errores y aprendizajes/El test que se cortaba a mitad y decía que todo estaba bien.md`.
 
 **Checklists — reforma en curso (06/10).** Tres conceptos que la palabra
 «checklist» tapaba: **plantilla** (lo que hay que revisar, editable),
@@ -275,9 +297,25 @@ los waivers, y **sin FK** como el resto del acta.
 `FIRMANTE_SELECT_POR_LISTA` mapea lista → selector en un solo lugar, para no
 agregarle un séptimo parámetro a `renderCheckItems`.
 
-**Pendiente, pedido el 09/10:** un **motivo por ítem que faltó**, tipeado al
-firmar («no pudimos poner toallas»). Va en `items_snapshot`, sin cambio de
-esquema. Ver `Decisiones/Quién tildó cada ítem.md`.
+**Al firmar una incompleta se pregunta POR QUÉ faltó cada ítem** (hecho el
+09/10, pedido por Fran con el caso de las toallas en un private charter).
+Reemplazó al sí/no «faltan 2 ítems, ¿firmar igual?» — la pregunta que le sirve a
+un centro no es si firma, es por qué faltó, y eso es lo que convierte «firmada
+14/16» en algo con lo que se le contesta a un cliente. Un campo por ítem que
+faltó y sólo por ésos; va a `items_snapshot.why`, sin cambio de esquema.
+
+**Los motivos son opcionales a propósito**: obligarlos con diez ítems sin hacer
+haría que alguien escriba «x» diez veces, y un dato inventado es peor que
+ninguno porque parece un dato. Un objeto vacío significa «firmo sin explicar» y
+es distinto de cancelar. Un motivo sobre un ítem hecho se descarta — en un
+registro inmutable un campo sin sentido queda para siempre. `confirmarFirma()`
+decide en un solo lugar si se pregunta o no, así que los tres caminos no pueden
+divergir.
+
+**La lista única de lo que queda abierto en checklists** —lo que espera una
+decisión de Fran, lo que espera una prueba de uso y lo decidido que falta
+construir— está en
+`Seven Seas Ops/Checklists — qué falta decidir y probar.md` del vault.
 
 **Los ítems de plantilla son bilingües en la base** (`text_en` + `text_es`),
 decidido por Fran el 07/10: al pasar a ser dato del centro un ítem sería un

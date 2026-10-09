@@ -20,7 +20,7 @@
 //  · la comprobación contra el servidor, para dos celulares — el progreso es
 //    compartido, así que Juanma puede firmar en el suyo sin que el mío se entere
 //    hasta el refresco de diez segundos.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});

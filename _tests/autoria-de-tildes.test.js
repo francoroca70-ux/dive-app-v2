@@ -10,7 +10,7 @@
 // `{id, text, done}`. O sea que la atribución se destruía JUSTO al firmar — el
 // momento en que empieza a tener valor legal. De ahí que el test más importante
 // acá sea el del snapshot.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});

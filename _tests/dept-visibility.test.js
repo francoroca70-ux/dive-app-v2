@@ -7,7 +7,7 @@
 //   deptKeyForRole()                 → bajo qué pestaña se ARCHIVAN sus
 //                                      checklists propias
 // Este test cubre los dos justamente para que no se los toque a la vez.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});

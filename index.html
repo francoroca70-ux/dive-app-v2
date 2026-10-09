@@ -796,6 +796,15 @@ body { background: var(--navy); color: var(--text); }
   font-size: 0.7rem; color: var(--muted); white-space: nowrap;
   max-width: 40%; overflow: hidden; text-overflow: ellipsis;
 }
+/* El por qué faltó un ítem, debajo de su texto y no en la columna de la
+   derecha: puede ser una frase entera («el proveedor no trajo las toallas») y
+   ahí tiene todo el ancho. Es la parte del acta que se lee cuando hay que
+   explicarle algo a un cliente, así que va en el renglón del ítem y no en una
+   nota aparte al pie. */
+.cl-item .cl-motivo {
+  font-size: 0.78rem; color: var(--muted);
+  margin-top: 3px; font-style: italic; line-height: 1.35;
+}
 /* «La llenaron entre Pau, Guido y Meli.» Arriba de la lista, porque es lo que
    contesta de un vistazo la pregunta que importa cuando algo salió mal: quién
    estuvo. */
@@ -1901,6 +1910,30 @@ body { background: var(--navy); color: var(--text); }
       <div class="settings-actions" style="justify-content:flex-end;">
         <button class="btn-cancel" id="confirm-modal-cancel" data-i18n="tt_cancel">Cancel</button>
         <button class="btn-save" id="confirm-modal-ok" data-i18n="modal_confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Por qué faltó cada ítem, al firmar una checklist incompleta.
+     Pedido por Fran el 09/10: «en un private charter no pudimos poner toallas,
+     entonces quedó incompleta — que aparezca un cartel para completar tipeando
+     por qué». Es lo que convierte «firmada 14/16» en un registro con el que se
+     le puede contestar a un cliente.
+     Modal propio y no el compartido: ese tiene dos campos fijos y acá la
+     cantidad de ítems que faltaron varía. -->
+<div class="modal-overlay" id="modal-motivos" style="display:none;z-index:300;">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h2 data-i18n="cl_motivos_titulo">Before signing</h2>
+    </div>
+    <div class="modal-body">
+      <p id="cl-motivos-intro" style="font-size:0.95rem;color:var(--text);line-height:1.5;margin-bottom:4px;"></p>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.45;margin-bottom:16px;" data-i18n="cl_motivos_ayuda">Saying why is optional, but it stays in the signed record — which is what lets you answer a customer later.</p>
+      <div id="cl-motivos-lista"></div>
+      <div class="settings-actions" style="justify-content:flex-end;">
+        <button class="btn-cancel" id="cl-motivos-cancel" data-i18n="tt_cancel">Cancel</button>
+        <button class="btn-save" id="cl-motivos-ok" data-i18n="cl_motivos_firmar">Sign anyway</button>
       </div>
     </div>
   </div>
@@ -4543,6 +4576,12 @@ const TRANSLATIONS = {
     cl_autor_title: 'Ticked from this crew member’s account',
     cl_participantes: 'Filled in together by {names}.',
     cl_ya_firmada: 'This checklist was already signed by {name} at {time}, so nothing was added. Signed records are never replaced — use Reset if you need to run it again.',
+    cl_motivos_titulo: 'Before signing',
+    cl_motivos_intro: '{n} item(s) were not done. Why?',
+    cl_motivos_ayuda: 'Saying why is optional, but it stays in the signed record — which is what lets you answer a customer later.',
+    cl_motivos_ph: 'e.g. supplier never delivered them',
+    cl_motivos_firmar: 'Sign anyway',
+    cl_acta_porque: 'Why: {why}',
     cl_logged_vessel_check: 'Vessel safety check',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
@@ -5261,6 +5300,12 @@ const TRANSLATIONS = {
     cl_autor_title: 'Tildado desde la cuenta de esta persona',
     cl_participantes: 'La completaron entre {names}.',
     cl_ya_firmada: 'Esta checklist ya la firmó {name} a las {time}, así que no se agregó nada. Las actas firmadas no se reemplazan — si hay que hacerla de nuevo, usá Reset.',
+    cl_motivos_titulo: 'Antes de firmar',
+    cl_motivos_intro: 'Quedaron {n} ítem(s) sin hacer. ¿Por qué?',
+    cl_motivos_ayuda: 'Explicar por qué es opcional, pero queda en el acta firmada — y es lo que después te permite contestarle a un cliente.',
+    cl_motivos_ph: 'ej. el proveedor no las trajo',
+    cl_motivos_firmar: 'Firmar igual',
+    cl_acta_porque: 'Por qué: {why}',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
@@ -8396,7 +8441,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-09c');
+  console.info('[Seven Seas] build 2026-10-09d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15868,11 +15913,12 @@ async function clearChecklistProgress(scopeKey) {
 // Se guardan las dos cosas, `by_id` y `by`. El id es el hecho y el nombre es la
 // comodidad — un acta es inmutable, así que si el nombre se resolvió mal queda
 // mal para siempre, y el id es lo único que permite reconstruirlo.
-function buildItemsSnapshot(items, estaTildado, autorDe) {
+function buildItemsSnapshot(items, estaTildado, autorDe, motivos) {
   return items.map((item, idx) => {
     const done = !!estaTildado(item, idx);
+    const id = String(item.id != null ? item.id : idx);
     const fila = {
-      id: String(item.id != null ? item.id : idx),
+      id,
       text: item.text != null ? item.text : String(item),
       done
     };
@@ -15882,6 +15928,11 @@ function buildItemsSnapshot(items, estaTildado, autorDe) {
       fila.by = autor.name || '';
       if (autor.at) fila.by_at = autor.at;
     }
+    // El por qué faltó, sólo en los que faltaron. Un motivo en un ítem hecho
+    // no querría decir nada, y en un registro inmutable un campo sin sentido
+    // queda para siempre.
+    const motivo = !done && motivos ? motivos[id] : null;
+    if (motivo) fila.why = motivo;
     return fila;
   });
 }
@@ -15904,7 +15955,7 @@ function buildItemsSnapshot(items, estaTildado, autorDe) {
 // mismo que dibuja la pantalla. Quien firma NO es necesariamente quien tildó
 // —el firmante sale de un selector— así que el acta guarda las dos cosas:
 // `signed_by` (quién responde) y el autor por ítem (quién lo revisó).
-function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, checks }) {
+function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, checks, motivos }) {
   const salida = (tripId && checklistTripById[tripId]) || null;
   const autores = autoriaDe(checks);
   return {
@@ -15929,7 +15980,7 @@ function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, 
     completed_items: hechos,
     total_items: items.length,
     items_snapshot: buildItemsSnapshot(items, estaTildado,
-      (item, idx) => autores[String(item.id != null ? item.id : idx)]),
+      (item, idx) => autores[String(item.id != null ? item.id : idx)], motivos),
     signed_at: new Date().toISOString()
   };
 }
@@ -16041,7 +16092,8 @@ async function instructorSignOff() {
   const checks = instructorChecksByTrip[currentChecklistTripId] || {};
   const done = instructorItems.filter(i => checks[i.id]).length;
   if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
-  if (done < instructorItems.length && !(await showConfirmModal(`${instructorItems.length - done}${t('cl_items_incomplete')}`))) return;
+  const confirmado = await confirmarFirma(instructorItems, (it) => checks[it.id]);
+  if (!confirmado) return;
 
   const tripId = currentChecklistTripId;
   await firmarUnaSolaVez(`instructor:${tripId}`, { role: 'instructor', tripId }, async () => {
@@ -16049,7 +16101,7 @@ async function instructorSignOff() {
     const payload = buildRecordPayload({
       role: 'instructor', tripId,
       items: instructorItems, estaTildado: (it) => checks[it.id],
-      signer, hechos: done, checks
+      signer, hechos: done, checks, motivos: confirmado.motivos
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
@@ -16177,7 +16229,7 @@ function renderActaItems(containerId, snapshot, progressId) {
     items.map(item => `
     <div class="cl-item acta ${item.done ? 'checked' : ''}">
       <div class="cl-checkbox">${item.done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
-      <div class="cl-item-text">${escapeHtml(item.text || '')}</div>
+      <div class="cl-item-text">${escapeHtml(item.text || '')}${item.why ? `<div class="cl-motivo">${escapeHtml(t('cl_acta_porque').replace('{why}', item.why))}</div>` : ''}</div>
       ${item.done ? chipDeAutor({ name: nombreDeFilaDeActa(item) }) : `<span class="cl-role-badge warn cl-item-falta">${escapeHtml(t('cl_acta_missed'))}</span>`}
     </div>`).join('');
 
@@ -16399,7 +16451,8 @@ async function customChecklistSignOff(checklistId) {
   const checks = customChecklistChecks[checklistId] || {};
   const done = cc.items.filter((_, idx) => checks[idx]).length;
   if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
-  if (done < cc.items.length && !(await showConfirmModal(`${cc.items.length - done}${t('cl_items_incomplete')}`))) return;
+  const confirmado = await confirmarFirma(cc.items, (_it, idx) => checks[idx]);
+  if (!confirmado) return;
 
   const pintar = (extra) => {
     const el = document.getElementById(`custom-cl-done-${checklistId}`);
@@ -16420,7 +16473,7 @@ async function customChecklistSignOff(checklistId) {
       // por ítem. Eso se arregla en la etapa 3, cuando las checklists propias
       // pasen a checklist_templates y cada ítem tenga su uuid.
       items: cc.items, estaTildado: (_it, idx) => checks[idx],
-      signer, hechos: done, checks
+      signer, hechos: done, checks, motivos: confirmado.motivos
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
@@ -16636,7 +16689,8 @@ async function deptRoutineSignOff() {
   const signer = readSigner('dept-routine-name');
   const done = routine.items.filter(i => checks[i.id]).length;
   if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
-  if (done < routine.items.length && !(await showConfirmModal(`${routine.items.length - done}${t('cl_items_incomplete')}`))) return;
+  const confirmado = await confirmarFirma(routine.items, (it) => checks[it.id]);
+  if (!confirmado) return;
 
   // La instancia de una rutina es su rol + su período: la de mañana es una por
   // día, el control mensual es uno por mes. Esa es la unidad que no puede tener
@@ -16647,7 +16701,7 @@ async function deptRoutineSignOff() {
     const payload = buildRecordPayload({
       role: routine.role, tripId: null,
       items: routine.items, estaTildado: (it) => checks[it.id],
-      signer, hechos: done, checks
+      signer, hechos: done, checks, motivos: confirmado.motivos
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
@@ -19502,6 +19556,69 @@ function showTwoFieldModal(message, placeholder1, placeholder2) {
     document.getElementById('modal-confirm').style.display = 'flex';
     setTimeout(() => input1.focus(), 50);
   });
+}
+
+// ─── Por qué faltó cada ítem ───
+//
+// Reemplaza al «faltan 2 ítems, ¿firmar igual?» que era un sí/no. La pregunta
+// que le sirve a un centro no es si firma: es por qué faltó. Pedido por Fran el
+// 09/10 con el caso concreto —no pudimos poner toallas en un private charter—
+// que es exactamente lo que después hay que poder explicarle a un cliente.
+//
+// Devuelve un mapa {itemId: motivo} con lo que se tipeó, o null si canceló.
+// Los motivos son OPCIONALES: obligarlos con diez ítems sin hacer haría que la
+// gente escriba «x» diez veces, que es peor que nada porque parece un dato.
+// Un objeto vacío es una respuesta válida y significa «firmo sin explicar».
+let _motivosResolve = null;
+
+function pedirMotivos(faltantes) {
+  return new Promise(resolve => {
+    _motivosResolve = resolve;
+    document.getElementById('cl-motivos-intro').textContent =
+      t('cl_motivos_intro').replace('{n}', faltantes.length);
+    document.getElementById('cl-motivos-lista').innerHTML = faltantes.map((it, i) => `
+      <div style="margin-bottom:12px;">
+        <label class="sf-label" style="display:block;margin-bottom:4px;">${escapeHtml(it.text)}</label>
+        <input class="sf-input" type="text" data-item-id="${escapeHtml(String(it.id))}"
+               id="cl-motivo-${i}" autocomplete="off"
+               placeholder="${escapeHtml(t('cl_motivos_ph'))}">
+      </div>`).join('');
+    document.getElementById('modal-motivos').style.display = 'flex';
+    const primero = document.getElementById('cl-motivo-0');
+    if (primero) setTimeout(() => primero.focus(), 50);
+  });
+}
+
+function cerrarMotivos(resultado) {
+  document.getElementById('modal-motivos').style.display = 'none';
+  const r = _motivosResolve;
+  _motivosResolve = null;
+  if (r) r(resultado);
+}
+
+document.getElementById('cl-motivos-cancel').addEventListener('click', () => cerrarMotivos(null));
+
+document.getElementById('cl-motivos-ok').addEventListener('click', () => {
+  const motivos = {};
+  document.querySelectorAll('#cl-motivos-lista input[data-item-id]').forEach(inp => {
+    const texto = (inp.value || '').trim();
+    if (texto) motivos[inp.getAttribute('data-item-id')] = texto;
+  });
+  cerrarMotivos(motivos);
+});
+
+// El sí/no de antes, para cuando la lista está completa y no hay nada que
+// explicar. Un solo lugar decide cuál de los dos se usa, así que los tres
+// caminos que firman no pueden divergir.
+//
+// Devuelve {motivos} si se puede seguir, o null si se cancela.
+async function confirmarFirma(items, estaTildado) {
+  const faltantes = items
+    .map((it, idx) => ({ id: it.id != null ? it.id : idx, text: it.text != null ? it.text : String(it), idx }))
+    .filter(f => !estaTildado(items[f.idx], f.idx));
+  if (!faltantes.length) return { motivos: {} };
+  const motivos = await pedirMotivos(faltantes);
+  return motivos === null ? null : { motivos };
 }
 
 document.getElementById('confirm-modal-cancel').addEventListener('click', () => {

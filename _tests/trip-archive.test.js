@@ -17,7 +17,7 @@
 //    cada clave exista también en español lo cubre el chequeo de i18n del final.
 //  · `currentTripId` se pone en null cuando la operación termina bien, así que
 //    cada caso tiene que volver a abrir una salida o cae en el return temprano.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});

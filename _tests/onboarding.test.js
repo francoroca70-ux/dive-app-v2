@@ -8,7 +8,7 @@
 // tareas imposibles, y al dueño solo además se le escondía el panel entero.
 //
 // Primeros pasos: comprobar el COMPORTAMIENTO con distintas formas de centro.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});

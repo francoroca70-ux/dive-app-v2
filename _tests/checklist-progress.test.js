@@ -5,7 +5,7 @@
 // El caso que importa no es "se guarda un tilde", es el de un control mensual
 // repartido: una persona tilda dos ítems el día 2, otra persona en otro
 // dispositivo abre la misma lista el día 3 y tiene que VER esos dos.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});

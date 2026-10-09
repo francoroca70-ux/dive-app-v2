@@ -10,7 +10,7 @@
 // Y no se arregla escribiendo `if (error)` veintiocho veces: eso es la regla
 // copiada, y el defecto aparece donde la copia FALTA. De ahí el guardián
 // estructural del final.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});

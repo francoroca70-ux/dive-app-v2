@@ -6,7 +6,7 @@
 // SOLA dentro de cinco años: por eso guarda el texto de cada ítem y no sólo
 // su id. Las plantillas van a cambiar (checklists por tipo de salida) y un
 // registro con ids se vuelve ilegible en cuanto cambien.
-const fs=require('fs'); const {JSDOM}=require('/tmp/node_modules/jsdom');
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
@@ -56,6 +56,11 @@ chk('arranca sin excepción',!boot,boot?String(boot).slice(0,200):'');
 
 window.__t.setOrg('org-1'); window.__t.setRole('instructor'); window.__t.offline(false);
 window.__t.yo('u-ana'); window.__t.tripulacion(TRIPULACION);
+// Desde el 09/10, firmar una lista incompleta abre el modal de «¿por qué faltó?»
+// y espera. Sin esta respuesta automática el test se queda colgado ahí y node
+// termina en silencio con código 0 — un archivo que se corta a mitad y no
+// reporta ningún fallo. Ver `_tests/run-all.js`, que existe por esto.
+window.pedirMotivos = async () => ({});
 window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
 
 (async()=>{ try {
