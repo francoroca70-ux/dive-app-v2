@@ -1,0 +1,57 @@
+# Fin de línea: LF en el repo Y en el disco de trabajo.
+#
+# Por qué existe este archivo, con fecha. El 10/10, después de un
+# `git checkout -- index.html` en Git Bash sobre Windows, el archivo quedó con
+# **19.923 líneas en CRLF** mientras el repo las tiene en LF. Medido: ignorando
+# espacios, el contenido era IDÉNTICO a HEAD — cero diferencias reales.
+#
+# El problema no es estético. Sin esto, `git status` muestra `index.html`
+# modificado para siempre y `git diff` devuelve 19.923 líneas de ruido. En un
+# proyecto donde la regla es «validar antes de pushear» y el archivo tiene
+# ~19.900 líneas, eso **esconde el cambio real dentro del ruido**: es
+# exactamente el mecanismo por el que un cambio se cuela sin que nadie lo vea.
+#
+# Y commitearlo sería peor: el historial de ese archivo quedaría con un commit
+# que toca todas las líneas, y cualquier `git log -p` posterior pasa a ser
+# inútil para encontrar cuándo cambió algo.
+#
+# Va dirigido por extensión y no con `* text=auto`, a propósito: el repo tiene
+# 60 png, 2 docx y `android/gradlew`. Un gradlew en CRLF no arranca.
+
+# El código y la documentación: LF siempre, en los dos lados.
+*.html  text eol=lf
+*.js    text eol=lf
+*.ts    text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.sql   text eol=lf
+*.txt   text eol=lf
+*.yml   text eol=lf
+*.xml   text eol=lf
+*.java  text eol=lf
+*.swift text eol=lf
+*.gradle text eol=lf
+*.properties text eol=lf
+*.plist text eol=lf
+*.storyboard text eol=lf
+*.xcscheme text eol=lf
+*.xcconfig text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Scripts de shell: LF obligatorio, no por prolijidad sino porque en CRLF no
+# ejecutan.
+android/gradlew text eol=lf
+*.sh text eol=lf
+
+# Binarios: que git no los toque nunca.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.docx binary
+*.pdf binary
+*.jar binary
+*.keystore binary

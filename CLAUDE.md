@@ -276,12 +276,59 @@ que **no activó**, y las plantillas se siembran al activarla — así que *Blue
 water* tiene salidas de buceo y ninguna plantilla de buceo. Detalle en
 `Seven Seas Ops/Tipos de salida duplicados.md`.
 
-**Lo que queda de la 3b:** decidir **qué lista gana cuando una reserva pisa el
-tipo de la salida** (`trip_groups.trip_type_id` es un override que ya existe y
-ya maneja el equipo). Hoy **0 de 53** reservas lo usan, así que el caso no
-apareció — pero una salida con una reserva de buceo y otra de snorkel tiene dos
-listas candidatas y no hay respuesta en ninguna parte. `custom_checklists` está
-**vacía** (0 filas), así que su fusión es trivial.
+> [!important] La 3b está TERMINADA y desplegada (`e88ecfb`, `build 2026-10-09e`,
+> `sw v42`). Lo de abajo **no es una parte pendiente de la 3b**: es una función
+> NUEVA que el trabajo de la 3b destapó como pregunta. Llamarla «lo que queda de
+> la 3b» fue un error de redacción mío que hizo dudar a Fran de si la etapa
+> estaba cerrada. **Está cerrada.**
+
+**Dos actividades en un mismo barco — función nueva, con un PIN puesto por Fran
+el 10/10.** La pregunta que la 3b destapó era qué lista gana cuando una reserva
+pisa el tipo de la salida; la respuesta correcta es que **no gana ninguna, salen
+las dos** (un private charter que además bucea necesita la lista de charter *y*
+la de buceo). Pero construirlo
+toca la **identidad** de una checklist —llave del progreso, esquema del acta, el
+guardián de no-firmar-dos-veces y la pantalla entera, 269 líneas— en un módulo
+con **cinco postmortems en cuatro días**, y el caso mide **cero** en los datos
+(0 salidas con dos actividades, 0 reservas con el tipo pisado).
+
+Se revirtió el trabajo a medio hacer. **Mientras tanto se usa `trips.notes` /
+`trip_groups.notes`, que ya existen.** Ojo: una checklist propia se indexa por
+`dept_key + role_scope + cadence`, **no por tipo de salida**, así que «que el
+centro se arme una checklist para esa salida» hoy no es posible sin construir.
+
+**Cuándo se retoma, decidido por Fran:** «una vez que hayamos cerrado todo y
+estemos activamente buscando clientes». Y la señal es medible:
+`select count(*) from trip_groups where trip_type_id is not null;` — medido el
+10/10: **0**. Mientras siga en 0 el caso es hipotético. Diseño completo y las
+cinco cosas que hay que mover, en
+`Decisiones/Dos actividades en un mismo barco.md`.
+
+**Quedó aplicada la migración `acta_guarda_la_actividad`**
+(`checklist_completions.trip_type_id` + `activity_name`, nulas, sin FK). Es
+aditiva y **nadie la escribe ni la lee**: se dejó porque borrarla es un DDL
+destructivo a cambio de nada.
+
+**Y la lección de proceso, que es mía:** no puse el costo sobre la mesa antes de
+empezar. Dije «es más grande que los últimos cambios» y seguí — y «grande» no le
+dio a Fran nada con qué decidir.
+
+**7 · Decir cuánto cuesta un cambio, del 1 al 10, ANTES de empezar.** Pedido por
+Fran el 10/10 por lo de arriba. Las anclas son reales: un texto es 1, una
+columna nueva 3, una función con su test 4, una regla en N lugares 5, un camino
+nuevo en un módulo 6, cambiar la **fuente** de algo en uso 7, **reestructurar un
+módulo en varias sesiones 8** (el ancla que fijó Fran: la reforma de checklists
+entera), tocar la **identidad** de algo en uso en varios módulos 9, cobros o
+autenticación 10.
+
+Y el número va con tres mediciones, o es un invento: **¿toca la identidad de
+algo en uso?** (+2), **¿cuántos lugares?** (contados), **¿cuántas veces se da el
+caso en los datos hoy?** (si es 0, el beneficio es hipotético). Más una cuarta:
+**¿rehace trabajo cerrado?**
+
+**De 7 para arriba el número va primero y se espera la respuesta.** De 1 a 6 se
+dice y se sigue. La escala no mide riesgo: un 3 que toca cobros es más peligroso
+que un 6 que toca un texto. Ver `Operativa/Cuánto cuesta un cambio.md`.
 
 Detalle y la lección —leí mi propia nota en vez de medir el código, cuatro
 veces— en `Seven Seas Ops/Plantillas y actas.md`.
