@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 415 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 441 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -214,19 +214,44 @@ Hecho: bloque 0 (actas inmutables), etapa 0.5 (`checklist_progress`), etapa 1
 Hecho también **etapa 3a**: el camino de tres capas que el offline necesita,
 construido y probado, con el interruptor `FUENTE_PLANTILLAS` en `'cableado'`.
 
-**La 3b NO es «pasar el interruptor a `base`, una línea».** Eso decía esta nota
-y era falso; medido el 09/10: `cargarConTresCapas()` la llama sólo
-`itemsDeInstructorParaTipo()`, y a **esa no la llama nadie**. El camino está
-construido, probado y **desconectado de la pantalla**, así que mover el
-interruptor hoy no cambia nada. Los 6 lugares que piden la lista
-(`INSTRUCTOR_ITEMS_get()`) son sincrónicos y la fuente nueva es asíncrona.
+**Etapa 3b hecha el 09/10: la lista de preparación sale del tipo de salida.**
+La 3a había construido y probado el camino de tres capas y
+`itemsDeInstructorParaTipo()` **no la llamaba nadie** — el interruptor existía y
+no cambiaba nada. `FUENTE_PLANTILLAS` está en `'base'` y volver atrás sigue
+siendo esa línea (hay un test que cuida que nadie más que `cargarConTresCapas()`
+la mire).
 
-Y el dato no alcanza para todas: de **51** salidas vigentes, las 51 tienen
-`trip_type_id` pero sólo **32** apuntan a un tipo con plantilla. Las otras 19
-caen a lo cableado (la capa 3 funciona), y el motivo es el de los **tipos de
-salida duplicados** — de nueve nombres afectados, seis tienen un gemelo que sí
-tiene plantilla, porque la siembra va una lista por nombre. Ese cabo suelto es
-carga estructural de la 3b.
+**La pieza clave: la lista de una salida se resuelve UNA vez y no se vuelve a
+tocar.** No es optimización. Los ids de ítem son la llave de los tildes: la
+lista cableada usa posiciones (`'0'`, `'1'`…) y la plantilla usa uuid. Si una
+salida resolviera su lista en cada dibujo, un corte de red a media mañana la
+pasaría de uuid a posicional y **todos los tildes de la tripulación se verían
+perdidos** — están guardados con la otra llave.
+
+- `instructorItemsByTrip` guarda **filas bilingües** o el centinela `'cableado'`
+- `itemsDeLaSalida(tripId)` es sincrónico y resuelve el idioma en cada lectura;
+  es lo que piden los cuatro lugares que dibujan o firman
+- `fijarItemsDeLaSalida(tripId)` resuelve una vez, antes de dibujar y antes de
+  leer los tildes
+- `filasDePlantillaParaTipo()` devuelve las filas crudas — una sola consulta,
+  dos formas de pedirla
+
+**La caída a lo cableado TAMBIÉN se guarda**, con el centinela: si no, el día
+que la plantilla apareciera (alguien activa la categoría a media mañana) la
+lista cambiaría de llave con la tripulación tildando. **Para una salida abierta,
+estabilidad le gana a frescura.**
+
+**Bug que introduje y agarró el test:** la primera versión guardaba el texto ya
+resuelto, lo que congela el idioma — el **mismo** error que la 3a había
+arreglado para la caché de `localStorage`, repetido doce líneas más abajo. Si
+una caché guarda algo que depende de quién mira, guarda el dato crudo.
+
+**Para probarlo hay que elegir bien el tipo de salida.** La cuenta de Fran está
+en *Blue water*, que tiene `diving` **sin activar**: sus 9 tipos no-buceo tienen
+plantilla (14–22 ítems) y los 7 de buceo tienen **cero**. Con un tipo de buceo
+se ve la lista cableada y parece que no funcionó. Probar con **Island Hopping**
+(22 ítems) o Sunset Cruise (21). Y la checklist de preparación sólo lista las
+salidas **de hoy** — hay que crear una.
 
 **Paso 1 de la 3b, listo y sin aplicar (09/10):** `trip_types_merge_duplicates(org, aplicar)`
 fusiona los tipos duplicados en una transacción, con **modo consulta** como
@@ -251,14 +276,20 @@ que **no activó**, y las plantillas se siembran al activarla — así que *Blue
 water* tiene salidas de buceo y ninguna plantilla de buceo. Detalle en
 `Seven Seas Ops/Tipos de salida duplicados.md`.
 
-La 3b de verdad: (1) limpiar los tipos duplicados **← la función ya está**, (2) conectar
-`itemsDeInstructorParaTipo()` a la pantalla, (3) decidir qué lista gana cuando
-`trip_groups.trip_type_id` pisa el tipo de la salida (hoy 0 de 53 reservas lo
-usan, así que el caso no apareció), (4) recién entonces el interruptor.
-`custom_checklists` está **vacía** (0 filas), así que su fusión es trivial.
+**Lo que queda de la 3b:** decidir **qué lista gana cuando una reserva pisa el
+tipo de la salida** (`trip_groups.trip_type_id` es un override que ya existe y
+ya maneja el equipo). Hoy **0 de 53** reservas lo usan, así que el caso no
+apareció — pero una salida con una reserva de buceo y otra de snorkel tiene dos
+listas candidatas y no hay respuesta en ninguna parte. `custom_checklists` está
+**vacía** (0 filas), así que su fusión es trivial.
 
 Detalle y la lección —leí mi propia nota en vez de medir el código, cuatro
 veces— en `Seven Seas Ops/Plantillas y actas.md`.
+
+**Y para esta etapa jsdom no alcanzó:** se midió contra la base real que la FK
+`checklist_template_items → checklist_templates` existe (sin ella el `select`
+incrustado daría PGRST200), que las 5 columnas del select están, y que RLS
+haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 
 **Las checklists funcionan sin señal SÓLO porque las listas están cableadas en
 `index.html`**, que es lo que el service worker cachea: no toca los pedidos a

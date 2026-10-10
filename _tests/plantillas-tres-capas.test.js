@@ -64,11 +64,20 @@ const FILAS=[{ id:'tpl-1', checklist_template_items:[
 
 (async()=>{ try {
 
-  // ─── El interruptor arranca apagado: la app sigue leyendo lo cableado ───
-  chk('el interruptor arranca en cableado', window.__t.verFuente()==='cableado', window.__t.verFuente());
+  // ─── El interruptor, ahora encendido ───
+  //
+  // Estas cuatro comprobaciones afirmaban que arrancaba en 'cableado', y era
+  // correcto mientras el camino estaba construido y desconectado. La 3b (09/10)
+  // lo conectó y lo pasó a 'base', así que ahora afirman lo contrario y lo que
+  // cuidan es que **apagarlo siga funcionando** — porque la vuelta atrás es esa
+  // sola línea y tiene que seguir siendo verdad.
+  chk('el interruptor arranca en base (lo encendió la 3b)',
+      window.__t.verFuente()==='base', window.__t.verFuente());
+
+  window.__t.fuente('cableado');
   filasDeLaBase=FILAS; lecturas=0;
   let items=await window.itemsDeInstructorParaTipo('tt-1');
-  chk('con el interruptor apagado NO se le pregunta a la base', lecturas===0, lecturas+' lecturas');
+  chk('apagándolo NO se le pregunta a la base', lecturas===0, lecturas+' lecturas');
   chk('y devuelve exactamente la lista cableada',
       items.length===window.INSTRUCTOR_ITEMS_get().length &&
       items[0].text===window.INSTRUCTOR_ITEMS_get()[0].text,
@@ -220,8 +229,15 @@ const FILAS=[{ id:'tpl-1', checklist_template_items:[
       'flush → refresco');
   chk('las tres capas viven en una sola función',
       (html.match(/async function cargarConTresCapas\(/g)||[]).length===1);
-  chk('el interruptor está en cableado en el código que se despliega',
-      /let FUENTE_PLANTILLAS = 'cableado'/.test(html), 'la 3b lo pasa a base');
+  chk('el interruptor está en base en el código que se despliega',
+      /let FUENTE_PLANTILLAS = 'base'/.test(html), 'lo encendió la 3b el 09/10');
+  // Y la vuelta atrás tiene que seguir siendo UNA línea: nadie más que
+  // `cargarConTresCapas` puede mirar el interruptor, o apagarlo dejaría medio
+  // camino encendido.
+  chk('sólo cargarConTresCapas mira el interruptor',
+      (html.match(/FUENTE_PLANTILLAS !== 'base'/g)||[]).length===1 &&
+      (html.match(/FUENTE_PLANTILLAS/g)||[]).length===2,
+      (html.match(/FUENTE_PLANTILLAS/g)||[]).length+' menciones: la declaración y la comprobación');
 
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,400)); }
   process.exit(fail);

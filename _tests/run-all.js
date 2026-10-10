@@ -54,11 +54,12 @@ const MINIMOS = {
   'checklist-record-scope.test.js': 35,
   'checklist-record.test.js':       54,
   'dept-visibility.test.js':        29,
+  'etapa-3b-lista-por-tipo.test.js':25,
   'firmar-una-sola-vez.test.js':    26,
   'motivo-de-lo-que-falto.test.js': 31,
   'onboarding.test.js':             12,
   'plan-limits.test.js':            14,
-  'plantillas-tres-capas.test.js':  30,
+  'plantillas-tres-capas.test.js':  31,
   'signer.test.js':                 31,
   'trip-archive.test.js':           40,
 };

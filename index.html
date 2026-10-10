@@ -8441,7 +8441,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-09d');
+  console.info('[Seven Seas] build 2026-10-09e');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14565,7 +14565,18 @@ function INSTRUCTOR_ITEMS_get() { return INSTRUCTOR_ITEMS_I18N.map(i => ({ id: i
 // El costo aceptado (hablado con Fran el 07/10): si el dueño edita una lista,
 // la copia de la tripulación queda vieja hasta que alguien abra la app con
 // señal. Mejor una lista de la semana pasada que ninguna.
-let FUENTE_PLANTILLAS = 'cableado';   // 'cableado' | 'base' — la 3b lo pasa a 'base'
+// La 3b (09/10) lo pasó a 'base', y recién acá el interruptor hace algo: hasta
+// ese día el único código que lo miraba era `itemsDeInstructorParaTipo()`, a la
+// que **no la llamaba nadie**. Volver a `'cableado'` es la vuelta atrás, y
+// alcanza con esta línea: los cuatro lugares que piden la lista pasan por
+// `itemsDeLaSalida()`, que cae a lo cableado sin enterarse.
+//
+// Qué cambia al estar en `'base'`: la lista de preparación de una salida sale
+// de la plantilla de SU tipo de salida (16 tipos, ~12 ítems cada una) en vez de
+// una sola lista de buceo genérica para todos. Medido el 09/10: 44 de 51
+// salidas tienen plantilla; las otras 7 caen a lo cableado y nadie queda sin
+// lista.
+let FUENTE_PLANTILLAS = 'base';   // 'cableado' | 'base'
 
 // ─── Caché local ───
 //
@@ -14656,7 +14667,7 @@ async function refrescarProgresoVisible() {
     const { scopeKey } = instructorScope();
     const checks = await loadChecklistProgress(scopeKey, { forzar: true });
     instructorChecksByTrip[currentChecklistTripId] = checks;
-    renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), checks, 'toggleInstructor', null);
+    renderCheckItems('cl-instructor-items', itemsDeLaSalida(currentChecklistTripId), checks, 'toggleInstructor', null);
   }
 
   if (visible('cl-department')) {
@@ -14737,12 +14748,24 @@ function itemsDePlantilla(filas) {
   }));
 }
 
-// La lista de preparación de una salida, por tipo de salida.
-async function itemsDeInstructorParaTipo(tripTypeId) {
+// Las FILAS BILINGÜES de la plantilla de un tipo de salida, o null si no tiene.
+//
+// Una sola consulta, dos formas de pedirla: esta devuelve las filas y
+// `itemsDeInstructorParaTipo()` devuelve el texto ya resuelto. La 3b necesita
+// las filas porque guarda la lista de una salida en memoria para toda la
+// sesión, y guardar el texto resuelto congela el idioma — que es el error que
+// la 3a ya había cometido y arreglado una vez, con `cacheLocalGuardar`. Lo
+// volví a cometer en la primera versión de la 3b y lo agarró este test:
+// «la lista se muestra en el idioma actual».
+//
+// `cableado: () => null` en vez de la lista cableada: quien pide filas quiere
+// filas o nada. Traducir «no hay plantilla» a la lista cableada es trabajo de
+// quien muestra, no de quien lee.
+async function filasDePlantillaParaTipo(tripTypeId) {
   return cargarConTresCapas({
     nombreEnCache: `plantilla_tipo_${tripTypeId || 'sin_tipo'}`,
-    cableado: () => INSTRUCTOR_ITEMS_get(),
-    convertir: itemsDePlantilla,
+    cableado: () => null,
+    convertir: (filas) => filas,
     leerDeLaBase: async () => {
       if (!tripTypeId) return null;
       const { data, error } = await sb.from('checklist_templates')
@@ -14759,6 +14782,13 @@ async function itemsDeInstructorParaTipo(tripTypeId) {
         .sort((a, b) => a.order_index - b.order_index);
     }
   });
+}
+
+// La lista de preparación de una salida, por tipo de salida, con el texto ya
+// resuelto en el idioma de quien mira. Sin plantilla, la cableada.
+async function itemsDeInstructorParaTipo(tripTypeId) {
+  const filas = await filasDePlantillaParaTipo(tripTypeId);
+  return (filas && filas.length) ? itemsDePlantilla(filas) : INSTRUCTOR_ITEMS_get();
 }
 
 // One entry per department, each with up to four cadences (morning/eod/monthly/yearly).
@@ -15022,7 +15052,7 @@ async function loadTodaysTripList() {
   (allTypes || []).forEach(tt => { typeById[tt.id] = tt; });
 
   const { data: trips } = await tripsVigentes(
-      'id, trip_name, trip_time, trip_type, trip_types(name, num_tanks, needs_tank_count), participants(id, gear, group_id), trip_crew(staff(role)), trip_groups(id, trip_type_id)')
+      'id, trip_name, trip_time, trip_type, trip_type_id, trip_types(name, num_tanks, needs_tank_count), participants(id, gear, group_id), trip_crew(staff(role)), trip_groups(id, trip_type_id)')
     .eq('org_id', currentOrgId)
     .eq('trip_date', today)
     .order('trip_time');
@@ -15039,7 +15069,10 @@ async function loadTodaysTripList() {
     // se puede borrar. Se registra ACÁ, donde el nombre ya se resolvió con su
     // cadena de fallbacks, para que el acta diga exactamente lo mismo que vio
     // en pantalla quien firmó — y no una segunda versión del mismo cálculo.
-    checklistTripById[tr.id] = { name, date: today, time: tr.trip_time || null };
+    // `trip_type_id` entra acá por la etapa 3b: es la llave con la que se busca
+    // la plantilla de checklist de este tipo de salida.
+    checklistTripById[tr.id] = { name, date: today, time: tr.trip_time || null,
+                                 tripTypeId: tr.trip_type_id || null };
     const time = tr.trip_time?.slice(0,5) || '';
     const guests = (tr.participants || []).length;
 
@@ -15196,12 +15229,79 @@ function instructorScope() {
            meta: { role: 'instructor', periodKey, tripId: currentChecklistTripId } };
 }
 
+// ─── Etapa 3b · La lista de preparación sale del tipo de salida ───
+//
+// Lo que la 3a dejó sin hacer: el camino de tres capas estaba construido y
+// probado, y `itemsDeInstructorParaTipo()` **no la llamaba nadie**. Esto la
+// conecta.
+//
+// El problema de forma: los cuatro lugares que dibujan o firman piden la lista
+// de manera SINCRÓNICA, y leerla de la base es asíncrono. La salida no es
+// volver async a los cuatro —serían cuatro ediciones y un hueco donde me
+// olvide— sino resolverla UNA vez por salida y guardarla acá.
+// Guarda las FILAS BILINGÜES, no el texto resuelto, o el centinela
+// `'cableado'`. Guardar el texto resuelto congela el idioma: la primera versión
+// de la 3b lo hacía y el test la agarró — es el mismo error que la 3a ya había
+// arreglado para la caché de `localStorage`. El idioma es de quien mira, no de
+// cuando se resolvió la lista.
+//
+// Tres estados, y los tres hacen falta:
+//   undefined    → todavía no se resolvió
+//   'cableado'   → se resolvió y este tipo NO tiene plantilla
+//   [filas]      → se resolvió y tiene plantilla
+// Sin el centinela, una salida sin plantilla volvería a consultar en cada
+// dibujo, que es justo lo que «una sola vez» evita.
+const instructorItemsByTrip = {};
+
+// La lista de ESTA salida, sincrónico. Es lo que piden los cuatro lugares, y el
+// idioma se resuelve acá, en cada lectura.
+//
+// Si todavía no se resolvió, devuelve la cableada: nunca se dibuja una lista
+// vacía. Es la capa 3 del camino de tres capas, y por eso se puede conectar
+// esto sin que nadie se quede sin lista en un barco.
+function itemsDeLaSalida(tripId) {
+  const guardado = instructorItemsByTrip[tripId || currentChecklistTripId];
+  return (Array.isArray(guardado) && guardado.length)
+    ? itemsDePlantilla(guardado)
+    : INSTRUCTOR_ITEMS_get();
+}
+
+// Resuelve la lista de una salida **una sola vez**, y no la vuelve a tocar.
+//
+// Lo de «una sola vez» es la parte importante y no es una optimización: los ids
+// de ítem son la llave con la que se guardan los tildes. Los de la lista
+// cableada son posicionales ('0', '1', …) y los de plantilla son uuid. Si una
+// salida resolviera su lista en cada dibujo, un corte de red a mitad de la
+// mañana la haría pasar de uuid a posicional y **todos los tildes de la
+// tripulación se verían perdidos** — están guardados con la otra llave.
+//
+// Así que la lista de una salida se fija al abrirla y se mantiene mientras la
+// sesión dure. Recargar la página es lo que la vuelve a resolver, y ahí la
+// instancia arranca de cero igual.
+async function fijarItemsDeLaSalida(tripId) {
+  if (!tripId || instructorItemsByTrip[tripId]) return itemsDeLaSalida(tripId);
+  const salida = checklistTripById[tripId] || null;
+  const filas = await filasDePlantillaParaTipo(salida && salida.tripTypeId);
+  // **La caída a lo cableado también se guarda**, con el centinela. No es
+  // pereza: si no se guardara, una salida sin plantilla volvería a consultar en
+  // cada dibujo, y el día que la plantilla apareciera —alguien activa la
+  // categoría a media mañana— la lista pasaría de posiciones a uuid con la
+  // tripulación tildando. Los tildes están guardados con la llave vieja, así
+  // que se verían todos perdidos.
+  //
+  // O sea: para una salida abierta, **estabilidad le gana a frescura**. Recargar
+  // la página es lo que vuelve a resolver, y ahí la instancia arranca de cero.
+  instructorItemsByTrip[tripId] = (filas && filas.length) ? filas : 'cableado';
+  return itemsDeLaSalida(tripId);
+}
+
 async function toggleInstructor(id) {
   if (!currentChecklistTripId) return;
   const { scopeKey, meta } = instructorScope();
   const checks = instructorChecksByTrip[currentChecklistTripId] = progressCache[scopeKey] || {};
+  const items = itemsDeLaSalida(currentChecklistTripId);
   await marcarTilde({ scopeKey, meta, itemId: id, checks,
-    dibujar: () => renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), checks, 'toggleInstructor', null) });
+    dibujar: () => renderCheckItems('cl-instructor-items', items, checks, 'toggleInstructor', null) });
 }
 
 // Loads a fresh, trip-specific checklist -- each trip today keeps its own
@@ -15209,10 +15309,14 @@ async function toggleInstructor(id) {
 // sign-off that already exists for this trip so switching back to a trip
 // someone already signed off doesn't show a misleading "Pending".
 async function renderInstructorChecklistForTrip(tripId) {
+  // La lista de ESTA salida, resuelta antes de dibujar y una sola vez. Tiene
+  // que venir primero: los tildes se leen indexados por id de ítem, y los ids
+  // dependen de qué lista sea.
+  const items = await fijarItemsDeLaSalida(tripId);
   // Lo que ya esté tildado por otro, o por uno mismo en otro dispositivo.
   const periodKey = periodKeyForCadence(null, tripId);
   instructorChecksByTrip[tripId] = await loadChecklistProgress(progressScopeKey('instructor', periodKey));
-  renderCheckItems('cl-instructor-items', INSTRUCTOR_ITEMS_get(), instructorChecksByTrip[tripId], 'toggleInstructor', null);
+  renderCheckItems('cl-instructor-items', items, instructorChecksByTrip[tripId], 'toggleInstructor', null);
   const doneBanner = document.getElementById('cl-instructor-done');
   doneBanner.style.display = 'none';
   const status = document.getElementById('cl-instructor-status');
@@ -16088,7 +16192,9 @@ function readSigner(selectId) {
 async function instructorSignOff() {
   if (!currentChecklistTripId) { await showAlertModal(t('cl_select_trip_first')); return; }
   const signer = readSigner('cl-instructor-name');
-  const instructorItems = INSTRUCTOR_ITEMS_get();
+  // La MISMA lista que se dibujó y se tildó. Pedirla de nuevo a la fuente
+  // cableada acá haría que el acta guardara ítems que nadie vio.
+  const instructorItems = itemsDeLaSalida(currentChecklistTripId);
   const checks = instructorChecksByTrip[currentChecklistTripId] || {};
   const done = instructorItems.filter(i => checks[i.id]).length;
   if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
