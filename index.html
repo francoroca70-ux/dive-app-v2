@@ -4785,6 +4785,23 @@ const TRANSLATIONS = {
     set_click_to_deactivate: 'Click to deactivate this category', set_deactivate_category_btn: 'Deactivate category',
     set_removing_category_confirm: 'Deactivate <strong>{cat}</strong>? It will drop off this list. Its existing trip types, gear, and checklists stay exactly as they are and can still be managed individually — this only affects whether the category shows as active here. Owner only.',
     set_no_trip_types_yet: 'No trip types yet. Select an operation category above to get started.',
+    prep_btn: 'Prep checklist', prep_header: 'Trip prep checklist',
+    prep_desc: 'This is the list the crew works through before this trip goes out. Edit the wording, add what you check that nobody else does, retire what does not apply to your operation.',
+    prep_read_only: 'Only the owner or a manager can edit this list.',
+    prep_count: '{n} items on the list',
+    prep_none_yet: 'This trip type has no list of its own yet, so the crew sees the generic dive list. Give it its own.',
+    prep_seed_from_standard: 'Start from the standard list', prep_start_blank: 'Start from scratch',
+    prep_first_item: 'First item — change this text',
+    prep_new_ph: 'Add an item…', prep_add: 'Add',
+    prep_move_up: 'Move up', prep_move_down: 'Move down', prep_retire: 'Retire this item',
+    prep_retire_confirm: 'Retire this item? It comes off the list for future trips. Checklists already signed keep it, exactly as they were signed.',
+    prep_cannot_empty: 'A list cannot be left with no items. With an empty list the crew would be shown the generic dive list instead, with no warning. Edit this item, or add another one before retiring it.',
+    prep_retired_header: 'Retired ({n})', prep_restore: 'Put back',
+    prep_retired_note: 'A retired item is not deleted: the checklists that were signed with it keep it.',
+    prep_one_lang_badge: '1 lang', prep_other_lang_missing: 'Written in one language only. Anyone using the app in the other language sees this same text.',
+    prep_empty_text: 'An item needs text. To take it off the list, use the ✕ button — that keeps it on the checklists already signed.',
+    prep_load_error: 'Could not load this list.',
+    prep_seed_error: 'There is no standard list for this trip type. Start from scratch instead.',
     set_tanks_plural: ' tanks', set_tank_singular: ' tank',
     set_can_be_private: ' · can be private', set_multi_day_suffix: ' · multi-day',
     set_rental_fees_btn: 'Rental fees',
@@ -5511,6 +5528,23 @@ const TRANSLATIONS = {
     set_click_to_deactivate: 'Tocá para desactivar esta categoría', set_deactivate_category_btn: 'Desactivar categoría',
     set_removing_category_confirm: '¿Desactivar <strong>{cat}</strong>? Desaparecerá de esta lista. Sus tipos de salida, equipo y checklists existentes se mantienen tal cual y se siguen pudiendo gestionar individualmente — esto solo afecta si la categoría aparece como activa acá. Solo para el propietario.',
     set_no_trip_types_yet: 'Aún no hay tipos de salida. Selecciona una categoría de operación arriba para empezar.',
+    prep_btn: 'Lista de preparación', prep_header: 'Lista de preparación de la salida',
+    prep_desc: 'Es la lista que la tripulación recorre antes de que salga esta salida. Cambia el texto, agrega lo que revisan ustedes y nadie más, retira lo que no aplica a tu operación.',
+    prep_read_only: 'Sólo el dueño o un encargado puede editar esta lista.',
+    prep_count: '{n} ítems en la lista',
+    prep_none_yet: 'Este tipo de salida todavía no tiene su propia lista, así que la tripulación ve la lista genérica de buceo. Dale la suya.',
+    prep_seed_from_standard: 'Arrancar de la lista estándar', prep_start_blank: 'Arrancar de cero',
+    prep_first_item: 'Primer ítem — cambia este texto',
+    prep_new_ph: 'Agregar un ítem…', prep_add: 'Agregar',
+    prep_move_up: 'Subir', prep_move_down: 'Bajar', prep_retire: 'Retirar este ítem',
+    prep_retire_confirm: '¿Retirar este ítem? Sale de la lista para las próximas salidas. Las checklists ya firmadas lo conservan, tal como se firmaron.',
+    prep_cannot_empty: 'Una lista no puede quedar sin ningún ítem. Con la lista vacía, a la tripulación se le mostraría la lista genérica de buceo en su lugar, sin ningún aviso. Edita este ítem, o agrega otro antes de retirarlo.',
+    prep_retired_header: 'Retirados ({n})', prep_restore: 'Devolver',
+    prep_retired_note: 'Un ítem retirado no se borra: las checklists que se firmaron con él lo conservan.',
+    prep_one_lang_badge: '1 idioma', prep_other_lang_missing: 'Escrito en un solo idioma. Quien use la app en el otro idioma ve este mismo texto.',
+    prep_empty_text: 'Un ítem necesita texto. Para sacarlo de la lista usa el botón ✕ — así se conserva en las checklists ya firmadas.',
+    prep_load_error: 'No se pudo cargar esta lista.',
+    prep_seed_error: 'No hay lista estándar para este tipo de salida. Arranca de cero.',
     set_tanks_plural: ' tanques', set_tank_singular: ' tanque',
     set_can_be_private: ' · puede ser privada', set_multi_day_suffix: ' · varios días',
     set_rental_fees_btn: 'Tarifas de alquiler',
@@ -8445,7 +8479,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-11a');
+  console.info('[Seven Seas] build 2026-10-11b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -14620,6 +14654,21 @@ function cacheLocalLeer(nombre) {
   }
 }
 
+// Tirar una copia guardada. La necesita quien ESCRIBE: sin esto, un centro
+// edita su lista de preparación y sigue viendo la vieja, porque
+// `cargarConTresCapas` prefiere la base pero deja la copia local intacta y la
+// usa en cuanto se cae la señal. Una caché sin forma de invalidarla es una
+// caché que miente en cuanto el dato cambia.
+function cacheLocalBorrar(nombre) {
+  try {
+    localStorage.removeItem(cacheLocalClave(nombre));
+    return true;
+  } catch (e) {
+    console.warn('[CACHE] no se pudo borrar', nombre, e);
+    return false;
+  }
+}
+
 // ─── Refresco mientras la checklist está abierta ───
 //
 // El caso que esto resuelve, en palabras de Fran: tres personas cargando el
@@ -14765,9 +14814,17 @@ function itemsDePlantilla(filas) {
 // `cableado: () => null` en vez de la lista cableada: quien pide filas quiere
 // filas o nada. Traducir «no hay plantilla» a la lista cableada es trabajo de
 // quien muestra, no de quien lee.
+// El nombre de la copia local de la plantilla de un tipo. Vive acá y no
+// incrustado en la consulta porque desde la etapa 4 hay DOS lados que lo
+// necesitan: el que lee y el que invalida al guardar una edición. Un nombre de
+// caché escrito dos veces es una invalidación que algún día no coincide.
+function nombreEnCacheDePlantilla(tripTypeId) {
+  return `plantilla_tipo_${tripTypeId || 'sin_tipo'}`;
+}
+
 async function filasDePlantillaParaTipo(tripTypeId) {
   return cargarConTresCapas({
-    nombreEnCache: `plantilla_tipo_${tripTypeId || 'sin_tipo'}`,
+    nombreEnCache: nombreEnCacheDePlantilla(tripTypeId),
     cableado: () => null,
     convertir: (filas) => filas,
     leerDeLaBase: async () => {
@@ -15870,7 +15927,14 @@ async function hayRedDeVerdad() {
 // Y lo importante para un centro de buceo: el motivo traducido. Un
 // `23503 foreign_key_violation` no le dice nada a nadie; «tiene historia
 // asociada» sí, y es justo la conversación de archivar en vez de borrar.
-async function motivoDeFalloAlBorrar(error) {
+// Por qué falló una escritura, en palabras. Se llamaba `motivoDeFalloAlBorrar`
+// hasta el 11/10: el nombre decía «borrar» pero la lógica nunca fue de borrar,
+// es de cualquier rechazo del servidor. Se renombró al sumarse el editor de
+// plantillas, que la necesita igual — y antes de eso cada lugar inventaba su
+// propio cartel. El caso que lo hizo evidente está medido: un rol por debajo de
+// encargado recibe **42501** al tocar un ítem de plantilla, y el cartel genérico
+// le decía «revisá la conexión», que es el motivo equivocado.
+async function motivoDeFalloAlEscribir(error) {
   // La red primero: si nunca llegamos, el código de Postgres no significa nada.
   if (pareceFalloDeRed(error) || !(await hayRedDeVerdad())) return t('del_sin_conexion');
   if (error.code === '23503') return t('del_tiene_historia');
@@ -15885,7 +15949,7 @@ async function borrarOAvisar(consulta) {
   const { error } = await consulta;
   if (!error) return true;
   console.error('[BORRAR] falló:', error);
-  await showAlertModal(await motivoDeFalloAlBorrar(error));
+  await showAlertModal(await motivoDeFalloAlEscribir(error));
   return false;
 }
 
@@ -16030,7 +16094,7 @@ async function clearChecklistProgress(scopeKey, { avisarSiFalla = false } = {}) 
     .eq('org_id', currentOrgId).eq('scope_key', scopeKey);
   if (error) {
     console.warn('[CHECKLIST] no se pudo limpiar el trabajo en curso', error);
-    if (avisarSiFalla) await showAlertModal(await motivoDeFalloAlBorrar(error));
+    if (avisarSiFalla) await showAlertModal(await motivoDeFalloAlEscribir(error));
     return false;
   }
   return true;
@@ -19611,6 +19675,7 @@ async function renderTripTypesList() {
         <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleGearFieldsPanel('${tt.id}')">${t('set_gear_fields_btn')}</button>
         <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRentalFees('${tt.id}')">${t('set_rental_fees_btn')}</button>
         <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="toggleRequiredWaivers('${tt.id}')">${t('set_required_waivers_btn')}</button>
+        <button class="btn-cancel" style="font-size:0.75rem;padding:6px 10px;" onclick="togglePrepChecklist('${tt.id}')">${t('prep_btn')}</button>
         <button class="btn-icon danger" onclick="deactivateTripType('${tt.id}')">${t('fleet_remove')}</button>
       </div>
     </div>
@@ -19623,6 +19688,7 @@ async function renderTripTypesList() {
     <div id="gear-fields-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     <div id="rental-fees-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     <div id="required-waivers-${tt.id}" style="display:none;margin:6px 0 0;"></div>
+    <div id="prep-checklist-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     </div>
   `).join('');
 }
@@ -19713,6 +19779,370 @@ async function updateTripTypePrice(id, value, inputEl) {
     inputEl.style.borderColor = 'var(--success, #2f855a)';
     setTimeout(() => { inputEl.style.borderColor = ''; }, 800);
   }
+}
+
+// ─── Etapa 4 · Editar la lista de preparación de un tipo de salida ───
+//
+// Lo que la etapa 2 había dejado a medias: las semillas se COPIAN a cada centro
+// precisamente para que el centro pueda cambiar su copia, y hasta hoy nada en
+// la app insertaba ni actualizaba `checklist_template_items`. Un centro recibía
+// 22 ítems y no podía tocar ninguno.
+//
+// Tres reglas que no son preferencias, son consecuencias medidas:
+//
+// 1 · RETIRAR, NUNCA BORRAR. El id de un ítem es la llave con la que se
+//     guardan los tildes (`checklist_progress.item_id`) y con la que quedan
+//     escritos en las actas. Borrar una fila deja tildes y actas apuntando a
+//     nada; `active = false` la saca de la lista y deja la historia intacta.
+//     El lector ya filtra `active !== false` desde la 3a — este editor no
+//     necesitó cambiarle una línea.
+//
+// 2 · SE EDITA EL IDIOMA DE QUIEN MIRA Y EL OTRO NO SE TOCA. El CHECK
+//     `checklist_template_items_con_texto` exige UNO de los dos, no los dos, y
+//     `itemsDePlantilla()` ya cae al otro idioma si el elegido está vacío. Un
+//     centro en Tailandia escribe en inglés y nunca va a llenar el español;
+//     pedirle los dos campos sería pedirle trabajo para nadie. Cuando el otro
+//     idioma falta se avisa, no se bloquea.
+//
+// 3 · NO SE PUEDE QUEDAR SIN NINGÚN ÍTEM ACTIVO. Medido: con cero activos
+//     `filasDePlantillaParaTipo()` devuelve vacío, `cargarConTresCapas()` no
+//     cachea un vacío y cae a la lista CABLEADA. El centro vaciaría su lista y
+//     en el barco vería OTRA lista, la genérica de buceo, sin ningún aviso.
+//     Es el mismo tipo de trampa que mostrar un acta sin dar salida.
+//
+// Y el editor NO reutiliza el camino de tres capas para leer: va derecho a la
+// base. Editar sobre una copia cacheada —o peor, sobre la cableada— sería
+// editar algo que no es lo que está guardado.
+
+// Un solo lugar decide quién edita plantillas, y dice lo mismo que RLS.
+//
+// Medido: las 43 plantillas tienen `created_by = NULL` (las sembró el
+// disparador, no una persona), así que las políticas de UPDATE y DELETE caen en
+// la rama del rol: owner o manager. Si la pantalla ofreciera el botón a un
+// marinero, el servidor lo rechazaría en silencio — un botón que no puede
+// funcionar es peor que ningún botón.
+function puedeEditarPlantillas() {
+  return ['owner', 'manager'].includes(currentUserRole);
+}
+
+// La plantilla de un tipo, SIN caché y SIN caída a lo cableado. Trae también
+// los ítems retirados, que el editor muestra aparte para poder devolverlos.
+async function plantillaDeTipoParaEditar(tripTypeId) {
+  const { data, error } = await sb.from('checklist_templates')
+    .select('id, title, checklist_template_items(id, order_index, text_en, text_es, active)')
+    .eq('org_id', currentOrgId).eq('trip_type_id', tripTypeId)
+    .eq('scope', 'trip_type').eq('active', true).limit(1);
+  if (error) throw error;
+  const plantilla = (data || [])[0];
+  if (!plantilla) return null;
+  const items = (plantilla.checklist_template_items || [])
+    .sort((a, b) => (a.order_index - b.order_index) || String(a.id).localeCompare(String(b.id)));
+  return { id: plantilla.id, title: plantilla.title, items };
+}
+
+// Después de cada escritura: tirar la copia local y redibujar el panel. Un solo
+// lugar, porque son cinco caminos de edición y el que se olvide de invalidar
+// deja al centro mirando su lista vieja.
+//
+// `instructorItemsByTrip` NO se toca a propósito: una salida que ya resolvió su
+// lista la conserva hasta recargar. Es la regla de la 3b — para una salida
+// abierta, estabilidad le gana a frescura — y acá importa igual: si la
+// tripulación está tildando y el dueño edita la plantilla desde la oficina,
+// cambiarle la lista debajo movería la llave de los tildes.
+async function trasEditarPlantilla(tripTypeId) {
+  cacheLocalBorrar(nombreEnCacheDePlantilla(tripTypeId));
+  await dibujarPanelDePreparacion(tripTypeId);
+}
+
+async function togglePrepChecklist(tripTypeId) {
+  const panel = document.getElementById('prep-checklist-' + tripTypeId);
+  if (!panel) return;
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  await dibujarPanelDePreparacion(tripTypeId);
+}
+
+async function dibujarPanelDePreparacion(tripTypeId) {
+  const panel = document.getElementById('prep-checklist-' + tripTypeId);
+  if (!panel) return;
+  panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);">${t('common_loading')}</p>`;
+
+  const tt = (window._settingsTripTypes || []).find(x => x.id === tripTypeId);
+  let plantilla = null;
+  try {
+    plantilla = await plantillaDeTipoParaEditar(tripTypeId);
+  } catch (e) {
+    console.warn('[PLANTILLAS] no se pudo leer la plantilla para editar', e);
+    panel.innerHTML = `<p style="font-size:0.8rem;color:var(--danger,#c53030);padding:4px 0 12px;">${t('prep_load_error')}</p>`;
+    return;
+  }
+
+  const cab = (texto) => `<div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">${texto}</div>`;
+
+  // Sin plantilla: el hueco que Fran midió — un centro puede crear salidas de
+  // una categoría que nunca activó, y las semillas se copian al activarla, así
+  // que esos tipos quedan con cero ítems y en el barco sale la lista cableada.
+  // Desde acá se arranca de la lista estándar o de cero.
+  if (!plantilla) {
+    const haySemillas = await haySemillasParaTipo(tt);
+    panel.innerHTML = `
+      <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
+        ${cab(t('prep_header'))}
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">${t('prep_none_yet')}</p>
+        ${puedeEditarPlantillas() ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${haySemillas ? `<button class="btn-primary" style="font-size:0.78rem;padding:7px 12px;" onclick="arrancarDeLaListaEstandar('${tripTypeId}')">${t('prep_seed_from_standard')}</button>` : ''}
+            <button class="btn-cancel" style="font-size:0.78rem;padding:7px 12px;" onclick="arrancarListaVacia('${tripTypeId}')">${t('prep_start_blank')}</button>
+          </div>
+        ` : `<p style="font-size:0.78rem;color:var(--muted);">${t('prep_read_only')}</p>`}
+      </div>
+    `;
+    return;
+  }
+
+  const activos = plantilla.items.filter(i => i.active !== false);
+  const retirados = plantilla.items.filter(i => i.active === false);
+  const puede = puedeEditarPlantillas();
+  const otroIdioma = currentLanguage === 'es' ? 'text_en' : 'text_es';
+
+  panel.innerHTML = `
+    <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
+      ${cab(t('prep_header'))}
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">${puede ? t('prep_desc') : t('prep_read_only')}</p>
+
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">${t('prep_count').replace('{n}', activos.length)}</div>
+
+      ${activos.map((it, idx) => `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="font-size:0.72rem;color:var(--muted);min-width:1.4em;text-align:right;">${idx + 1}</span>
+          <input class="sf-input" type="text" style="margin-bottom:0;flex:1;font-size:0.85rem;"
+            value="${escapeHtml(textoDeItemEnMiIdioma(it))}" ${puede ? '' : 'disabled'}
+            onchange="guardarTextoDeItem('${tripTypeId}', '${it.id}', this.value, this)">
+          ${!it[otroIdioma] ? `<span title="${t('prep_other_lang_missing')}" style="font-size:0.7rem;color:var(--muted);">${t('prep_one_lang_badge')}</span>` : ''}
+          ${puede ? `
+            <button class="btn-icon" ${idx === 0 ? 'disabled' : ''} title="${t('prep_move_up')}"
+              onclick="moverItemDePlantilla('${tripTypeId}', '${it.id}', -1)">↑</button>
+            <button class="btn-icon" ${idx === activos.length - 1 ? 'disabled' : ''} title="${t('prep_move_down')}"
+              onclick="moverItemDePlantilla('${tripTypeId}', '${it.id}', 1)">↓</button>
+            <button class="btn-icon danger" title="${t('prep_retire')}"
+              onclick="retirarItemDePlantilla('${tripTypeId}', '${it.id}', ${activos.length})">✕</button>
+          ` : ''}
+        </div>
+      `).join('')}
+
+      ${puede ? `
+        <div style="display:flex;gap:6px;margin-top:10px;">
+          <input class="sf-input" type="text" id="prep-new-${tripTypeId}" style="margin-bottom:0;flex:1;font-size:0.85rem;"
+            placeholder="${t('prep_new_ph')}"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();agregarItemDePlantilla('${tripTypeId}');}">
+          <button class="btn-primary" style="font-size:0.78rem;padding:7px 12px;" onclick="agregarItemDePlantilla('${tripTypeId}')">${t('prep_add')}</button>
+        </div>
+      ` : ''}
+
+      ${retirados.length ? `
+        <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border,#dde);">
+          <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;">${t('prep_retired_header').replace('{n}', retirados.length)}</div>
+          ${retirados.map(it => `
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <span style="flex:1;font-size:0.82rem;color:var(--muted);text-decoration:line-through;">${escapeHtml(textoDeItemEnMiIdioma(it))}</span>
+              ${puede ? `<button class="btn-cancel" style="font-size:0.72rem;padding:4px 8px;" onclick="devolverItemDePlantilla('${tripTypeId}', '${it.id}')">${t('prep_restore')}</button>` : ''}
+            </div>
+          `).join('')}
+          <p style="font-size:0.72rem;color:var(--muted);margin-top:6px;">${t('prep_retired_note')}</p>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+// El texto de un ítem en el idioma de quien mira, cayendo al otro si falta.
+// Misma regla que `itemsDePlantilla()`, que es la que dibuja en el barco: si el
+// editor resolviera distinto, un centro editaría una línea y vería otra.
+function textoDeItemEnMiIdioma(it) {
+  return (currentLanguage === 'es' ? it.text_es : it.text_en) || it.text_en || it.text_es || '';
+}
+
+async function haySemillasParaTipo(tt) {
+  if (!tt || !tt.category || !tt.name) return false;
+  const { data, error } = await sb.from('checklist_seeds')
+    .select('id').eq('category', tt.category).eq('trip_type_name', tt.name).limit(1);
+  if (error) { console.warn('[PLANTILLAS] no se pudieron leer las semillas', error); return false; }
+  return !!(data || []).length;
+}
+
+// Crea la plantilla del tipo copiando la lista estándar. Se copia desde el
+// cliente y no llamando a `sembrar_checklists_de_categoria()`: el EXECUTE de esa
+// función está revocado para `authenticated` (sólo postgres y service_role), y
+// `checklist_seeds` tiene política de SELECT, así que el camino honesto es leer
+// las semillas y escribir la copia.
+//
+// Una semilla corregida mañana no cambia lo que este centro recibió hoy, y eso
+// es lo correcto: desde el momento de la copia la lista es del centro.
+async function arrancarDeLaListaEstandar(tripTypeId) {
+  const tt = (window._settingsTripTypes || []).find(x => x.id === tripTypeId);
+  if (!tt) return;
+  const { data: semillas, error: errSem } = await sb.from('checklist_seeds')
+    .select('order_index, text_en, text_es')
+    .eq('category', tt.category).eq('trip_type_name', tt.name).order('order_index');
+  if (errSem || !(semillas || []).length) {
+    await showAlertModal(t('prep_seed_error'));
+    return;
+  }
+  const plantilla = await crearPlantillaVacia(tripTypeId, tt);
+  if (!plantilla) return;
+  const { error } = await sb.from('checklist_template_items').insert(
+    semillas.map(s => ({ template_id: plantilla, order_index: s.order_index, text_en: s.text_en, text_es: s.text_es }))
+  );
+  if (error) { await showAlertModal(await motivoDeFalloAlEscribir(error)); return; }
+  await trasEditarPlantilla(tripTypeId);
+}
+
+async function arrancarListaVacia(tripTypeId) {
+  const tt = (window._settingsTripTypes || []).find(x => x.id === tripTypeId);
+  if (!tt) return;
+  // Un primer ítem, no una plantilla de cero: una plantilla sin ítems activos
+  // devuelve la lista cableada en el barco, que es justo la confusión que este
+  // editor viene a terminar.
+  const plantilla = await crearPlantillaVacia(tripTypeId, tt);
+  if (!plantilla) return;
+  const { error } = await sb.from('checklist_template_items').insert({
+    template_id: plantilla, order_index: 0,
+    text_en: currentLanguage === 'es' ? null : t('prep_first_item'),
+    text_es: currentLanguage === 'es' ? t('prep_first_item') : null
+  });
+  if (error) { await showAlertModal(await motivoDeFalloAlEscribir(error)); return; }
+  await trasEditarPlantilla(tripTypeId);
+}
+
+// `is_system_default` queda en false: esta plantilla la creó el centro, no la
+// siembra. No cambia permisos (los dos caminos de RLS miran rol y created_by),
+// pero es el único registro de de dónde salió una lista.
+async function crearPlantillaVacia(tripTypeId, tt) {
+  const { data, error } = await sb.from('checklist_templates').insert({
+    org_id: currentOrgId, scope: 'trip_type', trip_type_id: tripTypeId,
+    cadence: 'per_trip', title: tt.name, is_system_default: false,
+    created_by: currentUserId || null
+  }).select('id').single();
+  if (error || !data) {
+    console.warn('[PLANTILLAS] no se pudo crear la plantilla', error);
+    await showAlertModal(await motivoDeFalloAlEscribir(error));
+    return null;
+  }
+  return data.id;
+}
+
+async function guardarTextoDeItem(tripTypeId, itemId, valor, inputEl) {
+  const texto = (valor || '').trim();
+  if (!texto) {
+    // El CHECK de la base exige que quede texto en al menos un idioma. Vaciar
+    // el campo es casi siempre un dedo, no una intención: se repone y se avisa
+    // cuál es la salida de verdad.
+    await showAlertModal(t('prep_empty_text'));
+    await dibujarPanelDePreparacion(tripTypeId);
+    return;
+  }
+  const campo = currentLanguage === 'es' ? 'text_es' : 'text_en';
+  const { error } = await sb.from('checklist_template_items')
+    .update({ [campo]: texto }).eq('id', itemId);
+  if (error) {
+    console.warn('[PLANTILLAS] no se pudo guardar el texto', error);
+    await showAlertModal(await motivoDeFalloAlEscribir(error));
+    await dibujarPanelDePreparacion(tripTypeId);
+    return;
+  }
+  cacheLocalBorrar(nombreEnCacheDePlantilla(tripTypeId));
+  if (inputEl) {
+    inputEl.style.borderColor = 'var(--success, #2f855a)';
+    setTimeout(() => { inputEl.style.borderColor = ''; }, 800);
+  }
+}
+
+async function agregarItemDePlantilla(tripTypeId) {
+  const input = document.getElementById('prep-new-' + tripTypeId);
+  const texto = ((input && input.value) || '').trim();
+  if (!texto) return;
+  const plantilla = await plantillaDeTipoParaEditar(tripTypeId);
+  if (!plantilla) return;
+  const ultimo = plantilla.items.reduce((m, i) => Math.max(m, i.order_index || 0), -1);
+  const { error } = await sb.from('checklist_template_items').insert({
+    template_id: plantilla.id, order_index: ultimo + 1,
+    text_en: currentLanguage === 'es' ? null : texto,
+    text_es: currentLanguage === 'es' ? texto : null
+  });
+  if (error) {
+    console.warn('[PLANTILLAS] no se pudo agregar el ítem', error);
+    await showAlertModal(await motivoDeFalloAlEscribir(error));
+    return;
+  }
+  await trasEditarPlantilla(tripTypeId);
+}
+
+// Retirar, no borrar. El id es la llave de los tildes y de lo que quedó escrito
+// en las actas; una fila borrada deja ambas cosas apuntando a nada.
+async function retirarItemDePlantilla(tripTypeId, itemId, activosAhora) {
+  if (activosAhora <= 1) {
+    // Sin ningún ítem activo, en el barco sale la lista CABLEADA y nadie se
+    // entera. Se niega el último antes que dejar esa trampa.
+    await showAlertModal(t('prep_cannot_empty'));
+    return;
+  }
+  if (!(await showConfirmModal(t('prep_retire_confirm')))) return;
+  const { error } = await sb.from('checklist_template_items')
+    .update({ active: false }).eq('id', itemId);
+  if (error) {
+    console.warn('[PLANTILLAS] no se pudo retirar el ítem', error);
+    await showAlertModal(await motivoDeFalloAlEscribir(error));
+    return;
+  }
+  await trasEditarPlantilla(tripTypeId);
+}
+
+async function devolverItemDePlantilla(tripTypeId, itemId) {
+  const { error } = await sb.from('checklist_template_items')
+    .update({ active: true }).eq('id', itemId);
+  if (error) {
+    console.warn('[PLANTILLAS] no se pudo devolver el ítem', error);
+    await showAlertModal(await motivoDeFalloAlEscribir(error));
+    return;
+  }
+  await trasEditarPlantilla(tripTypeId);
+}
+
+// Mover intercambia el `order_index` con el vecino ACTIVO, no con el de al lado
+// en la tabla: los retirados conservan su índice y saltearlos es lo que hace
+// que la flecha mueva un lugar y no dos.
+async function moverItemDePlantilla(tripTypeId, itemId, direccion) {
+  const plantilla = await plantillaDeTipoParaEditar(tripTypeId);
+  if (!plantilla) return;
+  const activos = plantilla.items.filter(i => i.active !== false);
+  const i = activos.findIndex(x => String(x.id) === String(itemId));
+  const j = i + direccion;
+  if (i < 0 || j < 0 || j >= activos.length) return;
+
+  const a = activos[i], b = activos[j];
+  // Dos order_index iguales dejarían el orden a merced del desempate, así que
+  // si la siembra dejó repetidos se reescribe la lista entera, 0..n-1, una vez.
+  const hayRepetidos = new Set(activos.map(x => x.order_index)).size !== activos.length;
+  const reordenada = activos.slice();
+  reordenada[i] = b; reordenada[j] = a;
+
+  const escrituras = hayRepetidos
+    ? reordenada.map((x, idx) => sb.from('checklist_template_items').update({ order_index: idx }).eq('id', x.id))
+    : [
+        sb.from('checklist_template_items').update({ order_index: b.order_index }).eq('id', a.id),
+        sb.from('checklist_template_items').update({ order_index: a.order_index }).eq('id', b.id)
+      ];
+
+  for (const esc of escrituras) {
+    const { error } = await esc;
+    if (error) {
+      console.warn('[PLANTILLAS] no se pudo reordenar', error);
+      await showAlertModal(await motivoDeFalloAlEscribir(error));
+      await trasEditarPlantilla(tripTypeId);
+      return;
+    }
+  }
+  await trasEditarPlantilla(tripTypeId);
 }
 
 async function toggleRentalFees(tripTypeId) {

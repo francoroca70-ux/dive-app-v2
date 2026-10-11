@@ -102,7 +102,7 @@ const consulta=(error)=>Promise.resolve({error});
       envueltos >= 25, envueltos+' envueltos');
   chk('la regla vive en una sola función',
       (html.match(/async function borrarOAvisar\(/g)||[]).length===1 &&
-      (html.match(/async function motivoDeFalloAlBorrar\(/g)||[]).length===1);
+      (html.match(/async function motivoDeFalloAlEscribir\(/g)||[]).length===1);
 
   // Las secuencias de varios borrados tienen que CORTAR al primer fallo: eso
   // es lo que dejaba estados a medias.

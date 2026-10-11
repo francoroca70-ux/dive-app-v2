@@ -1,0 +1,457 @@
+// Etapa 4 — el centro edita su lista de preparación.
+//
+//   node _tests/run-all.js      (preferido)
+//   node _tests/editor-de-plantillas.test.js
+//
+// Qué cierra esta etapa: la 2 copió las semillas a cada centro PRECISAMENTE
+// para que el centro pudiera cambiar su copia, y hasta el 11/10 nada en la app
+// insertaba ni actualizaba `checklist_template_items`. Medido contra la base:
+// 43 plantillas, 711 ítems, **0 retirados** — la columna `active` existía sin
+// que nada la usara nunca.
+//
+// LAS DOS COMPROBACIONES QUE MÁS IMPORTAN, y por qué:
+//
+// 1 · RETIRAR ES `active = false`, NUNCA UN DELETE. El id de un ítem es la
+//     llave con la que se guardan los tildes (`checklist_progress.item_id`) y
+//     con la que quedan escritos en `items_snapshot` de cada acta. Una fila
+//     borrada deja tildes vivos y actas firmadas apuntando a nada. Un acta es
+//     un registro legal inmutable: no se puede arreglar después.
+//
+// 2 · NO SE PUEDE DEJAR LA LISTA SIN NINGÚN ÍTEM ACTIVO. Medido en el código:
+//     con cero activos `filasDePlantillaParaTipo()` devuelve vacío,
+//     `cargarConTresCapas()` no cachea un vacío y cae a la lista CABLEADA. El
+//     centro vaciaría su lista y en el barco la tripulación vería OTRA lista
+//     —la genérica de buceo— sin ningún aviso. Es peor que un error: es una
+//     lista equivocada que parece la correcta.
+//
+// Y la tercera, que es la que se rompe sola con el tiempo: **los cinco caminos
+// de escritura invalidan la caché local.** Son cinco lugares y el que se
+// olvide deja al centro editando contra una copia vieja.
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
+const P=require('path').join(__dirname,'..','index.html');
+const html=fs.readFileSync(P,'utf8');
+const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
+const {window}=dom;
+
+// ─── Lo que "hay en la base", y un registro de todo lo que se le escribe ───
+let ops = [];                 // cada operación: {tabla, verbo, payload, eq}
+let plantilla = null;         // null = el tipo no tiene plantilla
+let semillas = [];
+let proximoInsertFalla = false;
+
+function itemsDePrueba(){
+  return [
+    { id:'it-1', order_index:0, text_en:'Check tanks',  text_es:'Chequear tanques', active:true },
+    { id:'it-2', order_index:1, text_en:'Load towels',  text_es:'Cargar toallas',   active:true },
+    { id:'it-3', order_index:2, text_en:'Fuel topped',  text_es:'Combustible',      active:true },
+    { id:'it-4', order_index:3, text_en:'Old item',     text_es:'Ítem viejo',       active:false }
+  ];
+}
+
+function tabla(nombre){
+  const estado = { verbo:null, payload:null, eq:{} };
+  const resolver = () => {
+    ops.push({ tabla:nombre, verbo:estado.verbo||'select', payload:estado.payload, eq:{...estado.eq} });
+    if (estado.verbo === 'insert') {
+      if (proximoInsertFalla) return { data:null, error:{ code:'XX000', message:'falló' } };
+      return { data:{ id:'tpl-nueva' }, error:null };
+    }
+    if (estado.verbo === 'update') return { data:null, error:null };
+    if (nombre === 'checklist_templates') return { data: plantilla ? [plantilla] : [], error:null };
+    if (nombre === 'checklist_seeds')     return { data: semillas, error:null };
+    return { data:[], error:null };
+  };
+  const h = { get(_t, prop){
+    if (prop === 'then') return (res,rej)=>Promise.resolve(resolver()).then(res,rej);
+    if (prop === 'single') return ()=>Promise.resolve(resolver());
+    if (prop === 'insert') return (p)=>{ estado.verbo='insert'; estado.payload=p; return new Proxy({},h); };
+    if (prop === 'update') return (p)=>{ estado.verbo='update'; estado.payload=p; return new Proxy({},h); };
+    if (prop === 'delete') return ()=>{ estado.verbo='delete'; return new Proxy({},h); };
+    if (prop === 'eq') return (c,v)=>{ estado.eq[c]=v; return new Proxy({},h); };
+    return ()=>new Proxy({},h);
+  }};
+  return new Proxy({},h);
+}
+window.supabase={createClient:()=>({
+  auth:{getSession:async()=>({data:{session:null}}),getUser:async()=>({data:{user:{id:'u-fran'}}}),
+        onAuthStateChange:()=>({data:{subscription:{}}})},
+  from:(n)=>tabla(n),functions:{invoke:async()=>({})}})};
+window.Paddle={Environment:{set(){}},Initialize(){},Checkout:{open(){}}};
+window.Chart=function(){};
+
+const scripts=[...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+const main=scripts.find(s=>s.includes('[Seven Seas] build'));
+
+// Los modales se stubean SIEMPRE. Es la lección del 09/10: un modal que nadie
+// cierra deja a node sin trabajo pendiente y el archivo **termina con código 0
+// sin imprimir nada**, así que un test colgado se lee igual que un test que
+// pasa. Tres archivos bajaron de 54 comprobaciones a 6 reportando cero fallos.
+const hook=main+`
+;window.__avisos=[]; window.__respuestaConfirm=true;
+window.showAlertModal = async (m)=>{ window.__avisos.push(String(m)); };
+window.showConfirmModal = async (m)=>{ window.__avisos.push(String(m)); return window.__respuestaConfirm; };
+showAlertModal = window.showAlertModal; showConfirmModal = window.showConfirmModal;
+// La medición de red también se stubea: motivoDeFalloAlEscribir manda un HEAD
+// al propio origen antes de traducir el código de Postgres —la red es un hecho
+// y la forma del error sólo una pista— y en jsdom ese fetch cuelga.
+window.hayRedDeVerdad = async()=>true; hayRedDeVerdad = window.hayRedDeVerdad;
+window.__t={
+  idioma:(l)=>{currentLanguage=l;}, verIdioma:()=>currentLanguage,
+  setOrg:(id)=>{currentOrgId=id;}, rol:(r)=>{currentUserRole=r;},
+  usuario:(u)=>{currentUserId=u;},
+  tipos:(ts)=>{window._settingsTripTypes=ts;},
+  puedeEditar:()=>puedeEditarPlantillas(),
+  nombreCache:(id)=>nombreEnCacheDePlantilla(id),
+  claveCache:(n)=>cacheLocalClave(n),
+  guardarEnCache:(n,d)=>cacheLocalGuardar(n,d),
+  leerDeCache:(n)=>cacheLocalLeer(n),
+  borrarDeCache:(n)=>cacheLocalBorrar(n),
+  textoEnMiIdioma:(it)=>textoDeItemEnMiIdioma(it),
+  dibujar:(id)=>dibujarPanelDePreparacion(id),
+  guardarTexto:(tt,it,v)=>guardarTextoDeItem(tt,it,v,null),
+  agregar:(tt)=>agregarItemDePlantilla(tt),
+  retirar:(tt,it,n)=>retirarItemDePlantilla(tt,it,n),
+  devolver:(tt,it)=>devolverItemDePlantilla(tt,it),
+  mover:(tt,it,d)=>moverItemDePlantilla(tt,it,d),
+  desdeEstandar:(tt)=>arrancarDeLaListaEstandar(tt),
+  desdeCero:(tt)=>arrancarListaVacia(tt),
+  leerParaEditar:(tt)=>plantillaDeTipoParaEditar(tt)
+};`;
+let boot=null; try{window.eval(hook);}catch(e){boot=e;}
+let fail=0;
+function chk(n,ok,x){console.log((ok?'PASS  ':'FAIL  ')+n+(x?'  '+x:'')); if(!ok)fail=1;}
+chk('arranca sin excepción',!boot,boot?String(boot).slice(0,300):'');
+if(boot) process.exit(1);
+
+const T=window.__t;
+const TT='tipo-1';
+function prepararDOM(){
+  const d=window.document.createElement('div');
+  d.id='prep-checklist-'+TT; d.style.display='block';
+  window.document.body.appendChild(d);
+}
+function panel(){ return window.document.getElementById('prep-checklist-'+TT); }
+// El campo de "agregar" lo dibuja el panel, así que hay que usar EL del panel.
+// La primera versión de este test creaba uno suelto con el mismo id y
+// `getElementById` devolvía el del panel —vacío— así que "agregar" no hacía
+// nada y el test se caía culpando al código.
+async function escribirNuevo(valor){
+  await T.dibujar(TT);
+  const campo = window.document.getElementById('prep-new-'+TT);
+  if (campo) campo.value = valor;
+  return !!campo;
+}
+function limpiar(){ ops=[]; window.__avisos=[]; window.__respuestaConfirm=true; proximoInsertFalla=false; }
+const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo);
+
+(async()=>{ try {
+
+  prepararDOM();
+  T.setOrg('org-1'); T.usuario('u-fran'); T.idioma('en'); T.rol('owner');
+  T.tipos([{ id:TT, name:'Island Hopping', category:'charter_yacht' }]);
+  plantilla = { id:'tpl-1', title:'Island Hopping', checklist_template_items: itemsDePrueba() };
+
+  // ─── 1 · La UI dice lo mismo que RLS ───
+  //
+  // Medido en la base: las 43 plantillas tienen `created_by = NULL` (las sembró
+  // el disparador), así que las políticas de UPDATE y DELETE caen en la rama
+  // del rol. Si la pantalla ofreciera el botón a un marinero, el servidor lo
+  // rechazaría en silencio.
+  T.rol('owner');     chk('el dueño puede editar plantillas', T.puedeEditar()===true);
+  T.rol('manager');   chk('el encargado también', T.puedeEditar()===true);
+  T.rol('captain');   chk('el capitán NO', T.puedeEditar()===false);
+  T.rol('instructor');chk('un instructor NO', T.puedeEditar()===false);
+  T.rol('deckhand');  chk('un marinero NO', T.puedeEditar()===false);
+  T.rol('owner');
+
+  // ─── 2 · RETIRAR ES active=false, NUNCA UN DELETE ───
+  //
+  // La comprobación que protege las actas firmadas y los tildes en curso.
+  limpiar();
+  await T.retirar(TT, 'it-2', 3);
+  chk('retirar NO borra ninguna fila',
+      escrituras('checklist_template_items','delete').length===0,
+      escrituras('checklist_template_items','delete').length+' deletes');
+  const upd = escrituras('checklist_template_items','update');
+  chk('retirar escribe active:false', upd.length===1 && upd[0].payload.active===false,
+      JSON.stringify(upd.map(u=>u.payload)));
+  chk('y sobre el ítem que se pidió', upd.length===1 && upd[0].eq.id==='it-2');
+  chk('se pide confirmación antes, porque sale de la lista',
+      window.__avisos.length>=1);
+
+  // Y si el usuario dice que no, no se escribe nada.
+  limpiar(); window.__respuestaConfirm=false;
+  await T.retirar(TT, 'it-2', 3);
+  chk('si se cancela la confirmación no se escribe nada',
+      escrituras('checklist_template_items','update').length===0);
+
+  // ─── 3 · LA LISTA NO PUEDE QUEDAR VACÍA ───
+  //
+  // Con cero activos el barco ve la lista CABLEADA, no un error.
+  limpiar();
+  await T.retirar(TT, 'it-1', 1);
+  chk('no se puede retirar el último ítem activo',
+      escrituras('checklist_template_items','update').length===0);
+  chk('y se explica por qué, nombrando la lista genérica',
+      window.__avisos.some(a=>/generic|genérica/i.test(a)),
+      window.__avisos.join(' / ').slice(0,120));
+
+  // Vaciar el texto tampoco es una salida: el CHECK de la base exige texto en
+  // al menos un idioma, y vaciar el campo es casi siempre un dedo.
+  limpiar();
+  await T.guardarTexto(TT, 'it-1', '   ');
+  chk('un texto en blanco no se guarda',
+      escrituras('checklist_template_items','update').length===0);
+  chk('y se apunta al botón que sí conserva la historia',
+      window.__avisos.some(a=>/✕/.test(a)), window.__avisos.join(' / ').slice(0,120));
+
+  // ─── 4 · SE EDITA EL IDIOMA DE QUIEN MIRA, Y EL OTRO NO SE TOCA ───
+  //
+  // El CHECK `checklist_template_items_con_texto` exige UNO de los dos, no los
+  // dos, y `itemsDePlantilla()` ya cae al otro idioma. Un centro en Tailandia
+  // nunca va a llenar el español: pedirle los dos campos es pedirle trabajo
+  // para nadie.
+  limpiar(); T.idioma('en');
+  await T.guardarTexto(TT, 'it-1', 'Check tanks twice');
+  let p = escrituras('checklist_template_items','update')[0].payload;
+  chk('en inglés se escribe text_en', p.text_en==='Check tanks twice');
+  chk('y text_es NO se toca', !('text_es' in p), JSON.stringify(p));
+
+  limpiar(); T.idioma('es');
+  await T.guardarTexto(TT, 'it-1', 'Chequear tanques dos veces');
+  p = escrituras('checklist_template_items','update')[0].payload;
+  chk('en español se escribe text_es', p.text_es==='Chequear tanques dos veces');
+  chk('y text_en NO se toca', !('text_en' in p), JSON.stringify(p));
+
+  // Un ítem nuevo nace en un solo idioma, y eso es válido para la base.
+  T.idioma('es');
+  chk('el panel dibuja el campo para agregar', await escribirNuevo('Revisar el ancla'));
+  limpiar();
+  await T.agregar(TT);
+  const insNuevo = escrituras('checklist_template_items','insert');
+  chk('agregar inserta un ítem', insNuevo.length===1, insNuevo.length+' inserts');
+  p = insNuevo.length ? insNuevo[0].payload : {};
+  chk('un ítem nuevo guarda el idioma en que se escribió', p.text_es==='Revisar el ancla');
+  chk('y deja el otro en null, no en blanco', p.text_en===null, JSON.stringify(p));
+  // El último order_index de la plantilla es 3 (el retirado it-4), así que el
+  // nuevo va 4: el índice se cuenta sobre TODOS los ítems, no sólo los activos,
+  // porque un retirado puede volver y dos índices iguales dejan el orden a
+  // merced del desempate.
+  chk('y va al final de la lista, no al principio', p.order_index===4, 'order_index '+p.order_index);
+
+  // El editor resuelve el idioma IGUAL que la pantalla del barco. Si resolviera
+  // distinto, un centro editaría una línea y en el barco vería otra.
+  T.idioma('es');
+  chk('el editor cae al otro idioma cuando falta el elegido',
+      T.textoEnMiIdioma({text_en:'Only English', text_es:null})==='Only English');
+  T.idioma('en');
+  chk('y al revés también',
+      T.textoEnMiIdioma({text_en:null, text_es:'Sólo español'})==='Sólo español');
+
+  // ─── 5 · LOS CINCO CAMINOS DE ESCRITURA INVALIDAN LA CACHÉ ───
+  //
+  // Son cinco lugares. El que se olvide deja al centro editando contra una
+  // copia vieja de localStorage, que es lo que `cargarConTresCapas()` usa en
+  // cuanto se cae la señal.
+  const nombre = T.nombreCache(TT);
+  chk('el nombre de la caché lo da una sola función',
+      nombre==='plantilla_tipo_'+TT, nombre);
+  chk('y la consulta que lee usa esa función, no el string',
+      /nombreEnCache: nombreEnCacheDePlantilla\(tripTypeId\)/.test(html));
+
+  const caminos = [
+    ['guardar texto', async()=>{ T.idioma('en'); await T.guardarTexto(TT,'it-1','Nuevo texto'); }],
+    ['agregar',       async()=>{ await escribirNuevo('Otro ítem'); await T.agregar(TT); }],
+    ['retirar',       async()=>{ await T.retirar(TT,'it-2',3); }],
+    ['devolver',      async()=>{ await T.devolver(TT,'it-4'); }],
+    ['mover',         async()=>{ await T.mover(TT,'it-2',-1); }]
+  ];
+  for (const [etiqueta, correr] of caminos) {
+    limpiar();
+    T.guardarEnCache(nombre, [{ id:'viejo' }]);
+    chk('('+etiqueta+') la caché arranca puesta', !!T.leerDeCache(nombre));
+    await correr();
+    chk('('+etiqueta+') invalida la caché local', T.leerDeCache(nombre)===null);
+  }
+
+  // Y la caché tiene que tener forma de borrarse, que es lo que faltaba.
+  chk('cacheLocalBorrar existe y es un solo lugar',
+      (html.match(/function cacheLocalBorrar/g)||[]).length===1);
+
+  // ─── 6 · MOVER SALTEA LOS RETIRADOS ───
+  //
+  // Los retirados conservan su order_index. Intercambiar con el vecino de la
+  // tabla en vez del vecino ACTIVO haría que la flecha mueva dos lugares.
+  limpiar(); T.idioma('en');
+  await T.mover(TT, 'it-3', 1);   // it-3 es el último ACTIVO; it-4 está retirado
+  chk('la flecha del último activo no hace nada (el retirado no cuenta)',
+      escrituras('checklist_template_items','update').length===0,
+      escrituras('checklist_template_items','update').length+' updates');
+
+  limpiar();
+  await T.mover(TT, 'it-1', -1);
+  chk('la flecha del primero tampoco',
+      escrituras('checklist_template_items','update').length===0);
+
+  limpiar();
+  await T.mover(TT, 'it-2', -1);
+  const movs = escrituras('checklist_template_items','update');
+  chk('mover intercambia el order_index de dos ítems', movs.length===2, movs.length+' updates');
+  chk('y los índices quedan cruzados, no duplicados',
+      movs.length===2 && movs[0].payload.order_index!==movs[1].payload.order_index,
+      JSON.stringify(movs.map(m=>({id:m.eq.id, oi:m.payload.order_index}))));
+
+  // ─── 7 · EL TIPO SIN PLANTILLA: el hueco que Fran midió ───
+  //
+  // Un centro puede crear salidas de una categoría que nunca activó, y las
+  // semillas se copian al activarla. En *Blue water* los 7 tipos de buceo
+  // tienen CERO ítems por eso.
+  limpiar(); plantilla = null; semillas = [];
+  await T.dibujar(TT);
+  chk('sin plantilla se avisa que la tripulación ve la lista genérica',
+      /generic|genérica/i.test(panel().textContent), panel().textContent.slice(0,100));
+  chk('y sin semillas sólo se ofrece arrancar de cero',
+      !/standard|estándar/i.test(panel().innerHTML));
+
+  limpiar();
+  semillas = [{ order_index:0, text_en:'Seed one', text_es:'Semilla uno' }];
+  await T.dibujar(TT);
+  chk('con semillas se ofrece arrancar de la lista estándar',
+      /standard|estándar/i.test(panel().innerHTML));
+
+  // Copiar las semillas se hace desde el cliente a propósito: el EXECUTE de
+  // `sembrar_checklists_de_categoria()` está revocado para `authenticated`
+  // (medido: sólo postgres y service_role), y `checklist_seeds` tiene política
+  // de SELECT.
+  limpiar();
+  semillas = [
+    { order_index:0, text_en:'Seed one', text_es:'Semilla uno' },
+    { order_index:1, text_en:'Seed two', text_es:'Semilla dos' }
+  ];
+  await T.desdeEstandar(TT);
+  const nuevas = escrituras('checklist_templates','insert');
+  chk('crea la plantilla del centro', nuevas.length===1);
+  chk('y la marca como NO sembrada, porque la creó el centro',
+      nuevas.length===1 && nuevas[0].payload.is_system_default===false,
+      JSON.stringify(nuevas[0] && nuevas[0].payload));
+  chk('con el scope y la cadencia que exige el CHECK de la base',
+      nuevas.length===1 && nuevas[0].payload.scope==='trip_type'
+      && nuevas[0].payload.cadence==='per_trip',
+      JSON.stringify(nuevas[0] && nuevas[0].payload));
+  const itemsCopiados = escrituras('checklist_template_items','insert');
+  chk('copia los ítems de la semilla en los DOS idiomas',
+      itemsCopiados.length===1 && Array.isArray(itemsCopiados[0].payload)
+      && itemsCopiados[0].payload.length===2
+      && itemsCopiados[0].payload[0].text_en==='Seed one'
+      && itemsCopiados[0].payload[0].text_es==='Semilla uno');
+  // Y NO se llama a la función del servidor. La primera versión de esta
+  // comprobación buscaba el nombre en todo el archivo y fallaba por mi propio
+  // comentario que lo explica — un test que busca un string en vez de una
+  // llamada mide la documentación, no el código.
+  chk('no se llama por RPC a la función del servidor, que tiene el EXECUTE revocado',
+      !/rpc\(\s*['"]sembrar_checklists_de_categoria/.test(html));
+  chk('y el camino que copia lee checklist_seeds, que sí tiene política de SELECT',
+      /from\('checklist_seeds'\)/.test(html));
+
+  // Arrancar de cero crea UN ítem, no una plantilla vacía: una plantilla sin
+  // activos devuelve la lista cableada en el barco.
+  limpiar();
+  await T.desdeCero(TT);
+  const primer = escrituras('checklist_template_items','insert');
+  chk('arrancar de cero crea un primer ítem, no una lista vacía',
+      primer.length===1 && !Array.isArray(primer[0].payload),
+      JSON.stringify(primer.map(x=>x.payload)));
+
+  // Si la base rechaza la creación, se avisa y no se sigue escribiendo ítems.
+  limpiar(); proximoInsertFalla = true;
+  await T.desdeCero(TT);
+  chk('si crear la plantilla falla, se avisa', window.__avisos.length>=1,
+      window.__avisos.join(' / ').slice(0,100));
+  chk('y no se intenta insertar ítems contra una plantilla que no existe',
+      escrituras('checklist_template_items','insert').length===0);
+  proximoInsertFalla = false;
+
+  // ─── 7b · EL CARTEL DICE EL MOTIVO REAL, NO SIEMPRE «REVISÁ LA CONEXIÓN» ───
+  //
+  // Medido contra la base: un rol por debajo de encargado recibe **42501** al
+  // tocar un ítem de plantilla —RLS lanza, no devuelve 0 filas en silencio— y
+  // la primera versión de este editor le decía «revisá la conexión» igual. Un
+  // cartel que nombra el motivo equivocado manda a la persona a arreglar lo que
+  // no está roto. Se reusa la función que ya traducía códigos en los borrados,
+  // renombrada: no era de borrar, es de cualquier escritura rechazada.
+  chk('el traductor de errores de escritura existe una sola vez',
+      (html.match(/async function motivoDeFalloAlEscribir\(/g)||[]).length===1);
+  chk('y traduce el rechazo de permiso que RLS devuelve de verdad',
+      /error\.code === '42501'/.test(html));
+  chk('los caminos del editor lo usan en vez de un cartel propio',
+      !/prep_save_error/.test(html));
+
+  limpiar();
+  window.__erroresForzados = true;
+  proximoInsertFalla = true;
+  await T.desdeCero(TT);
+  chk('el aviso de un rechazo no habla de conexión',
+      window.__avisos.length>=1 && !/connection|conexión/i.test(window.__avisos.join(' ')),
+      window.__avisos.join(' / ').slice(0,140));
+  proximoInsertFalla = false;
+
+  // ─── 8 · EL EDITOR LEE DE LA BASE, NO DEL CAMINO DE TRES CAPAS ───
+  //
+  // Editar sobre una copia cacheada —o peor, sobre la lista cableada— sería
+  // editar algo que no es lo que está guardado.
+  const cuerpo = html.slice(html.indexOf('async function plantillaDeTipoParaEditar'),
+                            html.indexOf('async function trasEditarPlantilla'));
+  chk('plantillaDeTipoParaEditar NO pasa por cargarConTresCapas',
+      !/cargarConTresCapas/.test(cuerpo));
+  chk('ni cae a la lista cableada', !/INSTRUCTOR_ITEMS_get/.test(cuerpo));
+
+  // Y trae los retirados, que es lo que permite devolverlos.
+  limpiar();
+  plantilla = { id:'tpl-1', title:'Island Hopping', checklist_template_items: itemsDePrueba() };
+  const leida = await T.leerParaEditar(TT);
+  chk('el editor trae también los ítems retirados',
+      leida.items.length===4 && leida.items.some(i=>i.active===false),
+      leida.items.length+' ítems');
+  chk('y ordenados por order_index',
+      leida.items.map(i=>i.id).join(',')==='it-1,it-2,it-3,it-4',
+      leida.items.map(i=>i.id).join(','));
+
+  // ─── 9 · LO QUE VE QUIEN NO PUEDE EDITAR ───
+  limpiar(); T.rol('deckhand'); T.idioma('en');
+  await T.dibujar(TT);
+  chk('sin permiso no aparece el campo para agregar',
+      !panel().querySelector('#prep-new-'+TT));
+  chk('ni botones de retirar', !/prep_retire|onclick="retirarItemDePlantilla/.test(panel().innerHTML));
+  chk('los campos de texto quedan deshabilitados',
+      [...panel().querySelectorAll('input[type=text]')].every(i=>i.disabled));
+  chk('y se explica quién sí puede',
+      /owner|manager|dueño|encargado/i.test(panel().textContent),
+      panel().textContent.slice(0,120));
+  T.rol('owner');
+
+  // ─── 10 · LA PANTALLA QUE EDITA Y LA QUE DIBUJA EN EL BARCO ───
+  //
+  // `instructorItemsByTrip` NO se invalida a propósito: una salida que ya
+  // resolvió su lista la conserva. Es la regla de la 3b — para una salida
+  // abierta, estabilidad le gana a frescura — y acá importa igual, porque si
+  // la tripulación está tildando y el dueño edita desde la oficina, cambiarle
+  // la lista debajo le movería la llave de los tildes.
+  chk('trasEditarPlantilla no toca la lista fijada de una salida abierta',
+      !/instructorItemsByTrip/.test(
+        html.slice(html.indexOf('async function trasEditarPlantilla'),
+                   html.indexOf('async function togglePrepChecklist'))));
+
+  // El botón entró en el patrón que ya existía, no en una pestaña nueva.
+  chk('el panel cuelga de la fila del tipo de salida',
+      /id="prep-checklist-\$\{tt\.id\}"/.test(html));
+  chk('y el botón está junto a los otros tres del tipo de salida',
+      /togglePrepChecklist\('\$\{tt\.id\}'\)/.test(html));
+
+  // ─── 11 · LAS DOS VERSIONES ───
+  chk('el build subió a 2026-10-11b', /build 2026-10-11b/.test(html));
+  const sw=fs.readFileSync(require('path').join(__dirname,'..','sw.js'),'utf8');
+  chk('y el service worker a v44', /seven-seas-v44/.test(sw));
+
+} catch(e){ chk('sin excepciones durante la corrida', false, String(e&&e.stack||e).slice(0,400)); }
+process.exit(fail);
+})();

@@ -4,7 +4,7 @@
 verdad del proyecto. `HANDOVER.md` y `NEXT-SESSION.md` son históricos y están
 desactualizados — no mandan.*
 
-**Última actualización: 2026-10-03.**
+**Última actualización: 2026-10-11.**
 
 ---
 
@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 473 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 545 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -210,7 +210,14 @@ vault — **leerlo antes de tocar este módulo.**
 
 Hecho: bloque 0 (actas inmutables), etapa 0.5 (`checklist_progress`), etapa 1
 (el esquema) y **etapa 2** (las semillas: 16 tipos de salida, 270 ítems, en
-`checklist_seeds`, sembradas por un disparador al activar una categoría).
+`checklist_seeds`, copiadas al activar una categoría por el disparador
+`trg_sembrar_checklists`, que llama a `sembrar_checklists_de_categoria()` — el
+EXECUTE de esa función está **revocado** para `authenticated`, así que el
+cliente no la puede llamar).
+
+**La siembra NUNCA pisa:** si cualquier copia de ese nombre de tipo ya tiene
+plantilla, saltea. Medido el 11/10 antes de construir la etapa 4 — es lo que
+hace que las ediciones de un centro estén a salvo cuando activa otra categoría.
 Hecho también **etapa 3a**: el camino de tres capas que el offline necesita,
 construido y probado, con el interruptor `FUENTE_PLANTILLAS` en `'cableado'`.
 
@@ -553,6 +560,57 @@ Y la llave de instancia del instructor pasó de `` `instructor:${tripId}` `` a
 `instructorScope().scopeKey`: era la misma instancia **con otro texto**, y desde
 que Reset abre pasadas el guardián y el Reset tienen que mirar el mismo
 conjunto. Dos nombres para una instancia es un bug esperando.
+
+**Etapa 4 hecha el 11/10: el centro edita su lista de preparación.** Era lo que
+la etapa 2 dejó a medias — las semillas se COPIAN a cada centro precisamente
+para que pueda cambiar su copia, y hasta hoy **nada en la app insertaba ni
+actualizaba `checklist_template_items`**. Medido antes: 43 plantillas, 711
+ítems, **0 retirados** (la columna `active` existía sin que nada la usara).
+
+Está en **Configuración → Tipos de Salida → «Lista de preparación»**, cuarto
+botón de la fila, en el patrón de panel que ya existía tres veces. Lo ve
+cualquiera; lo edita sólo dueño o encargado (`puedeEditarPlantillas()`, que dice
+lo mismo que RLS — las 43 plantillas tienen `created_by = NULL`, así que las
+políticas caen en la rama del rol).
+
+Tres reglas que son consecuencias medidas, no preferencias:
+
+- **Retirar es `active = false`, NUNCA un borrado.** El id de un ítem es la
+  llave de los tildes (`checklist_progress.item_id`) y de lo que quedó escrito
+  en el `items_snapshot` de cada acta. Una fila borrada deja tildes vivos y
+  actas firmadas apuntando a nada, y un acta es inmutable: no se arregla después.
+  El lado que **lee** no se tocó — ya filtraba `active !== false` desde la 3a.
+- **No puede quedar sin ningún ítem activo.** Con cero activos,
+  `filasDePlantillaParaTipo()` devuelve vacío, `cargarConTresCapas()` no cachea
+  un vacío y cae a la **lista cableada**: el centro vaciaría su lista y en el
+  barco se vería OTRA, la genérica de buceo, sin aviso. Se niega el último. Por
+  lo mismo «arrancar de cero» crea **un** ítem, no una plantilla vacía.
+- **Se edita el idioma de quien mira y el otro no se toca.** El CHECK
+  `checklist_template_items_con_texto` exige UNO de los dos, y `itemsDePlantilla()`
+  ya cae al otro. Un centro en Tailandia no va a llenar el español nunca.
+
+**Un tipo sin plantilla ofrece «arrancar de la lista estándar»**, que copia
+`checklist_seeds` **desde el cliente** (esa tabla sí tiene política de SELECT).
+Tapa el hueco medido: un centro puede crear salidas de una categoría que no
+activó, y en *Blue water* los 7 tipos de buceo tienen cero ítems por eso.
+
+**Al guardar se tira la copia local** (`cacheLocalBorrar()`, que faltaba), y el
+nombre de la caché pasó a `nombreEnCacheDePlantilla()` porque ahora hay dos
+lados que lo necesitan. **`instructorItemsByTrip` NO se invalida**: una salida
+abierta conserva su lista, porque si la tripulación está tildando y el dueño
+edita desde la oficina, cambiarle la lista debajo le movería la llave.
+
+**`motivoDeFalloAlBorrar` se renombró a `motivoDeFalloAlEscribir`.** El nombre
+decía «borrar» y la lógica nunca fue de borrar: es de cualquier escritura
+rechazada. Lo destapó medir RLS — un rol por debajo de encargado recibe **42501**
+al tocar un ítem de plantilla (RLS *lanza*, no devuelve 0 filas), y el cartel
+genérico del editor le decía «revisá la conexión», el motivo equivocado.
+
+**Y me corregí el tamaño para abajo: 5/10, no el 7 que había anotado en la
+auditoría sin medir.** Lo que lo baja: el lado que lee no se toca, sin
+migración, RLS ya estaba, el patrón ya existía, y no toca la identidad de nada
+—precisamente porque retira en vez de borrar. Detalle en
+`Seven Seas Ops/El centro edita su lista de preparación.md`.
 
 **Auditoría completa del módulo (11/10)** —qué protege los registros legales,
 qué está probado y qué sólo lo da el uso, y los tres huecos que quedan— en
