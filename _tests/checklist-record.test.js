@@ -134,10 +134,14 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   chk('un acta vieja sin detalle lo dice en vez de mostrar una lista vacía',
       /cl-acta-nota/.test(contActa.innerHTML), contActa.innerHTML.slice(0,110));
 
-  // Los dos caminos que muestran una firmada usan la misma función.
-  chk('la salida y la rutina de departamento comparten el arreglo',
-      (html.match(/mostrarActaSiHay\(/g)||[]).length===3, // 1 declaración + 2 usos
+  // Los caminos que muestran una firmada usan la MISMA función. Eran dos
+  // (salida y rutina de departamento); desde el 11/10 son tres — las checklists
+  // propias se sumaron, y hasta entonces ni consultaban su acta.
+  chk('los tres caminos que muestran una firmada comparten el arreglo',
+      (html.match(/mostrarActaSiHay\(/g)||[]).length===4, // 1 declaración + 3 usos
       (html.match(/mostrarActaSiHay\(/g)||[]).length+' menciones');
+  chk('y el de las checklists propias es uno de ellos',
+      /mostrarActaSiHay\(ids\.items, s, ids\.progreso\)/.test(html));
   // Desde el 09/10 las columnas están en UNA constante y la consulta en UNA
   // función: eran tres listas idénticas escritas a mano, así que agregarle una
   // columna al acta pedía acordarse de tocar las tres.

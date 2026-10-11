@@ -174,10 +174,16 @@ window.showConfirmModal=async()=>true;
       (html.match(/async function firmarUnaSolaVez\(/g)||[]).length===1 &&
       (html.match(/await firmarUnaSolaVez\(/g)||[]).length===3,
       (html.match(/await firmarUnaSolaVez\(/g)||[]).length+' llamadas, una por camino');
-  chk('los tres caminos que firman la usan',
-      /firmarUnaSolaVez\(`instructor:\$\{tripId\}`/.test(html) &&
+  // Los tres usan el `scopeKey` como llave de instancia. El del instructor
+  // decía `instructor:${tripId}` — la misma instancia con OTRO texto. Desde que
+  // Reset abre pasadas (11/10), el guardián y el Reset tienen que mirar el mismo
+  // conjunto, así que dos nombres para una instancia era un bug esperando.
+  chk('los tres caminos que firman la usan, y con la misma llave',
+      /firmarUnaSolaVez\(instructorScope\(\)\.scopeKey/.test(html) &&
       /firmarUnaSolaVez\(deptScope\(\)\.scopeKey/.test(html) &&
       /firmarUnaSolaVez\(scopeKey,/.test(html));
+  chk('ninguno inventa una llave propia',
+      !/firmarUnaSolaVez\(`/.test(html), 'ninguna llave armada con backticks');
   chk('firmar redibuja, que es lo que faltaba',
       /await renderInstructorChecklistForTrip\(tripId\);/.test(html) &&
       /await renderDeptRoutine\(\);\s*\n\s*return true;/.test(html));

@@ -4582,6 +4582,8 @@ const TRANSLATIONS = {
     cl_motivos_ph: 'e.g. supplier never delivered them',
     cl_motivos_firmar: 'Sign anyway',
     cl_acta_porque: 'Why: {why}',
+    cl_reset_confirm: 'Start this checklist over? The {n} tick(s) already made will be cleared for everyone.',
+    cl_reset_confirm_firmada: 'Run this checklist again? It starts blank and gets its own signature. The {n} tick(s) will be cleared, and the record already signed is kept — signed records are never edited.',
     cl_logged_vessel_check: 'Vessel safety check',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
@@ -5306,6 +5308,8 @@ const TRANSLATIONS = {
     cl_motivos_ph: 'ej. el proveedor no las trajo',
     cl_motivos_firmar: 'Firmar igual',
     cl_acta_porque: 'Por qué: {why}',
+    cl_reset_confirm: '¿Arrancar esta checklist de nuevo? Se borran los {n} tilde(s) que ya hizo la tripulación.',
+    cl_reset_confirm_firmada: '¿Hacer esta checklist otra vez? Arranca en blanco y lleva su propia firma. Se borran los {n} tilde(s), y el acta que ya se firmó queda guardada — las actas no se editan nunca.',
     cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
@@ -8441,7 +8445,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-09e');
+  console.info('[Seven Seas] build 2026-10-11a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15216,10 +15220,20 @@ function initInstructorChecklist() {
   if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
 }
 
-function resetInstructorChecklist() {
+async function resetInstructorChecklist() {
   if (!currentChecklistTripId) return;
-  instructorChecksByTrip[currentChecklistTripId] = {};
-  renderInstructorChecklistForTrip(currentChecklistTripId);
+  const tripId = currentChecklistTripId;
+  const { scopeKey } = instructorScope();
+  const hayActa = !!(currentOrgId && await buscarActaVigente({ role: 'instructor', tripId }));
+  await reiniciarPasada({
+    scopeKey, items: itemsDeLaSalida(tripId),
+    checks: instructorChecksByTrip[tripId] || {},
+    hayActa,
+    redibujar: async () => {
+      instructorChecksByTrip[tripId] = {};
+      await renderInstructorChecklistForTrip(tripId);
+    }
+  });
 }
 
 // La llave de la instancia: una preparación por salida.
@@ -15327,6 +15341,10 @@ async function renderInstructorChecklistForTrip(tripId) {
   // firmada dejaba el botón escondido.
   pintarZonaDeFirma({ selectId: 'cl-instructor-name', botonId: 'cl-instructor-signoff-btn', acta: null });
   if (!currentOrgId) return;
+  // Con una pasada abierta por Reset NO se muestra el acta: se está haciendo la
+  // lista de nuevo y lo que hay que ver es la lista viva. El acta anterior
+  // sigue en el historial y en Logged Checklists — no se borró ni se editó.
+  if (pasadasAbiertas.has(instructorScope().scopeKey)) return;
   const s = await buscarActaVigente({ role: 'instructor', tripId });
   if (s) {
     pintarEstadoDeActa('cl-instructor-status', s);
@@ -15404,7 +15422,11 @@ async function firmarUnaSolaVez(claveDeInstancia, instancia, hacerlo) {
   if (firmasEnCurso.has(claveDeInstancia)) return false;
   firmasEnCurso.add(claveDeInstancia);
   try {
-    const yaHay = await buscarActaVigente(instancia);
+    // Una pasada abierta con Reset SÍ puede firmar, aunque ya haya acta: es
+    // justamente una segunda pasada deliberada. Sin esta excepción el guardián
+    // dejaría de proteger y pasaría a bloquear.
+    const segundaPasada = pasadasAbiertas.has(claveDeInstancia);
+    const yaHay = segundaPasada ? null : await buscarActaVigente(instancia);
     if (yaHay) {
       // No se inserta nada. El acta de quien llegó primero queda, que es lo
       // correcto: las actas no se tocan ni se reemplazan.
@@ -15413,7 +15435,12 @@ async function firmarUnaSolaVez(claveDeInstancia, instancia, hacerlo) {
         .replace('{time}', new Date(yaHay.signed_at).toLocaleString()));
       return false;
     }
-    return await hacerlo();
+    const ok = await hacerlo();
+    // La pasada se cierra al firmarla, no antes: si el acta no entró, sigue
+    // abierta y se puede volver a intentar. Cerrarla de más dejaría la pantalla
+    // mostrando el acta vieja con el trabajo nuevo perdido.
+    if (ok) pasadasAbiertas.delete(claveDeInstancia);
+    return ok;
   } finally {
     firmasEnCurso.delete(claveDeInstancia);
   }
@@ -15986,14 +16013,71 @@ async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
 // Al firmar, la instancia se cierra: el acta pasa a ser el registro y el
 // trabajo en curso deja de existir. Si hiciera falta corregir algo, se firma
 // una nueva y quedan las dos — las actas no se tocan.
-async function clearChecklistProgress(scopeKey) {
+// `avisarSiFalla` distingue los dos usos, que piden lo contrario:
+//
+//  · después de firmar (false): el acta YA entró y esto es limpieza. Un cartel
+//    de error acá le haría dudar de una firma que sí se guardó.
+//  · en un Reset (true): la persona pidió borrar los tildes. Si falló y no se
+//    avisa, va a creer que arrancó de cero y va a estar tildando sobre lo
+//    anterior.
+async function clearChecklistProgress(scopeKey, { avisarSiFalla = false } = {}) {
   delete progressCache[scopeKey];
-  if (!currentOrgId || isOffline) return;
+  // Lo pendiente también se olvida: si no, un tilde sin confirmar lo resucita
+  // en el próximo refresco y el Reset se deshace solo.
+  delete tildesPendientes[scopeKey];
+  if (!currentOrgId || isOffline) return !isOffline;
   const { error } = await sb.from('checklist_progress').delete()
     .eq('org_id', currentOrgId).eq('scope_key', scopeKey);
-  // Registra pero NO avisa: el acta ya quedó guardada y esto es limpieza. Un
-  // cartel de error acá le haría dudar de una firma que sí entró.
-  if (error) console.warn('[CHECKLIST] no se pudo limpiar el trabajo en curso', error);
+  if (error) {
+    console.warn('[CHECKLIST] no se pudo limpiar el trabajo en curso', error);
+    if (avisarSiFalla) await showAlertModal(await motivoDeFalloAlBorrar(error));
+    return false;
+  }
+  return true;
+}
+
+// ─── Reset: arrancar la lista de nuevo ───
+//
+// Qué hacía hasta el 11/10: **nada**. Vaciaba el objeto local de tildes y
+// redibujaba, y el redibujo llamaba a `loadChecklistProgress()`, que devuelve
+// `progressCache[scopeKey]` sin consultar — así que los tildes volvían. Sobre
+// una checklist ya firmada era peor: el redibujo encontraba el acta y la
+// mostraba otra vez, así que el botón parecía no responder.
+//
+// Lo que significa, decidido por Fran el 11/10: **una segunda pasada, con dos
+// actas.** La mañana se hizo dos veces y quedan las dos en el historial, cada
+// una con su hora y su firmante. Es lo que ya decía el principio del proyecto
+// —las actas no se tocan, nunca se editan— aplicado a la pantalla.
+//
+// Las pasadas abiertas se recuerdan acá. Sin esto, el guardián de
+// `firmarUnaSolaVez()` encontraría el acta anterior y **se negaría a firmar la
+// segunda pasada**, convirtiendo una protección en un bloqueo — el mismo error
+// que casi cometí con las dos actividades.
+const pasadasAbiertas = new Set();
+
+// Un solo lugar decide qué significa Reset, para que los tres botones no puedan
+// divergir. Devuelve true si la pasada quedó abierta.
+async function reiniciarPasada({ scopeKey, items, checks, hayActa, redibujar }) {
+  const tildados = (items || []).filter((it, idx) =>
+    checks[it && it.id != null ? it.id : idx]).length;
+
+  // Se confirma porque es destructivo: los tildes de la tripulación se van. Y
+  // el texto dice lo que de verdad va a pasar con el acta, que es la pregunta
+  // que alguien se hace antes de apretar.
+  const aviso = hayActa
+    ? t('cl_reset_confirm_firmada').replace('{n}', tildados)
+    : t('cl_reset_confirm').replace('{n}', tildados);
+  if (tildados > 0 || hayActa) {
+    if (!(await showConfirmModal(aviso))) return false;
+  }
+
+  // Borrar de verdad: caché, pendientes y servidor. Si el servidor dice no, se
+  // avisa y NO se abre la pasada — si no, quedaría tildando sobre lo viejo.
+  if (!(await clearChecklistProgress(scopeKey, { avisarSiFalla: true }))) return false;
+
+  if (hayActa) pasadasAbiertas.add(scopeKey);
+  await redibujar();
+  return true;
 }
 
 // ─── El acta de lo que se firmó ───
@@ -16202,7 +16286,12 @@ async function instructorSignOff() {
   if (!confirmado) return;
 
   const tripId = currentChecklistTripId;
-  await firmarUnaSolaVez(`instructor:${tripId}`, { role: 'instructor', tripId }, async () => {
+  // La llave es el `scopeKey`, igual que en los otros dos caminos. Era
+  // `instructor:${tripId}`, que identificaba la misma instancia pero **con otro
+  // texto** — y desde que Reset abre pasadas, el guardián y el Reset tienen que
+  // mirar el MISMO conjunto o la pasada abierta no se ve. Dos nombres para una
+  // instancia es un bug esperando.
+  await firmarUnaSolaVez(instructorScope().scopeKey, { role: 'instructor', tripId }, async () => {
     if (!currentOrgId) { pintarFirmaDelInstructor(signer.name, done, instructorItems.length); return true; }
     const payload = buildRecordPayload({
       role: 'instructor', tripId,
@@ -16589,13 +16678,68 @@ async function customChecklistSignOff(checklistId) {
     if (!(await guardarActa(payload))) return false;
     await clearChecklistProgress(scopeKey);
     pintar();
-    // OJO: a diferencia de las otras dos, una checklist propia firmada todavía
-    // NO muestra su acta al volver a entrar — `renderCustomChecklistsForCurrentView`
-    // nunca consulta `checklist_completions`. El candado y la comprobación
-    // contra el servidor sí la cubren, así que no se puede duplicar; lo que
-    // falta es la vista. Anotado en `Decisiones/Quién tildó cada ítem.md`.
+    // Y redibuja, que ahora sí muestra el acta: `renderCustomChecklistsForCurrentView`
+    // la consulta desde el 11/10. Antes este redibujo dejaba la lista viva
+    // vacía arriba del cartel de «firmada», que para quien entraba después se
+    // leía como que no se había hecho nada.
     await renderCustomChecklistsForCurrentView();
     return true;
+  });
+}
+
+// El acta de una checklist propia, con la misma forma que las otras dos: si está
+// firmada se ve el ACTA de sólo lectura —lo que se hizo y lo que NO— y
+// desaparecen el selector y el botón de firmar.
+//
+// Los ids se arman igual que en la tarjeta, con el id de la checklist como
+// sufijo. Son varios en pantalla a la vez, así que un id repetido haría que una
+// tarjeta escribiera en otra.
+async function dibujarActaDeChecklistPropia(cc) {
+  const ids = {
+    items: `custom-cl-items-${cc.id}`, estado: `custom-cl-status-${cc.id}`,
+    firmante: `custom-cl-name-${cc.id}`, cartel: `custom-cl-done-${cc.id}`,
+    boton: `custom-cl-signoff-${cc.id}`, progreso: `custom-cl-progress-${cc.id}`
+  };
+  const cartel = document.getElementById(ids.cartel);
+  if (cartel) cartel.style.display = 'none';
+  pintarZonaDeFirma({ selectId: ids.firmante, botonId: ids.boton, acta: null });
+  if (!currentOrgId) return;
+  // Pasada abierta por Reset: se muestra la lista viva. Ver `reiniciarPasada()`.
+  if (pasadasAbiertas.has(customScope(cc).scopeKey)) return;
+
+  const s = await buscarActaVigente({ role: `custom_${cc.id}`,
+                                      periodo: deptRoutinePeriodRange(cc.cadence) });
+  if (!s) return;
+  pintarEstadoDeActa(ids.estado, s);
+  if (cartel) {
+    cartel.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ` +
+      `${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
+    cartel.style.display = 'block';
+  }
+  mostrarActaSiHay(ids.items, s, ids.progreso);
+  pintarZonaDeFirma({ selectId: ids.firmante, botonId: ids.boton, acta: s });
+}
+
+// Reset para una checklist propia. Va junto con el acta y no después: sin él,
+// una firmada mostraría el acta para siempre y no habría forma de repetirla —
+// mostrar el acta sin dar salida sería cambiar un hueco por una trampa.
+async function resetCustomChecklist(checklistId) {
+  const cc = customChecklists.find(c => c.id === checklistId);
+  if (!cc) return;
+  const { scopeKey } = customScope(cc);
+  const hayActa = !!(currentOrgId && await buscarActaVigente({
+    role: `custom_${cc.id}`, periodo: deptRoutinePeriodRange(cc.cadence) }));
+  await reiniciarPasada({
+    scopeKey,
+    // Los ítems de una checklist propia son texto suelto y `checks` va por
+    // índice, no por id. Se le pasa la forma que `reiniciarPasada` espera.
+    items: cc.items.map((text, idx) => ({ id: idx, text })),
+    checks: customChecklistChecks[cc.id] || {},
+    hayActa,
+    redibujar: async () => {
+      customChecklistChecks[cc.id] = {};
+      await renderCustomChecklistsForCurrentView();
+    }
   });
 }
 
@@ -16631,17 +16775,29 @@ async function renderCustomChecklistsForCurrentView() {
         <div class="card-section-title" style="margin-bottom:0;">${cc.title} <span style="font-weight:400;color:var(--muted);font-size:0.8rem;">(${crewRoleLabel(cc.role_scope)})</span></div>
         ${delBtn}
       </div>
-      <div class="cl-progress-bar"><div class="cl-progress-fill" style="width:${cc.items.length ? (done / cc.items.length * 100) : 0}%;"></div></div>
-      ${itemsHtml}
+      <div class="cl-progress-bar"><div class="cl-progress-fill" id="custom-cl-progress-${cc.id}" style="width:${cc.items.length ? (done / cc.items.length * 100) : 0}%;"></div></div>
+      <div class="cl-role-badge" id="custom-cl-status-${cc.id}" style="margin-bottom:10px;">${escapeHtml(t('cl_pending'))}</div>
+      <div id="custom-cl-items-${cc.id}">${itemsHtml}</div>
       <div class="cl-signoff">
         <select class="sf-input signer-select" id="custom-cl-name-${cc.id}"></select>
         <div class="cl-done-banner" id="custom-cl-done-${cc.id}" style="display:none;"></div>
         <div class="settings-actions" style="margin-top:12px;">
-          <button class="btn-save" onclick="customChecklistSignOff('${cc.id}')">${t('cl_sign_off_routine')}</button>
+          <button class="btn-save" id="custom-cl-signoff-${cc.id}" onclick="customChecklistSignOff('${cc.id}')">${t('cl_sign_off_routine')}</button>
+          <button class="btn-cancel" onclick="resetCustomChecklist('${cc.id}')">${escapeHtml(t('cl_reset'))}</button>
         </div>
       </div>
     </div>`;
   }).join('');
+
+  // El acta de cada una. Hasta el 11/10 esto no existía: una checklist propia se
+  // firmaba y al volver a entrar se veía la lista viva vacía, igual que el bug
+  // que se arregló el 09/10 para las otras dos — pero en este camino el arreglo
+  // nunca se aplicó, porque `renderCustomChecklistsForCurrentView` no consultaba
+  // `checklist_completions` en ningún momento.
+  //
+  // No era un problema de protección: el candado y la comprobación contra el
+  // servidor ya impedían duplicar. Era que faltaba la vista.
+  for (const cc of matching) await dibujarActaDeChecklistPropia(cc);
   // Los selectores de estas tarjetas nacen vacíos: se llenan acá, después
   // de inyectar el HTML. Uno por tarjeta, y cada uno con los firmantes de SU
   // instancia — no los de toda la tripulación, y no los de la tarjeta vecina.
@@ -16751,6 +16907,9 @@ async function renderDeptRoutine() {
 
   pintarZonaDeFirma({ selectId: 'dept-routine-name', botonId: 'dept-routine-signoff-btn', acta: null });
   if (!currentOrgId) return;
+  // Pasada abierta por Reset: se muestra la lista viva, no el acta. Ver
+  // `reiniciarPasada()`.
+  if (pasadasAbiertas.has(deptScope().scopeKey)) return;
   const s = await buscarActaVigente({ role: roleKey, periodo: deptRoutinePeriodRange(currentCadenceKey) });
   // Guard against a stale response landing after the user already switched
   // to a different department/cadence tab while this was in flight.
@@ -16766,10 +16925,19 @@ async function renderDeptRoutine() {
   }
 }
 
-function resetDeptRoutine() {
-  const routine = currentDeptRoutine();
-  deptRoutineChecks[routine.role] = {};
-  renderDeptRoutine();
+async function resetDeptRoutine() {
+  const { routine, scopeKey } = deptScope();
+  const hayActa = !!(currentOrgId && await buscarActaVigente({
+    role: routine.role, periodo: deptRoutinePeriodRange(currentCadenceKey) }));
+  await reiniciarPasada({
+    scopeKey, items: routine.items,
+    checks: deptRoutineChecks[routine.role] || {},
+    hayActa,
+    redibujar: async () => {
+      deptRoutineChecks[routine.role] = {};
+      await renderDeptRoutine();
+    }
+  });
 }
 
 // Una instancia por período: la de mañana es diaria, el control mensual es

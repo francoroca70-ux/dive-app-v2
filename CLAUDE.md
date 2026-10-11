@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 441 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 473 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -523,12 +523,50 @@ diciendo «✓ firmada por Franco» arriba de un acta que el servidor había
 rechazado. Ver
 `Errores y aprendizajes/El arreglo que no cubrió el momento de firmar.md`.
 
-**Pendiente de ahí:** una checklist **propia** firmada todavía no muestra su
-acta (`renderCustomChecklistsForCurrentView` nunca consulta
-`checklist_completions`); no se puede duplicar, pero falta la vista. Y **Reset
-quedó ambiguo**: vacía los tildes y el redibujo vuelve a encontrar el acta del
-período, así que no abre visiblemente una pasada nueva. Hay que decidirlo con
-Fran.
+**Los dos pendientes de ahí se cerraron el 11/10.**
+
+**Una checklist propia firmada ahora muestra su acta.** No faltaba protección
+—el candado y la comprobación ya impedían duplicar— faltaba la vista:
+`renderCustomChecklistsForCurrentView` no consultaba `checklist_completions` en
+ningún momento. Y **se le agregó Reset en el mismo cambio**, porque mostrar el
+acta sin dar salida habría cambiado un hueco por una trampa: quedaría mostrando
+el acta para siempre, sin forma de repetir la checklist.
+
+**Reset = una segunda pasada, con dos actas** (decidido por Fran el 11/10).
+Antes **no hacía nada**: vaciaba el objeto local y el redibujo lo repoblaba desde
+`progressCache`, que `loadChecklistProgress()` devuelve sin consultar. Sobre una
+firmada era peor — el redibujo encontraba el acta y la mostraba otra vez.
+
+Ahora `reiniciarPasada()` lo decide en un solo lugar para los tres botones:
+confirma (es destructivo, se van los tildes de la tripulación), borra de verdad
+(caché + pendientes + servidor, **avisando** si el servidor rechaza — lo
+contrario que la limpieza post-firma, que calla a propósito), y si había acta
+**abre una pasada** en `pasadasAbiertas`.
+
+**La parte difícil: choca con `firmarUnaSolaVez()`**, que se niega si ya hay
+acta. Con la pasada abierta se salta esa negativa — sin la excepción, el
+guardián dejaría de proteger y pasaría a **bloquear**, el mismo error que casi
+se cometió con las dos actividades. La pasada se cierra **sólo si el acta
+entró**: si falló, sigue abierta para reintentar.
+
+Y la llave de instancia del instructor pasó de `` `instructor:${tripId}` `` a
+`instructorScope().scopeKey`: era la misma instancia **con otro texto**, y desde
+que Reset abre pasadas el guardián y el Reset tienen que mirar el mismo
+conjunto. Dos nombres para una instancia es un bug esperando.
+
+**Auditoría completa del módulo (11/10)** —qué protege los registros legales,
+qué está probado y qué sólo lo da el uso, y los tres huecos que quedan— en
+`Seven Seas Ops/Auditoría del sistema de checklists.md`. Dos cosas de ahí que
+conviene saber antes de tocar esto:
+
+- **El acta es inmutable en DOS capas independientes**: RLS no tiene política de
+  UPDATE ni DELETE (0 filas alcanzables) y el trigger
+  `trg_checklist_record_immutable` frena incluso saltando RLS. Las dos probadas.
+- **Toda prueba de «esto está bloqueado» tiene que afirmar que alcanzó una
+  fila.** La primera versión de esa prueba dijo «se pudo modificar un acta» y
+  era falso: `where id = NULL` no toca ninguna fila, el trigger por fila no
+  dispara, y «no hubo excepción» se lee igual que «se pudo». Tercera vez esta
+  semana con la misma forma.
 
 **Una checklist firmada muestra el acta, no la lista viva.** Firmar cierra la
 instancia y borra el trabajo en curso, así que antes se veía «completa» arriba

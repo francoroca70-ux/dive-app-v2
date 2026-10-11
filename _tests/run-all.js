@@ -60,6 +60,7 @@ const MINIMOS = {
   'onboarding.test.js':             12,
   'plan-limits.test.js':            14,
   'plantillas-tres-capas.test.js':  31,
+  'reset-segunda-pasada.test.js':   30,
   'signer.test.js':                 31,
   'trip-archive.test.js':           40,
 };
