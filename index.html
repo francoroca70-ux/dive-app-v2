@@ -4979,8 +4979,13 @@ const TRANSLATIONS = {
     offline_syncing_back: 'Back online — syncing {n} change{s}...', offline_syncing: 'Syncing {n} change{s}...', offline_all_synced: 'All changes synced ✓',
     trial_banner_ending: 'Your free trial ends in {n} day{s}. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
     trial_banner_expired: 'Your free trial has ended. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
+    trial_banner_ending_native: 'This shop\'s free trial ends in {n} day{s}. Your shop administrator can set up the subscription at sevenseasops.com.',
+    trial_banner_expired_native: 'This shop\'s free trial has ended. Your shop administrator can reactivate it at sevenseasops.com.',
+    plan_limit_admin_web: 'Your shop administrator can review this at sevenseasops.com.',
     bp_modal_title: 'Choose your plan',
     bp_modal_sub: 'Pick a plan to keep using Seven Seas. Change or cancel anytime.',
+    bp_native_locked_title: 'Subscription required',
+    bp_native_manage_on_web: 'Seven Seas Ops is subscribed to by the dive centre or charter operation, not from this app. Your shop administrator manages the subscription at sevenseasops.com from a web browser. Once it is active again, sign in here and your work continues where you left it.',
     bp_boats_unlimited_staff: 'boats · unlimited staff',
     bp_per_month: '/mo',
     bp_per_year: '/yr',
@@ -4995,6 +5000,8 @@ const TRANSLATIONS = {
     bp_back_to_plans: 'Back to plans',
     bp_locked_trial_expired: 'Your free trial has ended. Choose a plan to keep using Seven Seas.',
     bp_locked_canceled: 'Your subscription is no longer active. Choose a plan to keep using Seven Seas.',
+    bp_locked_trial_expired_native: 'The free trial for this shop has ended.',
+    bp_locked_canceled_native: 'This shop\'s subscription is no longer active.',
     bp_status_trial: 'Free trial',
     bp_status_trialing: 'Free trial',
     bp_status_active: 'Active',
@@ -5722,8 +5729,13 @@ const TRANSLATIONS = {
     offline_syncing_back: 'De vuelta en línea — sincronizando {n} cambio{s}...', offline_syncing: 'Sincronizando {n} cambio{s}...', offline_all_synced: 'Todos los cambios sincronizados ✓',
     trial_banner_ending: 'Tu prueba gratis termina en {n} día{s}. <a href="#" onclick="openChoosePlanModal();return false;">Elegí un plan</a> para seguir usando Seven Seas.',
     trial_banner_expired: 'Tu prueba gratis terminó. <a href="#" onclick="openChoosePlanModal();return false;">Elegí un plan</a> para seguir usando Seven Seas.',
+    trial_banner_ending_native: 'La prueba gratis de este centro termina en {n} día{s}. El administrador de tu centro puede contratar la suscripción en sevenseasops.com.',
+    trial_banner_expired_native: 'La prueba gratis de este centro terminó. El administrador de tu centro puede reactivarla en sevenseasops.com.',
+    plan_limit_admin_web: 'El administrador de tu centro puede revisarlo en sevenseasops.com.',
     bp_modal_title: 'Elegí tu plan',
     bp_modal_sub: 'Elegí un plan para seguir usando Seven Seas. Cambialo o cancelalo cuando quieras.',
+    bp_native_locked_title: 'Hace falta una suscripción',
+    bp_native_manage_on_web: 'A Seven Seas Ops se suscribe el centro de buceo o la operación de charter, no se hace desde esta app. El administrador de tu centro gestiona la suscripción en sevenseasops.com desde un navegador. Cuando vuelva a estar activa, entrá acá y tu trabajo sigue donde lo dejaste.',
     bp_boats_unlimited_staff: 'botes · personal ilimitado',
     bp_per_month: '/mes',
     bp_per_year: '/año',
@@ -5738,6 +5750,8 @@ const TRANSLATIONS = {
     bp_back_to_plans: 'Volver a los planes',
     bp_locked_trial_expired: 'Tu prueba gratis terminó. Elegí un plan para seguir usando Seven Seas.',
     bp_locked_canceled: 'Tu suscripción ya no está activa. Elegí un plan para seguir usando Seven Seas.',
+    bp_locked_trial_expired_native: 'La prueba gratis de este centro terminó.',
+    bp_locked_canceled_native: 'La suscripción de este centro ya no está activa.',
     bp_status_trial: 'Prueba gratis',
     bp_status_trialing: 'Prueba gratis',
     bp_status_active: 'Activo',
@@ -6153,12 +6167,16 @@ function updateTrialBanner() {
   }
   banner.style.display = 'flex';
   const textEl = banner.querySelector('.trial-banner-text');
+  // El enlace «elegí un plan» va DENTRO del texto traducido, así que acá no se
+  // puede quitar sin reemplazar la clave: de ahí las variantes `_native`, que
+  // dicen lo mismo y terminan en quién lo reactiva en vez de en un enlace.
+  const sufijo = puedeMostrarPrecios() ? '' : '_native';
   if (daysRemaining <= 0) {
     banner.className = 'expired';
-    textEl.innerHTML = t('trial_banner_expired');
+    textEl.innerHTML = t('trial_banner_expired' + sufijo);
   } else {
     banner.className = 'ending';
-    textEl.innerHTML = t('trial_banner_ending')
+    textEl.innerHTML = t('trial_banner_ending' + sufijo)
       .replace('{n}', daysRemaining).replace('{s}', daysRemaining > 1 ? 's' : '');
   }
 }
@@ -6294,23 +6312,16 @@ async function updatePlanOverageBanner() {
       .join(' · ');
     msg += ' ' + t('plan_overage_where').replace('{list}', lista);
   }
-  msg += ' ' + (needs
-    ? t('plan_limit_upgrade_to').replace('{plan}', needs.charAt(0).toUpperCase() + needs.slice(1))
-    : t('plan_limit_contact'));
-  banner.querySelector('.plan-overage-text').innerHTML = msg +
-    ` <a href="#" onclick="openChoosePlanModal(); return false;">${t('plan_limit_see_plans')}</a>`;
+  msg += colaDeAvisoDePlan(needs);
+  banner.querySelector('.plan-overage-text').innerHTML = msg;
   banner.style.display = 'flex';
 }
 
 function showPlanLimitMessage(feedbackEl, resource, block) {
   const key = resource === 'boats' ? 'plan_limit_boats' : 'plan_limit_locations';
   let msg = t(key).replace('{max}', block.max);
-  msg += ' ' + (block.needs
-    ? t('plan_limit_upgrade_to').replace('{plan}',
-        block.needs.charAt(0).toUpperCase() + block.needs.slice(1))
-    : t('plan_limit_contact'));
-  feedbackEl.innerHTML = msg +
-    ` <a href="#" onclick="openChoosePlanModal(); return false;">${t('plan_limit_see_plans')}</a>`;
+  msg += colaDeAvisoDePlan(block.needs);
+  feedbackEl.innerHTML = msg;
   feedbackEl.className = 'save-feedback error visible';
 }
 
@@ -6349,14 +6360,37 @@ function openChoosePlanModal(lockedReason) {
   if (lockedReason) {
     closeBtn.style.display = 'none';
     lockedMsgEl.style.display = 'block';
+    // En nativo el motivo se dice sin el «elegí un plan» del final: ahí no hay
+    // ningún plan que elegir, y un cartel que pide algo que la pantalla no
+    // ofrece es peor que no decir nada.
+    const sufijoNativo = puedeMostrarPrecios() ? '' : '_native';
     lockedMsgEl.textContent = lockedReason === 'subscription_canceled'
-      ? t('bp_locked_canceled') : t('bp_locked_trial_expired');
+      ? t('bp_locked_canceled' + sufijoNativo) : t('bp_locked_trial_expired' + sufijoNativo);
   } else {
     closeBtn.style.display = '';
     lockedMsgEl.style.display = 'none';
   }
 
-  renderPlanCards();
+  // En la app de una tienda NO se dibuja la vitrina: ni el selector de ciclo,
+  // ni las tarjetas, ni un precio. Queda el motivo del bloqueo y una frase
+  // que dice quién lo reactiva y dónde.
+  //
+  // Es una frase, no un botón ni un enlace: lo que Apple mira es si la app
+  // empuja a comprar por fuera, y un cartel que explica por qué no se puede
+  // trabajar no es lo mismo que un precio con un botón al lado. El dueño
+  // igual necesita saber qué pasó — esconderlo sin explicación cambiaría un
+  // problema de tienda por una app que parece rota.
+  const vitrina = puedeMostrarPrecios();
+  const ciclo = document.getElementById('plan-cycle-toggle');
+  const grilla = document.getElementById('plan-cards-grid');
+  const sub = document.querySelector('#paddle-plans-step [data-i18n="bp_modal_sub"]');
+  const titulo = document.querySelector('#modal-choose-plan [data-i18n="bp_modal_title"]');
+  if (ciclo)  ciclo.style.display  = vitrina ? 'flex' : 'none';
+  if (grilla) grilla.style.display = vitrina ? 'grid' : 'none';
+  if (sub)    sub.textContent = vitrina ? t('bp_modal_sub') : t('bp_native_manage_on_web');
+  if (titulo) titulo.textContent = vitrina ? t('bp_modal_title') : t('bp_native_locked_title');
+
+  if (vitrina) renderPlanCards();
   document.getElementById('modal-choose-plan').style.display = 'flex';
 }
 function closeChoosePlanModal() {
@@ -6399,6 +6433,11 @@ function setPlanCycle(cycle) {
 function renderPlanCards() {
   const grid = document.getElementById('plan-cards-grid');
   if (!grid) return;
+  // El corte va ACÁ y no sólo en quien llama: `backToPlanPicker()` también
+  // dibuja las tarjetas, y la llaman tres lugares. Esconder la grilla no
+  // alcanzaba: los precios quedaban en el DOM de una app de iOS, y «no está a
+  // la vista» es más débil y más difícil de probar que «no está».
+  if (!puedeMostrarPrecios()) { grid.innerHTML = ''; return; }
   const cycle = window._planCycle || 'monthly';
   const perLabel = cycle === 'annual' ? t('bp_per_year') : t('bp_per_month');
 
@@ -6460,6 +6499,13 @@ function updateBillingCard(org) {
   // Owner-only, but every owner sees it -- including trials and the legacy
   // orgs that never went through checkout.
   if (currentUserRole !== 'owner') { card.style.display = 'none'; return; }
+
+  // Y en la app de una tienda no se muestra en absoluto (decidido por Fran el
+  // 11/10). No se pierde nada que funcione hoy: elegir o cambiar de plan ya
+  // era sólo web desde el 30/09, y al personal nunca se le mostró porque la
+  // tarjeta es de dueño. Lo único que deja de verse es EN QUÉ plan está el
+  // centro, que el dueño ya sabe — lo compró él, en la web.
+  if (!puedeMostrarPrecios()) { card.style.display = 'none'; return; }
   card.style.display = 'block';
 
   const statusLine  = document.getElementById('billing-status-line');
@@ -6537,7 +6583,11 @@ function updateBillingCard(org) {
 async function openBillingPortal() {
   const btn = document.getElementById('btn-manage-billing');
   const feedback = document.getElementById('billing-portal-feedback');
-  if (isNativeAppShell()) {
+  // Desde el 11/10 esto es defensa en profundidad y no el camino normal: en
+  // nativo ya no hay tarjeta de facturación ni tarjetas de plan de donde
+  // salir, así que acá no se llega. Se deja porque el día que alguien vuelva
+  // a mostrar un botón, el corte sigue puesto.
+  if (!puedeMostrarPrecios()) {
     feedback.innerHTML = t('bp_use_web_for_billing');
     feedback.className = 'save-feedback visible';
     return;
@@ -6584,6 +6634,49 @@ function isNativeAppShell() {
     ['ios', 'android'].includes(window.Capacitor.getPlatform()));
 }
 
+// UN SOLO LUGAR decide si esta copia de la app puede mostrar precios y una
+// forma de pagar. Se llama por lo que DECIDE y no por dónde estamos, porque la
+// regla es «una copia distribuida por una tienda de apps no muestra nada que
+// parezca una compra» — y el día que haya una tercera razón para apagarlo
+// (una build de demo, un centro con facturación por fuera) se agrega acá.
+//
+// Nació el 11/10 porque la regla estaba en DOS lugares y se le escapó el
+// tercero, que era el peor: `openChoosePlanModal()` levantaba el bloqueo con
+// las tarjetas de los planes y los **precios en dólares**, sin forma de
+// cerrarlo, dentro de la app de iOS. El corte de nativo se le había puesto al
+// checkout y al portal; a la vitrina, no. Apple lo preguntó por 2.1(b) el
+// 08/10 antes de terminar la revisión.
+//
+// Para qué sirve, en plata: Apple se queda con 15–30% de lo cobrado por IAP,
+// contra ~5% de Paddle. Y el IAP además no encaja — la suscripción es del
+// CENTRO y la usan seis personas en tres plataformas, no de un Apple ID. Es
+// el caso de Enterprise Services (3.1.3(c)).
+function puedeMostrarPrecios() {
+  return !isNativeAppShell();
+}
+
+// La cola de un aviso de plan: qué hacer y dónde. La comparten el aviso de
+// tope de barcos, el que frena al crear uno, y el banner de trial.
+//
+// Existe porque cerrar la vitrina no alcanzaba: había **tres puertas más** al
+// modal de planes que el arreglo del 11/10 no había cerrado — un enlace «ver
+// los planes» pegado a cada aviso de límite, y el banner de trial con «elegí
+// un plan» dentro del propio texto traducido. Con la vitrina apagada ya no
+// mostraban precios, pero un enlace que invita a elegir un plan sigue siendo
+// un llamado a comprar, y en la app no llevaba a ningún lado útil.
+//
+// El AVISO se queda en las dos plataformas: un centro tiene que saber que
+// llegó al tope de barcos de su plan. Lo que cambia es la salida — en la app,
+// quién lo resuelve y dónde.
+function colaDeAvisoDePlan(needs) {
+  if (!puedeMostrarPrecios()) return ' ' + t('plan_limit_admin_web');
+  const queHacer = needs
+    ? t('plan_limit_upgrade_to').replace('{plan}', needs.charAt(0).toUpperCase() + needs.slice(1))
+    : t('plan_limit_contact');
+  return ' ' + queHacer +
+    ` <a href="#" onclick="openChoosePlanModal(); return false;">${t('plan_limit_see_plans')}</a>`;
+}
+
 // cycle: 'monthly' | 'annual'. Defaults to whatever the toggle is showing.
 async function openPaddleCheckout(tier, cycle) {
   const feedback = document.getElementById('choose-plan-feedback');
@@ -6597,7 +6690,11 @@ async function openPaddleCheckout(tier, cycle) {
     feedback.className = 'save-feedback error visible';
     return;
   }
-  if (isNativeAppShell()) {
+  // Desde el 11/10 esto es defensa en profundidad y no el camino normal: en
+  // nativo ya no hay tarjeta de facturación ni tarjetas de plan de donde
+  // salir, así que acá no se llega. Se deja porque el día que alguien vuelva
+  // a mostrar un botón, el corte sigue puesto.
+  if (!puedeMostrarPrecios()) {
     feedback.innerHTML = t('bp_use_web_for_billing');
     feedback.className = 'save-feedback visible';
     return;
@@ -8486,7 +8583,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-11d');
+  console.info('[Seven Seas] build 2026-10-11f');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo

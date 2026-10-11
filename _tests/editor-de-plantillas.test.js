@@ -535,10 +535,15 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   chk('y un precio vacío queda vacío, no en 0.00',
       campoVacio.value==='', JSON.stringify(campoVacio.value));
 
-  // ─── 12 · LAS DOS VERSIONES ───
-  chk('el build subió a 2026-10-11b', /build 2026-10-11d/.test(html));
-  const sw=fs.readFileSync(require('path').join(__dirname,'..','sw.js'),'utf8');
-  chk('y el service worker a v44', /seven-seas-v46/.test(sw));
+  // Las dos versiones (sw.js y el build de index.html) se comprueban en UN
+  // solo archivo, `sin-vitrina-en-nativo.test.js`, y acá ya no.
+  //
+  // Estaban en los dos y se desincronizaron a la primera: un `sed` actualizó
+  // el patrón y NO la etiqueta, así que el test decía «el build subió a
+  // 2026-10-11b» mientras buscaba 2026-10-11e. Un test cuyo nombre miente
+  // sobre lo que comprueba es peor que no tenerlo, porque el día que falle
+  // manda a buscar la cosa equivocada. Dos lugares para el mismo número es la
+  // misma regla copiada que este proyecto ya pagó cinco veces.
 
 } catch(e){ chk('sin excepciones durante la corrida', false, String(e&&e.stack||e).slice(0,400)); }
 process.exit(fail);

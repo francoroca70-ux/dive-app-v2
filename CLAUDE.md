@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 575 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 632 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -715,6 +715,80 @@ Postgres concede EXECUTE a **PUBLIC** por defecto (el ACL lo muestra como
 de RLS, que se evalúan con el rol que consulta, así que revocarla rompe la app
 (medido: 4 filas → «permission denied»). Ver
 `Errores y aprendizajes/El permiso que nunca estuvo revocado.md`.
+
+**En la app de una tienda NO se muestra nada que parezca una compra**, y lo
+decide `puedeMostrarPrecios()` — llamada por lo que decide y no por dónde
+estamos. Apple rebotó la build 136001 el 08/10 por **2.1(b), Information
+Needed**, pidiendo el modelo de negocio, y al medir apareció por qué: el corte
+de nativo estaba en **dos** lugares (checkout y portal, desde el 30/09) y se le
+había escapado el **tercero**, el peor. `enforceSubscriptionGate()` levantaba un
+modal **no cerrable** con las tarjetas de los tres planes **y sus precios**,
+dentro de la app de iOS. Un paywall con precios, sin IAP, señalando una compra
+en la web.
+
+Qué quedó, en iOS y Android: el bloqueo **no muestra un solo precio** (la grilla
+se **vacía** en `renderPlanCards()`, no se esconde — «no está a la vista» es más
+débil y más difícil de probar que «no está», y el corte va ahí porque
+`backToPlanPicker()` también dibuja y la llaman tres lugares); la **tarjeta de
+facturación no aparece** (ya era de dueño, y gestionar el plan era sólo web); y
+el motivo se dice **sin «elegí un plan»**, que ahí no existe.
+
+**Pero sigue bloqueando en las dos plataformas**: cambió *qué* se muestra, no
+*cuándo*. Si en nativo no bloqueara, la app de iOS sería el producto gratis.
+`past_due` sigue sin bloquear, acompañando los reintentos de Paddle.
+
+**Y había TRES puertas más al modal, que el primer arreglo no cerró.**
+Preguntando quién llama a `openChoosePlanModal()` aparecieron: el enlace «ver
+los planes» del aviso de tope de barcos, el del que frena al crear uno, y el
+**banner de trial** con «elegí un plan» **dentro del texto traducido**. La cola
+de esos avisos la decide ahora `colaDeAvisoDePlan()`, y el banner tiene claves
+`_native` porque desde el código no se podía quitar un enlace que venía en la
+traducción. **El aviso se queda** —un centro tiene que saber que llegó al tope—
+y lo que cambia es la salida. Apagar la pantalla no apaga las puertas: la
+pregunta «¿quién llama a esto?» es la misma que destapó la 3b.
+
+Por qué cobramos por fuera: Apple se queda con **15–30%** contra **~5%** de
+Paddle, y el IAP **no encaja** — la suscripción es del **centro** y la usan seis
+personas en tres plataformas, no de un Apple ID. Es el caso de **Enterprise
+Services, 3.1.3(c)**. La respuesta a las cinco preguntas está en
+`_apple/respuesta-2.1b-2026-10-11.md`, y **para que sea verdadera hay que enviar
+la build `2026-10-11f`** más credenciales de demo con plan activo en App Review
+Information.
+
+**La cuenta de revisión es `demo@sevenseasops.com`, dueña del org
+`Blue water`** (`044849ea…`), medida el 11/10 en **`active` / `growth`**. El
+cartel de «suscripción vencida» que vio Fran NO era ésa: era su propia cuenta,
+`francoroca70@gmail.com`, dueña de `the seven seas dive shop` (`81944871…`), que
+quedó en **`canceled`** desde la prueba de cobro real del 30/09. Es correcto que
+esté así.
+
+**Y la demo NO cuelga de una suscripción viva — medido en Paddle el 11/10.**
+Primero dije que sí y que podía morirse a mitad de la revisión: lo **deduje** de
+que la columna `paddle_subscription_id` estaba cargada, sin mirar el otro lado.
+Falso. En la cuenta de producción existen dos clientes —
+`ctm_01m3s2v8ag…` (francoroca70, 1 suscripción **Canceled** con reembolso total)
+y `ctm_01m3s2jxnn…` (demo, **ninguna** suscripción) — y los ids de `Blue water`
+(`ctm_01m231kxzn…` / `sub_01m234hzc…`) **no están ahí**: son del sandbox, de
+otra generación de ids.
+
+Así que la demo es **estable**, porque no hay nada de producción detrás que se
+pueda cancelar y el webhook nunca va a recibir un evento para esa suscripción.
+Estable porque nadie la mira, pero para una cuenta de revisión alcanza.
+
+Lo único roto, y no afecta a Apple: «Gestionar facturación» desde la **web** con
+la demo falla (el portal necesita un cliente real, devuelve 400). En nativo esa
+tarjeta ya no aparece. **No perseguirlo como bug nuevo.**
+
+Cuando la cuenta de revisión tenga una suscripción real, sí hay que mirar antes
+de cada envío que **no tenga un cambio agendado**: cancelar «al final del
+período» en Paddle NO cambia el estado —queda `active` hasta la fecha de
+factura— y la app no lee el cambio agendado. **Y se busca por el
+`paddle_customer_id` de la base, no por el mail**, que es lo que hizo aparecer
+un cliente que no era el de la org. Detalle en
+`Operativa/Trámites en curso.md`.
+
+Detalle y lo que no pude verificar, en
+`Decisiones/Nada que parezca una compra en la app de una tienda.md`.
 
 **Seguridad, dos principios que costaron caro:**
 - El webhook de Paddle **deriva el plan del price ID de Paddle**, nunca de lo

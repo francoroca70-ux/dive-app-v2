@@ -54,7 +54,7 @@ const MINIMOS = {
   'checklist-record-scope.test.js': 35,
   'checklist-record.test.js':       54,
   'dept-visibility.test.js':        29,
-  'editor-de-plantillas.test.js':   86,
+  'editor-de-plantillas.test.js':   84,
   'etapa-3b-lista-por-tipo.test.js':25,
   'firmar-una-sola-vez.test.js':    26,
   'motivo-de-lo-que-falto.test.js': 47,
@@ -63,6 +63,7 @@ const MINIMOS = {
   'plantillas-tres-capas.test.js':  31,
   'reset-segunda-pasada.test.js':   30,
   'signer.test.js':                 31,
+  'sin-vitrina-en-nativo.test.js':  59,
   'trip-archive.test.js':           40,
 };
 
