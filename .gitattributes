@@ -1,57 +1,57 @@
 # Fin de línea: LF en el repo Y en el disco de trabajo.
 #
-# Por qué existe este archivo, con fecha. El 10/10, después de un
-# `git checkout -- index.html` en Git Bash sobre Windows, el archivo quedó con
-# **19.923 líneas en CRLF** mientras el repo las tiene en LF. Medido: ignorando
-# espacios, el contenido era IDÉNTICO a HEAD — cero diferencias reales.
+# Por qué existe, con fecha. El 10/10, después de un `git checkout -- index.html`
+# en Git Bash sobre Windows, el archivo quedó con **19.923 líneas en CRLF**
+# mientras el repo las tiene en LF. Medido: ignorando espacios, el contenido era
+# IDÉNTICO a HEAD — cero diferencias reales.
 #
 # El problema no es estético. Sin esto, `git status` muestra `index.html`
 # modificado para siempre y `git diff` devuelve 19.923 líneas de ruido. En un
 # proyecto donde la regla es «validar antes de pushear» y el archivo tiene
-# ~19.900 líneas, eso **esconde el cambio real dentro del ruido**: es
-# exactamente el mecanismo por el que un cambio se cuela sin que nadie lo vea.
+# ~19.900 líneas, eso **esconde el cambio real dentro del ruido**: es exactamente
+# el mecanismo por el que un cambio se cuela sin que nadie lo vea. Y commitearlo
+# sería peor: cualquier `git log -p` posterior deja de servir para encontrar
+# cuándo cambió algo.
 #
-# Y commitearlo sería peor: el historial de ese archivo quedaría con un commit
-# que toca todas las líneas, y cualquier `git log -p` posterior pasa a ser
-# inútil para encontrar cuándo cambió algo.
+# ─── Por qué un comodín y no una lista de extensiones ───
 #
-# Va dirigido por extensión y no con `* text=auto`, a propósito: el repo tiene
-# 60 png, 2 docx y `android/gradlew`. Un gradlew en CRLF no arranca.
+# La primera versión de este archivo enumeraba extensiones una por una. Se armó
+# mirando `git ls-files` con un `head -20` sobre una lista ordenada por cantidad,
+# y se trató esa lista truncada como completa. Resultado: `.pro` y `.pbxproj`
+# quedaron afuera y git avisó al primer commit.
+#
+# Es [[La regla copiada N veces]] con otra forma: **una lista enumerada son N
+# lugares donde puede faltar una entrada, y el defecto aparece justo donde
+# falta.** Un archivo nuevo con una extensión no listada volvería a traer el
+# problema, en silencio y meses después.
+#
+# Así que `* text=auto` y listo. `text=auto` **detecta el contenido binario por
+# sí mismo**, así que los png y los jar no se tocan sin tener que nombrarlos. Lo
+# que queda abajo son sólo las dos excepciones reales.
+* text=auto eol=lf
 
-# El código y la documentación: LF siempre, en los dos lados.
-*.html  text eol=lf
-*.js    text eol=lf
-*.ts    text eol=lf
-*.json  text eol=lf
-*.md    text eol=lf
-*.sql   text eol=lf
-*.txt   text eol=lf
-*.yml   text eol=lf
-*.xml   text eol=lf
-*.java  text eol=lf
-*.swift text eol=lf
-*.gradle text eol=lf
-*.properties text eol=lf
-*.plist text eol=lf
-*.storyboard text eol=lf
-*.xcscheme text eol=lf
-*.xcconfig text eol=lf
-.gitignore text eol=lf
-.gitattributes text eol=lf
+# ─── Las dos excepciones ───
 
-# Scripts de shell: LF obligatorio, no por prolijidad sino porque en CRLF no
-# ejecutan.
-android/gradlew text eol=lf
-*.sh text eol=lf
+# Un .bat en LF puede comportarse mal en Windows: éste va en CRLF a propósito.
+*.bat text eol=crlf
 
-# Binarios: que git no los toque nunca.
-*.png binary
-*.jpg binary
+# Binarios declarados igual, como cinturón además del detector. Si alguno de
+# estos llegara con una cabecera rara, `text=auto` podría dudar; acá no duda.
+*.png  binary
+*.jpg  binary
 *.jpeg binary
-*.gif binary
-*.ico binary
+*.gif  binary
+*.ico  binary
 *.webp binary
 *.docx binary
-*.pdf binary
-*.jar binary
+*.pdf  binary
+*.jar  binary
 *.keystore binary
+*.p12  binary
+*.mobileprovision binary
+
+# Scripts de shell: LF obligatorio, no por prolijidad sino porque en CRLF no
+# ejecutan. `* text=auto eol=lf` ya los cubre; queda explícito porque romperlo
+# no da error de git, da un build que no arranca.
+android/gradlew text eol=lf
+*.sh text eol=lf
