@@ -108,6 +108,8 @@ window.__t={
   borrarDeCache:(n)=>cacheLocalBorrar(n),
   textoEnMiIdioma:(it)=>textoDeItemEnMiIdioma(it),
   dibujar:(id)=>dibujarPanelDePreparacion(id),
+  abrirSolo:(panelId)=>abrirSoloEstePanel(panelId),
+  precio:(id,v,el)=>updateTripTypePrice(id,v,el),
   guardarTexto:(tt,it,v)=>guardarTextoDeItem(tt,it,v,null),
   agregar:(tt)=>agregarItemDePlantilla(tt),
   retirar:(tt,it,n)=>retirarItemDePlantilla(tt,it,n),
@@ -447,10 +449,96 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   chk('y el botón está junto a los otros tres del tipo de salida',
       /togglePrepChecklist\('\$\{tt\.id\}'\)/.test(html));
 
-  // ─── 11 · LAS DOS VERSIONES ───
-  chk('el build subió a 2026-10-11b', /build 2026-10-11c/.test(html));
+  // ─── 11 · UN SOLO PANEL ABIERTO EN TIPOS DE SALIDA ───
+  //
+  // Reportado por Fran el 11/10: abría «formularios requeridos», después
+  // «lista de preparación», y quedaban los dos abiertos uno debajo del otro.
+  // En el celular la pantalla se volvía larguísima.
+  //
+  // La causa: los cuatro botones tenían cada uno su propia lógica de abrir y
+  // cerrar, así que ninguno sabía de los otros.
+  limpiar();
+  // El panel que `prepararDOM()` colgó del body tiene el MISMO id que el que
+  // va dentro de la lista, y `getElementById` devuelve el primero del
+  // documento. Hay que sacarlo antes o esta sección mide el panel equivocado.
+  // Segunda vez que me pasa en este archivo: un id duplicado en un test se
+  // lee como un bug del código.
+  panel().remove();
+
+  // Y la lista NO se crea: `#trip-types-list` ya existe en el index.html real,
+  // y crear otra con el mismo id hacía que la función cerrara los paneles de
+  // una y el test midiera los de la otra. Tercera vez con la misma forma en
+  // este archivo — **en un test sobre el DOM real, los ids ya están tomados.**
+  const lista = window.document.getElementById('trip-types-list');
+  const PANELES = ['gear-fields', 'rental-fees', 'required-waivers', 'prep-checklist'];
+  for (const p of PANELES) {
+    const d = window.document.createElement('div');
+    d.className = 'tt-panel'; d.id = `${p}-${TT}`; d.style.display = 'none';
+    lista.appendChild(d);
+  }
+  // Un panel de OTRO tipo de salida: abrir uno de ésos alargaba la pantalla
+  // igual, así que también tiene que cerrarse.
+  const otro = window.document.createElement('div');
+  otro.className = 'tt-panel'; otro.id = 'gear-fields-tipo-2'; otro.style.display = 'none';
+  lista.appendChild(otro);
+  const abierto = (id) => window.document.getElementById(id).style.display === 'block';
+  const cuantosAbiertos = () =>
+    [...lista.querySelectorAll('.tt-panel')].filter(p => p.style.display === 'block').length;
+
+  chk('abrir un panel devuelve el panel, para poder llenarlo',
+      !!T.abrirSolo(`required-waivers-${TT}`));
+  chk('y queda abierto', abierto(`required-waivers-${TT}`));
+
+  T.abrirSolo(`prep-checklist-${TT}`);
+  chk('abrir otro cierra el primero', !abierto(`required-waivers-${TT}`));
+  chk('y queda UNO solo abierto en toda la lista', cuantosAbiertos()===1,
+      cuantosAbiertos()+' abiertos');
+
+  T.abrirSolo('gear-fields-tipo-2');
+  chk('abrir el panel de otro tipo de salida también cierra el anterior',
+      !abierto(`prep-checklist-${TT}`) && cuantosAbiertos()===1);
+
+  // Y sigue siendo un toggle: el mismo botón dos veces cierra.
+  chk('volver a apretar el mismo devuelve null, no el panel',
+      T.abrirSolo('gear-fields-tipo-2')===null);
+  chk('y no queda ninguno abierto', cuantosAbiertos()===0);
+
+  chk('un id que no existe no explota', T.abrirSolo('no-existe')===null);
+
+  // Se cierran por CLASE y no por una lista de ids: una lista de cuatro ids es
+  // cuatro lugares donde puede faltar una entrada, y el quinto panel que
+  // alguien agregue mañana se olvidaría en silencio. Mismo error que la
+  // enumeración de extensiones en .gitattributes.
+  chk('el cierre es por clase, no por una lista de ids',
+      /querySelectorAll\('\.tt-panel'\)/.test(html) &&
+      !/\['gear-fields', 'rental-fees'/.test(html));
+  chk('los cuatro paneles llevan la clase',
+      (html.match(/class="tt-panel" id="/g)||[]).length===4,
+      (html.match(/class="tt-panel" id="/g)||[]).length+' de 4');
+  chk('y los cuatro botones pasan por la misma función',
+      (html.match(/abrirSoloEstePanel\(/g)||[]).length===5, // 1 declaración + 4 usos
+      (html.match(/abrirSoloEstePanel\(/g)||[]).length+' menciones');
+  chk('ya no queda ningún toggle con su propia lógica de abrir/cerrar',
+      !/if \(panel\.style\.display === 'block'\) \{ panel\.style\.display = 'none'; return; \}/.test(html));
+
+  // ─── 11b · EL PRECIO SE VE COMO UN PRECIO AL GUARDARLO ───
+  //
+  // Fran escribió 100 en un tipo nuevo y quedó «100»: los dos decimales sólo
+  // aparecían al recargar la pantalla.
+  limpiar();
+  const campoPrecio = { value:'100', style:{} };
+  await T.precio(TT, '100', campoPrecio);
+  chk('al guardar, el precio se reescribe con dos decimales',
+      campoPrecio.value==='100.00', campoPrecio.value);
+  const campoVacio = { value:'', style:{} };
+  await T.precio(TT, '', campoVacio);
+  chk('y un precio vacío queda vacío, no en 0.00',
+      campoVacio.value==='', JSON.stringify(campoVacio.value));
+
+  // ─── 12 · LAS DOS VERSIONES ───
+  chk('el build subió a 2026-10-11b', /build 2026-10-11d/.test(html));
   const sw=fs.readFileSync(require('path').join(__dirname,'..','sw.js'),'utf8');
-  chk('y el service worker a v44', /seven-seas-v45/.test(sw));
+  chk('y el service worker a v44', /seven-seas-v46/.test(sw));
 
 } catch(e){ chk('sin excepciones durante la corrida', false, String(e&&e.stack||e).slice(0,400)); }
 process.exit(fail);

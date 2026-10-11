@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 561 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 575 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -621,6 +621,18 @@ auditoría sin medir.** Lo que lo baja: el lado que lee no se toca, sin
 migración, RLS ya estaba, el patrón ya existía, y no toca la identidad de nada
 —precisamente porque retira en vez de borrar. Detalle en
 `Seven Seas Ops/El centro edita su lista de preparación.md`.
+
+**En Tipos de Salida hay UN solo panel abierto a la vez**, y lo decide
+`abrirSoloEstePanel()`. Los cuatro botones tenían cada uno su propia lógica de
+abrir y cerrar, así que ninguno sabía de los otros: con dos paneles apenas se
+notaba y el cuarto lo hizo evidente — Fran abría «formularios requeridos» y
+después «lista de preparación» y quedaban los dos, con la pantalla larguísima en
+el celular. **Se cierran por CLASE (`.tt-panel`), no por una lista de ids**: una
+lista de cuatro ids es cuatro lugares donde puede faltar una entrada y el quinto
+panel se olvidaría en silencio, el mismo error que la enumeración de extensiones
+en `.gitattributes`. Cierra en toda la lista y no sólo en la tarjeta. De paso
+`toggleRentalFees` ganó el guardián de nulo que era el único de los cuatro en no
+tener.
 
 **Auditoría completa del módulo (11/10)** —qué protege los registros legales,
 qué está probado y qué sólo lo da el uso, y los tres huecos que quedan— en

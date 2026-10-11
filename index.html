@@ -8486,7 +8486,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-11c');
+  console.info('[Seven Seas] build 2026-10-11d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -19729,10 +19729,10 @@ async function renderTripTypesList() {
       ${t('set_multiday_checkbox_label')}
     </label>
     ${tt.is_multi_day ? `<p style="font-size:0.75rem;color:var(--muted);margin:4px 0 0;">${t('set_crew_day_rate_hint')}</p>` : ''}` : ''}
-    <div id="gear-fields-${tt.id}" style="display:none;margin:6px 0 0;"></div>
-    <div id="rental-fees-${tt.id}" style="display:none;margin:6px 0 0;"></div>
-    <div id="required-waivers-${tt.id}" style="display:none;margin:6px 0 0;"></div>
-    <div id="prep-checklist-${tt.id}" style="display:none;margin:6px 0 0;"></div>
+    <div class="tt-panel" id="gear-fields-${tt.id}" style="display:none;margin:6px 0 0;"></div>
+    <div class="tt-panel" id="rental-fees-${tt.id}" style="display:none;margin:6px 0 0;"></div>
+    <div class="tt-panel" id="required-waivers-${tt.id}" style="display:none;margin:6px 0 0;"></div>
+    <div class="tt-panel" id="prep-checklist-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     </div>
   `).join('');
 }
@@ -19742,10 +19742,8 @@ async function renderTripTypesList() {
 // Mask" report: trip types created at different times can end up with different gear
 // fields attached, and until now there was no way to add a missing one back in Settings.
 async function toggleGearFieldsPanel(tripTypeId) {
-  const panel = document.getElementById('gear-fields-' + tripTypeId);
+  const panel = abrirSoloEstePanel('gear-fields-' + tripTypeId);
   if (!panel) return;
-  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
-  panel.style.display = 'block';
   panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);">${t('common_loading')}</p>`;
 
   if (!gearFieldCatalog.length) await loadGearFieldCatalog();
@@ -19778,16 +19776,14 @@ async function updateTripTypeGearField(tripTypeId, gearFieldId, checked, existin
 }
 
 function toggleRequiredWaivers(tripTypeId) {
-  const panel = document.getElementById('required-waivers-' + tripTypeId);
+  const panel = abrirSoloEstePanel('required-waivers-' + tripTypeId);
   if (!panel) return;
-  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
   const tt = (window._settingsTripTypes || []).find(x => x.id === tripTypeId);
   const required = new Set((tt && tt.required_waiver_types) || []);
   const waiverTypeOptions = [
     ['liability', 'wv_type_liability'], ['minor', 'wv_type_minor'], ['freediving', 'wv_type_freediving'],
     ['snorkel', 'wv_type_snorkel'], ['medical', 'wv_type_medical'], ['custom', 'wv_type_custom']
   ];
-  panel.style.display = 'block';
   panel.innerHTML = `
     <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
       <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">${t('set_required_waivers_header')}</div>
@@ -19818,11 +19814,51 @@ async function updateTripTypeMultiDay(id, checked) {
 }
 
 async function updateTripTypePrice(id, value, inputEl) {
-  await sb.from('trip_types').update({ default_price: parseFloat(value) || 0 }).eq('id', id);
+  const precio = parseFloat(value) || 0;
+  await sb.from('trip_types').update({ default_price: precio }).eq('id', id);
   if (inputEl) {
+    // Se reescribe con los dos decimales, que antes sólo aparecían al recargar
+    // la pantalla: escribías 100 y quedaba «100», aunque la fila ya decía
+    // 100.00 y el resto de la app muestra precios con centavos. Reportado por
+    // Fran el 11/10 al crear un tipo nuevo. Es un precio: que se vea como un
+    // precio en el momento en que se guarda, no en la próxima visita.
+    inputEl.value = precio ? precio.toFixed(2) : '';
     inputEl.style.borderColor = 'var(--success, #2f855a)';
     setTimeout(() => { inputEl.style.borderColor = ''; }, 800);
   }
+}
+
+// UN SOLO PANEL ABIERTO EN TIPOS DE SALIDA, decidido en un solo lugar.
+//
+// Reportado por Fran el 11/10: abría «formularios requeridos», después «lista
+// de preparación», y quedaban los dos abiertos uno debajo del otro. En el
+// celular la pantalla se volvía larguísima.
+//
+// La causa es la de siempre: los cuatro botones tenían **cada uno su propia**
+// lógica de abrir y cerrar, así que ninguno sabía de los otros. Con dos paneles
+// apenas se notaba; el cuarto lo hizo evidente. Una regla copiada cuatro veces
+// no es «cuatro veces la regla»: es cuatro lugares sin nadie que decida.
+//
+// Se cierran por CLASE y no por una lista de ids. Una lista de cuatro ids es
+// cuatro lugares donde puede faltar una entrada, y el quinto panel que alguien
+// agregue mañana se olvidaría en silencio — exactamente el error que acabó con
+// la enumeración de extensiones en `.gitattributes`. Con la clase, un panel
+// nuevo queda cubierto por existir.
+//
+// Cierra en TODA la lista, no sólo en la tarjeta: abrir un panel de otro tipo
+// de salida alargaba la pantalla igual. Uno abierto a la vez, y nada más.
+//
+// Devuelve el panel si quedó ABIERTO y null si quedó cerrado, así quien llama
+// no carga contenido en algo que el usuario acaba de cerrar.
+function abrirSoloEstePanel(panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return null;
+  const estabaAbierto = panel.style.display === 'block';
+  const alcance = document.getElementById('trip-types-list') || document;
+  alcance.querySelectorAll('.tt-panel').forEach(p => { p.style.display = 'none'; });
+  if (estabaAbierto) return null;   // era un toggle sobre el propio: queda cerrado
+  panel.style.display = 'block';
+  return panel;
 }
 
 // ─── Etapa 4 · Editar la lista de preparación de un tipo de salida ───
@@ -19899,10 +19935,7 @@ async function trasEditarPlantilla(tripTypeId) {
 }
 
 async function togglePrepChecklist(tripTypeId) {
-  const panel = document.getElementById('prep-checklist-' + tripTypeId);
-  if (!panel) return;
-  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
-  panel.style.display = 'block';
+  if (!abrirSoloEstePanel('prep-checklist-' + tripTypeId)) return;
   await dibujarPanelDePreparacion(tripTypeId);
 }
 
@@ -20190,9 +20223,10 @@ async function moverItemDePlantilla(tripTypeId, itemId, direccion) {
 }
 
 async function toggleRentalFees(tripTypeId) {
-  const panel = document.getElementById('rental-fees-' + tripTypeId);
-  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
-  panel.style.display = 'block';
+  // De paso se le puso el guardián de nulo que le faltaba: era el único de los
+  // cuatro que hacía `panel.style` sin comprobar que el panel existiera.
+  const panel = abrirSoloEstePanel('rental-fees-' + tripTypeId);
+  if (!panel) return;
   panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);">${t('common_loading')}</p>`;
   const { data: ttgf } = await sb.from('trip_type_gear_fields')
     .select('id, rental_fee, gear_field_definitions(field_key, label)')
