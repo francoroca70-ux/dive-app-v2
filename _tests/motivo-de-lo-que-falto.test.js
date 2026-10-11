@@ -50,7 +50,8 @@ const hook=main+`
   marcar:(tripId,obj)=>{instructorChecksByTrip[tripId]=obj;},
   confirmar:(items,f)=>confirmarFirma(items,f),
   snapshot:(i,e,a,m)=>buildItemsSnapshot(i,e,a,m),
-  acta:(c,s,p)=>renderActaItems(c,s,p)
+  acta:(c,s,p)=>renderActaItems(c,s,p),
+  fila:(it,o)=>filaDeActa(it,o)
 };`;
 let boot=null; try{window.eval(hook);}catch(e){boot=e;}
 const doc=window.document;
@@ -189,6 +190,66 @@ const ITEMS=[{id:'0',text:'Check tanks'},{id:'1',text:'Load towels'},
   doc.getElementById('cl-motivos-cancel').click();
   await promesa4;
   T.idioma('en');
+
+  // ─── LAS DOS PANTALLAS QUE DIBUJAN UN ACTA NO PUEDEN DIVERGIR ───
+  //
+  // Reportado por Fran el 11/10: en **Logged Checklists** el ítem que dejó sin
+  // tildar aparecía, pero sin el nombre de la cuenta que tildó cada uno. La
+  // causa no era el dato —el acta guarda `by` y `by_id` desde el 09/10— sino
+  // que esa vista **armaba sus propias filas** con sólo el ✓/✗ y el texto. Lo
+  // que se agregó el 09/10 nunca llegó a la pantalla donde un dueño mira el
+  // historial, que es donde más vale.
+  //
+  // El defecto aparece donde la copia falta. Ahora las dos pieles salen de
+  // `filaDeActa()`.
+  const UNO = { id:'0', text:'Load towels', done:true, by:'Pau', by_id:'s-pau' };
+  const FALTO = { id:'1', text:'Fuel', done:false, why:'el surtidor estaba cerrado' };
+
+  chk('la fila del acta se arma en un solo lugar',
+      (html.match(/function filaDeActa\(/g)||[]).length===1);
+
+  for (const [piel, opts] of [['salida', undefined], ['historial', { compacto:true }]]) {
+    const hecho = T.fila(UNO, opts);
+    chk(`(${piel}) un ítem hecho muestra desde qué cuenta se tildó`,
+        /Pau/.test(hecho), hecho.replace(/<[^>]*>/g,' ').trim().slice(0,70));
+    chk(`(${piel}) y lo hace con el mismo chip, no con un span propio`,
+        /class="cl-autor"/.test(hecho));
+
+    const falto = T.fila(FALTO, opts);
+    chk(`(${piel}) un ítem que faltó muestra el por qué`,
+        /surtidor/.test(falto), falto.replace(/<[^>]*>/g,' ').trim().slice(0,70));
+    chk(`(${piel}) y NO le cuelga un nombre a algo que nadie hizo`,
+        !/class="cl-autor"/.test(falto));
+  }
+
+  // La piel compacta conserva las marcas que el historial ya tenía: si el ✓/✗
+  // se perdiera al unificar, habría cambiado un hueco por una regresión.
+  const compacto = T.fila(UNO, { compacto:true });
+  chk('el historial conserva su marca ✓ y su clase',
+      /cl-logged-item-mark/.test(compacto) && /cl-logged-item ok/.test(compacto));
+  chk('y el que faltó queda en rojo con ✗',
+      /cl-logged-item missed/.test(T.fila(FALTO, { compacto:true })) &&
+      /✗/.test(T.fila(FALTO, { compacto:true })));
+
+  chk('Logged Checklists ya no arma sus propias filas',
+      !/class="cl-logged-item \$\{i\.done/.test(html));
+  chk('y usa la función compartida',
+      /filaDeActa\(i, \{ compacto: true \}\)/.test(html));
+
+  // Un acta vieja (previa al 09/10) no tiene autor y se dibuja sin inventarlo.
+  const viejo = T.fila({ id:'0', text:'Check tanks', done:true }, { compacto:true });
+  chk('un acta sin autoría se dibuja sin nombre, no con uno inventado',
+      !/class="cl-autor"/.test(viejo) && /Check tanks/.test(viejo));
+
+  // El estilo cubre las dos pieles con UN selector, no con la regla duplicada.
+  chk('el CSS del autor cubre las dos pantallas en una sola regla',
+      /\.cl-item \.cl-autor, \.cl-logged-item \.cl-autor \{/.test(html));
+
+  // Y el texto de un ítem sigue escapándose en la piel nueva.
+  const malicioso = T.fila({ id:'0', text:'<img src=x onerror=alert(1)>', done:true, by:'Pau' },
+                           { compacto:true });
+  chk('el texto se escapa también en el historial',
+      !/<img/.test(malicioso) && /&lt;img/.test(malicioso));
 
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,500)); }
   process.exit(fail);

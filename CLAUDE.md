@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 545 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 561 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -404,6 +404,16 @@ la página — y lo mismo con dos personas tildando a la vez.
 y el snapshot guardaba `{id, text, done}`, así que **la atribución se destruía
 justo al firmar**, el momento en que empieza a valer. Las actas anteriores al
 09/10 la perdieron y no se recupera.
+
+**Y el acta se dibuja en UN solo lugar, `filaDeActa()`** (11/10). Antes había
+dos: la pantalla de la salida mostraba autor y motivo, y **Logged Checklists
+armaba sus propias filas** con sólo el ✓/✗ y el texto — así que todo lo del
+09/10 nunca llegó a la pantalla donde un dueño mira el historial, que es donde
+más vale. Lo reportó Fran probando la etapa 4. Las dos pieles son legítimas (la
+del acta de la salida es la checklist entera, la del historial es compacta), así
+que la piel es un parámetro y qué se muestra se decide en un lugar. El CSS
+también: **un** selector cubre las dos (`.cl-item .cl-autor, .cl-logged-item
+.cl-autor`), no la regla duplicada.
 
 La autoría cuelga del **mismo objeto de tildes que la pantalla dibuja**
 (`autoresDeChecks`, un WeakMap): los ids de ítem son posicionales y un mapa

@@ -448,9 +448,9 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
       /togglePrepChecklist\('\$\{tt\.id\}'\)/.test(html));
 
   // ─── 11 · LAS DOS VERSIONES ───
-  chk('el build subió a 2026-10-11b', /build 2026-10-11b/.test(html));
+  chk('el build subió a 2026-10-11b', /build 2026-10-11c/.test(html));
   const sw=fs.readFileSync(require('path').join(__dirname,'..','sw.js'),'utf8');
-  chk('y el service worker a v44', /seven-seas-v44/.test(sw));
+  chk('y el service worker a v44', /seven-seas-v45/.test(sw));
 
 } catch(e){ chk('sin excepciones durante la corrida', false, String(e&&e.stack||e).slice(0,400)); }
 process.exit(fail);
