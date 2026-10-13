@@ -165,21 +165,36 @@ async function clic({previo, ejecucion, confirmar=true, trip='trip-1', grupos=[{
   // Eran nueve consultas de lista. Filtrar a mano en nueve es el patrón donde
   // el defecto aparece donde la copia FALTA: alcanza con que una vista se
   // olvide para que el centro vea una salida que creía quitada.
+  //
+  // Desde el 13/10 el guardián exige **UNA**, no tres. Contar tres era contar
+  // «las consultas que yo conozco»: la tarjeta de archivadas de Reportes habría
+  // sido la cuarta y habría pasado con sólo subir el número. Ahora todas
+  // arrancan en consultaDeSalidas() y salirse de ahí es tocar esta línea.
   const crudasConSelect=[...html.matchAll(/from\('trips'\)\s*\n?\s*\.select\(/g)].length;
-  chk('sólo quedan 3 consultas crudas: el helper y las dos excepciones',
-      crudasConSelect===3, crudasConSelect+' consultas crudas con select');
-  chk('las dos excepciones están documentadas como tales',
+  chk('sólo UN lugar nombra la tabla trips',
+      crudasConSelect===1, crudasConSelect+' consultas crudas con select');
+  chk('y ese lugar es consultaDeSalidas()',
+      /function consultaDeSalidas\(cols\) \{\s*\n\s*return sb\.from\('trips'\)\.select\(cols\);\s*\n\}/.test(html));
+  chk('las dos excepciones al filtro siguen documentadas como tales',
       (html.match(/A propósito NO usa tripsVigentes\(\)/g)||[]).length===2,
       (html.match(/A propósito NO usa tripsVigentes\(\)/g)||[]).length+' comentarios');
-  // Total de menciones, menos la declaración, menos las dos que viven dentro
-  // de los comentarios de excepción. Lo que queda son llamadas reales.
-  const mencionesHelper=(html.match(/tripsVigentes\(/g)||[]).length;
-  const enComentarios=(html.match(/NO usa tripsVigentes\(\)/g)||[]).length;
-  const llamadasHelper=mencionesHelper-1-enComentarios;
+  // Se cuentan las llamadas sobre el código SIN comentarios, no «menciones
+  // menos las que yo sé que están en comentarios». Eso último se rompió el
+  // 13/10 en cuanto un comentario nuevo nombró el helper: el guardián acusó una
+  // novena consulta que no existía. Un guardián que depende de que yo recuerde
+  // mis propios comentarios es un guardián que miente cuando escribo uno.
+  const sinComentarios=html.replace(/^\s*\/\/.*$/gm,'');
+  const llamadasHelper=(sinComentarios.match(/tripsVigentes\(/g)||[]).length-1;
   chk('las ocho consultas de lista pasan por el helper',
       llamadasHelper===8, llamadasHelper+' llamadas reales');
-  chk('el helper es el único que filtra, y filtra por archived_at',
-      /function tripsVigentes\(cols\) \{\s*\n\s*return sb\.from\('trips'\)\.select\(cols\)\.is\('archived_at', null\);/.test(html));
+  chk('el helper de vigentes filtra por archived_at y nada más',
+      /function tripsVigentes\(cols\) \{\s*\n\s*return consultaDeSalidas\(cols\)\.is\('archived_at', null\);/.test(html));
+  chk('y su espejo, tripsArchivadas, vive al lado y usa la misma columna',
+      /function tripsArchivadas\(cols\) \{\s*\n\s*return consultaDeSalidas\(cols\)\.not\('archived_at', 'is', null\);/.test(html),
+      'las dos caras del filtro, de una sola lectura');
+  const usosArchivadas=(sinComentarios.match(/tripsArchivadas\(/g)||[]).length-1;
+  chk('tripsArchivadas se usa en un solo lugar: la tarjeta de Reportes',
+      usosArchivadas===1, usosArchivadas+' llamadas reales');
   chk('el export del historial completo SÍ incluye archivadas',
       /archived_at, boats\(name\)/.test(html), 'pide archived_at en el export');
   chk('ya no quedan los cinco borrados sueltos del botón',

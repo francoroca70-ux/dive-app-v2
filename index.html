@@ -3656,6 +3656,12 @@ body { background: var(--navy); color: var(--text); }
             <div id="rep-missed-list"></div>
           </div>
 
+          <div class="card" id="rep-archived-card">
+            <div class="card-section-title" data-i18n="rep_archived_trips">Archived trips</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;" data-i18n="rep_archived_trips_desc">Trips removed from the calendar in this range. Archiving takes a trip out of day-to-day use, not out of your records — its bookings, payments, waivers and signed checklists are all still here.</p>
+            <div id="rep-archived-list"></div>
+          </div>
+
           <div class="card">
             <div class="card-section-title" data-i18n="rep_expenses">Expenses</div>
             <div id="rep-expense-chart"></div>
@@ -4844,6 +4850,12 @@ const TRANSLATIONS = {
     rep_no_closed_days: 'No closed-out days with counted cash in this range yet.',
     rep_no_discrepancies: 'No discrepancies in this range.', rep_closed_by: 'Closed by',
     rep_no_missed_cashups: 'No missed cash-ups in this range.', rep_taken_not_closed: 'taken, not closed out',
+    rep_archived_trips: 'Archived trips',
+    rep_archived_trips_desc: 'Trips removed from the calendar in this range. Archiving takes a trip out of day-to-day use, not out of your records — its bookings, payments, waivers and signed checklists are all still here.',
+    rep_archived_none: 'No trips were archived in this range.',
+    rep_archived_untitled: 'Trip',
+    rep_archived_meta: 'Archived {date}',
+    rep_archived_meta_by: 'Archived {date} — from {name}\'s account',
 
     cu_tab_cashup: 'Cash-Up', cu_tab_guest_tabs: 'Guest Tabs', cu_select_location: 'Select a location above to view cash-up.',
     cu_open_tab: '+ Open Tab', cu_unknown: 'unknown', cu_tab_badge: 'TAB', cu_no_payments: 'No payments logged for this date.',
@@ -5594,6 +5606,12 @@ const TRANSLATIONS = {
     rep_no_closed_days: 'Aún no hay días cerrados con efectivo contado en este rango.',
     rep_no_discrepancies: 'No hay discrepancias en este rango.', rep_closed_by: 'Cerrado por',
     rep_no_missed_cashups: 'No hay arqueos faltantes en este rango.', rep_taken_not_closed: 'recaudado, sin cerrar',
+    rep_archived_trips: 'Salidas archivadas',
+    rep_archived_trips_desc: 'Salidas que se quitaron del calendario en este rango. Archivar la saca del uso diario, no del registro: sus reservas, pagos, waivers y checklists firmadas siguen acá.',
+    rep_archived_none: 'No se archivó ninguna salida en este rango.',
+    rep_archived_untitled: 'Salida',
+    rep_archived_meta: 'Archivada el {date}',
+    rep_archived_meta_by: 'Archivada el {date} — desde la cuenta de {name}',
 
     cu_tab_cashup: 'Arqueo de Caja', cu_tab_guest_tabs: 'Cuentas de Huéspedes', cu_select_location: 'Selecciona una ubicación arriba para ver el arqueo de caja.',
     cu_open_tab: '+ Abrir Cuenta', cu_unknown: 'desconocido', cu_tab_badge: 'CUENTA', cu_no_payments: 'No hay pagos registrados para esta fecha.',
@@ -8583,7 +8601,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-11f');
+  console.info('[Seven Seas] build 2026-10-13a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9827,8 +9845,29 @@ let trips = {};
 //
 // La excepción deliberada es openTrip(id), que busca UNA salida por id: si
 // alguien llega con un id archivado, verlo es mejor que una pantalla vacía.
+//
+// UN solo lugar nombra la tabla (13/10). Antes había tres `from('trips')` y el
+// guardián del test contaba tres; contar tres es contar «las que conozco», y
+// un cuarto lugar nuevo —éste, el de archivadas— habría pasado sólo con subir
+// el número. Ahora las cuatro consultas arrancan acá, el guardián exige UNA, y
+// quien quiera salirse tiene que tocar esta línea, que es justo lo que se
+// quiere que sea difícil.
+function consultaDeSalidas(cols) {
+  return sb.from('trips').select(cols);
+}
+
 function tripsVigentes(cols) {
-  return sb.from('trips').select(cols).is('archived_at', null);
+  return consultaDeSalidas(cols).is('archived_at', null);
+}
+
+// El espejo exacto de tripsVigentes(): la misma tabla, el mismo campo, la
+// condición dada vuelta. Está acá al lado a propósito — si mañana «archivada»
+// deja de ser `archived_at not null` (una columna `status`, un borrado blando
+// distinto), las dos caras del filtro se cambian de una sola lectura. Tenerlas
+// en pantallas distintas es cómo se llega a que el calendario esconda una cosa
+// y el reporte muestre otra.
+function tripsArchivadas(cols) {
+  return consultaDeSalidas(cols).not('archived_at', 'is', null);
 }
 
 function formatDate(d) {
@@ -10414,9 +10453,7 @@ async function openTrip(id) {
   // A propósito NO usa tripsVigentes(): busca UNA salida por id, no lista.
   // Si alguien llega con el id de una archivada, mostrarla es mejor que una
   // pantalla vacía — y el botón de quitarla ya avisa que estaba archivada.
-  const { data: trip } = await sb
-    .from('trips')
-    .select('*, boats(name)')
+  const { data: trip } = await consultaDeSalidas('*, boats(name)')
     .eq('id', id)
     .single();
   if (!trip) return;
@@ -11914,7 +11951,18 @@ async function loadReports() {
     paymentsQuery = paymentsQuery.eq('location_id', scope);
     expensesQuery = expensesQuery.eq('location_id', scope);
   }
-  const queries = [paymentsQuery, expensesQuery];
+  // Las archivadas se piden por `trip_date`, no por `archived_at`, y es la
+  // decisión que importa de esta tarjeta. El agujero que cierra es: el dueño
+  // mira el martes 7 en el calendario, la salida no está, y no tiene a dónde
+  // ir. Con `archived_at` contestaría «qué quité esta semana», que es otra
+  // pregunta. Así el rango significa lo mismo acá que en las otras seis
+  // tarjetas de la página — y cuándo se archivó va igual, en la fila.
+  let archivedQuery = tripsArchivadas('id, trip_date, trip_time, trip_name, trip_type, archived_at, archived_by, boats(name), locations(name)')
+    .eq('org_id', currentOrgId).gte('trip_date', startDate).lte('trip_date', endDate)
+    .order('trip_date', { ascending: false }).order('trip_time', { ascending: false });
+  if (!isAllShops) archivedQuery = archivedQuery.eq('location_id', scope);
+
+  const queries = [paymentsQuery, expensesQuery, archivedQuery];
   if (!isAllShops) {
     queries.push(sb.from('cash_ups').select('*').eq('org_id', currentOrgId).eq('location_id', scope)
       .gte('cash_up_date', startDate).lte('cash_up_date', endDate));
@@ -11922,7 +11970,15 @@ async function loadReports() {
   const results = await Promise.all(queries);
   const payments = results[0].data || [];
   const expenses = results[1].data || [];
-  const cashUps = isAllShops ? [] : (results[2].data || []);
+  const archived = results[2].data || [];
+  const cashUps = isAllShops ? [] : (results[3].data || []);
+
+  // `archived_by` NO tiene FK a staff, así que no se puede incrustar: se
+  // resuelve con la misma caché y la misma función que la autoría de un tilde
+  // (`nombreDeTripulante`), que ya decide qué hacer cuando el nombre no está.
+  // Una segunda forma de traducir un uuid a un nombre es una segunda forma de
+  // contradecirse.
+  await loadSignerStaff();
 
   renderRevenueReport(payments, startDate, endDate);
   if (isAllShops) {
@@ -11931,8 +11987,56 @@ async function loadReports() {
     renderDiscrepancyReport(cashUps);
     renderMissedCashUps(payments, cashUps);
   }
+  renderArchivedTrips(archived, isAllShops);
   renderExpenseReport(expenses, startDate, endDate);
   renderTripTypeAndBoatBreakdown(payments);
+}
+
+// Lo que un centro archivó, visible. La app le promete que archivar conserva
+// —y hasta hoy no había ninguna pantalla donde mirarlo, así que la promesa era
+// verdadera y no se podía comprobar, que para el dueño se lee igual que falsa.
+//
+// Es sólo lectura y vive en Reportes, que ya es sólo del dueño. No hay botón de
+// desarchivar: devolver una salida al calendario es una decisión con
+// consecuencias (choques de barco, reservas que reviven) y todavía no está
+// decidida. Ver «Archivar en vez de borrar» en el vault.
+function renderArchivedTrips(trips, isAllShops) {
+  const listEl = document.getElementById('rep-archived-list');
+  if (!listEl) return;
+  const filas = Array.isArray(trips) ? trips : [];
+  if (!filas.length) {
+    listEl.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${escapeHtml(t('rep_archived_none'))}</p>`;
+    return;
+  }
+  listEl.innerHTML = filas.map(tr => {
+    const fecha = tr.trip_date
+      ? new Date(tr.trip_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+      : '';
+    const hora = (tr.trip_time || '').slice(0, 5);
+    const nombre = tr.trip_name || tr.trip_type || t('rep_archived_untitled');
+    const partes = [];
+    if (tr.boats && tr.boats.name) partes.push(tr.boats.name);
+    if (isAllShops && tr.locations && tr.locations.name) partes.push(tr.locations.name);
+    // Quién archivó se dice sólo si el nombre se pudo resolver. Un tripulante
+    // dado de baja no está en la caché de activos, y una fecha sin nombre es
+    // mejor que «archivada por» seguido de nada.
+    const quien = nombreDeTripulante(tr.archived_by);
+    const cuando = tr.archived_at ? new Date(tr.archived_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    // Sin fecha no se dibuja la línea: «Archived» a secas es una etiqueta
+    // colgando. En los datos reales `archived_at` siempre está —lo pone
+    // trip_archive_or_delete()— pero el dibujo no tiene por qué confiar en eso.
+    const meta = !cuando ? ''
+      : quien ? t('rep_archived_meta_by').replace('{date}', cuando).replace('{name}', quien)
+      : t('rep_archived_meta').replace('{date}', cuando);
+    return `<div class="gear-item-row">
+        <div class="gear-item-header">
+          <span class="gear-item-name">${escapeHtml(nombre)}</span>
+          <span style="color:var(--muted);font-size:0.8rem;">${escapeHtml([fecha, hora].filter(Boolean).join(' · '))}</span>
+        </div>
+        ${partes.length ? `<div style="font-size:0.8rem;color:var(--muted);">${escapeHtml(partes.join(' · '))}</div>` : ''}
+        ${meta ? `<div style="font-size:0.78rem;color:var(--muted);opacity:0.85;margin-top:2px;">${escapeHtml(meta)}</div>` : ''}
+      </div>`;
+  }).join('');
 }
 
 function renderRevenueReport(payments, startDate, endDate) {
@@ -13744,8 +13848,7 @@ async function exportAllShopRecords() {
       // Archivar saca una salida del calendario, no del registro — y este
       // archivo es exactamente el registro que se le entrega a un contador o
       // a un abogado.
-      let q = sb.from('trips')
-        .select('id, trip_date, trip_time, trip_type, archived_at, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
+      let q = consultaDeSalidas('id, trip_date, trip_time, trip_type, archived_at, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
         .eq('org_id', currentOrgId).order('trip_date').order('trip_time');
       if (currentLocationId) q = q.eq('location_id', currentLocationId);
       return q;

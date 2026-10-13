@@ -1,122 +1,89 @@
 # Reply to App Review — Guideline 2.1(b), Information Needed
 
 **Submission ID:** 84a8c50c-621a-4b13-86b0-7edafae99a9c
-**Version:** 1.0 (136001)
-**Prepared:** 11 October 2026
+**Version:** 1.0 (136001) · **Reply to the 8 Oct message** (the 23 Sep one is the old screenshots issue)
+**Prepared:** 11 October 2026 · **cut to fit the 4000-character limit**
 
-Paste the section below into the App Store Connect message thread. Everything in
-it is true of build **136001 plus the change made on 11/10** (`sw v48`,
-`build 2026-10-11f`) — so submit that build, or the answer to question 4 is not
-accurate yet.
+The status label on the submission page reads `2.1.0 Performance: App
+Completeness`; that is the parent of `2.1(b)`, not a second rejection. This
+reply answers the five questions as asked.
 
 ---
 
 ## PASTE FROM HERE
 
-Thank you for the questions. Seven Seas Ops is a business-to-business
-operations tool for dive centres and charter operations. It is not a consumer
-app, and it contains no purchasable content. Below are answers to each of your
-five questions.
+Seven Seas Ops is a B2B operations tool for dive centres and charter operations.
+It is not a consumer app and contains no purchasable content.
 
-**1. Who are the users that will use the paid content, subscriptions, features,
-and services in the app?**
+**1. Who are the users?**
 
-The users are the employees of a dive centre or charter operation that
-subscribes to Seven Seas Ops as a business.
+Employees of a dive centre or charter operation that subscribes as a business.
+The subscription belongs to the business: one account covers the owner, manager,
+captains, instructors, deckhands and front-desk staff. Each signs in with their
+own account, created for them by the business by invitation, and uses the app
+for daily operations: pre-dive and boat-loading checklists, equipment
+inspections, liability waivers, dive logs, scheduling.
 
-The subscription belongs to the business, not to an individual. One business
-account typically covers an owner, a manager, boat captains, dive instructors,
-deckhands, stewards and front-desk staff — commonly six to twelve people at one
-operation. Each of them signs in with their own account, which the business
-creates for them by invitation. They use the app to run the operation's daily
-work: pre-dive and boat-loading checklists, equipment inspection records,
-digital liability waivers, dive logs, trip scheduling and bookings.
+No individual consumer buys anything. A staff member cannot purchase, upgrade or
+change the business's subscription from any platform, including this app.
 
-No individual consumer buys anything, and there is nothing in the app that an
-individual can buy. A member of staff cannot purchase, upgrade, or change
-anything about the business's subscription from any platform, including this app.
-
-**2. Where can users purchase the content, subscriptions, features, and
-services that can be accessed in the app?**
+**2. Where can users purchase?**
 
 The business subscribes on our website, sevenseasops.com, in a web browser,
-before and independently of anyone installing the app. Payment is processed by
-Paddle.com Market Ltd., which acts as the merchant of record.
+before anyone installs the app. Payment is processed by Paddle.com Market Ltd.
+as merchant of record. That is the only place a
+subscription can be bought — not through the app on any platform, and through no
+reseller.
 
-This is the only place a subscription can be bought. It is not sold through the
-app on any platform, it is not sold in the Google Play version either, and there
-is no reseller or other channel.
+**3. What previously purchased content can be accessed in the app?**
 
-**3. What specific types of previously purchased content, subscriptions,
-features, and services can a user access in the app?**
+There is no content library and nothing is sold item by item. The subscription
+determines capacity only: how many boats and locations the operation may
+register, matching the size of the business. Features are identical at every
+tier.
 
-There is no content library and nothing is sold item by item. What the
-business's subscription determines is capacity: how many boats and locations the
-operation may register, which corresponds to the size of the business. The
-functional features of the app are the same at every tier.
+A staff member signing in on iOS sees their own operation's data — boats, trips,
+checklists, records — created by colleagues on whatever device each uses: a web
+browser, Android, or this app, all the same account.
 
-A member of staff signing in on iOS sees their own operation's data — its boats,
-its trips, its checklists, its records — created by their colleagues on whatever
-device each of them uses. The app is one of several ways into the same business
-account; the others are a web browser and Android.
+**4. What is unlocked in the app without In-App Purchase?**
 
-**4. What paid content, subscriptions, or features are unlocked within the app
-that do not use In-App Purchase?**
+Nothing. The app contains no purchase functionality at all: no in-app purchase,
+no third-party payment flow, no checkout, no prices, no pricing screen, no buy
+button, no link leading to a purchase. Signing in to an account whose business
+already subscribes gives access to that business's own operational records,
+created by its own employees.
 
-Nothing is unlocked within the app. The app contains no purchase functionality
-at all: no in-app purchase, no third-party payment flow, no checkout, no prices,
-no plan or pricing screen, no buy button, and no link or button that leads to a
-purchase. Signing in to an account whose business already subscribes gives
-access to that business's own operational records, which the business's own
-employees created.
+In full transparency: in the build you reviewed, a business whose trial had
+lapsed or subscription was cancelled saw a screen listing our three tiers with
+prices. That screen was built for the web app and should never have been
+reachable in the iOS app. That was our error and it is fixed — the app loads its
+interface from our server, so the correction already applies to the build you
+have, with no new binary. It now shows no plans, prices or purchase controls,
+only a statement that the subscription is not active and that the operation's
+administrator manages it on our website. The billing section is gone from the
+app on iOS and Android, and notices about a trial ending or a plan limit no
+longer link to choosing a plan. Automated tests now fail the build if a price or
+purchase control reappears.
 
-To be fully transparent about one point, and about a change we have just made:
+We believe this falls under Guideline 3.1.3(c), Enterprise Services: we sell
+directly to organisations — dive centres and charter operations — for use by
+their employees, and the app lets those employees access what their organisation
+already subscribed to. We are glad to adjust anything that falls short here.
 
-In the build you reviewed, if a business's free trial had lapsed or its
-subscription had been cancelled, the app displayed a screen listing our three
-subscription tiers with their prices. That screen was intended for the web app
-and should never have been reachable inside the iOS app. We consider that our
-error. As of build `2026-10-11f`, submitted with this reply, that screen in the
-iOS and Android apps shows no plans, no prices and no purchase controls — only a
-plain statement that the business's subscription is not currently active and
-that the operation's administrator manages it on our website. The billing
-section has likewise been removed from the app entirely on iOS and Android, and
-the in-app notices about a trial ending or a plan's limits no longer offer any
-link to choose or change a plan — they state the situation and who resolves it.
-We have added automated tests that fail the build if any price or purchase
-control can appear in the app again.
+**5. How do users obtain an account? Is there a fee?**
 
-We believe this falls under Guideline 3.1.3(c), Enterprise Services: Seven Seas
-Ops is sold by us directly to organisations — dive centres and charter
-operations — for use by their employees, and the app lets those employees access
-what their organisation has already subscribed to. We are glad to adjust
-anything that does not meet your expectations here.
+No fee, on any platform. Two routes: a business owner creates the operation's
+account free of charge and receives a 15-day free trial granted by our
+application, with no payment method required; everyone else is invited by their
+own operation, sets a password, and never sees a payment step, because the
+subscription is the business's. Accounts can be created in the app or on the
+web, free in both.
 
-**5. How do users obtain an account? Do users have to pay a fee to create an
-account?**
-
-No fee is charged to create an account, on any platform. There are two routes:
-
-- A business owner creates the operation's account themselves, free of charge,
-  and receives a 15-day free trial granted by our application. No payment
-  method is required to start it.
-- Everyone else is invited by their own operation. The owner or manager enters
-  their email address, they receive an invitation, and they set a password. They
-  never see a payment step at any point, because the subscription is the
-  business's.
-
-Accounts can be created in the app as well as on the web, and in both cases it
-is free.
-
-### For your testing
-
-We have an account with an active subscription set up for review. The
-credentials are in the App Review Information section of this submission. Please
-use that account: an account whose trial has lapsed is intentionally blocked
-from the operational screens, in the app and on the web alike, which would stop
-you from seeing the app's actual functionality.
-
-Thank you for your time. Please tell us if any part of this needs more detail.
+**For your testing:** credentials for an account with an active subscription are
+in the App Review Information section. Please use that account — one whose trial
+has lapsed is intentionally blocked from the operational screens, which would
+prevent you from seeing the app's functionality.
 
 ## PASTE TO HERE
 
@@ -124,29 +91,51 @@ Thank you for your time. Please tell us if any part of this needs more detail.
 
 ## Notes for Fran — not for Apple
 
-**Before you send this, two things have to be true, or the reply is not:**
+**Length: 3,892 characters, measured** — not estimated. App Store Connect's
+limit is 4,000. Even if it counted every line break as two characters (CRLF),
+the worst case is ~3,964, still inside.
 
-1. **Push and submit build `2026-10-11f`.** Question 4 says the screen has been
-   fixed. If you reply against 136001 and they re-test 136001, they find the
-   price screen still there and the answer reads as false — which is far worse
-   than the original question.
-2. **Check the App Review Information section has demo credentials for an
-   account with an active plan.** The reply points them there. If it is empty,
-   fill it in before sending. And confirm that account's
-   `subscription_status = 'active'`, because a lapsed one hits the lock screen
-   and they cannot review anything.
+My first estimate was "~3,750" and the real count was **4,446**. Measuring is
+the only reason this fits. If the field still complains, the quickest safe cut
+is the last sentence of answer 4 ("We are glad to adjust…", 53 chars).
 
-**What I could not verify, and you should know:**
+Cut from the long draft, with nothing factual lost: the restated question texts,
+the repeated "the subscription belongs to the business" framing, the duplicated
+"not a consumer app" line, and the closing pleasantries. All five answers, the
+admission about the price screen, the 3.1.3(c) framing and the testing note are
+intact.
 
-Guideline 3.1.3(c) covers apps sold *only* to organisations. Nothing in the
-product today physically stops a single-person operator from buying a Starter
-plan on the web, and there are reports of reviewers refusing the Enterprise
-Services exception on exactly that basis. The reply does not claim individual
-purchase is blocked — it describes who the customer is, which is true. If they
-push back on this specific point, the answer is a product decision, not a code
-one, and worth a conversation before replying.
+**Don't paste the heading lines `## PASTE FROM HERE` / `## PASTE TO HERE`.**
 
-**What is NOT in this reply, deliberately:** any mention of Apple's commission,
-of Paddle's fees, or of why the web is cheaper for us. The question they asked is
-who buys what and where. Volunteering the economics invites an argument about
-whether we are avoiding In-App Purchase rather than a reading of 3.1.3(c).
+**Before you send:**
+
+1. **The trial days must say 15 in BOTH listing fields.** The promotional text
+   said 14 and the description said 15; the app grants 15. If the edit went the
+   other way and both now say 14, the listing understates the product — fix
+   before resubmitting. This number has drifted three times; it lives in
+   `Datos canónicos` and the listing is the one place the repo cannot check.
+2. **Confirm the fix is live:** `https://www.sevenseasops.com/index.html`,
+   console says `build 2026-10-11f`. Done and verified 11/10. The native app
+   pulls its interface from the same place, so the reviewer's existing build
+   (`136001`) has the fix. **No new binary for this.**
+3. **Check the screenshots are still in the version before redoing them.**
+   Metadata is not wiped by a rejection; the ones prepared for the 30/09
+   submission should still be in their slots.
+4. **App Review Information already has demo credentials** for
+   `demo@sevenseasops.com`, whose org is `active` — verified 11/10.
+
+**Order:** fix the trial days → reply to the 8 Oct message → then "Resubmit to
+App Review". If the status flips to "In Review" on its own after the reply,
+don't resubmit.
+
+**What I could not verify:** Guideline 3.1.3(c) covers apps sold *only* to
+organisations. Nothing in the product today stops a single-person operator from
+buying a Starter plan on the web, and there are reports of reviewers refusing
+the Enterprise Services exception on that basis. The reply does not claim
+individual purchase is blocked — it describes who the customer is, which is
+true. If they press that point it's a product decision, not a code one.
+
+**Deliberately absent:** any mention of Apple's commission, Paddle's fees, or
+why the web is cheaper for us. They asked who buys what and where. Volunteering
+the economics invites an argument about whether we are avoiding In-App Purchase
+instead of a reading of 3.1.3(c).

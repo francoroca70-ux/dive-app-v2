@@ -340,9 +340,19 @@ function hayPrecioEnElDOM() {
   T.nativo(null); T.banner(null, null);
 
   // ─── 7 · LAS DOS VERSIONES ───
-  chk('el build subió a 2026-10-11e', /build 2026-10-11f/.test(html));
+  // El par va en UNA constante y el texto del chequeo se deriva de ella. Antes
+  // el rótulo y el regex eran dos literales distintos y se desincronizaron el
+  // mismo día que se escribieron: el cartel decía «subió a 11b» mientras el
+  // regex exigía 11e. Un chequeo que miente sobre lo que exige es peor que no
+  // tenerlo, porque el que lo lee se va con el dato equivocado.
+  //
+  // Que haya que editar estas dos líneas en cada cambio es a propósito: la
+  // regla 5 de CLAUDE.md dice que los dos números suben juntos, y esto es lo
+  // que lo convierte en un paso que falla si se saltea.
+  const ESPERADO={ build:'2026-10-13a', sw:'seven-seas-v49' };
+  chk('el build subió a '+ESPERADO.build, html.includes('build '+ESPERADO.build));
   const sw=fs.readFileSync(require('path').join(__dirname,'..','sw.js'),'utf8');
-  chk('y el service worker a v47', /seven-seas-v48/.test(sw));
+  chk('y el service worker a '+ESPERADO.sw, sw.includes(ESPERADO.sw));
 
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,400)); }
 process.exit(fail);

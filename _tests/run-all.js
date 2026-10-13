@@ -52,19 +52,20 @@ const MINIMOS = {
   'borrados-avisan.test.js':        16,
   'checklist-progress.test.js':     56,
   'checklist-record-scope.test.js': 35,
-  'checklist-record.test.js':       54,
+  'checklist-record.test.js':       55,
   'dept-visibility.test.js':        29,
   'editor-de-plantillas.test.js':   84,
   'etapa-3b-lista-por-tipo.test.js':25,
-  'firmar-una-sola-vez.test.js':    26,
+  'firmar-una-sola-vez.test.js':    27,
   'motivo-de-lo-que-falto.test.js': 47,
   'onboarding.test.js':             12,
   'plan-limits.test.js':            14,
   'plantillas-tres-capas.test.js':  31,
   'reset-segunda-pasada.test.js':   30,
+  'salidas-archivadas.test.js':     31,
   'signer.test.js':                 31,
   'sin-vitrina-en-nativo.test.js':  59,
-  'trip-archive.test.js':           40,
+  'trip-archive.test.js':           43,
 };
 
 const archivos = fs.readdirSync(DIR).filter(f => f.endsWith('.test.js')).sort();

@@ -4,7 +4,7 @@
 verdad del proyecto. `HANDOVER.md` y `NEXT-SESSION.md` son históricos y están
 desactualizados — no mandan.*
 
-**Última actualización: 2026-10-11.**
+**Última actualización: 2026-10-13.**
 
 ---
 
@@ -29,7 +29,7 @@ Objetivo: USD 1.500/mes de ingreso semi-pasivo.
 | **Código** | esta carpeta (`~/dive-app-v2`) |
 | **Memoria del proyecto** | el vault de Obsidian en `~/Desktop/Fran´s Vult` |
 | Web app | Render, servicio con URL `dive-app-v2.onrender.com` |
-| Landing | `sevenseasops.com` → redirige a `www` → sirve `landing.html` |
+| Landing | **`sevenseasops.com/landing.html`** — y ojo: la **raíz** (`www.sevenseasops.com/`) sirve `index.html`, **la app**. Ver abajo |
 | Base y auth | Supabase, proyecto `ggtbxjwstkuhnabwpgdz`, región `sa-east-1` |
 | DNS | **Squarespace** (`nsa1..nsa4.squarespacedns.com`) — no Cloudflare |
 | Pagos | Paddle, en **producción** |
@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 632 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 666 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -697,6 +697,36 @@ comentadas: `openTrip(id)` busca una por id, y `exportAllShopRecords()` es el
 historial completo y las archivadas tienen que estar. Archivar saca algo del
 uso diario, no del registro.
 
+**Y desde el 13/10 un solo lugar nombra la tabla: `consultaDeSalidas(cols)`.**
+De ahí salen las cuatro —el helper de vigentes, su espejo `tripsArchivadas()`,
+`openTrip()` y el export—. El guardián del test pasó de exigir **tres** consultas
+crudas a exigir **UNA**: contar tres era contar «las que yo conozco», y la
+tarjeta de archivadas habría sido la cuarta pasando con sólo subirle el número.
+`tripsVigentes` y `tripsArchivadas` están una al lado de la otra a propósito —
+si mañana «archivada» deja de ser `archived_at not null`, las dos caras del
+filtro se cambian de una sola lectura.
+
+**Un centro ve lo que archivó: tarjeta `rep-archived-card` en Reportes** (13/10,
+cierra el paso 1c de archivar). La app le promete al dueño que archivar conserva
+y no había dónde comprobarlo — una promesa verdadera que no se puede comprobar
+se lee igual que una falsa. Quedó en Reportes, que ya es sólo del dueño, y **no**
+como filtro del calendario: el calendario es la herramienta del día y meterle lo
+quitado vuelve a mezclar lo que archivar separó.
+
+Tres cosas de ahí:
+- **El rango filtra por `trip_date`, no por `archived_at`.** Con `archived_at`
+  contestaría «qué quité esta semana»; la pregunta real es «el martes 7 no está,
+  qué pasó». Así el rango significa lo mismo que en las otras seis tarjetas.
+  Cuándo se archivó va igual, en la fila.
+- **`archived_by` no tiene FK a `staff`**, así que no se incrusta: se resuelve con
+  `nombreDeTripulante()`, la misma función que la autoría de un tilde, y hereda su
+  criterio — si el nombre no resuelve se dice sólo la fecha, nunca un «desde la
+  cuenta de» colgando. Sin `archived_at` no se dibuja la línea.
+- **Es sólo lectura: no hay desarchivar.** Devolver una salida al calendario tiene
+  consecuencias sin decidir (choques de barco, reservas que reviven).
+
+Detalle en `Seven Seas Ops/Un centro ve lo que archivó.md`.
+
 **Cinco `await sb.from(…).delete()` seguidos NO son una transacción.** Cada uno
 es su propio pedido y commitea solo, así que una secuencia puede fallar a mitad
 y dejar un estado roto — eso es exactamente lo que hacía el borrado de una
@@ -751,9 +781,22 @@ Por qué cobramos por fuera: Apple se queda con **15–30%** contra **~5%** de
 Paddle, y el IAP **no encaja** — la suscripción es del **centro** y la usan seis
 personas en tres plataformas, no de un Apple ID. Es el caso de **Enterprise
 Services, 3.1.3(c)**. La respuesta a las cinco preguntas está en
-`_apple/respuesta-2.1b-2026-10-11.md`, y **para que sea verdadera hay que enviar
-la build `2026-10-11f`** más credenciales de demo con plan activo en App Review
-Information.
+`_apple/respuesta-2.1b-2026-10-11.md`.
+
+> [!important] Un arreglo del `index.html` NO necesita binario nuevo
+> `capacitor.config.json` tiene `server.url = https://dive-app-v2.onrender.com`,
+> así que **la app nativa carga su interfaz del servidor**. Cualquier cambio del
+> `index.html` llega al iPhone del revisor en cuanto Render despliega, con el
+> binario que ya está en App Store Connect (`161001`).
+>
+> Primero dije «hay que enviar la build 2026-10-11f» — **mal**. `2026-10-11f` es
+> el build **web**; el único número que App Store Connect conoce es el del
+> binario. El binario se vuelve a subir sólo si cambia el envoltorio nativo
+> (`capacitor.config.json`, plugins, íconos, permisos), no por tocar la app.
+>
+> Lo que sí hay que confirmar antes de contestarle a Apple: abrir
+> `https://www.sevenseasops.com/index.html` y que la consola diga el build
+> esperado.
 
 **La cuenta de revisión es `demo@sevenseasops.com`, dueña del org
 `Blue water`** (`044849ea…`), medida el 11/10 en **`active` / `growth`**. El
@@ -839,19 +882,39 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
 
 ### Después de eso
 
-- **Decidir qué hacer con `app.sevenseasops.com`.** Hoy resuelve y tiene
-  certificado, pero apunta a un servicio de Render equivocado que sirve un
-  prototipo viejo llamado *Blue Drift* (verificado: sin Supabase, sin claves,
-  todo en `localStorage` — no es una fuga). Render rutea por nombre de host,
-  así que el CNAME está bien y lo que está mal es en qué servicio figura el
-  dominio. Opciones: moverlo al servicio correcto y usarlo como URL oficial de
-  la app, o soltarlo. No es urgente.
-- Bajar el prototipo *Blue Drift* de Render
-- **iOS: build 136001 en revisión** desde el 30/09, reenviado con capturas
-  nuevas tras el rechazo del 23/09 por metadatos (guía 2.3.3: las capturas de
-  13" sólo mostraban el login). El procedimiento para prepararlas está en
-  `Operativa/Capturas para el App Store.md` del vault — se repite en cada
-  versión.
+- ✅ **`app.sevenseasops.com` y Blue Drift: borrados el 13/10.** Queda **un solo
+  servicio en Render, `dive-app-v2`**, con un solo dominio,
+  `www.sevenseasops.com`. El código del prototipo sigue en GitHub
+  (`francoroca70-ux/dive-app`). No se movió la app a `app.` porque Paddle
+  aprueba *dominios* y el checkout se habría roto en esa URL.
+
+  **Dos datos operativos que costaron media hora y conviene no reaprender:**
+  en Render, **un servicio sin proyecto asignado NO aparece en la lista de
+  Projects** (`Ctrl+K` + nombre es la forma confiable, y el contador de Billing
+  es donde el sistema dice la verdad); y **cuando un subdominio sirve lo que no
+  debe, el DNS es el último lugar donde mirar** — Render rutea por hostname, así
+  que `app` y `www` apuntaban los dos al servicio correcto y el problema era qué
+  servicio tenía cargado ese hostname.
+
+> [!warning] La RAÍZ del dominio sirve el login, no la landing — y no se arregla
+> moviendo la landing
+> Medido el 13/10: `www.sevenseasops.com/` sirve `index.html` (la app) y la
+> landing está en `/landing.html`. **Un prospecto que teclee el dominio cae en un
+> formulario de contraseña.** CLAUDE.md decía lo contrario; corregido.
+>
+> **La trampa:** `capacitor.config.json` carga `https://dive-app-v2.onrender.com`
+> **sin ruta**, o sea la raíz. Si la raíz sirviera la landing, **la app nativa
+> abriría el marketing** — rechazo inmediato de Apple.
+>
+> **Orden obligado:** aprobación de Apple → Capacitor a `/index.html` explícito
+> (binario nuevo) → recién entonces la landing a la raíz. **Los dos últimos van
+> juntos o no van.** Detalle en `Operativa/Plan de octubre 2026.md`.
+- **iOS: tercer envío en revisión desde el 13/10**, binario **162001**, con la
+  respuesta de 2.1(b) contestada en el hilo. Los dos anteriores volvieron
+  rechazados: 23/09 por metadatos (guía 2.3.3, las capturas de 13" sólo mostraban
+  el login) y 30/09 por el modelo de negocio. El procedimiento de capturas está
+  en `Operativa/Capturas para el App Store.md` del vault — se repite en cada
+  versión, y el 13/10 **no hizo falta** porque seguían cargadas.
 - Casilla de correo para reemplazar el domicilio particular publicado en la
   ficha europea del App Store
 - Contactar los 10 centros de la investigación — **no depende de nada**
