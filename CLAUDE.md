@@ -29,7 +29,7 @@ Objetivo: USD 1.500/mes de ingreso semi-pasivo.
 | **Código** | esta carpeta (`~/dive-app-v2`) |
 | **Memoria del proyecto** | el vault de Obsidian en `~/Desktop/Fran´s Vult` |
 | Web app | Render, servicio con URL `dive-app-v2.onrender.com` |
-| Landing | **`sevenseasops.com/landing.html`** — y ojo: la **raíz** (`www.sevenseasops.com/`) sirve `index.html`, **la app**. Ver abajo |
+| Landing | **`sevenseasops.com/landing.html`**, y **tecleando el dominio pelado se llega ahí**: la raíz sirve `index.html` pero ese archivo redirige. Ver abajo |
 | Base y auth | Supabase, proyecto `ggtbxjwstkuhnabwpgdz`, región `sa-east-1` |
 | DNS | **Squarespace** (`nsa1..nsa4.squarespacedns.com`) — no Cloudflare |
 | Pagos | Paddle, en **producción** |
@@ -896,19 +896,38 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
   que `app` y `www` apuntaban los dos al servicio correcto y el problema era qué
   servicio tenía cargado ese hostname.
 
-> [!warning] La RAÍZ del dominio sirve el login, no la landing — y no se arregla
-> moviendo la landing
-> Medido el 13/10: `www.sevenseasops.com/` sirve `index.html` (la app) y la
-> landing está en `/landing.html`. **Un prospecto que teclee el dominio cae en un
-> formulario de contraseña.** CLAUDE.md decía lo contrario; corregido.
+> [!important] La raíz YA manda a la landing, y el ruteo está resuelto por
+> hostname — no hay nada pendiente acá
+> **Medí esto mal dos veces el 13/10 y conviene que quede el porqué.** Primero
+> escribí que la raíz servía la landing (falso: sirve `index.html`). Después lo
+> «corregí» a que **un prospecto cae en un formulario de contraseña** — también
+> falso, y peor, porque sonaba a medición.
 >
-> **La trampa:** `capacitor.config.json` carga `https://dive-app-v2.onrender.com`
-> **sin ruta**, o sea la raíz. Si la raíz sirviera la landing, **la app nativa
-> abriría el marketing** — rechazo inmediato de Apple.
+> El error: medí con **WebFetch, que no corre JavaScript**. El archivo que el
+> servidor devuelve en `/` es `index.html`, sí, pero su `<head>` tiene un
+> redirect que manda a `/landing.html`. **Medido en un navegador de verdad el
+> 13/10: tecleando `sevenseasops.com` se llega a la landing.** Lo que WebFetch
+> ve es el archivo; lo que ve una persona es el resultado de correrlo. *Ir y ver
+> con la herramienta equivocada no es ir y ver.*
 >
-> **Orden obligado:** aprobación de Apple → Capacitor a `/index.html` explícito
-> (binario nuevo) → recién entonces la landing a la raíz. **Los dos últimos van
-> juntos o no van.** Detalle en `Operativa/Plan de octubre 2026.md`.
+> **El redirect está keyeado por HOSTNAME, no por Capacitor**, y por eso no hay
+> conflicto con Apple: `PUBLIC_HOSTS` es sólo `sevenseasops.com` y
+> `www.sevenseasops.com`, y la app nativa carga `dive-app-v2.onrender.com`, que
+> **no está en la lista** — nunca redirige. No depende de que `window.Capacitor`
+> esté inyectado tan temprano, que no está garantizado.
+>
+> Y respeta cuatro casos que son los que lo hacen no-trivial: `/index.html`
+> pedido por nombre (así entran los «Log in» de la landing), los deep links con
+> `?waiver=` / `?invite=`, los de recuperación de contraseña —que traen el token
+> en el **hash**, no en la query— y **la sesión guardada**: si hay un
+> `-auth-token` en `localStorage` es personal del centro abriendo su
+> herramienta, no un prospecto, y se queda en la app. `localStorage` bloqueado
+> (modo privado, webview) cae a mostrar la app.
+>
+> **Consecuencia práctica: no hay que mover la landing a la raíz ni tocar
+> `capacitor.config.json`.** El «orden obligado» que yo había escrito —Apple →
+> Capacitor a `/index.html` → landing a la raíz— **no hace falta**, salía del
+> diagnóstico equivocado.
 - **iOS: tercer envío en revisión desde el 13/10**, binario **162001**, con la
   respuesta de 2.1(b) contestada en el hilo. Los dos anteriores volvieron
   rechazados: 23/09 por metadatos (guía 2.3.3, las capturas de 13" sólo mostraban

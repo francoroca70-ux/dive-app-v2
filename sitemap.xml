@@ -2,25 +2,29 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.sevenseasops.com/landing.html</loc>
-    <lastmod>2026-09-12</lastmod>
+    <!-- lastmod = la fecha real del último cambio del archivo, sacada de git.
+         Las cuatro decían 2026-09-12, que es de cuando se creó el sitemap y no
+         de cuando cambió cada página: un lastmod inventado es una pista falsa
+         que el crawler usa para decidir si vale revisitar. -->
+    <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://www.sevenseasops.com/privacy.html</loc>
-    <lastmod>2026-09-12</lastmod>
+    <lastmod>2026-09-22</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://www.sevenseasops.com/terms.html</loc>
-    <lastmod>2026-09-12</lastmod>
+    <lastmod>2026-09-22</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://www.sevenseasops.com/refund.html</loc>
-    <lastmod>2026-09-12</lastmod>
+    <lastmod>2026-09-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
