@@ -934,6 +934,19 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
   el login) y 30/09 por el modelo de negocio. El procedimiento de capturas está
   en `Operativa/Capturas para el App Store.md` del vault — se repite en cada
   versión, y el 13/10 **no hizo falta** porque seguían cargadas.
+> [!warning] Los dos `google*.html` de la raíz del repo NO se borran
+> `google6c351a16b170880f.html` sostiene la verificación de Search Console
+> (propiedad `https://www.sevenseasops.com/`, verificada el 14/10) y
+> `google38afbbbeee2c0da9.html` es de un intento anterior con otra cuenta.
+> Parecen basura —un `.html` de una línea cada uno— y si desaparecen del
+> servidor **Google desverifica la propiedad** y se pierden los datos.
+>
+> **Y el dominio no está indexado** (medido el 13/10: buscar «Seven Seas Ops» da
+> cero resultados). El SEO on-page está completo y en vivo; faltan mandar el
+> sitemap y pedir la indexación, que son pantallas de Search Console. Pasos y las
+> dos trampas de la verificación, en
+> `Operativa/Que nos encuentren buscando Seven Seas Ops.md`.
+
 - Casilla de correo para reemplazar el domicilio particular publicado en la
   ficha europea del App Store
 - Contactar los 10 centros de la investigación — **no depende de nada**
