@@ -50,6 +50,7 @@ const TIEMPO_MAXIMO_MS = 90000;
 const MINIMOS = {
   'autoria-de-tildes.test.js':      41,
   'borrados-avisan.test.js':        16,
+  'cambio-agendado.test.js':        28,
   'checklist-progress.test.js':     56,
   'checklist-record-scope.test.js': 35,
   'checklist-record.test.js':       55,

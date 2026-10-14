@@ -4993,6 +4993,12 @@ const TRANSLATIONS = {
     trial_banner_expired: 'Your free trial has ended. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
     trial_banner_ending_native: 'This shop\'s free trial ends in {n} day{s}. Your shop administrator can set up the subscription at sevenseasops.com.',
     trial_banner_expired_native: 'This shop\'s free trial has ended. Your shop administrator can reactivate it at sevenseasops.com.',
+    // Un cambio agendado en Paddle. Deliberadamente sin precio y sin enlace a
+    // una compra: se muestra también dentro de la app de iOS y Android, y lo
+    // que lo hace admisible ahí es que dice un hecho con una fecha.
+    sub_sched_cancel: 'Your subscription is set to end on {date}. You keep full access until then.',
+    sub_sched_pause: 'Your subscription is set to pause on {date}. You keep full access until then.',
+    sub_sched_resume: 'Your subscription is set to resume on {date}.',
     plan_limit_admin_web: 'Your shop administrator can review this at sevenseasops.com.',
     bp_modal_title: 'Choose your plan',
     bp_modal_sub: 'Pick a plan to keep using Seven Seas. Change or cancel anytime.',
@@ -5749,6 +5755,9 @@ const TRANSLATIONS = {
     trial_banner_expired: 'Tu prueba gratis terminó. <a href="#" onclick="openChoosePlanModal();return false;">Elegí un plan</a> para seguir usando Seven Seas.',
     trial_banner_ending_native: 'La prueba gratis de este centro termina en {n} día{s}. El administrador de tu centro puede contratar la suscripción en sevenseasops.com.',
     trial_banner_expired_native: 'La prueba gratis de este centro terminó. El administrador de tu centro puede reactivarla en sevenseasops.com.',
+    sub_sched_cancel: 'Tu suscripción termina el {date}. Mantenés el acceso completo hasta esa fecha.',
+    sub_sched_pause: 'Tu suscripción se pausa el {date}. Mantenés el acceso completo hasta esa fecha.',
+    sub_sched_resume: 'Tu suscripción se reanuda el {date}.',
     plan_limit_admin_web: 'El administrador de tu centro puede revisarlo en sevenseasops.com.',
     bp_modal_title: 'Elegí tu plan',
     bp_modal_sub: 'Elegí un plan para seguir usando Seven Seas. Cambialo o cancelalo cuando quieras.',
@@ -6166,11 +6175,65 @@ function queueOfflineAction(type, payload) {
 // Orgs that predate the billing system are backfilled to 'active' in the
 // migration (see outputs/paddle-billing-phase3-migration.sql) so they never
 // see this -- it only ever applies to orgs still on the free trial.
+// Lo que la app sabe de la suscripción del centro, guardado en UN lugar.
+//
+// Eran tres `window.currentOrg…` seteadas a mano en los dos caminos que cargan
+// una organización (abrir la app y crear el centro). Agregarle el cambio
+// agendado habría hecho cinco asignaciones × dos lugares, que es exactamente la
+// forma donde el defecto aparece donde la copia FALTA — una pantalla leyendo un
+// dato que el otro camino nunca cargó.
+function recordarEstadoDeSuscripcion(org, estadoPorDefecto) {
+  window.currentOrgSubscriptionStatus = (org && org.subscription_status) || estadoPorDefecto;
+  window.currentOrgTrialEndsAt = (org && org.trial_ends_at) || null;
+  window.currentOrgPlanTier = (org && org.plan_tier) || null;
+  window.currentOrgScheduledAction = (org && org.scheduled_change_action) || null;
+  window.currentOrgScheduledAt = (org && org.scheduled_change_at) || null;
+}
+
+// El cambio agendado en Paddle, y qué decirle al centro.
+//
+// Cancelar «al final del período» NO cambia el estado en Paddle: la suscripción
+// queda `active` hasta la fecha de factura. Así que sin esto la app le mostraba
+// a quien acababa de cancelar exactamente la misma pantalla que antes — muda
+// justo cuando el cliente quiere confirmación de que su baja se registró.
+//
+// Devuelve texto o cadena vacía, y lo deciden los dos lugares que lo muestran:
+// el banner (que se ve también en la app nativa) y la tarjeta de facturación
+// (que es sólo web). Un solo lugar arma la frase para que no puedan decir cosas
+// distintas sobre la misma fecha.
+function textoDeCambioAgendado(accion, cuando) {
+  if (!accion || !cuando) return '';
+  const fecha = new Date(cuando);
+  if (isNaN(fecha.getTime())) return '';
+  const clave = { cancel: 'sub_sched_cancel', pause: 'sub_sched_pause', resume: 'sub_sched_resume' }[accion];
+  // Una acción que no conocemos no se inventa: mejor no decir nada que decir
+  // algo que no entendemos sobre la facturación de alguien.
+  if (!clave) return '';
+  return t(clave).replace('{date}', fecha.toLocaleDateString(
+    currentLanguage === 'es' ? 'es-AR' : 'en-GB',
+    { day: 'numeric', month: 'long', year: 'numeric' }));
+}
+
 function updateTrialBanner() {
   const banner = document.getElementById('trial-banner');
   if (!banner) return;
   const status = window.currentOrgSubscriptionStatus;
   const trialEndsAt = window.currentOrgTrialEndsAt;
+
+  // El cambio agendado gana sobre el aviso de prueba cuando están los dos: es
+  // el hecho más nuevo y más específico. Y se muestra EN NATIVO también —a
+  // diferencia de la tarjeta de facturación, que ahí no existe— porque es
+  // informativo: dice una fecha, no ofrece una compra ni enlaza a una. El
+  // dueño que canceló desde la web tiene que poder verlo desde el celular.
+  const agendado = textoDeCambioAgendado(window.currentOrgScheduledAction, window.currentOrgScheduledAt);
+  if (agendado) {
+    banner.style.display = 'flex';
+    banner.className = 'ending';
+    const el = banner.querySelector('.trial-banner-text');
+    if (el) el.textContent = agendado;
+    return;
+  }
+
   if (status !== 'trial' || !trialEndsAt) {
     banner.style.display = 'none';
     return;
@@ -6596,6 +6659,17 @@ function updateBillingCard(org) {
     : t('set_billing_no_plan');
   chooseBtn.style.display = '';
   chooseBtn.textContent = planLabel ? t('set_change_plan') : t('set_choose_plan');
+
+  // Y si hay un cambio agendado, se dice acá también. `active` con una baja
+  // agendada es el caso que la app no sabía contar: el estado dice «activa» y
+  // es cierto, pero no es todo lo que el dueño necesita saber. Reusa la línea
+  // de la prueba porque las dos contestan lo mismo —hasta cuándo— y nunca
+  // coinciden: si está en prueba, el camino de arriba ya salió con un return.
+  const agendado = textoDeCambioAgendado(org.scheduled_change_action, org.scheduled_change_at);
+  if (agendado) {
+    trialLine.style.display = 'block';
+    trialLine.textContent = agendado;
+  }
 }
 
 async function openBillingPortal() {
@@ -8601,7 +8675,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-13a');
+  console.info('[Seven Seas] build 2026-10-14a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9387,9 +9461,7 @@ async function loadSettings(user) {
       const isOwnerRole = staffRow.role === 'owner';
       applyWaiverGatingUI(isOwnerRole);
 
-      window.currentOrgSubscriptionStatus = org.subscription_status || 'active';
-      window.currentOrgTrialEndsAt = org.trial_ends_at || null;
-      window.currentOrgPlanTier = org.plan_tier || null;
+      recordarEstadoDeSuscripcion(org, 'active');
       updateTrialBanner();
       updatePlanOverageBanner();
       enforceSubscriptionGate(window.currentOrgSubscriptionStatus, window.currentOrgTrialEndsAt);
@@ -9690,9 +9762,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     window.waiversEnabled = false;
     applyWaiverGatingUI(true);
 
-    window.currentOrgSubscriptionStatus = org.subscription_status || 'trial';
-    window.currentOrgTrialEndsAt = org.trial_ends_at || null;
-    window.currentOrgPlanTier = org.plan_tier || null;
+    recordarEstadoDeSuscripcion(org, 'trial');
     updateTrialBanner();
 
     document.getElementById('org-notice-new').style.display = 'none';

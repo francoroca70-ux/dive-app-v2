@@ -918,9 +918,49 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
   bancaria y verificación de identidad. Es lo único que falta para que el
   dinero llegue a Fran. Ojo con el mínimo de payout y el ciclo de pago: la
   primera transferencia no sale al día siguiente del primer cliente.
-- **La app no registra el cambio agendado.** Un centro que cancela con 20 días
-  por delante no ve nada: ni «tu suscripción termina el 30 de octubre», ni un
-  aviso. Funciona, pero queda mudo justo cuando el cliente quiere confirmación.
+- ✅ **La app registra el cambio agendado — hecho el 14/10 (A3).** Antes un
+  centro que cancelaba con 20 días por delante no veía nada, porque cancelar «al
+  final del período» en Paddle **no cambia el estado**: queda `active` hasta la
+  fecha de factura, y la app sólo leía `subscription_status`.
+
+  Migración aditiva `la_app_registra_el_cambio_agendado`:
+  `organizations.scheduled_change_action` (cancel/pause/resume, con CHECK),
+  `scheduled_change_at` y `subscription_updated_at`.
+
+  **Dos cosas que, mal hechas, lo convierten en una mentira**, y las dos están
+  en el webhook:
+  - **`scheduled_change` llega como objeto O COMO NULL.** Null es «se dio de
+    baja el cambio agendado» —en Paddle el único valor que se le puede poner es
+    null, justamente para quitarlo—. Así que el webhook **limpia** además de
+    setear: tratarlo como «si viene, guardo» dejaría a quien canceló y se
+    arrepintió viendo para siempre que su suscripción termina.
+  - **Paddle NO garantiza el orden de entrega**, y lo dice en su documentación.
+    Sin mirar `occurred_at`, un `subscription.updated` viejo que llega tarde
+    resucitaría un cambio ya quitado. Se guarda el `occurred_at` aplicado y un
+    evento más viejo no pisa esas columnas.
+
+  La frase se arma en **un solo lugar** (`textoDeCambioAgendado`) y la usan los
+  dos que la muestran: el banner y la tarjeta de facturación. **El banner SÍ se
+  ve en nativo** —a diferencia de la tarjeta, que ahí no existe— porque es
+  informativo: dice un hecho con una fecha, sin precio y sin enlace a una
+  compra. El dueño que canceló desde la web tiene que poder verlo del celular.
+
+  Y el estado de la suscripción se guarda en un solo lugar
+  (`recordarEstadoDeSuscripcion`): eran tres `window.currentOrg…` a mano en los
+  dos caminos que cargan una organización, y sumar el cambio agendado habrían
+  sido cinco × dos.
+
+  **Falta desplegar la edge function** — el archivo está en el repo y el deploy
+  no lo hace Claude: es el camino del cobro. Hasta que se despliegue, las tres
+  columnas quedan en NULL y la app no muestra nada, que es el comportamiento de
+  antes. Detalle en `Seven Seas Ops/El cambio agendado de suscripción.md`.
+
+  **Hallazgo aparte, sin tocar:** el webhook escribe `subscription_status` —que
+  es lo que habilita el acceso— **sin guardia de orden**. Un evento viejo que
+  llegue tarde podría devolver un org de `canceled` a `active` o al revés. Con
+  un cliente y eventos secuenciales nunca se vio. Arreglarlo cambia *cuándo* se
+  aplica una escritura del portón de acceso, así que es un cambio aparte y de
+  los que se preguntan primero.
 
 ### Después de eso
 

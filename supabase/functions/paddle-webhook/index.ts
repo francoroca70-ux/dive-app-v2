@@ -203,6 +203,55 @@ Deno.serve(async (req: Request) => {
     if (customerId) update.paddle_customer_id = customerId;
     if (tier) update.plan_tier = tier;
 
+    // El cambio AGENDADO, que hasta el 14/10 se tiraba entero.
+    //
+    // Cancelar «al final del período» en Paddle NO cambia el estado: la
+    // suscripción queda `active` hasta la fecha de factura. Así que un centro
+    // que cancela con 20 días por delante veía la app exactamente igual que
+    // antes, sin un «tu suscripción termina el 30 de octubre» en ningún lado --
+    // muda justo en el momento en que el cliente quiere confirmación de que su
+    // baja se registró.
+    //
+    // DOS cosas que hay que hacer bien o esto miente:
+    //
+    // 1 · `scheduled_change` llega como objeto O COMO NULL. Null es el caso de
+    //     «se dio de baja el cambio agendado» (en Paddle el único valor que se
+    //     le puede poner es null, justamente para quitarlo). Así que esto
+    //     LIMPIA además de setear: tratarlo como «si viene, guardo» dejaría a
+    //     un centro que canceló y se arrepintió viendo para siempre un cartel
+    //     de que su suscripción termina.
+    //
+    // 2 · Paddle NO garantiza el orden de entrega de los webhooks, y lo dice en
+    //     su documentación. Sin mirar `occurred_at`, un `subscription.updated`
+    //     viejo que llega tarde resucitaría un cambio agendado ya quitado. Por
+    //     eso se guarda el `occurred_at` aplicado y un evento más viejo no pisa
+    //     estas columnas.
+    const occurredAt = (payload as any)?.occurred_at ?? null;
+    const scheduled = data?.scheduled_change ?? null;
+    let aplicarCambioAgendado = true;
+
+    if (occurredAt) {
+      const { data: actual } = await createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+        .from("organizations")
+        .select("subscription_updated_at")
+        .eq("id", orgId)
+        .maybeSingle();
+      const previo = actual?.subscription_updated_at;
+      if (previo && new Date(occurredAt) < new Date(previo)) {
+        aplicarCambioAgendado = false;
+        console.log(
+          `paddle-webhook: evento fuera de orden para org ${orgId} ` +
+          `(occurred_at ${occurredAt} < ${previo}); no se toca el cambio agendado`
+        );
+      }
+    }
+
+    if (aplicarCambioAgendado) {
+      update.scheduled_change_action = scheduled?.action ?? null;
+      update.scheduled_change_at = scheduled?.effective_at ?? null;
+      if (occurredAt) update.subscription_updated_at = occurredAt;
+    }
+
     const { error } = await supabase.from("organizations").update(update).eq("id", orgId);
 
     if (error) {
@@ -211,7 +260,12 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log(
-      `paddle-webhook: org ${orgId} -> ${status} (${tier ? `${tier} via ${source}` : "tier unchanged"})`
+      `paddle-webhook: org ${orgId} -> ${status} (${tier ? `${tier} via ${source}` : "tier unchanged"})` +
+      (aplicarCambioAgendado
+        ? (scheduled
+            ? ` | agendado: ${scheduled.action} el ${scheduled.effective_at}`
+            : " | sin cambio agendado")
+        : " | cambio agendado sin tocar (evento viejo)")
     );
   } else {
     console.log(`paddle-webhook: ignoring event ${eventType}`);
