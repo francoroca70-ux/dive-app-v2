@@ -4538,6 +4538,19 @@ const TRANSLATIONS = {
     fleet_your_name: 'Your name', fleet_remove_engine_confirm: 'Remove this engine and its history?',
     fleet_maint_required: 'Title, date and description are required.', fleet_saved_offline: 'Saved offline — will sync automatically when you\'re back online.',
     fleet_error_prefix: 'Error: ', fleet_no_maint_boat: 'No maintenance logged for this boat yet.',
+    // La vista de equipo tenía estos textos cableados en inglés, sin pasar por
+    // t(), porque era una copia de la de barco que quedó atrás.
+    gear_no_maint_item: 'No maintenance logged for this item yet.',
+    fleet_maint_remove_confirm: 'Remove this maintenance entry?',
+    // El sello. Sólo el número en pantalla: 64 caracteres de hexadecimal en una
+    // lista no le sirven a nadie.
+    svc_seal_btn: 'Seal record',
+    svc_seal_confirm: 'Seal this service record? Once sealed it can never be edited or deleted — not by you, not by anyone. That is what makes it worth something to an insurer. Make sure the cost, the date and what was done are right.',
+    svc_seal_failed: 'Could not seal this record: {why}',
+    svc_sealed_badge: 'Sealed',
+    svc_sealed_title: 'This record is sealed: it cannot be edited or deleted.',
+    svc_sealed_meta: 'Sealed {date} · tamper-evident record',
+    svc_sealed_meta_by: 'Sealed {date} from {name}\'s account · tamper-evident record',
     fleet_parts_prefix: 'Parts: ', fleet_cost_prefix: 'Cost: ', fleet_next_due_prefix: 'Next due: ', fleet_due_now: ' — due now',
 
     crew_invite_title: 'Invite a crew member', crew_invite_hint: 'They will receive an email with a link to set up their account.',
@@ -5300,6 +5313,15 @@ const TRANSLATIONS = {
     fleet_your_name: 'Tu nombre', fleet_remove_engine_confirm: '¿Eliminar este motor y su historial?',
     fleet_maint_required: 'Título, fecha y descripción son obligatorios.', fleet_saved_offline: 'Guardado sin conexión — se sincronizará automáticamente cuando vuelvas a estar en línea.',
     fleet_error_prefix: 'Error: ', fleet_no_maint_boat: 'Aún no hay mantenimiento registrado para esta embarcación.',
+    gear_no_maint_item: 'Aún no hay mantenimiento registrado para este artículo.',
+    fleet_maint_remove_confirm: '¿Quitar este registro de mantenimiento?',
+    svc_seal_btn: 'Sellar registro',
+    svc_seal_confirm: '¿Sellar este service? Una vez sellado no se puede editar ni borrar nunca más — ni vos ni nadie. Eso es justamente lo que lo hace valer ante un seguro. Revisá que el costo, la fecha y lo que se hizo estén bien.',
+    svc_seal_failed: 'No se pudo sellar el registro: {why}',
+    svc_sealed_badge: 'Sellado',
+    svc_sealed_title: 'Este registro está sellado: no se puede editar ni borrar.',
+    svc_sealed_meta: 'Sellado el {date} · registro inalterable',
+    svc_sealed_meta_by: 'Sellado el {date} desde la cuenta de {name} · registro inalterable',
     fleet_parts_prefix: 'Repuestos: ', fleet_cost_prefix: 'Costo: ', fleet_next_due_prefix: 'Próximo vencimiento: ', fleet_due_now: ' — vencido',
 
     crew_invite_title: 'Invitar a un miembro de la tripulación', crew_invite_hint: 'Recibirán un correo con un enlace para configurar su cuenta.',
@@ -8508,14 +8530,18 @@ async function renderTasksAll() {
       const done = listItems.filter(i => (completions || []).some(c => c.task_list_item_id === i.id && c.staff_id === a.staff_id)).length;
       return `${a.staff?.full_name || t('tk_unknown')} (${done}/${listItems.length})`;
     }).join(', ');
+    // Escapado el 14/10, junto con el de los service: el título de una lista,
+    // la nota de un asignado y el nombre son todos texto que escribe una
+    // persona, e iban crudos al innerHTML. Apareció buscando el agujero de las
+    // vistas de mantenimiento — el mismo defecto, en un tercer lugar.
     const notesHtml = listAssignees.filter(a => a.note).map(a =>
-      `<div style="font-size:0.78rem;color:var(--warning);margin-top:4px;">📝 ${a.staff?.full_name || t('tk_unknown')}: ${a.note}</div>`
+      `<div style="font-size:0.78rem;color:var(--warning);margin-top:4px;">📝 ${escapeHtml((a.staff?.full_name || t('tk_unknown')) + ': ' + a.note)}</div>`
     ).join('');
     return `<div class="gear-item-row" onclick="openTaskDetail('${l.id}')" style="cursor:pointer;">
       <div class="gear-item-header">
-        <span class="gear-item-name">${l.title}</span>
+        <span class="gear-item-name">${escapeHtml(l.title || '')}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${l.due_date || t('tk_no_due_date')} · ${perAssignee}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${escapeHtml((l.due_date || t('tk_no_due_date')) + ' · ' + perAssignee)}</div>
       ${notesHtml}
     </div>`;
   }).join('');
@@ -8675,7 +8701,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-14a');
+  console.info('[Seven Seas] build 2026-10-14b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -18578,34 +18604,124 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
 
 async function loadBoatDetailMaintenance(boatId) {
   const { data: logs } = await sb.from('maintenance_logs').select('*, engines(name), gear(name)').eq('boat_id', boatId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
+  // `sealed_by` no tiene FK a staff, así que no se incrusta: se resuelve con la
+  // misma caché y la misma función que la autoría de un tilde. Igual que la
+  // tarjeta de archivadas del 13/10.
+  await loadSignerStaff();
   renderBoatDetailMaintenance(logs || []);
+}
+
+// Un service se dibuja en UN solo lugar, con dos pieles.
+//
+// Antes había dos copias —`renderBoatDetailMaintenance` y
+// `renderGearDetailMaintenance`— y la copia se había desincronizado de las tres
+// formas posibles, que es lo que hace esto el mismo caso que `filaDeActa()` del
+// 11/10:
+//
+//  1 · La de equipo estaba **entera sin traducir**: «Remove», «Parts:»,
+//      «Cost:», «Next due:», «— due now», todo cableado en inglés. La de barco
+//      sí usaba t().
+//  2 · **NINGUNA de las dos escapaba** `title`, `description`, `parts_used` ni
+//      `performed_by`. Son campos que escribe el usuario e iban crudos al
+//      innerHTML.
+//  3 · Y el sello del 14/10 habría tenido que agregarse dos veces.
+//
+// La piel es un parámetro (`conBarco` agrega motor y equipo, que sólo tienen
+// sentido en la pantalla del barco) y qué se muestra se decide acá.
+function filaDeService(l, { conBarco = false } = {}) {
+  const today = new Date().toISOString().split('T')[0];
+  const dueSoon = l.next_due_date && l.next_due_date <= today;
+  const fecha = (d) => new Date(d + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const contexto = [];
+  if (conBarco) {
+    if (l.engines && l.engines.name) contexto.push(l.engines.name);
+    if (l.gear && l.gear.name) contexto.push(l.gear.name);
+  }
+  if (l.performed_date) contexto.push(fecha(l.performed_date));
+  if (l.performed_by) contexto.push(l.performed_by);
+
+  const sellado = !!l.sealed_at;
+  // Un sellado no ofrece el botón de quitar. El trigger de la base lo rechaza
+  // igual —es ahí donde la regla vive— pero ofrecer un botón que sólo puede
+  // fallar es la misma cosa que `manageBtn` sin cliente de Paddle.
+  const acciones = sellado
+    ? `<span class="cl-role-badge" title="${escapeHtml(t('svc_sealed_title'))}">${escapeHtml(t('svc_sealed_badge'))}</span>`
+    : `<div style="display:flex;gap:6px;flex-wrap:wrap;">
+         ${puedeSellarService() ? `<button class="btn-cancel" style="padding:4px 10px;font-size:0.78rem;" onclick="sellarService('${l.id}', ${conBarco})">${escapeHtml(t('svc_seal_btn'))}</button>` : ''}
+         <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', ${conBarco}, ${!conBarco})">${escapeHtml(t('fleet_remove'))}</button>
+       </div>`;
+
+  return `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div>
+          <h2 style="margin-bottom:2px;">${escapeHtml(l.title || '')}</h2>
+          <p style="font-size:0.8rem;color:var(--muted);">${escapeHtml(contexto.join(' · '))}</p>
+        </div>
+        ${acciones}
+      </div>
+      ${l.description ? `<p style="font-size:0.85rem;margin-top:8px;">${escapeHtml(l.description)}</p>` : ''}
+      ${l.parts_used ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:6px;">${escapeHtml(t('fleet_parts_prefix') + l.parts_used)}</p>` : ''}
+      ${l.cost ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:2px;">${escapeHtml(t('fleet_cost_prefix') + (l.currency || 'USD') + ' ' + parseFloat(l.cost).toFixed(2))}</p>` : ''}
+      ${l.next_due_date ? `<p style="font-size:0.8rem;margin-top:2px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">${escapeHtml(t('fleet_next_due_prefix') + fecha(l.next_due_date) + (dueSoon ? t('fleet_due_now') : ''))}</p>` : ''}
+      ${sellado ? lineaDeSello(l) : ''}
+    </div>
+  `;
+}
+
+// El certificado, en pantalla. Igual que en los waivers: **sólo el número**.
+// 64 caracteres de hexadecimal en una lista no le sirven a nadie; el sello
+// completo es para el documento exportado.
+function lineaDeSello(l) {
+  const cuando = l.sealed_at
+    ? new Date(l.sealed_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+    : '';
+  const quien = nombreDeTripulante(l.sealed_by);
+  const texto = quien
+    ? t('svc_sealed_meta_by').replace('{date}', cuando).replace('{name}', quien)
+    : t('svc_sealed_meta').replace('{date}', cuando);
+  return `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border, rgba(0,0,0,0.08));font-size:0.76rem;color:var(--muted);">
+      ${escapeHtml(texto)}
+      ${l.document_id ? `<div style="font-family:monospace;margin-top:2px;">${escapeHtml(l.document_id)}</div>` : ''}
+    </div>`;
+}
+
+// Sellar es de dueño o encargado, igual que quitar una salida o editar una
+// plantilla. Dice lo mismo que diría RLS si tuviera una política para esto —
+// hoy no la tiene, y por eso está acá y además en el trigger.
+function puedeSellarService() {
+  return ['owner', 'manager'].includes(currentUserRole);
+}
+
+async function sellarService(id, fromBoatModal) {
+  // Irreversible, así que se pregunta. Y el texto dice QUÉ se pierde —no poder
+  // corregirlo nunca más— en vez de un «¿estás seguro?» que no informa nada.
+  if (!(await showConfirmModal(t('svc_seal_confirm')))) return;
+  // `sealed_at` se manda sólo como señal de «sellá esto»: el trigger lo
+  // sobrescribe con now() y pone el autor desde auth.uid(). Lo que el navegador
+  // manda acá no termina en el registro, y es a propósito.
+  const { error } = await sb.from('maintenance_logs')
+    .update({ sealed_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) {
+    showAlertModal(t('svc_seal_failed').replace('{why}', motivoDeFalloAlEscribir(error)));
+    return;
+  }
+  if (fromBoatModal && window.currentBoatDetailId) {
+    await loadBoatDetailMaintenance(window.currentBoatDetailId);
+  } else if (window.currentGearDetailId) {
+    await loadGearDetailMaintenance(window.currentGearDetailId);
+  }
 }
 
 function renderBoatDetailMaintenance(logs) {
   const list = document.getElementById('boat-detail-maintenance-list');
   if (!logs.length) {
-    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('fleet_no_maint_boat')}</p>`;
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${escapeHtml(t('fleet_no_maint_boat'))}</p>`;
     return;
   }
-  const today = new Date().toISOString().split('T')[0];
-  list.innerHTML = logs.map(l => {
-    const dueSoon = l.next_due_date && l.next_due_date <= today;
-    return `
-    <div class="card" style="margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div>
-          <h2 style="margin-bottom:2px;">${l.title}</h2>
-          <p style="font-size:0.8rem;color:var(--muted);">${[l.engines?.name, l.gear?.name].filter(Boolean).join(' · ')}${l.engines?.name || l.gear?.name ? ' · ' : ''}${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
-        </div>
-        <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', true)">${t('fleet_remove')}</button>
-      </div>
-      <p style="font-size:0.85rem;margin-top:8px;">${l.description}</p>
-      ${l.parts_used ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:6px;">${t('fleet_parts_prefix')}${l.parts_used}</p>` : ''}
-      ${l.cost ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:2px;">${t('fleet_cost_prefix')}${l.currency || 'USD'} ${parseFloat(l.cost).toFixed(2)}</p>` : ''}
-      ${l.next_due_date ? `<p style="font-size:0.8rem;margin-top:2px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">${t('fleet_next_due_prefix')}${new Date(l.next_due_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? t('fleet_due_now') : ''}</p>` : ''}
-    </div>
-  `;
-  }).join('');
+  list.innerHTML = logs.map(l => filaDeService(l, { conBarco: true })).join('');
 }
 // ─── END BOAT DETAIL ───
 
@@ -18957,34 +19073,17 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
 
 async function loadGearDetailMaintenance(gearId) {
   const { data: logs } = await sb.from('maintenance_logs').select('*').eq('gear_id', gearId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
+  await loadSignerStaff();
   renderGearDetailMaintenance(logs || []);
 }
 
 function renderGearDetailMaintenance(logs) {
   const list = document.getElementById('gear-detail-maintenance-list');
   if (!logs.length) {
-    list.innerHTML = '<p style="font-size:0.83rem;color:var(--muted)">No maintenance logged for this item yet.</p>';
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${escapeHtml(t('gear_no_maint_item'))}</p>`;
     return;
   }
-  const today = new Date().toISOString().split('T')[0];
-  list.innerHTML = logs.map(l => {
-    const dueSoon = l.next_due_date && l.next_due_date <= today;
-    return `
-    <div class="card" style="margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div>
-          <h2 style="margin-bottom:2px;">${l.title}</h2>
-          <p style="font-size:0.8rem;color:var(--muted);">${new Date(l.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${l.performed_by ? ' · ' + l.performed_by : ''}</p>
-        </div>
-        <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', false, true)">Remove</button>
-      </div>
-      <p style="font-size:0.85rem;margin-top:8px;">${l.description}</p>
-      ${l.parts_used ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:6px;">Parts: ${l.parts_used}</p>` : ''}
-      ${l.cost ? `<p style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Cost: ${l.currency || 'USD'} ${parseFloat(l.cost).toFixed(2)}</p>` : ''}
-      ${l.next_due_date ? `<p style="font-size:0.8rem;margin-top:2px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">Next due: ${new Date(l.next_due_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? ' — due now' : ''}</p>` : ''}
-    </div>
-  `;
-  }).join('');
+  list.innerHTML = logs.map(l => filaDeService(l)).join('');
 }
 // ─── END GEAR REGISTRY ───
 
@@ -19470,7 +19569,7 @@ async function deleteCompressor(id) {
 // ─── MAINTENANCE ───
 
 async function deleteMaintenanceLog(id, fromBoatModal, fromGearModal) {
-  if (!(await showConfirmModal('Remove this maintenance entry?'))) return;
+  if (!(await showConfirmModal(t('fleet_maint_remove_confirm')))) return;
   if (!(await borrarOAvisar(sb.from('maintenance_logs').delete().eq('id', id)))) return;
   if (fromGearModal && window.currentGearDetailId) {
     await loadGearDetailMaintenance(window.currentGearDetailId);

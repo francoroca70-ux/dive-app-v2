@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 666 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 728 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -346,7 +346,7 @@ correcto y lo que cambió al medirlo fue la forma.
 archivo y **38 de los últimos 54 commits lo tocan** (70%). Una rama de semanas
 contra `main` moviéndose en el mismo archivo deja un merge grande que resuelve
 Claude, y un merge mal resuelto acá es el modo de falla de siempre: verde en las
-666 comprobaciones y mal en algo que nadie afirmó. Peor: **la base es una sola y
+728 comprobaciones y mal en algo que nadie afirmó. Peor: **la base es una sola y
 las migraciones entran en producción al aplicarse**, así que la copia sería del
 código y no de los datos — no cubriría el A1, que es justo el que preocupa.
 
@@ -1036,8 +1036,44 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
   contraseñas filtradas (el chequeo contra HaveIBeenPwned es función de Pro, no
   un interruptor del plan gratis; medido el 08/10, org `sevenseas` en `free`).
   Hasta que se pague, ese aviso del linter de seguridad **no se puede cerrar**.
-- Service con sello inalterable en `maintenance_logs`, mismo patrón que el
-  certificado de autenticidad de los waivers
+- ✅ **Service con sello inalterable — hecho el 14/10 (A4).** Medido antes:
+  `maintenance_logs` tenía 4 filas, **0 triggers** y una sola política
+  (`ALL:org_isolation`), así que cualquiera del centro podía editar o borrar un
+  service — y un sello sobre algo editable no vale nada.
+
+  **Un service NO es un waiver**, y de ahí el diseño: un waiver nace firmado e
+  inmutable, un service es un registro de trabajo que alguien corrige mientras lo
+  escribe. Dos estados: `sealed_at IS NULL` = **borrador** editable;
+  con valor = **sellado**, y no se modifica ni se borra nunca.
+
+  Cuatro decisiones, las tres primeras heredadas del certificado de los waivers:
+  el hash se calcula **una vez al sellar y nunca se recalcula** (la diferencia
+  entre el guardado y el recalculado ES la prueba); lo calcula **Postgres**, que
+  sobrescribe `sealed_at` con `now()` y el autor con `auth.uid()` — el navegador
+  manda una sola clave y su valor se ignora; **`next_due_date` queda AFUERA**
+  porque cambia por diseño, igual que la habilitación médica en los waivers; y el
+  payload lleva **prefijo de versión `v1`** para que un cambio de criterio no
+  invalide retroactivamente lo ya sellado.
+
+  **Una sola capa, no dos.** El acta tiene RLS sin UPDATE/DELETE **más** trigger;
+  acá sólo trigger, porque la misma tabla tiene que seguir editable mientras es
+  borrador y **sellar es en sí mismo un UPDATE**. Si alguien ablanda
+  `trg_stamp_maintenance_log`, no queda nada detrás.
+
+  **Probado contra la base real**, no en jsdom: 9 comprobaciones en una
+  transacción revertida (sellar calcula el hash, la fecha la pone Postgres aunque
+  se mande otra, modificar y borrar se rechazan, el hash no se mueve).
+
+  **Y las dos vistas de mantenimiento eran la misma fila copiada**, con los tres
+  síntomas: la de equipo **entera sin traducir**, **ninguna** escapaba
+  `title`/`description`/`parts_used`/`performed_by` —crudos al innerHTML— y el
+  sello habría ido dos veces. Ahora hay una `filaDeService(l, {conBarco})`.
+  Buscando ese agujero apareció un **tercer** lugar con el mismo defecto, la
+  lista de tareas (`renderTaskLists`), arreglado en el mismo cambio.
+
+  Detalle en `Seven Seas Ops/El sello de un service.md`. **Queda abierto**:
+  nadie exporta todavía un service sellado a papel, que es lo que un seguro
+  pediría de verdad.
 
 ---
 

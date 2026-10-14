@@ -64,6 +64,7 @@ const MINIMOS = {
   'plantillas-tres-capas.test.js':  31,
   'reset-segunda-pasada.test.js':   30,
   'salidas-archivadas.test.js':     31,
+  'sello-de-service.test.js':       34,
   'signer.test.js':                 31,
   'sin-vitrina-en-nativo.test.js':  59,
   'trip-archive.test.js':           43,
