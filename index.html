@@ -42,6 +42,17 @@
   // them to dive-app-v2.onrender.com.
   if (location.pathname !== '/') return;
 
+  // No network? Then this is not a prospect arriving from a search result: it's
+  // someone who already has the app and is opening it on a boat. Redirecting
+  // would send them to /landing.html, and a navigation that can't reach the
+  // network is answered from the cache -- so this is also what keeps the
+  // redirect from bouncing between two pages while offline.
+  //
+  // Only the FALSE branch is trusted. `navigator.onLine === true` means "there
+  // is an interface up", which on a boat is routinely a lie; false is the one
+  // value the browser can be sure of, and false is all this needs.
+  if (navigator.onLine === false) return;
+
   // Deep links that have to reach the app, not the sales page.
   if (/[?&](waiver|invite)=/.test(location.search || '')) return;
   // Supabase password-recovery links put the token in the HASH, not the query
@@ -1936,7 +1947,7 @@ body { background: var(--navy); color: var(--text); }
     </div>
     <div class="modal-body">
       <p id="cl-motivos-intro" style="font-size:0.95rem;color:var(--text);line-height:1.5;margin-bottom:4px;"></p>
-      <p style="font-size:0.82rem;color:var(--muted);line-height:1.45;margin-bottom:16px;" data-i18n="cl_motivos_ayuda">Saying why is optional, but it stays in the signed record — which is what lets you answer a customer later.</p>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.45;margin-bottom:16px;" data-i18n="cl_motivos_ayuda">Saying why is optional, but it stays in the signed record.</p>
       <div id="cl-motivos-lista"></div>
       <div class="settings-actions" style="justify-content:flex-end;">
         <button class="btn-cancel" id="cl-motivos-cancel" data-i18n="tt_cancel">Cancel</button>
@@ -4625,9 +4636,10 @@ const TRANSLATIONS = {
     cl_autor_title: 'Ticked from this crew member’s account',
     cl_participantes: 'Filled in together by {names}.',
     cl_ya_firmada: 'This checklist was already signed by {name} at {time}, so nothing was added. Signed records are never replaced — use Reset if you need to run it again.',
+    cl_custom_checklist_generic: 'Custom checklist',
     cl_motivos_titulo: 'Before signing',
     cl_motivos_intro: '{n} item(s) were not done. Why?',
-    cl_motivos_ayuda: 'Saying why is optional, but it stays in the signed record — which is what lets you answer a customer later.',
+    cl_motivos_ayuda: 'Saying why is optional, but it stays in the signed record.',
     cl_motivos_ph: 'e.g. supplier never delivered them',
     cl_motivos_firmar: 'Sign anyway',
     cl_acta_porque: 'Why: {why}',
@@ -5408,9 +5420,10 @@ const TRANSLATIONS = {
     cl_autor_title: 'Tildado desde la cuenta de esta persona',
     cl_participantes: 'La completaron entre {names}.',
     cl_ya_firmada: 'Esta checklist ya la firmó {name} a las {time}, así que no se agregó nada. Las actas firmadas no se reemplazan — si hay que hacerla de nuevo, usá Reset.',
+    cl_custom_checklist_generic: 'Checklist propia',
     cl_motivos_titulo: 'Antes de firmar',
     cl_motivos_intro: 'Quedaron {n} ítem(s) sin hacer. ¿Por qué?',
-    cl_motivos_ayuda: 'Explicar por qué es opcional, pero queda en el acta firmada — y es lo que después te permite contestarle a un cliente.',
+    cl_motivos_ayuda: 'Explicar por qué es opcional, pero queda en el acta firmada.',
     cl_motivos_ph: 'ej. el proveedor no las trajo',
     cl_motivos_firmar: 'Firmar igual',
     cl_acta_porque: 'Por qué: {why}',
@@ -5423,7 +5436,12 @@ const TRANSLATIONS = {
     cl_sign_off_routine: 'Confirmar', cl_select_trip_first: 'Primero seleccioná una salida arriba.',
     cl_includes_spares: 'incluye {n} de repuesto',
     cl_dept_captain: 'Capitán', cl_dept_instructor: 'Instructor / DM / Guía de Buceo', cl_dept_deck: 'Cubierta', cl_dept_stewards: 'Stewards',
-    cl_cadence_morning: 'Mañana', cl_cadence_eod: 'Fin del Día', cl_cadence_monthly: 'Mensual', cl_cadence_yearly: 'Anual',
+    // «Mañana» se lee como *tomorrow* y no como *morning*: Fran lo reportó
+    // probando en castellano el 14/10, y en una checklist diaria la diferencia
+    // entre «lo de hoy temprano» y «lo de mañana» no es un matiz. «Inicio del
+    // día» no tiene la otra lectura y además hace par con «Fin del día», que es
+    // la etiqueta de la otra cadencia diaria.
+    cl_cadence_morning: 'Inicio del día', cl_cadence_eod: 'Fin del día', cl_cadence_monthly: 'Mensual', cl_cadence_yearly: 'Anual',
     cl_crew_signoff_status: 'Estado de Confirmación de Tripulación', cl_vessel_safety_check: 'Revisión de Seguridad de la Embarcación',
     cl_complete_once_daily: 'Completar una vez al día antes de la primera salida. Independiente de las salidas individuales.',
     cl_captain_signoff: 'Confirmación del Capitán', cl_captain_name: 'Nombre del capitán', cl_boat_name: 'Nombre de la embarcación',
@@ -8736,7 +8754,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-14d');
+  console.info('[Seven Seas] build 2026-10-14e');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15368,28 +15386,50 @@ function departmentRoutinesGet() {
 // Human label for a checklist_completions.role value, for Logged Checklists.
 // Covers both the department-routine keys above and the legacy trip-linked
 // 'instructor' role from Trip Prep's Gear Prep checklist.
+// Las cadencias y los departamentos, en UN lugar. Antes esto era un mapa de 17
+// entradas escritas a mano —cuatro departamentos × cuatro cadencias, más dos
+// claves sueltas— y agregar una cadencia eran cuatro líneas nuevas que alguien
+// se iba a olvidar en alguno de los cuatro. El nombre del rol ya tiene la forma
+// `<departamento>_<cadencia>`: se parte y se arma, no se enumera.
+const CHECKLIST_CADENCIAS = {
+  morning: 'cl_cadence_morning', eod: 'cl_cadence_eod',
+  monthly: 'cl_cadence_monthly', yearly: 'cl_cadence_yearly'
+};
+const CHECKLIST_DEPTOS = {
+  captain: 'cl_dept_captain', instructor: 'cl_dept_instructor',
+  deck: 'cl_dept_deck', stewards: 'cl_dept_stewards'
+};
 function checklistRoleLabel(role) {
-  const cadenceOf = { morning: 'cl_cadence_morning', eod: 'cl_cadence_eod', monthly: 'cl_cadence_monthly', yearly: 'cl_cadence_yearly' };
-  const map = {
-    captain: `${t('cl_dept_captain')} — ${t('cl_cadence_morning')}`,
-    captain_eod: `${t('cl_dept_captain')} — ${t('cl_cadence_eod')}`,
-    captain_monthly: `${t('cl_dept_captain')} — ${t('cl_cadence_monthly')}`,
-    captain_yearly: `${t('cl_dept_captain')} — ${t('cl_cadence_yearly')}`,
-    instructor_morning: `${t('cl_dept_instructor')} — ${t('cl_cadence_morning')}`,
-    instructor_eod: `${t('cl_dept_instructor')} — ${t('cl_cadence_eod')}`,
-    instructor_monthly: `${t('cl_dept_instructor')} — ${t('cl_cadence_monthly')}`,
-    instructor_yearly: `${t('cl_dept_instructor')} — ${t('cl_cadence_yearly')}`,
-    deck_morning: `${t('cl_dept_deck')} — ${t('cl_cadence_morning')}`,
-    deck_eod: `${t('cl_dept_deck')} — ${t('cl_cadence_eod')}`,
-    deck_monthly: `${t('cl_dept_deck')} — ${t('cl_cadence_monthly')}`,
-    deck_yearly: `${t('cl_dept_deck')} — ${t('cl_cadence_yearly')}`,
-    stewards_morning: `${t('cl_dept_stewards')} — ${t('cl_cadence_morning')}`,
-    stewards_eod: `${t('cl_dept_stewards')} — ${t('cl_cadence_eod')}`,
-    stewards_monthly: `${t('cl_dept_stewards')} — ${t('cl_cadence_monthly')}`,
-    stewards_yearly: `${t('cl_dept_stewards')} — ${t('cl_cadence_yearly')}`,
-    instructor: t('cl_instructor_dm'),
-  };
-  return map[role] || crewRoleLabel(role);
+  if (!role || typeof role !== 'string') return '';
+
+  // Una checklist propia del centro. Hasta el 14/10 caía en el `crewRoleLabel`
+  // del final, que devuelve lo que le entra, así que Logged Checklists mostraba
+  // `custom_` seguido de un uuid — lo reportó Fran, y es justo la pantalla donde
+  // un dueño mira el historial.
+  if (role.startsWith('custom_')) {
+    const cc = customChecklists.find(c => `custom_${c.id}` === role);
+    if (cc && cc.title) return cc.title;
+    // Un acta es inmutable y sobrevive a la checklist que la generó, así que no
+    // encontrarla es un caso normal y no un error: la borraron, o la lista
+    // todavía no cargó. Se dice qué es; nunca el uuid.
+    return t('cl_custom_checklist_generic');
+  }
+
+  // Los dos casos sin sufijo de cadencia, que son históricos y van primero:
+  // 'instructor' es el Gear Prep de una salida, y 'captain' es la clave vieja
+  // de la rutina de capitán de la mañana, de cuando era la única.
+  if (role === 'instructor') return t('cl_instructor_dm');
+  if (role === 'captain') return `${t('cl_dept_captain')} — ${t('cl_cadence_morning')}`;
+
+  // `lastIndexOf` y no `split`: un departamento puede llevar guión bajo en el
+  // nombre, una cadencia no.
+  const corte = role.lastIndexOf('_');
+  if (corte > 0) {
+    const dept = CHECKLIST_DEPTOS[role.slice(0, corte)];
+    const cad = CHECKLIST_CADENCIAS[role.slice(corte + 1)];
+    if (dept && cad) return `${t(dept)} — ${t(cad)}`;
+  }
+  return crewRoleLabel(role);
 }
 
 // State
@@ -16475,7 +16515,49 @@ async function clearChecklistProgress(scopeKey, { avisarSiFalla = false } = {}) 
 // `firmarUnaSolaVez()` encontraría el acta anterior y **se negaría a firmar la
 // segunda pasada**, convirtiendo una protección en un bloqueo — el mismo error
 // que casi cometí con las dos actividades.
-const pasadasAbiertas = new Set();
+// Era un `new Set()` en memoria, y eso lo rompía justo en el caso que importa:
+// Fran reseteó una checklist ya firmada, cerró la app, volvió a entrar, pudo
+// tildar y **no tenía botón para firmar**. Al reabrir, el Set nacía vacío, así
+// que `firmarUnaSolaVez()` encontraba el acta de la primera pasada y
+// `pintarZonaDeFirma()` escondía selector y botón. La protección pasaba a ser
+// un bloqueo — exactamente lo que el comentario de arriba dice que hay que
+// evitar — y en un barco cerrar y reabrir la app es lo normal, no la excepción.
+//
+// Se guarda en `localStorage`, con la misma forma de objeto que el resto: `.has`,
+// `.add`, `.delete`. Los cinco lugares que lo usan no cambian, que es el punto.
+//
+// Dos detalles que lo hacen correcto y no sólo persistente:
+//  · **La `scopeKey` ya lleva el período** (`progressScopeKey(role, periodKey)`),
+//    así que una pasada abierta hoy a la mañana no puede aplicarse mañana. No
+//    hace falta inventar una expiración: la llave se vuelve inalcanzable sola.
+//    El corte de 48 h es sólo para que el objeto no crezca para siempre.
+//  · **La memoria es la fuente y el disco la copia.** Si `localStorage` está
+//    bloqueado (modo privado, webview), sigue funcionando dentro de la sesión,
+//    que es lo que hacía antes. Se pierde al reabrir y nada más.
+const pasadasAbiertas = {
+  _mem: null,
+  _org: undefined,
+  _clave() { return `ss_cl_pasadas_abiertas_${currentOrgId || ''}`; },
+  _cargar() {
+    const org = currentOrgId || '';
+    if (this._mem && this._org === org) return this._mem;
+    this._org = org;
+    this._mem = {};
+    try {
+      const raw = JSON.parse(localStorage.getItem(this._clave()) || '{}');
+      const corte = Date.now() - 48 * 60 * 60 * 1000;
+      for (const k in raw) if (typeof raw[k] === 'number' && raw[k] > corte) this._mem[k] = raw[k];
+    } catch (e) { /* ilegible o bloqueado: se arranca vacío */ }
+    return this._mem;
+  },
+  _guardar() {
+    try { localStorage.setItem(this._clave(), JSON.stringify(this._cargar())); }
+    catch (e) { /* bloqueado: queda sólo en memoria */ }
+  },
+  has(k) { return Object.prototype.hasOwnProperty.call(this._cargar(), k); },
+  add(k) { this._cargar()[k] = Date.now(); this._guardar(); },
+  delete(k) { delete this._cargar()[k]; this._guardar(); }
+};
 
 // Un solo lugar decide qué significa Reset, para que los tres botones no puedan
 // divergir. Devuelve true si la pasada quedó abierta.
@@ -17250,12 +17332,48 @@ async function resetCustomChecklist(checklistId) {
   });
 }
 
+// ─── Plegar una checklist propia ───
+//
+// Qué checklists propias están ABIERTAS. Lo importante es que esto viva afuera
+// del render: la tarjeta se redibuja en cada tilde, así que sin recordar el
+// estado cada tilde volvería a plegar la tarjeta que la persona tiene abierta.
+//
+// Se guarda lo abierto y no lo plegado porque **el default es plegado**. Una
+// pestaña con varias checklists propias es una lista para elegir; cuatro listas
+// desplegadas obligan a scrollear hasta el fondo para ver la última, que es lo
+// que reportó Fran el 14/10 («tengo que ir hasta abajo de todo para ver que
+// tengo la checklist de noche»). Por eso el encabezado plegado se queda con la
+// barra de progreso y el estado: una tarjeta cerrada igual dice «Firmada 6/16».
+let propiasAbiertas = new Set();
+function clavePropiasAbiertas() { return `ss_cl_propias_abiertas_${currentOrgId || ''}`; }
+function cargarPropiasAbiertas() {
+  // La clave lleva el org id: un navegador tiene varias cuentas guardadas.
+  try {
+    const raw = localStorage.getItem(clavePropiasAbiertas());
+    propiasAbiertas = new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) { propiasAbiertas = new Set(); }
+}
+// Se toca el DOM y no se redibuja: un redibujo volvería a consultar el progreso
+// de cada tarjeta para no cambiar nada visible. El estado se guarda en el acto,
+// así que un redibujo posterior lo respeta igual.
+function togglePropiaAbierta(id) {
+  const estaba = propiasAbiertas.has(id);
+  if (estaba) propiasAbiertas.delete(id); else propiasAbiertas.add(id);
+  try { localStorage.setItem(clavePropiasAbiertas(), JSON.stringify([...propiasAbiertas])); }
+  catch (e) { /* storage bloqueado: se pierde al recargar, y nada más */ }
+  const cuerpo = document.getElementById(`custom-cl-body-${id}`);
+  const flecha = document.getElementById(`custom-cl-chev-${id}`);
+  if (cuerpo) cuerpo.style.display = estaba ? 'none' : 'block';
+  if (flecha) flecha.textContent = estaba ? '▸' : '▾';
+}
+
 // Renders every custom checklist that belongs to the department tab + cadence
 // currently on screen, right below the built-in routine -- same check/sign-off
 // pattern as the built-ins, just one card per custom checklist.
 async function renderCustomChecklistsForCurrentView() {
   const container = document.getElementById('dept-custom-list');
   if (!container) return;
+  cargarPropiasAbiertas();
   const { data: userData } = await sb.auth.getUser();
   const myUserId = userData?.user?.id;
   const matching = customChecklists.filter(cc => cc.dept_key === currentDeptKey && cc.cadence === currentCadenceKey);
@@ -17272,25 +17390,35 @@ async function renderCustomChecklistsForCurrentView() {
       cc.items.map((text, idx) => `
       <div class="cl-item ${checks[idx] ? 'checked' : ''}" onclick="toggleCustomChecklistItem('${cc.id}','${idx}')">
         <div class="cl-checkbox">${checks[idx] ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
-        <div class="cl-item-text">${text}</div>
+        <div class="cl-item-text">${escapeHtml(text)}</div>
         ${checks[idx] ? chipDeAutor(autores[idx]) : ''}
       </div>`).join('');
     const delBtn = canDeleteCustomChecklist(cc, myUserId)
       ? `<button class="btn-icon" onclick="deleteCustomChecklist('${cc.id}')" style="color:var(--error);">${t('cl_delete_checklist')}</button>` : '';
-    return `<div class="card" style="margin-top:16px;border:1px dashed var(--border);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <div class="card-section-title" style="margin-bottom:0;">${cc.title} <span style="font-weight:400;color:var(--muted);font-size:0.8rem;">(${crewRoleLabel(cc.role_scope)})</span></div>
+    // El título y los ítems son texto que escribe el centro, así que van
+    // escapados. Iban crudos al innerHTML hasta el 14/10 — el mismo agujero que
+    // ya se había tapado en las actas y en las listas de tareas.
+    const abierta = propiasAbiertas.has(cc.id);
+    return `<div class="card" style="margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px;">
+        <div class="card-section-title" style="margin-bottom:0;flex:1;cursor:pointer;display:flex;align-items:center;gap:8px;"
+             onclick="togglePropiaAbierta('${cc.id}')">
+          <span id="custom-cl-chev-${cc.id}" style="color:var(--muted);font-size:0.9rem;">${abierta ? '▾' : '▸'}</span>
+          <span>${escapeHtml(cc.title || '')} <span style="font-weight:400;color:var(--muted);font-size:0.8rem;">(${escapeHtml(crewRoleLabel(cc.role_scope))})</span></span>
+        </div>
         ${delBtn}
       </div>
       <div class="cl-progress-bar"><div class="cl-progress-fill" id="custom-cl-progress-${cc.id}" style="width:${cc.items.length ? (done / cc.items.length * 100) : 0}%;"></div></div>
       <div class="cl-role-badge" id="custom-cl-status-${cc.id}" style="margin-bottom:10px;">${escapeHtml(t('cl_pending'))}</div>
-      <div id="custom-cl-items-${cc.id}">${itemsHtml}</div>
-      <div class="cl-signoff">
-        <select class="sf-input signer-select" id="custom-cl-name-${cc.id}"></select>
-        <div class="cl-done-banner" id="custom-cl-done-${cc.id}" style="display:none;"></div>
-        <div class="settings-actions" style="margin-top:12px;">
-          <button class="btn-save" id="custom-cl-signoff-${cc.id}" onclick="customChecklistSignOff('${cc.id}')">${t('cl_sign_off_routine')}</button>
-          <button class="btn-cancel" onclick="resetCustomChecklist('${cc.id}')">${escapeHtml(t('cl_reset'))}</button>
+      <div id="custom-cl-body-${cc.id}" style="display:${abierta ? 'block' : 'none'};">
+        <div id="custom-cl-items-${cc.id}">${itemsHtml}</div>
+        <div class="cl-signoff">
+          <select class="sf-input signer-select" id="custom-cl-name-${cc.id}"></select>
+          <div class="cl-done-banner" id="custom-cl-done-${cc.id}" style="display:none;"></div>
+          <div class="settings-actions" style="margin-top:12px;">
+            <button class="btn-save" id="custom-cl-signoff-${cc.id}" onclick="customChecklistSignOff('${cc.id}')">${t('cl_sign_off_routine')}</button>
+            <button class="btn-cancel" onclick="resetCustomChecklist('${cc.id}')">${escapeHtml(t('cl_reset'))}</button>
+          </div>
         </div>
       </div>
     </div>`;

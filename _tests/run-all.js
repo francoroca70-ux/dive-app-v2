@@ -48,6 +48,7 @@ const TIEMPO_MAXIMO_MS = 90000;
 // Mínimo de comprobaciones por archivo. Un archivo por debajo de su número se
 // cortó a mitad, aunque no reporte ningún fallo.
 const MINIMOS = {
+  'abrir-sin-internet.test.js':     56,
   'autoria-de-tildes.test.js':      41,
   'borrados-avisan.test.js':        16,
   'cambio-agendado.test.js':        28,

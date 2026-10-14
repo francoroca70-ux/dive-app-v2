@@ -1,0 +1,262 @@
+// Lo que Fran encontró probando en el celular el 14/10 — index.html real.
+//
+//   node _tests/abrir-sin-internet.test.js
+//
+// El hallazgo grande: **la app no abría con el modo avión puesto.** Pantalla
+// azul, nada. Y eso contradice lo único que el producto promete de entrada —
+// que un instructor pueda tildar una checklist en un barco sin señal.
+//
+// El mecanismo, medido: la raíz del dominio público redirige a `/landing.html`
+// para que un prospecto que teclea el dominio caiga en la página de ventas. Sin
+// red ese pedido no se podía contestar ni desde la red ni desde la caché, porque
+// `/landing.html` **no estaba en `APP_SHELL`**. El arreglo que importa no es
+// cachearla: es **no redirigir sin red**. Alguien sin conexión abriendo el
+// dominio no es un prospecto que viene de Google, es el centro abriendo su
+// herramienta.
+//
+// Y el resto de la tanda, que salió de la misma prueba de uso: el acta de una
+// checklist propia mostraba `custom_` y un uuid, el título y los ítems iban
+// crudos al innerHTML, las tarjetas no se podían plegar, y la pasada abierta por
+// Reset se perdía al cerrar la app — que es el bug que dejaba a Fran tildando
+// una checklist **sin botón para firmarla**.
+const fs=require('fs'); const {JSDOM}=require('./jsdom');
+const path=require('path');
+const P=path.join(__dirname,'..','index.html');
+const html=fs.readFileSync(P,'utf8');
+const sw=fs.readFileSync(path.join(__dirname,'..','sw.js'),'utf8');
+
+let fail=0;
+function chk(n,ok,x){console.log((ok?'PASS  ':'FAIL  ')+n+(x?'  '+x:'')); if(!ok)fail=1;}
+
+// ─── 1 · El redirect de la raíz, corrido de verdad ───
+//
+// No se afirma «el código tiene una guarda»: se le pasan los cuatro mundos y se
+// mira a dónde manda. `new Function` con location/navigator/localStorage
+// falsos — el script del head no toca nada más.
+const scripts=[...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+const headScript=scripts.find(s=>s.includes('PUBLIC_HOSTS'));
+chk('el script del redirect sigue existiendo',!!headScript);
+
+function aDondeVa({hostname='www.sevenseasops.com',pathname='/',search='',hash='',onLine=true,storage={}}={}){
+  let destino=null;
+  const claves=Object.keys(storage);
+  const fn=new Function('location','navigator','localStorage',headScript);
+  fn({hostname,pathname,search,hash,replace:(u)=>{destino=u;}},
+     {onLine},
+     {length:claves.length,key:(i)=>claves[i],getItem:(k)=>storage[k]});
+  return destino;
+}
+
+chk('un prospecto con red tecleando el dominio va a la landing',
+    aDondeVa()==='/landing.html', String(aDondeVa()));
+chk('SIN RED la raíz NO redirige: se queda en la app',
+    aDondeVa({onLine:false})===null, String(aDondeVa({onLine:false})));
+chk('sin red tampoco redirige en el dominio sin www',
+    aDondeVa({hostname:'sevenseasops.com',onLine:false})===null);
+chk('`onLine` true no alcanza para nada más que seguir el camino de antes',
+    aDondeVa({onLine:true})==='/landing.html');
+// Las cuatro excepciones que ya existían siguen en pie: el arreglo no las tocó.
+chk('/index.html pedido por nombre no redirige',
+    aDondeVa({pathname:'/index.html'})===null);
+chk('un deep link de waiver no redirige',
+    aDondeVa({search:'?waiver=abc'})===null);
+chk('un deep link de invitación no redirige',
+    aDondeVa({search:'?invite=abc'})===null);
+chk('la recuperación de contraseña, que viaja en el hash, no redirige',
+    aDondeVa({hash:'#access_token=xyz&type=recovery'})===null);
+chk('con sesión guardada no redirige',
+    aDondeVa({storage:{'sb-ggtbxjwstkuhnabwpgdz-auth-token':'{"x":1}'}})===null);
+chk('la app nativa carga otro host y nunca entra al redirect',
+    aDondeVa({hostname:'dive-app-v2.onrender.com'})===null);
+chk('un host desconocido tampoco',
+    aDondeVa({hostname:'localhost'})===null);
+
+// ─── 2 · La landing, cacheada ───
+chk('/landing.html está en APP_SHELL del service worker',
+    /APP_SHELL[\s\S]*?'\/landing\.html'/.test(sw));
+chk('siguen estando la raíz y /index.html',
+    /APP_SHELL[\s\S]*?'\/'[\s\S]*?'\/index\.html'/.test(sw));
+
+// ─── 3 · El resto, con el index.html real en jsdom ───
+const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
+const {window}=dom;
+function tabla(){
+  const h={get(t,prop){
+    if(prop==='then') return (res,rej)=>Promise.resolve({data:[],count:0,error:null}).then(res,rej);
+    return ()=>new Proxy({},h);
+  }};
+  return new Proxy({},h);
+}
+window.supabase={createClient:()=>({
+  auth:{getSession:async()=>({data:{session:null}}),getUser:async()=>({data:{user:{id:'u-fran'}}}),
+        onAuthStateChange:()=>({data:{subscription:{}}})},
+  from:()=>tabla(), rpc:async()=>({data:null,error:null}),
+  functions:{invoke:async()=>({})}})};
+window.Paddle={Environment:{set(){}},Initialize(){},Checkout:{open(){}}};
+window.Chart=function(){};
+const main=scripts.find(s=>s.includes('[Seven Seas] build'));
+const hook=main+"\n;window.__t={"+
+  "setOrg:(id)=>{currentOrgId=id;},setIdioma:(l)=>{currentLanguage=l;},"+
+  "rol:(r)=>checklistRoleLabel(r),"+
+  "setCustom:(a)=>{customChecklists=a;},"+
+  "esc:(s)=>escapeHtml(s),"+
+  "pHas:(k)=>pasadasAbiertas.has(k),"+
+  "pAdd:(k)=>pasadasAbiertas.add(k),"+
+  "pDel:(k)=>pasadasAbiertas.delete(k),"+
+  "cerrarApp:()=>{pasadasAbiertas._mem=null;pasadasAbiertas._org=undefined;},"+
+  "abiertas:()=>[...propiasAbiertas],"+
+  "cargarAbiertas:()=>cargarPropiasAbiertas(),"+
+  "toggleAbierta:(id)=>togglePropiaAbierta(id),"+
+  "t:(k)=>t(k)};";
+let boot=null; try{window.eval(hook);}catch(e){boot=e;}
+chk('arranca sin excepción',!boot,boot?String(boot).slice(0,200):'');
+
+try{
+const T=window.__t;
+T.setOrg('org-1');
+
+// ─── 3a · La etiqueta de un acta ───
+//
+// El bug: `checklistRoleLabel` tenía un mapa de 17 entradas a mano y caía en
+// `crewRoleLabel`, que devuelve lo que le entra. Para una checklist propia eso
+// era `custom_` + uuid, en la pantalla donde un dueño mira el historial.
+T.setCustom([{id:'aaa-111',title:'Revisión de seguridad',cadence:'morning',dept_key:'deck',role_scope:'captain',items:['uno']}]);
+chk('una checklist propia se etiqueta con SU nombre',
+    T.rol('custom_aaa-111')==='Revisión de seguridad', T.rol('custom_aaa-111'));
+chk('nunca aparece el uuid en la etiqueta',
+    !/aaa-111/.test(T.rol('custom_aaa-111')), T.rol('custom_aaa-111'));
+// Un acta sobrevive a la checklist que la generó: es inmutable. Que no se
+// encuentre es normal, y lo que NO puede pasar es que se muestre el uuid.
+chk('una propia borrada dice qué es, no el uuid',
+    T.rol('custom_zzz-999')===T.t('cl_custom_checklist_generic'), T.rol('custom_zzz-999'));
+chk('y tampoco filtra el uuid cuando no la encuentra',
+    !/zzz-999/.test(T.rol('custom_zzz-999')), T.rol('custom_zzz-999'));
+
+// Las 16 combinaciones de departamento × cadencia, derivadas y no enumeradas.
+const DEPTOS=['captain','instructor','deck','stewards'];
+const CADS=['morning','eod','monthly','yearly'];
+let derivadasOk=0;
+for(const d of DEPTOS) for(const c of CADS){
+  const et=T.rol(`${d}_${c}`);
+  if(et && et.includes('—') && !et.includes('_')) derivadasOk++;
+}
+chk('las 16 combinaciones depto × cadencia se derivan',derivadasOk===16,`${derivadasOk}/16`);
+chk('la clave vieja «captain», sin sufijo, sigue siendo la rutina de la mañana',
+    T.rol('captain').includes('—'), T.rol('captain'));
+chk('«instructor» a secas sigue siendo el Gear Prep de una salida',
+    T.rol('instructor')===T.t('cl_instructor_dm'), T.rol('instructor'));
+chk('un rol desconocido no explota',T.rol('cualquiera')!=null);
+chk('null y vacío devuelven cadena vacía',T.rol(null)===''&&T.rol('')==='');
+
+// ─── 3b · «Mañana» se leía como *tomorrow* ───
+T.setIdioma('es');
+chk('en castellano la cadencia diaria ya no dice «Mañana»',
+    T.t('cl_cadence_morning')!=='Mañana', T.t('cl_cadence_morning'));
+chk('y dice algo que no se puede confundir con el día siguiente',
+    !/^Mañana$/i.test(T.t('cl_cadence_morning')), T.t('cl_cadence_morning'));
+chk('hace par con la otra cadencia diaria',
+    /día/i.test(T.t('cl_cadence_morning'))&&/día/i.test(T.t('cl_cadence_eod')),
+    `${T.t('cl_cadence_morning')} / ${T.t('cl_cadence_eod')}`);
+chk('la clave nueva existe en castellano',T.t('cl_custom_checklist_generic')==='Checklist propia');
+T.setIdioma('en');
+chk('y en inglés',T.t('cl_custom_checklist_generic')==='Custom checklist');
+chk('en inglés la cadencia sigue diciendo Morning',T.t('cl_cadence_morning')==='Morning');
+
+// ─── 3c · El texto gris de «¿por qué faltó?» ───
+//
+// Pedido de Fran: la última oración afuera. Un tripulante firmando no necesita
+// que le expliquen para qué le sirve el dato al dueño.
+chk('el texto de ayuda ya no habla de contestarle a un cliente',
+    !/customer/i.test(T.t('cl_motivos_ayuda')), T.t('cl_motivos_ayuda'));
+T.setIdioma('es');
+chk('y tampoco en castellano',
+    !/cliente/i.test(T.t('cl_motivos_ayuda')), T.t('cl_motivos_ayuda'));
+chk('pero sigue diciendo lo que importa: que queda en el acta',
+    /acta/i.test(T.t('cl_motivos_ayuda')), T.t('cl_motivos_ayuda'));
+
+// ─── 3d · La pasada abierta sobrevive cerrar la app ───
+//
+// El bug tal como lo vivió Fran: reseteó una ya firmada, cerró la app, volvió,
+// pudo tildar y **no había botón para firmar**. El Set en memoria nacía vacío,
+// el guardián encontraba el acta de la primera pasada y escondía el botón: la
+// protección pasaba a bloqueo.
+const K='org-1|deck_morning|2026-10-14';
+chk('una pasada nueva no está abierta',!T.pHas(K));
+T.pAdd(K);
+chk('se abre',T.pHas(K));
+T.cerrarApp();
+chk('y SIGUE ABIERTA después de cerrar y reabrir la app',T.pHas(K));
+T.pDel(K);
+chk('cerrarla la cierra',!T.pHas(K));
+T.cerrarApp();
+chk('y sigue cerrada al reabrir',!T.pHas(K));
+// La llave lleva el período, así que una pasada de hoy no puede aplicarse a la
+// de mañana. No hace falta inventar una expiración.
+T.pAdd(K);
+chk('la pasada de hoy no abre la instancia de otro día',
+    !T.pHas('org-1|deck_morning|2026-10-15'));
+chk('ni la de otro departamento',!T.pHas('org-1|captain_morning|2026-10-14'));
+// Cambiar de organización cambia la clave guardada.
+T.setOrg('org-2');
+chk('una pasada abierta en un centro no abre nada en otro',!T.pHas(K));
+T.setOrg('org-1');
+chk('y volviendo al centro de antes sigue ahí',T.pHas(K));
+T.pDel(K);
+
+// ─── 3e · Plegar una checklist propia ───
+//
+// «tengo que ir hasta abajo de todo para ver que tengo la checklist de noche».
+// El default es plegado, y lo abierto se recuerda — importa porque la tarjeta se
+// redibuja en CADA tilde, así que sin memoria cada tilde la volvería a plegar.
+T.cargarAbiertas();
+chk('por defecto no hay ninguna abierta',T.abiertas().length===0,JSON.stringify(T.abiertas()));
+T.toggleAbierta('aaa-111');
+chk('abrir una la recuerda',T.abiertas().includes('aaa-111'),JSON.stringify(T.abiertas()));
+T.cargarAbiertas();
+chk('y lo recordado sobrevive un redibujo',T.abiertas().includes('aaa-111'));
+T.toggleAbierta('aaa-111');
+chk('volver a tocarla la cierra',!T.abiertas().includes('aaa-111'));
+T.cargarAbiertas();
+chk('y eso también se recuerda',!T.abiertas().includes('aaa-111'));
+T.toggleAbierta('bbb-222'); T.toggleAbierta('ccc-333');
+chk('se pueden tener varias abiertas a la vez',
+    T.abiertas().includes('bbb-222')&&T.abiertas().includes('ccc-333'));
+
+// ─── 3f · El texto del centro va escapado ───
+//
+// Encontrado al entrar a esta tarjeta: `cc.title` y el texto de cada ítem iban
+// crudos al innerHTML. Mismo agujero que ya se había tapado en las actas y en
+// las listas de tareas — tercer lugar.
+const hostil='<img src=x onerror=alert(1)>';
+chk('escapeHtml neutraliza el caso hostil',
+    !T.esc(hostil).includes('<img'), T.esc(hostil));
+const tarjeta=main.slice(main.indexOf('async function renderCustomChecklistsForCurrentView'),
+                         main.indexOf('async function renderCustomChecklistsForCurrentView')+4200);
+chk('el título de la tarjeta va escapado',
+    !/\$\{cc\.title\}/.test(tarjeta)&&/escapeHtml\(cc\.title/.test(tarjeta));
+chk('el texto de cada ítem va escapado',
+    /cl-item-text">\$\{escapeHtml\(text\)\}/.test(tarjeta));
+chk('el rol del ámbito también',/escapeHtml\(crewRoleLabel\(cc\.role_scope\)\)/.test(tarjeta));
+
+// ─── 3g · El recuadro punteado, afuera ───
+chk('la tarjeta de una checklist propia ya no tiene borde punteado',
+    !/border:1px dashed/.test(tarjeta));
+
+// ─── 3h · Un solo lugar nombra las cadencias ───
+//
+// El mapa de 17 líneas era cuatro ediciones por cadencia nueva, y una cadencia
+// que falte en uno de los cuatro departamentos no se nota: la etiqueta cae al
+// `crewRoleLabel` y muestra la clave cruda, que es exactamente el bug de arriba.
+const sinComentarios=main.split('\n').filter(l=>!/^\s*\/\//.test(l)).join('\n');
+const vecesCad=(sinComentarios.match(/CHECKLIST_CADENCIAS/g)||[]).length;
+chk('CHECKLIST_CADENCIAS se declara y se usa en un solo lugar cada vez',
+    vecesCad===2, String(vecesCad));
+const vecesDept=(sinComentarios.match(/CHECKLIST_DEPTOS/g)||[]).length;
+chk('CHECKLIST_DEPTOS también',vecesDept===2,String(vecesDept));
+chk('ya no queda el mapa enumerado de 17 entradas',
+    !/stewards_yearly:\s*`/.test(sinComentarios));
+
+}catch(e){ chk('el cuerpo del test corrió hasta el final',false,String(e).slice(0,300)); }
+
+console.log(`\n${fail?'HAY FALLOS':'todo en verde'} — abrir-sin-internet`);
+process.exit(fail);

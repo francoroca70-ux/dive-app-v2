@@ -387,6 +387,30 @@ veces— en `Seven Seas Ops/Plantillas y actas.md`.
 incrustado daría PGRST200), que las 5 columnas del select están, y que RLS
 haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 
+> [!warning] Todo el offline vale **una vez que la app está abierta**
+> Fran probó el 14/10 abrirla con el modo avión puesto y vio una pantalla azul.
+> Dos causas distintas, y conviene no mezclarlas.
+>
+> **La web y la PWA: arreglado.** La raíz del dominio público redirige a
+> `/landing.html`, que no estaba en `APP_SHELL`. El arreglo que importa no es
+> cachearla —se cacheó igual— sino que **sin red no se redirige**: quien abre el
+> dominio sin conexión no es un prospecto que viene de Google, es el centro
+> abriendo su herramienta. Sólo se confía en `navigator.onLine === false`; `true`
+> en un barco es mentira de rutina.
+>
+> **La app instalada: NO arreglado, y es una decisión de Fran.**
+> `server.url` hace que Capacitor cargue la interfaz del servidor y **no** use
+> los archivos del binario — que es justo lo que permite que un arreglo del
+> `index.html` llegue al iPhone sin envío nuevo. Sin red no hay de dónde cargar.
+> Cambiarlo es **8/10**: empaquetar la app, agregarle un camino de actualización,
+> y volver a depender de App Store Connect para cada arreglo. Con una revisión en
+> curso, no se toca sin preguntar. Ver
+> `Errores y aprendizajes/La app que no abría sin internet.md`.
+>
+> Y la lección de proceso: todas las pruebas de offline se habían hecho con la
+> app ya abierta, cortando la señal después. El caso real es el contrario — el
+> instructor sube al barco y **ahí** la abre.
+
 **Las checklists funcionan sin señal SÓLO porque las listas están cableadas en
 `index.html`**, que es lo que el service worker cachea: no toca los pedidos a
 Supabase y `localStorage` no guarda datos de la app. Leer de la base sin más

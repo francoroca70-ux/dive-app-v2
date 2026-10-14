@@ -14,10 +14,16 @@
 // 23/09/2026: v2 -> v3. La v2 dejó a Fran dos días con una versión vieja de la
 // app sin forma de enterarse: pedía index.html y el service worker se lo servía
 // desde la caché. Arreglos desplegados que él nunca recibió.
-const CACHE_VERSION = 'seven-seas-v53';
+const CACHE_VERSION = 'seven-seas-v54';
 const APP_SHELL = [
   '/',
   '/index.html',
+  // 14/10/2026: la landing faltaba acá, y la raíz del dominio público redirige
+  // a ella. Sin red, ese pedido no se podía contestar ni desde la red ni desde
+  // la caché. El arreglo que importa está en `index.html` —sin red no se
+  // redirige— pero cachearla igual es correcto: es una página del shell, pesa
+  // poco, y un prospecto con señal mala merece verla.
+  '/landing.html',
   '/manifest.json',
   '/assets/icons/icon-72.png',
   '/assets/icons/icon-96.png',
