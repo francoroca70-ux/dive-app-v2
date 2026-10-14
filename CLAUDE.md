@@ -337,6 +337,48 @@ caso en los datos hoy?** (si es 0, el beneficio es hipotético). Más una cuarta
 dice y se sigue. La escala no mide riesgo: un 3 que toca cobros es más peligroso
 que un 6 que toca un texto. Ver `Operativa/Cuánto cuesta un cambio.md`.
 
+**8 · De 6 para arriba, el cambio va detrás de un interruptor apagado en
+producción.** Decidido con Fran el 14/10. Él lo pidió como «trabajar en una
+copia y pasarla al proyecto en vivo cuando esté pulida» — el requisito es
+correcto y lo que cambió al medirlo fue la forma.
+
+**Por qué no una rama larga:** `index.html` tiene 20.799 líneas en un solo
+archivo y **38 de los últimos 54 commits lo tocan** (70%). Una rama de semanas
+contra `main` moviéndose en el mismo archivo deja un merge grande que resuelve
+Claude, y un merge mal resuelto acá es el modo de falla de siempre: verde en las
+666 comprobaciones y mal en algo que nadie afirmó. Peor: **la base es una sola y
+las migraciones entran en producción al aplicarse**, así que la copia sería del
+código y no de los datos — no cubriría el A1, que es justo el que preocupa.
+
+El patrón ya está en uso y es `FUENTE_PLANTILLAS` (`'cableado' | 'base'`): el
+camino nuevo al lado del viejo, migración aditiva, y se prende con una línea.
+
+Lo que acompaña al interruptor, o no sirve:
+- **Migración sólo aditiva.** Si el cambio exige soltar, renombrar o restringir
+  algo en uso, el interruptor no alcanza: se muestra el SQL y se espera.
+- **El camino viejo queda entero**, sin limpiarlo «de paso».
+- **El interruptor en UN lugar, y un test lo cuida.**
+  `plantillas-tres-capas.test.js` afirma que `FUENTE_PLANTILLAS` aparece
+  **exactamente dos veces**. Una tercera y dejó de ser interruptor.
+- **Un test con el interruptor en cada posición**, y que afirme que **cambiarlo
+  cambia el comportamiento** — la 3a tuvo tres días un interruptor que no
+  cambiaba nada, con la suite en verde.
+- **El default en producción es el camino viejo.** Prenderlo es decisión de
+  Fran, no efecto colateral de un commit.
+- **Si el interruptor mueve una LLAVE** (ids posicionales vs uuid), hace falta
+  además una respuesta escrita a «¿qué pasa con lo que está abierto cuando se
+  prende?». Para algo en curso, estabilidad le gana a frescura.
+
+**Se borra el camino viejo** recién con las tres: una semana prendido en
+producción, usado de verdad por Fran, y nadie tocó el interruptor en el medio. Y
+es un cambio aparte, con su propio tamaño.
+
+**Nada de esto cambia el flujo de Fran**: una sola rama `main`, un solo servicio
+en Render, el mismo comando. El staging en Render y la rama de base de Supabase
+(~10 USD/mes) se arman el día que haya un centro pagando — hoy serían diez
+dólares por mes para proteger a cero personas. Ver
+`Operativa/Construir detrás de un interruptor.md`.
+
 Detalle y la lección —leí mi propia nota en vez de medir el código, cuatro
 veces— en `Seven Seas Ops/Plantillas y actas.md`.
 
