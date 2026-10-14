@@ -231,11 +231,26 @@ Deno.serve(async (req: Request) => {
     let aplicarCambioAgendado = true;
 
     if (occurredAt) {
-      const { data: actual } = await createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+      // Se reusa el `supabase` de arriba. La primera versión creaba un SEGUNDO
+      // cliente acá, con uno ya declarado doce líneas antes -- sin motivo, y en
+      // el camino del cobro.
+      //
+      // Y si esta lectura falla, `previo` queda undefined y el cambio **se
+      // aplica**. Es deliberado: no poder leer el timestamp anterior exige
+      // elegir qué se arriesga, y perder en silencio un cambio legítimo cada vez
+      // que falle una lectura es peor que el caso rarísimo de que una lectura
+      // falle Y además el evento venga fuera de orden.
+      const { data: actual, error: errPrevio } = await supabase
         .from("organizations")
         .select("subscription_updated_at")
         .eq("id", orgId)
         .maybeSingle();
+      if (errPrevio) {
+        console.error(
+          `paddle-webhook: no se pudo leer subscription_updated_at de ${orgId} ` +
+          `(${errPrevio.message}); se aplica el cambio agendado sin guardia de orden`
+        );
+      }
       const previo = actual?.subscription_updated_at;
       if (previo && new Date(occurredAt) < new Date(previo)) {
         aplicarCambioAgendado = false;
