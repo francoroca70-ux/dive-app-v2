@@ -58,6 +58,7 @@ const MINIMOS = {
   'editor-de-plantillas.test.js':   84,
   'etapa-3b-lista-por-tipo.test.js':25,
   'firmar-una-sola-vez.test.js':    27,
+  'listas-que-faltan.test.js':      31,
   'motivo-de-lo-que-falto.test.js': 47,
   'onboarding.test.js':             12,
   'plan-limits.test.js':            14,

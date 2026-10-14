@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 728 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 759 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -645,6 +645,44 @@ Tres reglas que son consecuencias medidas, no preferencias:
 `checklist_seeds` **desde el cliente** (esa tabla sí tiene política de SELECT).
 Tapa el hueco medido: un centro puede crear salidas de una categoría que no
 activó, y en *Blue water* los 7 tipos de buceo tienen cero ítems por eso.
+
+**A5, hecho el 14/10: y ese hueco ahora se AVISA.** Medido contra la base:
+*Blue water* tiene `diving` **sin activar**, 7 tipos de buceo, los 7 sin
+plantilla, y **8 salidas ya creadas** con esos tipos — no era hipotético. Lo que
+veía el instructor era la **lista cableada genérica**, que es peor que un error
+porque parece correcta. La salida de la etapa 4 existía pero **escondida dentro
+de un panel que hay que abrir tipo por tipo**, y una salida que hay que descubrir
+no es una salida.
+
+Ahora hay un aviso arriba de **Configuración → Tipos de Salida** con el número,
+qué pasa en el barco y un botón que las arma todas. Tres decisiones:
+
+- **NO activa la categoría**, aunque sería lo tentable:
+  `seedTripTypesForCategory()` **inserta tipos de salida nuevos** además de
+  marcar la categoría, así que a un centro con sus propios tipos le duplicaría la
+  lista. Se copian las semillas tipo por tipo, por `copiarListaEstandar()` — un
+  solo lugar, usado por el botón de uno y por el de todos.
+- **Si no se puede medir, no se avisa.** Si la consulta de plantillas falla el
+  aviso no se dibuja: «te faltan 7 listas» sin poder medirlo podría ser falso.
+- **Sólo lo ve dueño o encargado.** A un capitán sería ruido sobre algo que no
+  puede tocar.
+
+**Y aparecieron dos bugs reales de mensajes.** El primero importa más allá de
+este módulo: **`motivoDeFalloAlBorrar` se renombró a `…AlEscribir` el 11/10 y sus
+cuatro textos siguieron diciendo «borrar»**. 10 de los 11 lugares que la llaman
+escriben, así que guardar una plantilla o sellar un service decía «no se borró
+nada» / «no tenés permiso para borrar esto». Ahora lleva `operacion`:
+`borrarOAvisar()` pasa `'borrar'` y conserva los textos de antes, el resto usa
+los `esc_*`. Y **`23503` no significa lo mismo en los dos casos** — al borrar es
+«algo cuelga de esto», al guardar es «lo que esto referencia ya no existe».
+*Media corrección es una corrección que miente con más confianza.*
+
+El segundo: `crearPlantillaVacia` levantaba su propio modal y devolvía `null`,
+así que en bloque habrían sido siete carteles y el motivo real se perdía —
+reportaba «no hay lista estándar para copiar» cuando el problema era un permiso.
+Ahora devuelve `{id}` o `{motivo}` y **quien llama decide si avisar**.
+
+Detalle en `Seven Seas Ops/Las listas de preparación que faltan.md`.
 
 **Al guardar se tira la copia local** (`cacheLocalBorrar()`, que faltaba), y el
 nombre de la caché pasó a `nombreEnCacheDePlantilla()` porque ahora hay dos

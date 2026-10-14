@@ -4182,6 +4182,7 @@ body { background: var(--navy); color: var(--text); }
           </div>
           <div id="card-trip-types-body" style="display:none;">
           <p class="card-desc" data-i18n="set_trip_types_desc">Set default prices and gear requirements per trip type. These auto-fill when staff create a booking.</p>
+          <div id="trip-types-missing-prep" style="margin: 14px 0 0;display:none;"></div>
           <div id="trip-types-list" style="margin: 14px 0;"></div>
           <button class="btn-add" id="btn-add-trip-type" data-i18n="set_add_trip_type">+ Add custom trip type</button>
           </div>
@@ -4541,6 +4542,17 @@ const TRANSLATIONS = {
     // La vista de equipo tenía estos textos cableados en inglés, sin pasar por
     // t(), porque era una copia de la de barco que quedó atrás.
     gear_no_maint_item: 'No maintenance logged for this item yet.',
+    // A5. Las plantillas se siembran al ACTIVAR una categoría, y un centro puede
+    // crear salidas de una categoría que nunca activó. Lo que ve el instructor
+    // entonces es la lista cableada genérica, que parece correcta y no es la del
+    // centro — peor que un error.
+    prep_missing_title: '{n} trip types have no prep list of their own',
+    prep_missing_desc: 'On the boat these fall back to a generic list instead of yours. That list looks right, which is exactly what makes it worth fixing.',
+    prep_missing_fix: 'Set up the {n} missing lists',
+    prep_missing_no_seed: '{n} of them have no standard list to copy — those have to be written by hand, from the «Prep list» button on each one.',
+    prep_missing_confirm: 'Copy the standard list into {n} trip types? You can edit each one afterwards, and nothing already set up gets touched.',
+    prep_missing_done: 'Done — {n} prep lists created. Edit any of them from its «Prep list» button.',
+    prep_missing_partial: '{ok} lists created, and then it stopped: {why}',
     fleet_maint_remove_confirm: 'Remove this maintenance entry?',
     // El sello. Sólo el número en pantalla: 64 caracteres de hexadecimal en una
     // lista no le sirven a nadie.
@@ -4596,6 +4608,13 @@ const TRANSLATIONS = {
     del_tiene_historia: 'This can\'t be deleted because there are records attached to it — bookings, payments, logs or signed paperwork. Nothing was removed.',
     del_sin_permiso: "You don't have permission to delete this.",
     del_otro_motivo: "Couldn't delete that: {error}",
+    // Los mismos cuatro motivos, pero para una ESCRITURA. 23503 no significa lo
+    // mismo en los dos casos: al borrar es «algo cuelga de esto», al guardar es
+    // «lo que esto referencia ya no existe».
+    esc_sin_conexion: "No connection, so nothing was saved. Try again once you're back online.",
+    esc_falta_referencia: "Couldn't save that: something it refers to no longer exists. Reload and try again.",
+    esc_sin_permiso: "You don't have permission to do this.",
+    esc_otro_motivo: "Couldn't save that: {error}",
     cl_signed_partial: 'Signed {hechos}/{total}',
     cl_acta_nota: 'Signed record — what was checked and what was missed. Tap Reset to run a fresh check.',
     cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
@@ -5314,6 +5333,13 @@ const TRANSLATIONS = {
     fleet_maint_required: 'Título, fecha y descripción son obligatorios.', fleet_saved_offline: 'Guardado sin conexión — se sincronizará automáticamente cuando vuelvas a estar en línea.',
     fleet_error_prefix: 'Error: ', fleet_no_maint_boat: 'Aún no hay mantenimiento registrado para esta embarcación.',
     gear_no_maint_item: 'Aún no hay mantenimiento registrado para este artículo.',
+    prep_missing_title: '{n} tipos de salida no tienen su propia lista de preparación',
+    prep_missing_desc: 'En el barco estos caen a una lista genérica en vez de la del centro. Esa lista parece correcta, y es justamente por eso que vale arreglarlo.',
+    prep_missing_fix: 'Armar las {n} listas que faltan',
+    prep_missing_no_seed: '{n} de ellos no tienen lista estándar para copiar — ésos hay que escribirlos a mano, desde el botón «Lista de preparación» de cada uno.',
+    prep_missing_confirm: '¿Copiar la lista estándar en {n} tipos de salida? Después podés editar cada una, y no se toca nada de lo que ya estaba armado.',
+    prep_missing_done: 'Listo — se crearon {n} listas de preparación. Podés editar cualquiera desde su botón «Lista de preparación».',
+    prep_missing_partial: 'Se crearon {ok} listas y después se cortó: {why}',
     fleet_maint_remove_confirm: '¿Quitar este registro de mantenimiento?',
     svc_seal_btn: 'Sellar registro',
     svc_seal_confirm: '¿Sellar este service? Una vez sellado no se puede editar ni borrar nunca más — ni vos ni nadie. Eso es justamente lo que lo hace valer ante un seguro. Revisá que el costo, la fecha y lo que se hizo estén bien.',
@@ -5367,6 +5393,10 @@ const TRANSLATIONS = {
     del_tiene_historia: 'Esto no se puede borrar porque tiene registros asociados — reservas, pagos, logs o documentación firmada. No se borró nada.',
     del_sin_permiso: 'No tenés permiso para borrar esto.',
     del_otro_motivo: 'No se pudo borrar: {error}',
+    esc_sin_conexion: 'Sin conexión, así que no se guardó nada. Probá de nuevo cuando vuelva la señal.',
+    esc_falta_referencia: 'No se pudo guardar: algo a lo que esto hace referencia ya no existe. Recargá y probá de nuevo.',
+    esc_sin_permiso: 'No tenés permiso para hacer esto.',
+    esc_otro_motivo: 'No se pudo guardar: {error}',
     cl_signed_partial: 'Firmada {hechos}/{total}',
     cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
@@ -8701,7 +8731,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-14b');
+  console.info('[Seven Seas] build 2026-10-14c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -16237,12 +16267,32 @@ async function hayRedDeVerdad() {
 // propio cartel. El caso que lo hizo evidente está medido: un rol por debajo de
 // encargado recibe **42501** al tocar un ítem de plantilla, y el cartel genérico
 // le decía «revisá la conexión», que es el motivo equivocado.
-async function motivoDeFalloAlEscribir(error) {
+// Por qué falló una escritura, en palabras que le sirvan a un centro.
+//
+// El 11/10 esta función se renombró de `motivoDeFalloAlBorrar` porque su lógica
+// nunca fue de borrar: es de cualquier escritura rechazada. **Pero sólo se
+// renombró la función — los cuatro textos siguieron diciendo «borrar».** Así que
+// al guardar una plantilla, al sellar un service o al armar una lista, el cartel
+// decía «no se borró nada» o «no tenés permiso para borrar esto». Encontrado el
+// 14/10 por un test que afirmaba el contenido del mensaje y no sólo que hubiera
+// uno. Media corrección es una corrección que miente con más confianza.
+//
+// `operacion` lo pasa quien sabe qué estaba haciendo. Por defecto 'guardar',
+// porque 10 de los 11 lugares que la llaman escriben; `borrarOAvisar()` pasa
+// 'borrar' y conserva exactamente los textos de antes.
+//
+// Y 23503 NO significa lo mismo en los dos casos: al borrar es «algo cuelga de
+// esto»; al guardar es «lo que esto referencia ya no existe». Mismo código,
+// causas opuestas.
+async function motivoDeFalloAlEscribir(error, operacion) {
+  const borrando = operacion === 'borrar';
   // La red primero: si nunca llegamos, el código de Postgres no significa nada.
-  if (pareceFalloDeRed(error) || !(await hayRedDeVerdad())) return t('del_sin_conexion');
-  if (error.code === '23503') return t('del_tiene_historia');
-  if (error.code === '42501') return t('del_sin_permiso');
-  return t('del_otro_motivo').replace('{error}', error.message || '');
+  if (pareceFalloDeRed(error) || !(await hayRedDeVerdad())) {
+    return t(borrando ? 'del_sin_conexion' : 'esc_sin_conexion');
+  }
+  if (error.code === '23503') return t(borrando ? 'del_tiene_historia' : 'esc_falta_referencia');
+  if (error.code === '42501') return t(borrando ? 'del_sin_permiso' : 'esc_sin_permiso');
+  return t(borrando ? 'del_otro_motivo' : 'esc_otro_motivo').replace('{error}', error.message || '');
 }
 
 // Devuelve true si se borró. Si no, avisa y devuelve false para que quien
@@ -16252,7 +16302,7 @@ async function borrarOAvisar(consulta) {
   const { error } = await consulta;
   if (!error) return true;
   console.error('[BORRAR] falló:', error);
-  await showAlertModal(await motivoDeFalloAlEscribir(error));
+  await showAlertModal(await motivoDeFalloAlEscribir(error, 'borrar'));
   return false;
 }
 
@@ -16397,7 +16447,7 @@ async function clearChecklistProgress(scopeKey, { avisarSiFalla = false } = {}) 
     .eq('org_id', currentOrgId).eq('scope_key', scopeKey);
   if (error) {
     console.warn('[CHECKLIST] no se pudo limpiar el trabajo en curso', error);
-    if (avisarSiFalla) await showAlertModal(await motivoDeFalloAlEscribir(error));
+    if (avisarSiFalla) await showAlertModal(await motivoDeFalloAlEscribir(error, 'borrar'));
     return false;
   }
   return true;
@@ -18705,7 +18755,9 @@ async function sellarService(id, fromBoatModal) {
     .update({ sealed_at: new Date().toISOString() })
     .eq('id', id);
   if (error) {
-    showAlertModal(t('svc_seal_failed').replace('{why}', motivoDeFalloAlEscribir(error)));
+    // `await`: sin él esto interpola un Promise y el cartel dice
+    // «[object Promise]». Lo agarró el mismo test del 14/10.
+    showAlertModal(t('svc_seal_failed').replace('{why}', await motivoDeFalloAlEscribir(error)));
     return;
   }
   if (fromBoatModal && window.currentBoatDetailId) {
@@ -20070,6 +20122,8 @@ async function renderTripTypesList() {
   const list = document.getElementById('trip-types-list');
   if (!types || types.length === 0) {
     list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('set_no_trip_types_yet')}</p>`;
+    const aviso = document.getElementById('trip-types-missing-prep');
+    if (aviso) { aviso.innerHTML = ''; aviso.style.display = 'none'; }
     return;
   }
 
@@ -20104,6 +20158,11 @@ async function renderTripTypesList() {
     <div class="tt-panel" id="prep-checklist-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     </div>
   `).join('');
+
+  // Después de dibujar, no antes: el aviso cuenta sobre los tipos que se
+  // acabaron de listar, y si se midiera primero contaría sobre los de la carga
+  // anterior.
+  await pintarAvisoDeListasQueFaltan(types);
 }
 
 // Lets an owner/manager fix or customize exactly which gear questions show on the Add
@@ -20424,23 +20483,112 @@ async function haySemillasParaTipo(tt) {
 //
 // Una semilla corregida mañana no cambia lo que este centro recibió hoy, y eso
 // es lo correcto: desde el momento de la copia la lista es del centro.
-async function arrancarDeLaListaEstandar(tripTypeId) {
+// La copia en sí, sin pantalla: la usan el botón de un tipo y el de «armar las
+// que faltan» en bloque. Devuelve null si salió bien, o el motivo si no.
+//
+// Separado del wrapper porque el camino en bloque NO puede redibujar ni levantar
+// un modal por cada tipo: con siete tipos sin lista serían siete redibujos y
+// siete carteles.
+async function copiarListaEstandar(tripTypeId) {
   const tt = (window._settingsTripTypes || []).find(x => x.id === tripTypeId);
-  if (!tt) return;
+  if (!tt) return t('prep_seed_error');
   const { data: semillas, error: errSem } = await sb.from('checklist_seeds')
     .select('order_index, text_en, text_es')
     .eq('category', tt.category).eq('trip_type_name', tt.name).order('order_index');
-  if (errSem || !(semillas || []).length) {
-    await showAlertModal(t('prep_seed_error'));
-    return;
-  }
-  const plantilla = await crearPlantillaVacia(tripTypeId, tt);
-  if (!plantilla) return;
+  if (errSem || !(semillas || []).length) return t('prep_seed_error');
+  const { id: plantilla, motivo } = await crearPlantillaVacia(tripTypeId, tt);
+  // El motivo real, no `prep_seed_error`: decirle «no hay lista estándar para
+  // copiar» a alguien cuyo problema es un permiso lo manda a buscar donde no es.
+  if (!plantilla) return motivo || t('prep_seed_error');
   const { error } = await sb.from('checklist_template_items').insert(
     semillas.map(s => ({ template_id: plantilla, order_index: s.order_index, text_en: s.text_en, text_es: s.text_es }))
   );
-  if (error) { await showAlertModal(await motivoDeFalloAlEscribir(error)); return; }
+  if (error) return await motivoDeFalloAlEscribir(error);
+  cacheLocalBorrar(nombreEnCacheDePlantilla(tripTypeId));
+  return null;
+}
+
+async function arrancarDeLaListaEstandar(tripTypeId) {
+  const motivo = await copiarListaEstandar(tripTypeId);
+  if (motivo) { await showAlertModal(motivo); return; }
   await trasEditarPlantilla(tripTypeId);
+}
+
+// ─── A5: el hueco de la siembra por categoría ───
+//
+// Las plantillas se siembran al ACTIVAR una categoría, pero un centro puede
+// crear salidas de una categoría que nunca activó. Medido el 14/10: *Blue water*
+// tiene `diving` **sin activar**, 7 tipos de buceo, **los 7 sin plantilla**, y
+// **8 salidas ya creadas** con esos tipos.
+//
+// Lo que ve el instructor en el barco es la **lista cableada genérica**, que es
+// peor que un error: parece correcta y no es la del centro. Y hasta hoy el
+// centro no tenía forma de enterarse — la etapa 4 le dio la salida («arrancar de
+// la lista estándar») pero escondida dentro de un panel que hay que abrir tipo
+// por tipo.
+//
+// Esto NO activa la categoría, y es deliberado: `seedTripTypesForCategory()`
+// inserta **tipos de salida nuevos** además de marcar la categoría, y para un
+// centro que ya tiene los suyos con otros nombres eso le duplicaría la lista.
+// Copiar las semillas tipo por tipo es el camino seguro y ya estaba probado.
+async function tiposSinListaDePreparacion(types) {
+  const activos = (types || []).filter(tt => tt && tt.id);
+  if (!activos.length) return [];
+  const { data: plantillas, error } = await sb.from('checklist_templates')
+    .select('trip_type_id')
+    .eq('org_id', currentOrgId).eq('scope', 'trip_type').eq('active', true)
+    .in('trip_type_id', activos.map(tt => tt.id));
+  // Si la consulta falla no se inventa un diagnóstico: sin saber qué plantillas
+  // hay, avisar «te faltan 7 listas» podría ser falso. Mejor callar.
+  if (error) { console.warn('[A5] no se pudo medir qué tipos tienen plantilla', error); return []; }
+  const conPlantilla = new Set((plantillas || []).map(p => p.trip_type_id));
+  return activos.filter(tt => !conPlantilla.has(tt.id));
+}
+
+async function pintarAvisoDeListasQueFaltan(types) {
+  const el = document.getElementById('trip-types-missing-prep');
+  if (!el) return;
+  el.innerHTML = '';
+  el.style.display = 'none';
+  // Sólo quien puede arreglarlo se entera. A un capitán el aviso no le sirve:
+  // no puede tocar plantillas, así que sería ruido sobre algo ajeno.
+  if (!puedeEditarPlantillas()) return;
+
+  const faltan = await tiposSinListaDePreparacion(types);
+  if (!faltan.length) return;
+
+  // De los que faltan, cuáles tienen lista estándar disponible. Los que no,
+  // se cuentan aparte: para ésos el centro tiene que escribirla a mano, y
+  // ofrecer un botón que no puede hacer nada sería mentir.
+  const conSemilla = [];
+  for (const tt of faltan) { if (await haySemillasParaTipo(tt)) conSemilla.push(tt.id); }
+
+  window._tiposConSemillaPendiente = conSemilla;
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="card" style="margin:0 0 14px;border-left:3px solid var(--warning, #d9822b);">
+      <div style="font-weight:600;margin-bottom:4px;">${escapeHtml(t('prep_missing_title').replace('{n}', faltan.length))}</div>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">${escapeHtml(t('prep_missing_desc'))}</p>
+      ${conSemilla.length ? `<button class="btn-primary" style="font-size:0.8rem;padding:7px 12px;" onclick="armarListasQueFaltan()">${escapeHtml(t('prep_missing_fix').replace('{n}', conSemilla.length))}</button>` : ''}
+      ${conSemilla.length < faltan.length ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">${escapeHtml(t('prep_missing_no_seed').replace('{n}', faltan.length - conSemilla.length))}</p>` : ''}
+    </div>`;
+}
+
+async function armarListasQueFaltan() {
+  const ids = window._tiposConSemillaPendiente || [];
+  if (!ids.length) return;
+  if (!(await showConfirmModal(t('prep_missing_confirm').replace('{n}', ids.length)))) return;
+  let hechas = 0; let primerMotivo = null;
+  for (const id of ids) {
+    const motivo = await copiarListaEstandar(id);
+    if (motivo) { if (!primerMotivo) primerMotivo = motivo; } else { hechas++; }
+  }
+  // Se informa el resultado real, no «listo»: si cinco entraron y dos no, el
+  // centro tiene que saber que le quedan dos.
+  await showAlertModal(primerMotivo
+    ? t('prep_missing_partial').replace('{ok}', hechas).replace('{why}', primerMotivo)
+    : t('prep_missing_done').replace('{n}', hechas));
+  await renderTripTypesList();
 }
 
 async function arrancarListaVacia(tripTypeId) {
@@ -20449,8 +20597,8 @@ async function arrancarListaVacia(tripTypeId) {
   // Un primer ítem, no una plantilla de cero: una plantilla sin ítems activos
   // devuelve la lista cableada en el barco, que es justo la confusión que este
   // editor viene a terminar.
-  const plantilla = await crearPlantillaVacia(tripTypeId, tt);
-  if (!plantilla) return;
+  const { id: plantilla, motivo } = await crearPlantillaVacia(tripTypeId, tt);
+  if (!plantilla) { await showAlertModal(motivo); return; }
   const { error } = await sb.from('checklist_template_items').insert({
     template_id: plantilla, order_index: 0,
     text_en: currentLanguage === 'es' ? null : t('prep_first_item'),
@@ -20463,6 +20611,14 @@ async function arrancarListaVacia(tripTypeId) {
 // `is_system_default` queda en false: esta plantilla la creó el centro, no la
 // siembra. No cambia permisos (los dos caminos de RLS miran rol y created_by),
 // pero es el único registro de de dónde salió una lista.
+// Devuelve `{ id }` o `{ motivo }`. **No levanta el modal ella misma**, y eso
+// cambió el 14/10: antes mostraba un cartel y devolvía null, lo que hacía dos
+// cosas mal en el camino en bloque — siete carteles seguidos con siete tipos
+// fallando, y el motivo real perdido, porque quien llamaba sólo veía «null» y
+// reportaba «no hay lista estándar para copiar», que es la razón equivocada.
+//
+// Quien llama decide si avisar: los dos caminos de un tipo muestran el motivo,
+// el de bloque lo junta y avisa una vez.
 async function crearPlantillaVacia(tripTypeId, tt) {
   const { data, error } = await sb.from('checklist_templates').insert({
     org_id: currentOrgId, scope: 'trip_type', trip_type_id: tripTypeId,
@@ -20471,10 +20627,9 @@ async function crearPlantillaVacia(tripTypeId, tt) {
   }).select('id').single();
   if (error || !data) {
     console.warn('[PLANTILLAS] no se pudo crear la plantilla', error);
-    await showAlertModal(await motivoDeFalloAlEscribir(error));
-    return null;
+    return { motivo: await motivoDeFalloAlEscribir(error || {}) };
   }
-  return data.id;
+  return { id: data.id };
 }
 
 async function guardarTextoDeItem(tripTypeId, itemId, valor, inputEl) {
