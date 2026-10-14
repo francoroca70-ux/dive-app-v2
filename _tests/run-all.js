@@ -49,6 +49,7 @@ const TIEMPO_MAXIMO_MS = 90000;
 // cortó a mitad, aunque no reporte ningún fallo.
 const MINIMOS = {
   'abrir-sin-internet.test.js':     56,
+  'arrancar-del-binario.test.js':   24,
   'autoria-de-tildes.test.js':      41,
   'borrados-avisan.test.js':        16,
   'cambio-agendado.test.js':        28,

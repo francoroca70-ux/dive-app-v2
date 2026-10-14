@@ -8754,7 +8754,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-14e');
+  console.info('[Seven Seas] build 2026-10-14f');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -16278,13 +16278,34 @@ function pareceFalloDeRed(error) {
 // `HEAD` a propósito: el service worker sólo intercepta `GET`, así que un HEAD
 // pasa derecho a la red y no lo contesta la caché. Con un GET esto devolvería
 // `ok` incluso en modo avión y la medición no mediría nada.
+//
+// **Y se le pregunta a Supabase, no al propio origen.** Esto apuntaba a
+// `/manifest.json` de acá mismo, y así escrito **deja de medir la red el día que
+// la app se empaquete en el binario**: ahí el propio origen ES el bundle local,
+// un HEAD lo contesta el disco sin tocar la red, y `hayRedDeVerdad()` diría
+// «hay red» con el modo avión puesto. De eso cuelga si una escritura se ENCOLA
+// o se descarta, así que el error reaparecería como
+// «no tenés permiso» sobre un tilde que en realidad nunca salió del teléfono —
+// exactamente el bug de `La señal que se corta antes de que el navegador se
+// entere`, resucitado por un cambio de empaquetado que no parece tocar esto.
+//
+// Preguntarle a Supabase además es **más correcto hoy**: lo que se está
+// clasificando es una escritura a Supabase, así que la pregunta útil no es «hay
+// internet» sino «se llega a donde íbamos». Si Supabase no contesta, encolar es
+// la respuesta correcta aunque el wifi del barco ande.
+//
+// `mode: 'no-cors'` porque es otro origen y no necesitamos leer la respuesta:
+// con una respuesta opaca `r.ok` es **siempre false**, así que mirarlo diría
+// «no hay red» siempre. La señal es que la promesa **resuelva**. Un 404 también
+// resuelve, y está bien: un 404 prueba que la red funcionó.
+const ORIGEN_PARA_MEDIR_RED = SUPABASE_URL;
 async function hayRedDeVerdad() {
   if (!navigator.onLine) return false;
   try {
-    const r = await fetch('/manifest.json?ping=' + Date.now(), {
-      method: 'HEAD', cache: 'no-store'
+    await fetch(`${ORIGEN_PARA_MEDIR_RED}/auth/v1/health?ping=${Date.now()}`, {
+      method: 'HEAD', cache: 'no-store', mode: 'no-cors'
     });
-    return r.ok;
+    return true;
   } catch (e) {
     return false;
   }

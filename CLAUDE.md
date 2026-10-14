@@ -398,14 +398,55 @@ haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 > abriendo su herramienta. Sólo se confía en `navigator.onLine === false`; `true`
 > en un barco es mentira de rutina.
 >
-> **La app instalada: NO arreglado, y es una decisión de Fran.**
-> `server.url` hace que Capacitor cargue la interfaz del servidor y **no** use
-> los archivos del binario — que es justo lo que permite que un arreglo del
-> `index.html` llegue al iPhone sin envío nuevo. Sin red no hay de dónde cargar.
-> Cambiarlo es **8/10**: empaquetar la app, agregarle un camino de actualización,
-> y volver a depender de App Store Connect para cada arreglo. Con una revisión en
-> curso, no se toca sin preguntar. Ver
-> `Errores y aprendizajes/La app que no abría sin internet.md`.
+> **La app instalada: `server.url` SACADO el 14/10, sin probar en un celular.**
+> Con esa línea, Capacitor cargaba la interfaz del servidor y **no** usaba los
+> archivos del binario; sin red no había de dónde cargar. Ya no está, el
+> guardián quedó en `'binario'` y la suite en verde — **pero nadie lo abrió en un
+> teléfono todavía.** Ningún app instalada cambió: el 162001 ya estaba
+> construido y subido.
+>
+> Y medido: **el service worker no la salva en iOS.** En WKWebView, con
+> `server.url`, los SW **no se registran** sin App-Bound Domains, el issue de
+> Capacitor se cerró como *not planned*, y la posición de los mantenedores es
+> «si querés offline, empaquetá». Hay además un issue abierto donde WKWebView
+> **se cuelga para siempre** sin red al arrancar — el segundo síntoma de Fran.
+>
+> **Lo bueno: los archivos YA están en el binario** (el workflow corre
+> `build:www` y `cap sync`). El cambio es **sacar una línea**; lo que cuesta es
+> que después cada arreglo del `index.html` necesita un envío nuevo — y hoy eso
+> se paga en una moneda que sobra, porque las nativas tienen cero usuarios.
+>
+> **Dos consecuencias que no se ven**, y la primera ya está arreglada:
+> `hayRedDeVerdad()` pingueaba el **propio origen**, que empaquetado lo contesta
+> el disco → diría «hay red» en modo avión y una escritura sin señal se
+> **descartaría** en vez de encolarse. Ahora pinguea Supabase con
+> `mode:'no-cors'` (respuesta opaca: la señal es que **resuelva**, `ok` es
+> siempre false). La segunda: cambiar de origen a `capacitor://localhost`
+> **desloguea a todos una vez** — gratis hoy, masivo con centros adentro.
+>
+> **El interruptor es la presencia de `server.url`**, no una bandera en el JS:
+> la app no arranca, así que nuestro código nunca corre y no hay dónde ponerla.
+> Lo cuida `_tests/arrancar-del-binario.test.js`, donde una constante declara la
+> intención y el test falla si la config dice otra cosa.
+>
+> **Lo que falta es probarlo, y NO hace falta Android Studio**: el workflow
+> construye el APK en la nube (*Actions → Mobile app builds → Run workflow* →
+> artefacto `seven-seas-android-debug`). `cap sync` **no construye ni instala
+> nada**, sólo copia al proyecto — eso confundió una vez. Tres cosas a
+> confirmar: que abra en modo avión, que se entere cuando vuelve la red sin
+> cerrarla, y que un tilde sin señal **se encole**.
+>
+> **No entra en un envío antes de eso.** Apple no deja subir una build con la
+> versión *In Review*: hay que sacarla, queda *Developer Rejected*, y reenviar
+> **arranca la revisión de cero** — y el 162001 lleva la respuesta de 2.1(b).
+> Ojo con la distinción: **subir no es enviar.** El workflow tiene un paso
+> *Upload to TestFlight* que ya venía dejando builds en App Store Connect con
+> cada push, y eso no toca la versión en revisión.
+>
+> Y **`capacitor.config.json` no estaba en los paths del workflow** aunque el
+> comentario del archivo decía que sí: sacar el interruptor no habría construido
+> nada. Agregado. Plan completo en
+> `Decisiones/La app nativa arranca del binario.md`.
 >
 > Y la lección de proceso: todas las pruebas de offline se habían hecho con la
 > app ya abierta, cortando la señal después. El caso real es el contrario — el
@@ -928,7 +969,13 @@ Services, 3.1.3(c)**. La respuesta a las cinco preguntas está en
 > `capacitor.config.json` tiene `server.url = https://dive-app-v2.onrender.com`,
 > así que **la app nativa carga su interfaz del servidor**. Cualquier cambio del
 > `index.html` llega al iPhone del revisor en cuanto Render despliega, con el
-> binario que ya está en App Store Connect (`161001`).
+> binario que ya está en App Store Connect. **El que está en revisión es
+> `162001`, versión 1.0** — medido por Fran en App Store Connect el 14/10. Acá
+> decía `161001`, que era de un envío anterior y quedó sin actualizar.
+>
+> **Y esto deja de ser cierto en cuanto la app arranque del binario**, que es el
+> cambio del 14/10: desde ahí el binario **es** la app, y la build que se envía
+> es exactamente lo que recibe el usuario.
 >
 > Primero dije «hay que enviar la build 2026-10-11f» — **mal**. `2026-10-11f` es
 > el build **web**; el único número que App Store Connect conoce es el del

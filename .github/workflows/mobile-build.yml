@@ -28,6 +28,11 @@ on:
       - 'index.html'
       - 'sw.js'
       - 'manifest.json'
+      # Faltaba, aunque el comentario de arriba decía que un cambio de la
+      # config de Capacitor disparaba una build. No la disparaba: sacar
+      # `server.url` —que es el interruptor de arrancar del binario— no habría
+      # construido nada y habría parecido que no pasó nada.
+      - 'capacitor.config.json'
       - 'assets/**'
       - 'capacitor.config.json'
       - 'package.json'
