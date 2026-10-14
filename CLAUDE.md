@@ -176,7 +176,7 @@ Tres cuidados concretos al tocar esta zona:
   algo, más el usuario de la sesión**. Ver `Quién firma una checklist.md` y
   `Decisiones/Quién tildó cada ítem.md`.
 
-**Pruebas**: `node _tests/run-all.js` — 759 comprobaciones corriendo el
+**Pruebas**: `node _tests/run-all.js` — 783 comprobaciones corriendo el
 `index.html` real en jsdom. **Las corre Fran también**, que hasta el 09/10 no
 podía: los trece archivos hacían `require('/tmp/node_modules/jsdom')`, una ruta
 que sólo existe en el sandbox de Claude, así que en su Windows daban cero. La
@@ -683,6 +683,43 @@ reportaba «no hay lista estándar para copiar» cuando el problema era un permi
 Ahora devuelve `{id}` o `{motivo}` y **quien llama decide si avisar**.
 
 Detalle en `Seven Seas Ops/Las listas de preparación que faltan.md`.
+
+**Y el acta ahora registra de dónde salió la lista** (14/10, pedido por Fran al
+no cerrarle el hueco que quedaba abierto). Era la mitad que faltaba: el A5 avisa
+al centro, pero las actas ya firmadas contra la lista cableada **no decían contra
+qué lista se firmó**. El registro afirmaba algo más fuerte de lo que pasó — que
+la salida se preparó según la checklist del centro.
+
+`checklist_completions.items_source`, aditiva y nulable, con CHECK:
+`template` | `hardwired` | **NULL = no se sabe**. Las 11 actas existentes
+quedaron en NULL y **no se rellenan hacia atrás**: misma decisión que el backfill
+de los 5 waivers del 23/09, inventar la procedencia de un registro inmutable es
+justo lo que esto viene a evitar.
+
+Lo decide `fuenteDeLaLista(role, tripId)` **dentro** de `buildRecordPayload()`,
+no en los tres que firman — es el dato que uno de los tres se olvidaría de pasar.
+`instructor` mira el centinela de `instructorItemsByTrip`; `custom_*` es del
+centro por definición; cualquier otro rol (las rutinas de departamento) es
+`hardwired`, porque `scope='department'` tiene **cero** plantillas y hasta que el
+A1 se construya eso es la verdad.
+
+**En pantalla sólo se dice cuando NO era la del centro** —`lineaDeFuenteDeLista()`,
+un lugar, usado por la pantalla de la salida y por Logged Checklists— con el
+camino para arreglarlo. Si era la propia no se dice (sería ruido en todas las
+actas) y si es NULL tampoco. **Ojo: la ausencia de esa línea NO es una garantía**,
+significa «o era la del centro, o el acta es anterior al 14/10», y está escrito al
+lado de la función.
+
+**Y me corregí a mí mismo:** había agregado `items_template_id` y al ir a
+escribirla medí que `filasDePlantillaParaTipo()` **tira** el id — llevarlo al acta
+obligaba a cambiar qué guarda la caché de tres capas, la que tiene la regla de
+estabilidad de llaves. **La saqué** en vez de dejar una columna que nadie
+escribe, que es el error de `acta_guarda_la_actividad` repetido; ahí ya no se
+podía sacar, acá sí. El `items_snapshot` da la trazabilidad que importa.
+
+Probado contra la base sobre una fila real: el **trigger de inmutabilidad dispara
+antes que el CHECK**, así que ni un valor inválido llega a evaluarse. Detalle en
+`Seven Seas Ops/El acta de una checklist.md`.
 
 **Al guardar se tira la copia local** (`cacheLocalBorrar()`, que faltaba), y el
 nombre de la caché pasó a `nombreEnCacheDePlantilla()` porque ahora hay dos

@@ -4617,6 +4617,10 @@ const TRANSLATIONS = {
     esc_otro_motivo: "Couldn't save that: {error}",
     cl_signed_partial: 'Signed {hechos}/{total}',
     cl_acta_nota: 'Signed record — what was checked and what was missed. Tap Reset to run a fresh check.',
+    // Sólo aparece cuando la lista firmada NO era la del centro. Si era la
+    // propia no se dice nada (sería ruido en todas las actas), y en las actas
+    // anteriores al 14/10 tampoco, porque no se sabe.
+    cl_acta_lista_generica: 'Checked against the standard list, not a list set up by this shop. Set one up in Settings → Trip Types so future records reflect your own procedure.',
     cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
     cl_autor_title: 'Ticked from this crew member’s account',
     cl_participantes: 'Filled in together by {names}.',
@@ -5399,6 +5403,7 @@ const TRANSLATIONS = {
     esc_otro_motivo: 'No se pudo guardar: {error}',
     cl_signed_partial: 'Firmada {hechos}/{total}',
     cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
+    cl_acta_lista_generica: 'Revisada contra la lista estándar, no contra una lista armada por este centro. Armá la propia en Configuración → Tipos de Salida para que las actas siguientes reflejen el procedimiento del centro.',
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
     cl_autor_title: 'Tildado desde la cuenta de esta persona',
     cl_participantes: 'La completaron entre {names}.',
@@ -8731,7 +8736,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-14c');
+  console.info('[Seven Seas] build 2026-10-14d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15838,7 +15843,7 @@ async function firmarUnaSolaVez(claveDeInstancia, instancia, hacerlo) {
 
 function mostrarActaSiHay(containerId, acta, progressId) {
   const detalle = Array.isArray(acta.items_snapshot) ? acta.items_snapshot : [];
-  if (detalle.length) { renderActaItems(containerId, detalle, progressId); return; }
+  if (detalle.length) { renderActaItems(containerId, detalle, progressId, acta); return; }
   const el = document.getElementById(containerId);
   if (el) el.insertAdjacentHTML('afterbegin',
     `<div class="cl-acta-nota">${escapeHtml(t('cl_acta_sin_detalle'))}</div>`);
@@ -16560,10 +16565,45 @@ function buildItemsSnapshot(items, estaTildado, autorDe, motivos) {
 // mismo que dibuja la pantalla. Quien firma NO es necesariamente quien tildó
 // —el firmante sale de un selector— así que el acta guarda las dos cosas:
 // `signed_by` (quién responde) y el autor por ítem (quién lo revisó).
+// De dónde salió la lista que se está firmando.
+//
+// El agujero que cierra (14/10): cuando un tipo de salida no tiene plantilla
+// propia, en el barco aparece la lista **cableada genérica** — no las semillas
+// buenas, que hay que copiar primero. El instructor la tilda entera y firma, y
+// el acta quedaba diciendo «preparación 14/14» **sin decir contra qué lista**.
+// Nadie miente, pero el registro afirma algo más fuerte de lo que pasó: que la
+// salida se preparó según la checklist del centro.
+//
+// Se decide ACÁ, dentro de `buildRecordPayload`, y no en los tres lugares que
+// firman: es exactamente el dato que uno de los tres se olvidaría de pasar.
+//
+// Devuelve null cuando no se sabe, y eso es una respuesta: **no se afirma una
+// procedencia que no se midió.** Mismo criterio que no inventar el nombre de un
+// tripulante que no resuelve.
+function fuenteDeLaLista(role, tripId) {
+  // La lista de preparación de una salida es la única que puede venir de una
+  // plantilla del centro. `instructorItemsByTrip` guarda las filas, o el
+  // centinela 'cableado' cuando el tipo de salida no tiene plantilla.
+  if (role === 'instructor') {
+    const guardado = instructorItemsByTrip[tripId];
+    if (!guardado) return null;   // no se resolvió todavía: no se afirma nada
+    return (Array.isArray(guardado) && guardado.length) ? 'template' : 'hardwired';
+  }
+  // Una checklist propia del centro es, por definición, del centro.
+  if (typeof role === 'string' && role.startsWith('custom_')) return 'template';
+  // Y las rutinas de departamento están cableadas en `DEPARTMENT_ROUTINES_I18N`:
+  // `scope='department'` tiene CERO plantillas, medido el 13/10. Hasta que el A1
+  // se construya, un acta de rutina es siempre contra la lista cableada — y
+  // decirlo es más honesto que no decirlo.
+  if (typeof role === 'string' && role) return 'hardwired';
+  return null;
+}
+
 function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, checks, motivos }) {
   const salida = (tripId && checklistTripById[tripId]) || null;
   const autores = autoriaDe(checks);
   return {
+    items_source: fuenteDeLaLista(role, tripId),
     org_id: currentOrgId,
     trip_id: tripId || null,
     trip_name: salida ? (salida.name || null) : null,
@@ -16869,7 +16909,21 @@ function filaDeActa(item, { compacto = false } = {}) {
   </div>`;
 }
 
-function renderActaItems(containerId, snapshot, progressId) {
+// De dónde salió la lista, dicho en el acta. UN solo lugar lo redacta y lo usan
+// los dos que muestran un acta: la pantalla de la salida y Logged Checklists.
+//
+// **Sólo se dice cuando la lista NO era la del centro.** Si era la propia, es el
+// caso normal y decirlo sería ruido en todas las actas; y si es `null` —las
+// actas anteriores al 14/10— no se afirma nada, porque no se sabe. Las tres
+// ramas son deliberadas: ausencia de línea no significa «estaba bien», significa
+// «o estaba bien o es vieja», y eso está documentado acá para que nadie lo lea
+// como una garantía.
+function lineaDeFuenteDeLista(acta) {
+  if (!acta || acta.items_source !== 'hardwired') return '';
+  return `<div class="cl-acta-nota" style="border-left:3px solid var(--warning, #d9822b);">${escapeHtml(t('cl_acta_lista_generica'))}</div>`;
+}
+
+function renderActaItems(containerId, snapshot, progressId, acta) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const items = Array.isArray(snapshot) ? snapshot : [];
@@ -16877,6 +16931,7 @@ function renderActaItems(containerId, snapshot, progressId) {
 
   el.innerHTML =
     `<div class="cl-acta-nota">${escapeHtml(t('cl_acta_nota'))}</div>` +
+    lineaDeFuenteDeLista(acta) +
     lineaDeParticipantes(participantesDeActa(items)) +
     items.map(item => filaDeActa(item)).join('');
 
@@ -17528,7 +17583,8 @@ async function loadLoggedChecklists() {
       // eso no mostraba ni el autor ni el motivo: lo que se agregó el 09/10 no
       // había llegado acá.
       const detalle = acta
-        ? lineaDeParticipantes(participantesDeActa(acta)) +
+        ? lineaDeFuenteDeLista(r) +
+          lineaDeParticipantes(participantesDeActa(acta)) +
           acta.map(i => filaDeActa(i, { compacto: true })).join('')
         : `<p class="cl-logged-no-detail">${t('cl_logged_no_detail')}</p>`;
 
