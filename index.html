@@ -5085,6 +5085,7 @@ const TRANSLATIONS = {
     set_billing_trial_left_one: '1 day left — trial ends {date}',
     set_billing_trial_over: 'Your free trial has ended',
     set_billing_inactive_desc: 'Your subscription isn\'t active. Choose a plan to get your crew back in.',
+    set_billing_comped_desc: 'This shop has full access with no billing. Nothing to pay and nothing to renew.',
     set_billing_no_plan: 'No plan on this account yet.',
     auth_invite_desc: "You've been invited to join {org} as {role}. Set a password to finish creating your account.", auth_this_operation: 'this operation',
     auth_enter_name: 'Enter your name.', auth_password_min: 'Password must be at least 6 characters.', auth_setting_up: 'Setting up...',
@@ -5871,6 +5872,7 @@ const TRANSLATIONS = {
     set_billing_trial_left_one: 'Queda 1 día — la prueba termina el {date}',
     set_billing_trial_over: 'Tu prueba gratis terminó',
     set_billing_inactive_desc: 'Tu suscripción no está activa. Elegí un plan para que tu equipo vuelva a entrar.',
+    set_billing_comped_desc: 'Este centro tiene acceso completo sin facturación. No hay nada que pagar ni que renovar.',
     set_billing_no_plan: 'Esta cuenta todavía no tiene un plan.',
     auth_invite_desc: 'Fuiste invitado a unirte a {org} como {role}. Configurá una contraseña para terminar de crear tu cuenta.', auth_this_operation: 'esta operación',
     auth_enter_name: 'Ingresá tu nombre.', auth_password_min: 'La contraseña debe tener al menos 6 caracteres.', auth_setting_up: 'Configurando...',
@@ -6263,6 +6265,7 @@ function recordarEstadoDeSuscripcion(org, estadoPorDefecto) {
   window.currentOrgPlanTier = (org && org.plan_tier) || null;
   window.currentOrgScheduledAction = (org && org.scheduled_change_action) || null;
   window.currentOrgScheduledAt = (org && org.scheduled_change_at) || null;
+  window.currentOrgComped = !!(org && org.comped);
 }
 
 // El cambio agendado en Paddle, y qué decirle al centro.
@@ -6633,7 +6636,35 @@ function renderPlanCards() {
 // canceled/paused -- 'past_due' deliberately stays unblocked, matching
 // Paddle's own dunning retries, so a card hiccup doesn't lock someone out
 // mid-retry.
+// Una cuenta interna nunca ve el portón, y se pregunta ANTES que todo lo demás.
+//
+// Por qué es una columna aparte (`organizations.comped`) y no un valor de
+// `subscription_status`: **el webhook de Paddle escribe esa columna, y lo hace
+// sin guardia de orden.** La org de Fran tiene un `paddle_subscription_id`
+// cargado de la prueba de cobro real del 30/09, así que un evento viejo que
+// llegara tarde le devolvería `canceled` — y el paywall reaparecería, con suerte
+// en medio de una demo. El webhook no toca `comped` nunca.
+//
+// Y es honesta en los datos: esta org no paga y es a propósito. Poner `active`
+// a mano afirmaría que hay una suscripción donde no hay ninguna, que es la clase
+// de dato inventado que después nadie puede distinguir de uno real.
+//
+// `comped_reason` existe para que en seis meses nadie tenga que adivinar por qué
+// una org no paga.
+function esCuentaInterna() {
+  return !!window.currentOrgComped;
+}
+
 function enforceSubscriptionGate(status, trialEndsAt) {
+  if (esCuentaInterna()) {
+    // Y si el bloqueo ya estaba arriba —por ejemplo porque se marcó comped
+    // mientras la pantalla estaba abierta— se suelta.
+    if (window._subscriptionLocked) {
+      window._subscriptionLocked = false;
+      closeChoosePlanModal();
+    }
+    return;
+  }
   const isTrial = status === 'trial' || status === 'trialing';
   const trialExpired = isTrial && trialEndsAt && new Date(trialEndsAt).getTime() < Date.now();
   const canceled = status === 'canceled' || status === 'paused';
@@ -6679,6 +6710,18 @@ function updateBillingCard(org) {
   // The portal needs a Paddle customer. Without one it returns 400, so don't
   // offer a button that can only fail.
   manageBtn.style.display = org.paddle_customer_id ? '' : 'none';
+
+  // Una cuenta interna: se dice lo que es y no se ofrece nada que comprar.
+  // Sin esto la tarjeta le mostraría a Fran «suscripción cancelada» y un botón
+  // de elegir plan sobre una org que ya tiene acceso — un cartel que contradice
+  // lo que la app hace, que es peor que no tener cartel.
+  if (esCuentaInterna()) {
+    statusLine.textContent = t('set_billing_comped_desc');
+    if (trialLine) trialLine.style.display = 'none';
+    chooseBtn.style.display = 'none';
+    manageBtn.style.display = 'none';
+    return;
+  }
 
   if (isTrial) {
     const endsAt = org.trial_ends_at ? new Date(org.trial_ends_at) : null;
@@ -8754,7 +8797,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-14f');
+  console.info('[Seven Seas] build 2026-10-15a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo

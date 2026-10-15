@@ -54,6 +54,7 @@ const MINIMOS = {
   'borrados-avisan.test.js':        16,
   'cambio-agendado.test.js':        28,
   'checklist-progress.test.js':     56,
+  'cuenta-interna.test.js':         16,
   'checklist-record-scope.test.js': 35,
   'checklist-record.test.js':       55,
   'dept-visibility.test.js':        29,

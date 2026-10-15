@@ -11,7 +11,26 @@ desactualizados — no mandan.*
 ## Qué es
 
 SaaS de operaciones para centros de buceo y operaciones de charter. Bilingüe
-(ES/EN). Web + apps nativas. Sin lanzar todavía, cero clientes.
+(ES/EN). Web + apps nativas. Cero clientes **pagando**.
+
+> [!important] Pero la app de Android SÍ está publicada, y tiene usuarios
+> **Google Play, en producción al 100% desde el 1 de septiembre de 2026**:
+> `com.sevenseasops.app`, 16 instalaciones, **13 dispositivos activos por mes**.
+> Verificado en la ficha pública el 15/10.
+>
+> Claude afirmó el 15/10 que no estaba publicada, después de buscar en el repo y
+> en el vault y no encontrar registro. **La ausencia de un registro no es una
+> medición** — ver
+> `Errores y aprendizajes/La app que sí estaba publicada.md`.
+>
+> **Lo que esto cambia, y es la parte que importa:** la frase de más abajo sobre
+> «las nativas tienen cero usuarios» era falsa. Hay 13 dispositivos activos, y
+> **la versión publicada tiene `server.url`, así que hoy no abre sin internet**
+> mientras la ficha de Play promete *«Works offline — built for shops with
+> unreliable wifi»*. El arreglo del arranque desde el binario no es más barato
+> de lo que creíamos: es **más urgente**.
+>
+> iOS sigue sin publicar: binario 162001 en revisión.
 
 Lo construye **Franco Roca (Fran)** — ex instructor de buceo (Fiji, Tailandia,
 BVI), hoy en Mar del Plata. **No programa.** Claude escribe todo el código;
@@ -414,7 +433,16 @@ haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 > **Lo bueno: los archivos YA están en el binario** (el workflow corre
 > `build:www` y `cap sync`). El cambio es **sacar una línea**; lo que cuesta es
 > que después cada arreglo del `index.html` necesita un envío nuevo — y hoy eso
-> se paga en una moneda que sobra, porque las nativas tienen cero usuarios.
+> se paga en una moneda que **creí** que sobraba. **Falso, medido el 15/10:** la
+> app de Android está en Google Play desde el 1 de septiembre con **13
+> dispositivos activos por mes**. Así que el deslogueo de una vez le pega a 13
+> aparatos reales, y desde el flip cada arreglo necesita una release de Play.
+>
+> **La decisión no cambia pero el motivo sí**, y ahora apunta más fuerte en la
+> misma dirección: esos 13 dispositivos **tienen el bug de la pantalla azul en
+> producción ahora mismo**, y la ficha de Play promete que funciona sin
+> conexión. Verificar en Android y publicar la actualización dejó de ser
+> prolijidad y pasó a ser arreglarle algo a gente que ya lo tiene instalado.
 >
 > **Dos consecuencias que no se ven**, y la primera ya está arreglada:
 > `hayRedDeVerdad()` pingueaba el **propio origen**, que empaquetado lo contesta

@@ -78,7 +78,19 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # `packages` se pone a mano porque el default de la acción es
+      # `tools platform-tools`, y **Google sacó `tools` del repositorio del SDK**.
+      # sdkmanager no lo encuentra, sale con código 1 y la build muere antes de
+      # compilar una línea — nada que ver con el código de la app. Pasó el 14/10
+      # la primera vez que se corrió el workflow a mano.
+      #
+      # Se deja sólo `platform-tools`, que es el cambio más chico: el runner ya
+      # trae las cmdline-tools instaladas, y la plataforma y las build-tools las
+      # baja Gradle solo. La otra salida era saltar a `@v4`, que ya no pide
+      # `tools`, pero eso cambia más cosas de las que hace falta tocar hoy.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Build debug APK
         working-directory: android
