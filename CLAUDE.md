@@ -18,6 +18,14 @@ SaaS de operaciones para centros de buceo y operaciones de charter. Bilingüe
 > `com.sevenseasops.app`, 16 instalaciones, **13 dispositivos activos por mes**.
 > Verificado en la ficha pública el 15/10.
 >
+> **Esos 13 NO son clientes: son conocidos a los que Fran les pidió que bajaran
+> la app para probarla** (dicho por él el 15/10). El número no es tracción y no
+> hay que leerlo así. **Lo que sí vale de ellos es que son el único detector de
+> fallas de arranque que hay** — Play Vitals da tasa de fallas y de ANR, y el
+> cambio de arrancar del binario es justamente el que más puede romper el
+> arranque. Que dos o tres la dejen instalada hasta que la actualización esté
+> publicada y confirmada.
+>
 > Claude afirmó el 15/10 que no estaba publicada, después de buscar en el repo y
 > en el vault y no encontrar registro. **La ausencia de un registro no es una
 > medición** — ver
@@ -434,15 +442,18 @@ haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 > `build:www` y `cap sync`). El cambio es **sacar una línea**; lo que cuesta es
 > que después cada arreglo del `index.html` necesita un envío nuevo — y hoy eso
 > se paga en una moneda que **creí** que sobraba. **Falso, medido el 15/10:** la
-> app de Android está en Google Play desde el 1 de septiembre con **13
-> dispositivos activos por mes**. Así que el deslogueo de una vez le pega a 13
-> aparatos reales, y desde el flip cada arreglo necesita una release de Play.
+> app está en Google Play desde el 1 de septiembre, así que desde el flip cada
+> arreglo necesita una release de Play.
 >
-> **La decisión no cambia pero el motivo sí**, y ahora apunta más fuerte en la
-> misma dirección: esos 13 dispositivos **tienen el bug de la pantalla azul en
-> producción ahora mismo**, y la ficha de Play promete que funciona sin
-> conexión. Verificar en Android y publicar la actualización dejó de ser
-> prolijidad y pasó a ser arreglarle algo a gente que ya lo tiene instalado.
+> **Y después sobrecorregí en la otra dirección**, que conviene no repetir: dije
+> que el deslogueo de una vez «le pega a 13 aparatos reales» y lo usé como
+> costo. Fran aclaró que los 13 son conocidos que bajaron la app para probarla,
+> no clientes — así que ese costo es casi cero otra vez.
+>
+> **Lo que justifica la urgencia no es cuántos usuarios hay: es que la ficha
+> está pública.** Cualquiera que entre a Play hoy y la instale se come la
+> pantalla azul, y la ficha le promete textual *«Works offline»*. Eso es verdad
+> con 13 usuarios o con cero, y es el argumento que se sostiene solo.
 >
 > **Dos consecuencias que no se ven**, y la primera ya está arreglada:
 > `hayRedDeVerdad()` pingueaba el **propio origen**, que empaquetado lo contesta

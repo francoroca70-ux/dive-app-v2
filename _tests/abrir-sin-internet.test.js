@@ -248,11 +248,20 @@ chk('la tarjeta de una checklist propia ya no tiene borde punteado',
 // que falte en uno de los cuatro departamentos no se nota: la etiqueta cae al
 // `crewRoleLabel` y muestra la clave cruda, que es exactamente el bug de arriba.
 const sinComentarios=main.split('\n').filter(l=>!/^\s*\/\//.test(l)).join('\n');
-const vecesCad=(sinComentarios.match(/CHECKLIST_CADENCIAS/g)||[]).length;
-chk('CHECKLIST_CADENCIAS se declara y se usa en un solo lugar cada vez',
-    vecesCad===2, String(vecesCad));
-const vecesDept=(sinComentarios.match(/CHECKLIST_DEPTOS/g)||[]).length;
-chk('CHECKLIST_DEPTOS también',vecesDept===2,String(vecesDept));
+// Lo que importa es que el mapa se DECLARE una sola vez, no cuántos lo leen.
+// La primera versión de esta comprobación exigía exactamente dos apariciones
+// —una declaración y un lector— y falló el 15/10 en cuanto el selector del
+// formulario de checklist propia pasó a leer el mismo mapa. Eso es justamente
+// lo que queremos: un lector más de la única fuente. Contar lectores era
+// encodear «hoy hay uno», el mismo error que contar «tres consultas crudas» en
+// el guardián de salidas.
+const declCad=(sinComentarios.match(/const CHECKLIST_CADENCIAS\s*=/g)||[]).length;
+chk('CHECKLIST_CADENCIAS se declara exactamente una vez',declCad===1,String(declCad));
+const declDept=(sinComentarios.match(/const CHECKLIST_DEPTOS\s*=/g)||[]).length;
+chk('CHECKLIST_DEPTOS también',declDept===1,String(declDept));
+// Y nadie escribe su propio mapa de cadencia → clave de traducción al lado.
+const mapasSueltos=(sinComentarios.match(/\bmorning:\s*'cl_cadence_morning'/g)||[]).length;
+chk('y nadie arma un segundo mapa de cadencias',mapasSueltos===1,String(mapasSueltos));
 chk('ya no queda el mapa enumerado de 17 entradas',
     !/stewards_yearly:\s*`/.test(sinComentarios));
 

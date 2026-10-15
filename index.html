@@ -3271,12 +3271,7 @@ body { background: var(--navy); color: var(--text); }
               </div>
               <div class="sf-group">
                 <label class="sf-label" data-i18n="cl_new_checklist_cadence_label">Frequency</label>
-                <select class="sf-input" id="new-checklist-cadence">
-                  <option value="morning" data-i18n="cl_cadence_morning">Morning</option>
-                  <option value="eod" data-i18n="cl_cadence_eod">End of Day</option>
-                  <option value="monthly" data-i18n="cl_cadence_monthly">Monthly</option>
-                  <option value="yearly" data-i18n="cl_cadence_yearly">Yearly</option>
-                </select>
+                <select class="sf-input" id="new-checklist-cadence"></select>
               </div>
               <div class="sf-group">
                 <label class="sf-label" data-i18n="cl_new_checklist_items_label">Items (one per line)</label>
@@ -4653,6 +4648,7 @@ const TRANSLATIONS = {
     cl_includes_spares: 'includes {n} spares',
     cl_dept_captain: 'Captain', cl_dept_instructor: 'Instructor / DM / Dive Guide', cl_dept_deck: 'Deck', cl_dept_stewards: 'Stewards',
     cl_cadence_morning: 'Morning', cl_cadence_eod: 'End of Day', cl_cadence_monthly: 'Monthly', cl_cadence_yearly: 'Yearly',
+    cl_cadence_night: 'Night', cl_cadence_weekly: 'Weekly',
     cl_crew_signoff_status: 'Crew Sign-Off Status', cl_vessel_safety_check: 'Vessel Safety Check',
     cl_complete_once_daily: 'Complete once per day before first departure. Independent of individual trips.',
     cl_captain_signoff: 'Captain Sign-Off', cl_captain_name: 'Captain name', cl_boat_name: 'Boat name',
@@ -5443,6 +5439,9 @@ const TRANSLATIONS = {
     // día» no tiene la otra lectura y además hace par con «Fin del día», que es
     // la etiqueta de la otra cadencia diaria.
     cl_cadence_morning: 'Inicio del día', cl_cadence_eod: 'Fin del día', cl_cadence_monthly: 'Mensual', cl_cadence_yearly: 'Anual',
+    // «Noche» y no «Fin de jornada»: en un charter la salida de noche es una
+    // salida distinta, no el cierre del día. Pedido por Fran el 14/10.
+    cl_cadence_night: 'Noche', cl_cadence_weekly: 'Semanal',
     cl_crew_signoff_status: 'Estado de Confirmación de Tripulación', cl_vessel_safety_check: 'Revisión de Seguridad de la Embarcación',
     cl_complete_once_daily: 'Completar una vez al día antes de la primera salida. Independiente de las salidas individuales.',
     cl_captain_signoff: 'Confirmación del Capitán', cl_captain_name: 'Nombre del capitán', cl_boat_name: 'Nombre de la embarcación',
@@ -8797,7 +8796,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-15a');
+  console.info('[Seven Seas] build 2026-10-15b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15436,8 +15435,27 @@ function departmentRoutinesGet() {
 // `<departamento>_<cadencia>`: se parte y se arma, no se enumera.
 const CHECKLIST_CADENCIAS = {
   morning: 'cl_cadence_morning', eod: 'cl_cadence_eod',
+  night: 'cl_cadence_night', weekly: 'cl_cadence_weekly',
   monthly: 'cl_cadence_monthly', yearly: 'cl_cadence_yearly'
 };
+
+// ─── Interruptor: las dos cadencias nuevas ───
+//
+// Apagado controla **qué se OFRECE al crear una checklist propia**, y nunca qué
+// se lee. Una checklist de noche que ya exista se sigue viendo, etiquetando y
+// firmando con el interruptor apagado — si controlara la lectura, apagarlo haría
+// desaparecer registros que un centro ya creó, y eso no se arregla después.
+// Mismo principio que «retirar es `active = false`, nunca un borrado».
+//
+// Las cuatro rutinas de departamento NO se tocan: traen sus ítems cableados por
+// cadencia, así que agregarles noche y semanal serían ocho listas de ítems
+// inventadas. Lo que Fran pidió es que el CENTRO se arme su checklist de noche.
+const CADENCIAS_NUEVAS = false;
+function cadenciasQueSeOfrecen() {
+  const base = ['morning', 'eod', 'monthly', 'yearly'];
+  if (!CADENCIAS_NUEVAS) return base;
+  return ['morning', 'eod', 'night', 'weekly', 'monthly', 'yearly'];
+}
 const CHECKLIST_DEPTOS = {
   captain: 'cl_dept_captain', instructor: 'cl_dept_instructor',
   deck: 'cl_dept_deck', stewards: 'cl_dept_stewards'
@@ -16056,15 +16074,67 @@ function poblarFirmantesDe(selectId, checks) {
 // Qué instancia concreta de una checklist se está trabajando.
 // Una rutina de mañana es una por día; el control mensual, una por mes; la
 // preparación de una salida, una por salida.
+// ─── Qué período cubre una cadencia: UN solo lugar ───
+//
+// Esto estaba duplicado en dos funciones con el mismo if/else
+// —`periodKeyForCadence` y `deptRoutinePeriodRange`— y las dos terminaban en un
+// `else` que mandaba **todo lo desconocido a «por día»**.
+//
+// Con eso, agregar `weekly` habría dado una checklist semanal que se reinicia
+// cada mañana, **en silencio y sin que nada falle**: la cadencia nueva caía en
+// el else y nadie se enteraba. Y el defecto habría aparecido donde la copia
+// falta, que es el modo de falla de siempre acá.
+//
+// **Agregar una cadencia es agregar una línea ACÁ.** El `|| 'dia'` de abajo
+// existe sólo para valores viejos o inesperados que ya estén en la base; una
+// cadencia que la app ofrece no puede depender de él.
+const PERIODO_POR_CADENCIA = {
+  morning: 'dia',    // inicio del día
+  eod:     'dia',    // fin del día
+  night:   'dia',    // noche — comparte el grano con las otras dos diarias
+  weekly:  'semana',
+  monthly: 'mes',
+  yearly:  'anio'
+};
+function granoDeCadencia(cadence) {
+  return PERIODO_POR_CADENCIA[cadence] || 'dia';
+}
+
+// El lunes de la semana de una fecha, a las 00:00 locales.
+function lunesDeLaSemana(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));   // getDay(): domingo = 0
+  return x;
+}
+
+// Clave de semana ISO: `2026-W42`.
+//
+// Semana ISO y no «los últimos 7 días» porque una checklist semanal tiene que
+// significar lo mismo para toda la tripulación: si cada persona arrastrara su
+// propia ventana de siete días, dos personas verían instancias distintas de la
+// misma checklist. El año sale del JUEVES de la semana, que es lo que define a
+// qué año ISO pertenece una semana partida entre diciembre y enero.
+function claveDeSemana(d) {
+  const lunes = lunesDeLaSemana(d);
+  const jueves = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 3);
+  const anio = jueves.getFullYear();
+  const lunesDeLaSemana1 = lunesDeLaSemana(new Date(anio, 0, 4));  // la ISO 1 contiene el 4 de enero
+  const semana = Math.round((jueves - lunesDeLaSemana1) / 604800000) + 1;
+  return `${anio}-W${String(semana).padStart(2, '0')}`;
+}
+
 function periodKeyForCadence(cadence, tripId) {
   if (tripId) return tripId;
   const hoy = new Date();
   const yyyy = hoy.getFullYear();
   const mm = String(hoy.getMonth() + 1).padStart(2, '0');
   const dd = String(hoy.getDate()).padStart(2, '0');
-  if (cadence === 'monthly') return `${yyyy}-${mm}`;
-  if (cadence === 'yearly')  return String(yyyy);
-  return `${yyyy}-${mm}-${dd}`;     // morning / eod y cualquier otra: por día
+  switch (granoDeCadencia(cadence)) {
+    case 'anio':   return String(yyyy);
+    case 'mes':    return `${yyyy}-${mm}`;
+    case 'semana': return claveDeSemana(hoy);
+    default:       return `${yyyy}-${mm}-${dd}`;
+  }
 }
 
 // El local va adentro de la llave porque dos locales haciendo la rutina de
@@ -17229,6 +17299,21 @@ function populateNewChecklistRoleSelect() {
   sel.innerHTML = roles.map(r => `<option value="${r}">${crewRoleLabel(r)}</option>`).join('');
 }
 
+// El selector de frecuencia se arma desde `cadenciasQueSeOfrecen()` y no desde
+// `<option>` escritos a mano en el HTML. Antes eran cuatro options fijos, así
+// que el interruptor habría tenido que tocar el HTML para agregar dos — y el
+// nombre de cada cadencia habría quedado en dos lugares, el HTML y
+// `CHECKLIST_CADENCIAS`. Las etiquetas salen del mismo mapa que usa el acta.
+function poblarCadenciasDelFormulario() {
+  const sel = document.getElementById('new-checklist-cadence');
+  if (!sel) return;
+  const elegida = sel.value;
+  sel.innerHTML = cadenciasQueSeOfrecen()
+    .map(c => `<option value="${c}">${escapeHtml(t(CHECKLIST_CADENCIAS[c]))}</option>`).join('');
+  // Si la que estaba elegida sigue ofreciéndose, se conserva.
+  if (elegida && cadenciasQueSeOfrecen().includes(elegida)) sel.value = elegida;
+}
+
 async function saveNewCustomChecklist() {
   const errEl = document.getElementById('new-checklist-error');
   errEl.style.display = 'none';
@@ -17509,7 +17594,7 @@ async function renderCustomChecklistsForCurrentView() {
 document.getElementById('btn-show-new-checklist').addEventListener('click', () => {
   const form = document.getElementById('form-new-checklist');
   const isHidden = form.style.display === 'none';
-  if (isHidden) populateNewChecklistRoleSelect();
+  if (isHidden) { populateNewChecklistRoleSelect(); poblarCadenciasDelFormulario(); }
   form.style.display = isHidden ? 'block' : 'none';
 });
 document.getElementById('btn-cancel-new-checklist').addEventListener('click', () => {
@@ -17570,15 +17655,18 @@ function currentDeptRoutine() {
 // Daily cadences (morning/eod) check "already done today"; monthly/yearly
 // check the current calendar month/year instead, matching how often that
 // cadence is actually meant to be repeated.
+// El rango de fechas del período vigente. Sale del MISMO `granoDeCadencia()`
+// que la clave de instancia — antes era un if/else copiado, y la copia es lo
+// que habría dejado a `weekly` buscando actas de hoy mientras su progreso se
+// guardaba por semana.
 function deptRoutinePeriodRange(cadenceKey) {
   const now = new Date();
   let start;
-  if (cadenceKey === 'monthly') {
-    start = new Date(now.getFullYear(), now.getMonth(), 1);
-  } else if (cadenceKey === 'yearly') {
-    start = new Date(now.getFullYear(), 0, 1);
-  } else {
-    start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  switch (granoDeCadencia(cadenceKey)) {
+    case 'anio':   start = new Date(now.getFullYear(), 0, 1); break;
+    case 'mes':    start = new Date(now.getFullYear(), now.getMonth(), 1); break;
+    case 'semana': start = lunesDeLaSemana(now); break;
+    default:       start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
   return { start: start.toISOString(), end: new Date().toISOString() };
 }
