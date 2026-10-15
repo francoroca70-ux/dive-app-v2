@@ -626,8 +626,21 @@ tipo de salida, no por fila, porque hay centros con tipos duplicados
 históricos. Contenido completo en
 `Seven Seas Ops/Checklists sembradas por tipo de salida.md`.
 
-**El español de los textos es neutro latinoamericano, no rioplatense** (pedido
-por Fran el 07/10: hay muy pocos centros de buceo acá y los clientes van a
+**El español de los textos es neutro latinoamericano, no rioplatense** —y desde
+el 15/10 eso **también vale para la landing**, que se había quedado afuera de la
+regla nueve días con `Creá`, `Seguí`, `Cerrá`, `tenés`. Una regla escrita que
+vive en un solo lado es media regla.
+
+Y hay una segunda mitad, pedida por Fran el 15/10: **menos modo imperativo**,
+no sólo menos voseo. Una lista de funciones **describe**, no manda — «El
+manifiesto del día se genera solo», no «Generá el manifiesto». **No se elige
+entre `tú` y `vos`**: Centroamérica se parte entre los dos (Costa Rica,
+Nicaragua y Guatemala vosean), así que la segunda persona queda sin conjugar —
+impersonales, infinitivos, y el posesivo `tu`, que los dos comparten. Los
+botones van en infinitivo. Detalle en
+`Clientes/Auditoría de la landing.md`.
+
+Lo de siempre (pedido por Fran el 07/10: hay muy pocos centros de buceo acá y los clientes van a
 estar repartidos por la región). Cooler y no conservadora, leash y no invento,
 wax y no parafina —en Chile y Perú parafina es kerosene—, spot y no pico, gaff
 y no rebenque. **Se mantienen «huéspedes» y «licra»** porque la app ya los usa
