@@ -136,25 +136,36 @@ chk('el anual arranca en enero',
 // Está en 'false' en producción. Lo que se afirma acá es que **cambiarlo cambia
 // el comportamiento** — la etapa 3a tuvo tres días un interruptor que no
 // cambiaba nada con la suite en verde.
+// La posición declarada. Si el código dice otra cosa, el test falla — igual que
+// el guardián de `arrancar-del-binario`. Cambiar el interruptor obliga a cambiar
+// esta línea y a enterarse de qué implica.
+const POSICION_ESPERADA = 'prendido';   // 'apagado' | 'prendido'
+
 const ofrecidas=T.ofrecidas();
 const sinComentarios=main.split('\n').filter(l=>!/^\s*\/\//.test(l)).join('\n');
-const apagado=/const CADENCIAS_NUEVAS = false;/.test(sinComentarios);
-chk('en producción el interruptor está apagado', apagado);
-chk('apagado se ofrecen las cuatro de siempre',
-    !apagado || (ofrecidas.length===4 && !ofrecidas.includes('night') && !ofrecidas.includes('weekly')),
-    ofrecidas.join(','));
+const enCodigo=/const CADENCIAS_NUEVAS = true;/.test(sinComentarios) ? 'prendido' : 'apagado';
+chk('la posición del interruptor coincide con la declarada',
+    enCodigo===POSICION_ESPERADA, `código=${enCodigo} declarado=${POSICION_ESPERADA}`);
 
-// Y se corre el otro lado de verdad: se reevalúa la función con el interruptor
-// en true y se comprueba que ofrece seis.
-const conInterruptorPrendido = new window.Function(
-  sinComentarios.match(/function cadenciasQueSeOfrecen\(\)[\s\S]*?\n\}/)[0] +
-  "\nconst CADENCIAS_NUEVAS = true; return cadenciasQueSeOfrecen();")();
+// Las dos posiciones se corren de verdad, sin importar cuál esté en producción:
+// una sale del código tal como está, y la otra reevaluando la función con el
+// valor opuesto. Lo que se afirma es que **cambiarlo cambia el resultado** — la
+// etapa 3a tuvo tres días un interruptor inerte con la suite en verde.
+function ofrecidasCon(valor){
+  return new window.Function(
+    sinComentarios.match(/function cadenciasQueSeOfrecen\(\)[\s\S]*?\n\}/)[0] +
+    `\nconst CADENCIAS_NUEVAS = ${valor}; return cadenciasQueSeOfrecen();`)();
+}
+const conApagado=ofrecidasCon(false), conPrendido=ofrecidasCon(true);
+chk('apagado se ofrecen las cuatro de siempre',
+    conApagado.length===4 && !conApagado.includes('night') && !conApagado.includes('weekly'),
+    conApagado.join(','));
 chk('prendido se ofrecen SEIS, con noche y semanal',
-    conInterruptorPrendido.length===6 &&
-    conInterruptorPrendido.includes('night') && conInterruptorPrendido.includes('weekly'),
-    conInterruptorPrendido.join(','));
-chk('y cambiarlo cambia el resultado',
-    conInterruptorPrendido.length !== ofrecidas.length);
+    conPrendido.length===6 && conPrendido.includes('night') && conPrendido.includes('weekly'),
+    conPrendido.join(','));
+chk('y cambiarlo cambia el resultado', conApagado.length !== conPrendido.length);
+chk('lo que la app ofrece hoy es la posición del código',
+    ofrecidas.length===(enCodigo==='prendido'?6:4), ofrecidas.join(','));
 
 const veces=(sinComentarios.match(/CADENCIAS_NUEVAS/g)||[]).length;
 chk('el interruptor se declara y se lee en un solo lugar cada vez',

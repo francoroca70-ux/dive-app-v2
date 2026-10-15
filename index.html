@@ -8796,7 +8796,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-15b');
+  console.info('[Seven Seas] build 2026-10-15c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15450,7 +15450,9 @@ const CHECKLIST_CADENCIAS = {
 // Las cuatro rutinas de departamento NO se tocan: traen sus ítems cableados por
 // cadencia, así que agregarles noche y semanal serían ocho listas de ítems
 // inventadas. Lo que Fran pidió es que el CENTRO se arme su checklist de noche.
-const CADENCIAS_NUEVAS = false;
+// Prendido por Fran el 15/10 para probarlo en uso. Lo que falta medir y jsdom no
+// puede: que una checklist semanal NO se reinicie al día siguiente.
+const CADENCIAS_NUEVAS = true;
 function cadenciasQueSeOfrecen() {
   const base = ['morning', 'eod', 'monthly', 'yearly'];
   if (!CADENCIAS_NUEVAS) return base;
