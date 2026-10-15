@@ -191,7 +191,7 @@ window.showConfirmModal=async()=>true;
       (html.match(/async function buscarActaVigente\(/g)||[]).length===1 &&
       (html.match(/buscarActaVigente\(/g)||[]).length>=4);
   chk('y las columnas del acta también',
-      (html.match(/const COLUMNAS_DE_ACTA = /g)||[]).length===1 &&
+      (html.match(/const COLUMNAS_DE_ACTA\s*=/g)||[]).length===1 &&
       !/select\('signed_by, signed_at, completed_items, total_items, items_snapshot'\)/.test(html));
   chk('esconder la zona de firma es una sola regla',
       (html.match(/function pintarZonaDeFirma\(/g)||[]).length===1 &&

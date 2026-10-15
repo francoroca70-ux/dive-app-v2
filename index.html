@@ -3300,18 +3300,28 @@ body { background: var(--navy); color: var(--text); }
                 <select class="sf-input" id="dept-cadence-tabs" onchange="selectDeptCadence(this.value)"></select>
               </div>
             </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0;">
-              <div class="card-section-title" style="margin-bottom:0;" id="dept-routine-title"></div>
+            <!-- El encabezado se aprieta para abrir, igual que una checklist
+                 propia y que una salida. Plegada por defecto: ver
+                 `checklistsAbiertas`. Lo que queda a la vista con la tarjeta
+                 cerrada es la barra de progreso y el estado, que es lo que un
+                 capitán necesita de un vistazo. -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;" onclick="toggleDeptAbierta()">
+                <span id="dept-routine-chev" style="color:var(--muted);font-size:0.9rem;">▸</span>
+                <div class="card-section-title" style="margin-bottom:0;" id="dept-routine-title"></div>
+              </div>
               <div class="cl-role-badge" id="dept-routine-status" data-i18n="cl_pending">Pending</div>
             </div>
             <div class="cl-progress-bar"><div class="cl-progress-fill" id="dept-routine-progress"></div></div>
-            <div id="dept-list"></div>
-            <div class="cl-signoff">
-              <select class="sf-input signer-select" id="dept-routine-name"></select>
-              <div class="cl-done-banner" id="dept-routine-done" style="display:none;"></div>
-              <div class="settings-actions" style="margin-top:12px;">
-                <button class="btn-save" id="dept-routine-signoff-btn" onclick="deptRoutineSignOff()" data-i18n="cl_sign_off_routine">Sign Off</button>
-                <button class="btn-cancel" onclick="resetDeptRoutine()" data-i18n="cl_reset">Reset</button>
+            <div id="dept-routine-body" style="display:none;">
+              <div id="dept-list"></div>
+              <div class="cl-signoff">
+                <select class="sf-input signer-select" id="dept-routine-name"></select>
+                <div class="cl-done-banner" id="dept-routine-done" style="display:none;"></div>
+                <div class="settings-actions" style="margin-top:12px;">
+                  <button class="btn-save" id="dept-routine-signoff-btn" onclick="deptRoutineSignOff()" data-i18n="cl_sign_off_routine">Sign Off</button>
+                  <button class="btn-cancel" onclick="resetDeptRoutine()" data-i18n="cl_reset">Reset</button>
+                </div>
               </div>
             </div>
             <div id="dept-custom-list"></div>
@@ -4640,7 +4650,6 @@ const TRANSLATIONS = {
     cl_acta_porque: 'Why: {why}',
     cl_reset_confirm: 'Start this checklist over? The {n} tick(s) already made will be cleared for everyone.',
     cl_reset_confirm_firmada: 'Run this checklist again? It starts blank and gets its own signature. The {n} tick(s) will be cleared, and the record already signed is kept — signed records are never edited.',
-    cl_logged_vessel_check: 'Vessel safety check',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
     cl_your_name: 'Your name', cl_sign_off_gear: 'Sign Off — Gear Ready', cl_reset: 'Reset',
@@ -5426,7 +5435,6 @@ const TRANSLATIONS = {
     cl_acta_porque: 'Por qué: {why}',
     cl_reset_confirm: '¿Arrancar esta checklist de nuevo? Se borran los {n} tilde(s) que ya hizo la tripulación.',
     cl_reset_confirm_firmada: '¿Hacer esta checklist otra vez? Arranca en blanco y lleva su propia firma. Se borran los {n} tilde(s), y el acta que ya se firmó queda guardada — las actas no se editan nunca.',
-    cl_logged_vessel_check: 'Revisión de seguridad de la embarcación',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
     cl_your_name: 'Tu nombre', cl_sign_off_gear: 'Confirmar — Equipo Listo', cl_reset: 'Reiniciar',
@@ -8796,7 +8804,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-15d');
+  console.info('[Seven Seas] build 2026-10-15e');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -13859,7 +13867,7 @@ async function exportChecklistsForDay(date) {
 
 
   const { data, error } = await sb.from('checklist_completions')
-    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trip_name, trip_date, trip_time')
+    .select(COLUMNAS_DE_ACTA_LISTADO)
     .eq('org_id', currentOrgId)
     .gte('signed_at', date + 'T00:00:00')
     .lte('signed_at', date + 'T23:59:59')
@@ -13877,14 +13885,13 @@ async function exportChecklistsForDay(date) {
   }
 
   const rowsHtml = data.map(r => {
-    const etiqueta = tripLabelDeActa(r);
-    const tripLabel = etiqueta ? escapeHtml(etiqueta) : t('cl_logged_vessel_check');
-    const roleLabel = escapeHtml(crewRoleLabel(r.role) || r.role);
+    const tripLabel = escapeHtml(tituloDeActa(r));
+    const roleLabel = escapeHtml(rolDeActaSiAporta(r));
     return `
     <div class="cl-export-entry">
       <div class="cl-export-entry-header">
         <strong>${tripLabel}</strong>${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}
-        <span>${roleLabel}</span>
+        ${roleLabel ? `<span>${roleLabel}</span>` : ''}
         <span>${r.completed_items}/${r.total_items} items ✓</span>
         <span>${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
@@ -14031,7 +14038,7 @@ async function exportAllShopRecords() {
   const [{ data: waivers }, { data: completions }, { data: trips }] = await Promise.all([
     waiversQuery,
     sb.from('checklist_completions')
-      .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, trip_name, trip_date, trip_time')
+      .select(COLUMNAS_DE_ACTA_LISTADO)
       .eq('org_id', currentOrgId).order('signed_at'),
     (() => {
       // A propósito NO usa tripsVigentes(): este export es el historial
@@ -14056,12 +14063,12 @@ async function exportAllShopRecords() {
     </div>`).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
 
   const checklistsHtml = (completions || []).map(r => {
-    const etiquetaExp = tripLabelDeActa(r, { conFecha: true });
-    const tripLabel = etiquetaExp ? escapeHtml(etiquetaExp) : t('cl_logged_vessel_check');
+    const tripLabel = escapeHtml(tituloDeActa(r, { conFecha: true }));
+    const roleLabel = escapeHtml(rolDeActaSiAporta(r));
     return `
     <div class="ex-entry">
       <strong>${tripLabel}</strong>${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}
-      <span>${escapeHtml(crewRoleLabel(r.role) || r.role)}</span>
+      ${roleLabel ? `<span>${roleLabel}</span>` : ''}
       <span>${r.completed_items}/${r.total_items} ✓</span>
       <span>${r.signed_at ? new Date(r.signed_at).toLocaleString() : '—'} — ${escapeHtml(r.signed_by || '—')}</span>
     </div>`;
@@ -15695,8 +15702,8 @@ async function loadCrewStatus(tripId) {
   container.innerHTML = signoffs.map(s => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
       <div>
-        <div style="font-weight:600;font-size:0.875rem;">${checklistRoleLabel(s.role)}</div>
-        <div style="font-size:0.75rem;color:var(--muted);">${t('cl_signed_by')}${s.signed_by} · ${new Date(s.signed_at).toLocaleTimeString()}</div>
+        <div style="font-weight:600;font-size:0.875rem;">${escapeHtml(checklistRoleLabel(s.role))}</div>
+        <div style="font-size:0.75rem;color:var(--muted);">${t('cl_signed_by')}${escapeHtml(s.signed_by || '—')} · ${new Date(s.signed_at).toLocaleTimeString()}</div>
       </div>
       <div class="cl-role-badge done">${s.completed_items}/${s.total_items} ✓</div>
     </div>`).join('');
@@ -15866,7 +15873,23 @@ async function renderInstructorChecklistForTrip(tripId) {
 // Las columnas que necesita cualquier pantalla que muestre un acta ya firmada.
 // En un solo lugar: eran tres listas idénticas escritas a mano, y agregarle una
 // columna al acta significaba acordarse de tocar las tres.
-const COLUMNAS_DE_ACTA = 'signed_by, signed_at, completed_items, total_items, items_snapshot';
+const COLUMNAS_DE_ACTA =
+  'signed_by, signed_at, completed_items, total_items, items_snapshot, ' +
+  'role, checklist_name, items_source';
+
+// Las columnas con las que se LISTA un acta. Las tres vistas que lo hacen —el
+// export de un día, el export completo del centro y Logged Checklists— tenían
+// la misma lista escrita a mano tres veces, y el defecto apareció donde la
+// copia faltaba: `items_source` no estaba en NINGUNA de las tres, así que
+// `lineaDeFuenteDeLista()` siempre leía `undefined` y el aviso de «se firmó
+// contra la lista genérica» que se construyó el 14/10 **nunca se mostró en
+// pantalla**. La función estaba bien; el dato nunca llegaba.
+//
+// `items_snapshot` va aparte porque pesa: sólo Logged Checklists dibuja el
+// detalle ítem por ítem.
+const COLUMNAS_DE_ACTA_LISTADO =
+  'id, trip_id, role, checklist_name, items_source, signed_by, boat_name, ' +
+  'completed_items, total_items, signed_at, trip_name, trip_date, trip_time';
 
 // ¿Esta instancia ya tiene acta? Una consulta, dos formas de identificar la
 // instancia: por salida (la del instructor) o por período (las rutinas de
@@ -16817,11 +16840,39 @@ function fuenteDeLaLista(role, tripId) {
   return null;
 }
 
+// El nombre de la checklist que se firmó, para que el acta se lea sola.
+//
+// El bug que lo trajo (reportado por Fran el 15/10): creó una checklist propia
+// llamada «Mediodía», la firmó, la borró, y en Logged Checklists el acta quedó
+// titulada «Revisión de seguridad de la embarcación» — un texto de relleno que
+// no era el nombre de nada. El nombre se resolvía AL DIBUJAR, mirando la fila
+// viva de `custom_checklists`, así que borrar la checklist lo destruía. Un acta
+// es inmutable: lo que no se guardó al firmar no se recupera.
+//
+// Mismo criterio que `trip_name`, `boat_name`, `signed_by` y `location_name`:
+// el acta guarda el nombre y deja el id como puntero.
+//
+// **Sólo las propias.** Una rutina de departamento se nombra desde `role`
+// (`deck_morning` → «Cubierta — Inicio del día») y eso el acta ya lo guarda, así
+// que copiar el texto acá sería congelar la traducción del día que se firmó:
+// cambiar «Mañana» por «Inicio del día» dejaría todas las actas viejas con el
+// nombre viejo. Un dato derivable no se snapshotea; uno que una persona escribió
+// y puede borrar, sí.
+function nombreDeChecklistParaActa(role) {
+  if (typeof role !== 'string' || !role.startsWith('custom_')) return null;
+  const cc = customChecklists.find(c => `custom_${c.id}` === role);
+  // Si la checklist no está cargada, NULL. Guardar el texto genérico sería
+  // guardar un relleno con la misma confianza que un nombre real — el mismo
+  // error que esto viene a arreglar.
+  return (cc && cc.title) || null;
+}
+
 function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, checks, motivos }) {
   const salida = (tripId && checklistTripById[tripId]) || null;
   const autores = autoriaDe(checks);
   return {
     items_source: fuenteDeLaLista(role, tripId),
+    checklist_name: nombreDeChecklistParaActa(role),
     org_id: currentOrgId,
     trip_id: tripId || null,
     trip_name: salida ? (salida.name || null) : null,
@@ -16905,6 +16956,50 @@ function tripLabelDeActa(r, { conFecha = false } = {}) {
   const nombre = r.trip_name || t('wv_trip_fallback');
   if (conFecha) return `${r.trip_date || ''} ${hora} — ${nombre}`.trim();
   return `${hora ? hora + ' — ' : ''}${nombre}`;
+}
+
+// El título de un acta, decidido en UN lugar — las tres vistas que listan actas
+// (el export de un día, el export completo y Logged Checklists) lo armaban cada
+// una por su cuenta, y las tres caían en el mismo relleno.
+//
+// Lo que estaba mal, y es más tonto de lo que parece: cuando `tripLabelDeActa`
+// devolvía null —o sea, SIEMPRE que el acta no es de una salida— las tres
+// ponían de título `cl_logged_vessel_check`, «Revisión de seguridad de la
+// embarcación». Ese texto no era el nombre de ninguna checklist: era un relleno
+// escrito en el diccionario. Así que toda checklist de departamento y toda
+// propia aparecía en el historial con un nombre que nadie le puso.
+//
+// El orden es el orden de confianza:
+//  1 · la salida, cuando hay — es lo que un capitán busca en el historial
+//  2 · el nombre que el acta se llevó al firmar (`checklist_name`)
+//  3 · el nombre derivado de `role`: una rutina de departamento, o una propia
+//      que todavía existe
+//  4 · y si no hay nada, se dice que es una checklist propia sin más, que es lo
+//      único cierto. Nunca un nombre inventado.
+function tituloDeActa(r, opciones) {
+  const salida = tripLabelDeActa(r, opciones);
+  if (salida) return salida;
+  if (r.checklist_name) return r.checklist_name;
+  return checklistRoleLabel(r.role) || t('cl_custom_checklist_generic');
+}
+
+// El rol, pero sólo cuando agrega algo. Un acta de salida muestra «Island
+// Hopping» y abajo «Preparación de la salida»: dos datos distintos. Una de
+// departamento muestra «Cubierta — Inicio del día» y el rol diría exactamente lo
+// mismo, así que repetirlo es ruido.
+//
+// Y usa `checklistRoleLabel`, no `crewRoleLabel`: el segundo devuelve lo que le
+// entra, así que para una propia escupía `custom_` + uuid en la pantalla donde
+// un dueño mira el historial. Se arregló el 14/10 **en la función**, y estos
+// tres lugares nunca la llamaron — arreglé la función y no pregunté quién la
+// usaba. Ver [[La regla copiada N veces]].
+function rolDeActaSiAporta(r) {
+  const rol = checklistRoleLabel(r.role) || '';
+  // El texto genérico («Checklist propia») es el último recurso del TÍTULO, y
+  // nunca una segunda línea: un acta de una propia borrada mostraba «Mediodía»
+  // arriba y «Checklist propia» abajo, que no agrega nada. Lo agarró el test.
+  if (!rol || rol === t('cl_custom_checklist_generic')) return '';
+  return rol !== tituloDeActa(r) ? rol : '';
 }
 
 // Guarda el acta. Devuelve true si quedó guardada o encolada, false si el
@@ -17483,39 +17578,64 @@ async function resetCustomChecklist(checklistId) {
   });
 }
 
-// ─── Plegar una checklist propia ───
+// ─── Plegar una checklist ───
 //
-// Qué checklists propias están ABIERTAS. Lo importante es que esto viva afuera
-// del render: la tarjeta se redibuja en cada tilde, así que sin recordar el
-// estado cada tilde volvería a plegar la tarjeta que la persona tiene abierta.
+// Qué checklists están ABIERTAS, propias y de departamento. Lo importante es que
+// esto viva afuera del render: la tarjeta se redibuja en cada tilde, así que sin
+// recordar el estado cada tilde volvería a plegar la tarjeta que la persona
+// tiene abierta.
 //
 // Se guarda lo abierto y no lo plegado porque **el default es plegado**. Una
-// pestaña con varias checklists propias es una lista para elegir; cuatro listas
+// pestaña con varias checklists es una lista para elegir; varias listas
 // desplegadas obligan a scrollear hasta el fondo para ver la última, que es lo
 // que reportó Fran el 14/10 («tengo que ir hasta abajo de todo para ver que
 // tengo la checklist de noche»). Por eso el encabezado plegado se queda con la
 // barra de progreso y el estado: una tarjeta cerrada igual dice «Firmada 6/16».
-let propiasAbiertas = new Set();
-function clavePropiasAbiertas() { return `ss_cl_propias_abiertas_${currentOrgId || ''}`; }
-function cargarPropiasAbiertas() {
+//
+// El 15/10 pasó a cubrir también las de departamento, que eran lo que quedaba
+// desplegado por defecto: Fran abría Checklists, le aparecía la rutina de la
+// mañana entera abierta, y para llegar a las propias —o a la de noche— tenía que
+// pasar por arriba de ella. La forma la pidió él textual: «de la misma forma que
+// en las checklists de salida, me aparece la excursión y tengo que apretarla
+// para que se abra la checklist que voy a estar tildando».
+//
+// **Un solo registro para las dos**, y no uno por tipo de tarjeta: son la misma
+// regla («qué está abierto en esta pantalla, por cuenta, sobreviviendo al
+// redibujo») y dos copias serían dos lugares donde puede estar mal. La clave de
+// una propia es su uuid y la de una de departamento es `dept:<role>`, que no se
+// pueden pisar.
+let checklistsAbiertas = new Set();
+function claveChecklistsAbiertas() { return `ss_cl_abiertas_${currentOrgId || ''}`; }
+function cargarChecklistsAbiertas() {
   // La clave lleva el org id: un navegador tiene varias cuentas guardadas.
   try {
-    const raw = localStorage.getItem(clavePropiasAbiertas());
-    propiasAbiertas = new Set(raw ? JSON.parse(raw) : []);
-  } catch (e) { propiasAbiertas = new Set(); }
+    const raw = localStorage.getItem(claveChecklistsAbiertas());
+    checklistsAbiertas = new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) { checklistsAbiertas = new Set(); }
 }
 // Se toca el DOM y no se redibuja: un redibujo volvería a consultar el progreso
 // de cada tarjeta para no cambiar nada visible. El estado se guarda en el acto,
 // así que un redibujo posterior lo respeta igual.
-function togglePropiaAbierta(id) {
-  const estaba = propiasAbiertas.has(id);
-  if (estaba) propiasAbiertas.delete(id); else propiasAbiertas.add(id);
-  try { localStorage.setItem(clavePropiasAbiertas(), JSON.stringify([...propiasAbiertas])); }
+function toggleChecklistAbierta(clave, idCuerpo, idFlecha) {
+  const estaba = checklistsAbiertas.has(clave);
+  if (estaba) checklistsAbiertas.delete(clave); else checklistsAbiertas.add(clave);
+  try { localStorage.setItem(claveChecklistsAbiertas(), JSON.stringify([...checklistsAbiertas])); }
   catch (e) { /* storage bloqueado: se pierde al recargar, y nada más */ }
-  const cuerpo = document.getElementById(`custom-cl-body-${id}`);
-  const flecha = document.getElementById(`custom-cl-chev-${id}`);
+  const cuerpo = document.getElementById(idCuerpo);
+  const flecha = document.getElementById(idFlecha);
   if (cuerpo) cuerpo.style.display = estaba ? 'none' : 'block';
   if (flecha) flecha.textContent = estaba ? '▸' : '▾';
+}
+// La clave de una rutina de departamento. Es `role`, que ya identifica depto +
+// cadencia (`deck_morning`), con prefijo para no cruzarse con el uuid de una
+// propia.
+function claveDeptoAbierta(roleKey) { return `dept:${roleKey}`; }
+// El encabezado de la rutina es HTML estático, así que no puede llevar el role
+// interpolado: lo lee de la pestaña que está en pantalla, que es la misma fuente
+// que usa `renderDeptRoutine()`.
+function toggleDeptAbierta() {
+  toggleChecklistAbierta(claveDeptoAbierta(currentDeptRoutine().role),
+                         'dept-routine-body', 'dept-routine-chev');
 }
 
 // Renders every custom checklist that belongs to the department tab + cadence
@@ -17524,7 +17644,7 @@ function togglePropiaAbierta(id) {
 async function renderCustomChecklistsForCurrentView() {
   const container = document.getElementById('dept-custom-list');
   if (!container) return;
-  cargarPropiasAbiertas();
+  cargarChecklistsAbiertas();
   const { data: userData } = await sb.auth.getUser();
   const myUserId = userData?.user?.id;
   const matching = customChecklists.filter(cc => cc.dept_key === currentDeptKey && cc.cadence === currentCadenceKey);
@@ -17549,11 +17669,11 @@ async function renderCustomChecklistsForCurrentView() {
     // El título y los ítems son texto que escribe el centro, así que van
     // escapados. Iban crudos al innerHTML hasta el 14/10 — el mismo agujero que
     // ya se había tapado en las actas y en las listas de tareas.
-    const abierta = propiasAbiertas.has(cc.id);
+    const abierta = checklistsAbiertas.has(cc.id);
     return `<div class="card" style="margin-top:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px;">
         <div class="card-section-title" style="margin-bottom:0;flex:1;cursor:pointer;display:flex;align-items:center;gap:8px;"
-             onclick="togglePropiaAbierta('${cc.id}')">
+             onclick="toggleChecklistAbierta('${cc.id}','custom-cl-body-${cc.id}','custom-cl-chev-${cc.id}')">
           <span id="custom-cl-chev-${cc.id}" style="color:var(--muted);font-size:0.9rem;">${abierta ? '▾' : '▸'}</span>
           <span>${escapeHtml(cc.title || '')} <span style="font-weight:400;color:var(--muted);font-size:0.8rem;">(${escapeHtml(crewRoleLabel(cc.role_scope))})</span></span>
         </div>
@@ -17685,6 +17805,16 @@ async function renderDeptRoutine() {
   const periodKeyDept = periodKeyForCadence(currentCadenceKey, null);
   deptRoutineChecks[roleKey] = await loadChecklistProgress(progressScopeKey(roleKey, periodKeyDept));
   document.getElementById('dept-routine-title').textContent = routine.label;
+  // Plegado o desplegado según lo que la persona dejó, por rutina: cada depto +
+  // cadencia es su propia tarjeta aunque compartan el mismo lugar en pantalla.
+  // Esto va en el render y no sólo en el toggle porque cambiar de pestaña
+  // redibuja, y sin esto la nueva rutina heredaría el estado de la anterior.
+  cargarChecklistsAbiertas();
+  const abiertaDept = checklistsAbiertas.has(claveDeptoAbierta(roleKey));
+  const cuerpoDept = document.getElementById('dept-routine-body');
+  const flechaDept = document.getElementById('dept-routine-chev');
+  if (cuerpoDept) cuerpoDept.style.display = abiertaDept ? 'block' : 'none';
+  if (flechaDept) flechaDept.textContent = abiertaDept ? '▾' : '▸';
   const nombreSel = document.getElementById('dept-routine-name');
   if (nombreSel) nombreSel.value = '';
   const doneBanner = document.getElementById('dept-routine-done');
@@ -17819,7 +17949,7 @@ async function loadLoggedChecklists() {
   const searchDate = document.getElementById('cl-logged-date-search').value;
 
   const { data: completions } = await sb.from('checklist_completions')
-    .select('id, trip_id, role, signed_by, boat_name, completed_items, total_items, signed_at, items_snapshot, trip_name, trip_date, trip_time')
+    .select(COLUMNAS_DE_ACTA_LISTADO + ', items_snapshot')
     .eq('org_id', currentOrgId)
     .order('signed_at', { ascending: false })
     .limit(300);
@@ -17849,9 +17979,8 @@ async function loadLoggedChecklists() {
     const rowsHtml = byDay[day].map(r => {
       // Se escapa, que antes no se hacía: el nombre de la salida lo escribe
       // una persona y termina insertado como HTML.
-      const etiquetaActa = tripLabelDeActa(r);
-      const tripLabel = etiquetaActa ? escapeHtml(etiquetaActa) : t('cl_logged_vessel_check');
-      const roleLabel = crewRoleLabel(r.role) || r.role;
+      const tripLabel = escapeHtml(tituloDeActa(r));
+      const roleLabel = rolDeActaSiAporta(r);
       // Mismo criterio que las dos burbujas de estado: un registro firmado
       // completo y uno con huecos no pueden verse igual.
       const badge = 'cl-role-badge ' + estadoDeActa(r).clase;
@@ -17873,7 +18002,7 @@ async function loadLoggedChecklists() {
       return `<div class="cl-logged-row" onclick="toggleLoggedDetail('${r.id}')">
         <div>
           <div class="cl-logged-row-title">${tripLabel}${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}</div>
-          <div class="cl-logged-row-meta">${roleLabel} · ${t('cl_signed_by')}${escapeHtml(r.signed_by || '—')} · ${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          <div class="cl-logged-row-meta">${roleLabel ? escapeHtml(roleLabel) + ' · ' : ''}${t('cl_signed_by')}${escapeHtml(r.signed_by || '—')} · ${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
         </div>
         <div class="${badge}">${r.completed_items}/${r.total_items} ${estadoDeActa(r).clase === 'done' ? '✓' : ''}</div>
       </div>

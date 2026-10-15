@@ -104,9 +104,10 @@ const hook=main+"\n;window.__t={"+
   "pAdd:(k)=>pasadasAbiertas.add(k),"+
   "pDel:(k)=>pasadasAbiertas.delete(k),"+
   "cerrarApp:()=>{pasadasAbiertas._mem=null;pasadasAbiertas._org=undefined;},"+
-  "abiertas:()=>[...propiasAbiertas],"+
-  "cargarAbiertas:()=>cargarPropiasAbiertas(),"+
-  "toggleAbierta:(id)=>togglePropiaAbierta(id),"+
+  "abiertas:()=>[...checklistsAbiertas],"+
+  "cargarAbiertas:()=>cargarChecklistsAbiertas(),"+
+  "toggleAbierta:(id)=>toggleChecklistAbierta(id,`custom-cl-body-${id}`,`custom-cl-chev-${id}`),"+
+  "toggleDept:(r)=>toggleChecklistAbierta(claveDeptoAbierta(r),'dept-routine-body','dept-routine-chev'),"+
   "t:(k)=>t(k)};";
 let boot=null; try{window.eval(hook);}catch(e){boot=e;}
 chk('arranca sin excepción',!boot,boot?String(boot).slice(0,200):'');

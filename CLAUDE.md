@@ -788,6 +788,50 @@ Ahora devuelve `{id}` o `{motivo}` y **quien llama decide si avisar**.
 
 Detalle en `Seven Seas Ops/Las listas de preparación que faltan.md`.
 
+**El acta se lleva el nombre de la checklist** (15/10). Lo trajo una prueba de
+uso: Fran firmó una propia llamada «Mediodía», la borró, y el acta quedó titulada
+«Revisión de seguridad de la embarcación» — **un texto de relleno del
+diccionario** (`cl_logged_vessel_check`) que las tres vistas de actas usaban de
+título cuando el acta no tenía salida, o sea en casi todo el historial que no
+venga de una excursión. Ese texto ya no existe.
+
+`checklist_completions.checklist_name`, aditiva y nulable, escrita por
+`nombreDeChecklistParaActa()` **dentro de `buildRecordPayload()`**. Y la regla
+que vale para cualquier columna que se le quiera agregar a un acta de acá en
+adelante: **si el dato se deriva, no se guarda; si lo escribió una persona y
+puede borrarlo, se guarda.** Congelar algo derivable hace que un cambio de
+traducción reescriba el pasado —el cambio de «Mañana» a «Inicio del día» de ese
+mismo día dejaría las actas viejas con el nombre viejo—; no guardar lo que una
+persona escribió hace que un borrado lo reescriba. Por eso se escribe **sólo para
+las propias**: una rutina de departamento se nombra desde `role`, que el acta ya
+guarda. NULL = no se sabe, y **no se rellena hacia atrás**.
+
+**El título de un acta lo decide `tituloDeActa()`**, en orden de confianza:
+salida → nombre guardado → nombre derivado del rol → genérico. Y
+`rolDeActaSiAporta()` decide si la segunda línea agrega algo o repite el título.
+Las tres vistas lo armaban cada una por su cuenta y usaban **`crewRoleLabel`**, no
+`checklistRoleLabel` — el arreglo del uuid del 14/10 estaba hecho **en la función**
+y esos tres lugares nunca la llamaron. *Al arreglar una función compartida, la
+pregunta siguiente es quién la llama.* Tercera vez que esa pregunta paga.
+
+**Y las columnas del acta se declaran una vez cada una** (`COLUMNAS_DE_ACTA`,
+`COLUMNAS_DE_ACTA_LISTADO`). Estaban escritas a mano tres veces, y el defecto
+apareció donde la copia faltaba: **`items_source` no estaba en ninguna de las
+tres**, así que el aviso de «se firmó contra la lista genérica» del 14/10 **nunca
+se mostró en pantalla** — la función estaba bien, el dato no llegaba. Una pantalla
+sin el dato no da error: calla, y eso se lee igual que «no hay nada que avisar».
+Detalle en `Errores y aprendizajes/El nombre que el acta no se llevó.md`.
+
+**Las checklists se pliegan todas, y nacen plegadas** — propias desde el 14/10 y
+**de departamento desde el 15/10**, que era lo que quedaba abierto por defecto:
+Fran entraba a Checklists, le aparecía la rutina de la mañana entera desplegada,
+y para llegar a las propias o a la de noche tenía que pasar por arriba.
+`checklistsAbiertas` es **un** registro para las dos (clave: el uuid de una
+propia, `dept:<role>` para una rutina) porque son la misma regla; dos copias
+serían dos lugares donde puede estar mal. El estado se aplica **en el render**, no
+sólo en el toggle: cambiar de pestaña redibuja, y sin eso la rutina nueva
+heredaría el estado de la anterior.
+
 **Y el acta ahora registra de dónde salió la lista** (14/10, pedido por Fran al
 no cerrarle el hueco que quedaba abierto). Era la mitad que faltaba: el A5 avisa
 al centro, pero las actas ya firmadas contra la lista cableada **no decían contra

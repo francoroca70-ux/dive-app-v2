@@ -145,10 +145,29 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   // Desde el 09/10 las columnas están en UNA constante y la consulta en UNA
   // función: eran tres listas idénticas escritas a mano, así que agregarle una
   // columna al acta pedía acordarse de tocar las tres.
-  chk('las columnas del acta se piden desde un solo lugar',
-      (html.match(/const COLUMNAS_DE_ACTA = '[^']*items_snapshot'/g)||[]).length===1 &&
-      (html.match(/select\(COLUMNAS_DE_ACTA\)/g)||[]).length===1,
-      'una constante, una consulta');
+  // Dos listas de columnas, cada una declarada UNA vez: la de comprobar si ya
+  // hay acta y la de listarlas. Se afirma la regla —nadie escribe una lista de
+  // columnas del acta a mano dentro de un `select`— y no cuántos la usan: el
+  // 15/10 un guardián que contaba lectores falló por tener un lector MÁS de la
+  // única fuente, que es exactamente lo que se quiere.
+  chk('las columnas del acta se declaran en un solo lugar cada una',
+      (html.match(/const COLUMNAS_DE_ACTA\s*=/g)||[]).length===1 &&
+      (html.match(/const COLUMNAS_DE_ACTA_LISTADO\s*=/g)||[]).length===1,
+      'dos constantes, una declaración cada una');
+  // La regla es sobre las vistas que LISTAN actas, que son las que necesitan el
+  // snapshot entero. `loadCrewStatus()` pide cinco columnas a propósito: no
+  // lista actas, contesta «quién firmó esta salida».
+  chk('ninguna vista de listado escribe las columnas a mano',
+      !/\.select\('[^']*trip_name, trip_date, trip_time[^']*'\)/.test(html),
+      'la lista a mano era lo que dejaba items_source afuera de las tres');
+  // El defecto que esto previene, con fecha: `items_source` se empezó a escribir
+  // el 14/10 y no estaba en NINGUNA de las tres listas escritas a mano, así que
+  // el aviso de «se firmó contra la lista genérica» nunca se mostró. La función
+  // estaba bien; el dato no llegaba.
+  chk('las dos listas traen items_source y checklist_name',
+      /const COLUMNAS_DE_ACTA\s*=[\s\S]{0,240}?checklist_name[\s\S]{0,80}?items_source/.test(html) &&
+      /const COLUMNAS_DE_ACTA_LISTADO\s*=[\s\S]{0,240}?checklist_name, items_source/.test(html),
+      'sin estas dos columnas la pantalla miente por omisión');
 
   // ── El estado de una firmada dice la verdad ──
   // Fran firmó una checklist a medias y la pantalla le dijo «Completo ✓» en

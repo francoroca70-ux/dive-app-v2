@@ -116,10 +116,15 @@ chk('el texto apunta a DÓNDE se arregla',
     'un aviso sin salida es un reproche');
 
 // ─── 6 · La línea la redacta UN lugar, usado por las dos vistas del acta ───
-chk('lineaDeFuenteDeLista existe una vez y la usan los dos que muestran un acta',
-    (html.match(/function lineaDeFuenteDeLista/g)||[]).length===1 &&
-    (html.match(/lineaDeFuenteDeLista\(/g)||[]).length===3,
-    (html.match(/lineaDeFuenteDeLista\(/g)||[]).length+' menciones');
+// Se afirma que se declara una vez y que las DOS vistas la llaman, por sus
+// llamadas concretas. Contar menciones no servía: el 15/10 pasó de 3 a 4 porque
+// un comentario la nombra, y un comentario no es un lector.
+chk('lineaDeFuenteDeLista se declara una vez',
+    (html.match(/function lineaDeFuenteDeLista/g)||[]).length===1);
+chk('y la llaman las dos vistas que muestran un acta',
+    /lineaDeFuenteDeLista\(acta\) \+/.test(html) &&
+    /\? lineaDeFuenteDeLista\(r\) \+/.test(html),
+    'la pantalla de la salida y Logged Checklists');
 chk('la pantalla de la salida le pasa el acta entera a renderActaItems',
     /renderActaItems\(containerId, detalle, progressId, acta\)/.test(html),
     'antes sólo recibía el snapshot, que no trae items_source');

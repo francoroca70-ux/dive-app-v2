@@ -56,6 +56,7 @@ const MINIMOS = {
   'checklist-progress.test.js':     56,
   'cadencias-noche-y-semanal.test.js': 49,
   'cuenta-interna.test.js':         16,
+  'titulo-de-acta.test.js':         32,
   'checklist-record-scope.test.js': 35,
   'checklist-record.test.js':       55,
   'dept-visibility.test.js':        29,

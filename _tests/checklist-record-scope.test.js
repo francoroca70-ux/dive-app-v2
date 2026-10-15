@@ -188,20 +188,37 @@ window.queueOfflineAction=(tipo,payload)=>{ encolados.push({tipo,payload}); };
   // error que daría una tabla inexistente.
   chk('ninguna consulta de actas incrusta trips(...)',
       !/checklist_completions'\)[\s\S]{0,400}?trips\(/.test(html), 'sin embeds');
-  chk('y las tres piden los campos del snapshot',
-      (html.match(/signed_at, trip_name, trip_date, trip_time/g)||[]).length +
-      (html.match(/items_snapshot, trip_name, trip_date, trip_time/g)||[]).length === 3,
-      'tres selects con los campos del acta');
+  // Los campos del snapshot ya no se escriben tres veces: viven en
+  // COLUMNAS_DE_ACTA_LISTADO, y las tres vistas la piden. Se afirma que la
+  // constante los trae y que nadie volvió a escribir la lista a mano.
+  chk('la lista de columnas trae los campos del snapshot de la salida',
+      /const COLUMNAS_DE_ACTA_LISTADO\s*=[\s\S]{0,260}?trip_name, trip_date, trip_time/.test(html));
+  chk('y las tres vistas la piden en vez de escribirla',
+      (html.match(/select\(COLUMNAS_DE_ACTA_LISTADO/g)||[]).length===3,
+      (html.match(/select\(COLUMNAS_DE_ACTA_LISTADO/g)||[]).length+' selects');
   chk('el acta guarda fecha y hora de la salida, no sólo el nombre',
       /trip_date: salida \? \(salida\.date \|\| null\) : null/.test(html) &&
       /trip_time: salida \? \(salida\.time \|\| null\) : null/.test(html));
 
   // La etiqueta se arma en un solo lugar y lee sólo campos del acta.
   // La declaración también empieza con `tripLabelDeActa(r`, así que se descuenta.
-  const etqTotal=(html.match(/tripLabelDeActa\(r/g)||[]).length;
-  const etqDecl=(html.match(/function tripLabelDeActa\(/g)||[]).length;
+  // Desde el 15/10 las tres vistas no la llaman directo: pasan por
+  // `tituloDeActa()`, que decide el título de un acta —salida, nombre guardado,
+  // rol, o nada— en un solo lugar. Antes las tres caían en el mismo texto de
+  // relleno cuando el acta no era de una salida.
   chk('la etiqueta de la salida se arma en una sola función',
-      etqDecl===1 && (etqTotal-etqDecl)===3, (etqTotal-etqDecl)+' usos, '+etqDecl+' declaración');
+      (html.match(/function tripLabelDeActa\(/g)||[]).length===1);
+  chk('y el título de un acta lo decide tituloDeActa, no cada vista',
+      (html.match(/function tituloDeActa\(/g)||[]).length===1 &&
+      (html.match(/tituloDeActa\(r/g)||[]).length>=4,
+      'una declaración y las tres vistas, más rolDeActaSiAporta');
+  // El relleno se borró del diccionario: era un texto que no nombraba a ninguna
+  // checklist y que tres vistas usaban de título. Sólo queda nombrado en el
+  // comentario que cuenta por qué estaba mal.
+  chk('el relleno «Vessel safety check» ya no es una clave de traducción',
+      !/t\('cl_logged_vessel_check'\)/.test(html) &&
+      !/cl_logged_vessel_check:/.test(html),
+      'ni usado ni definido');
   let etiqueta=window.tripLabelDeActa({trip_id:'t1',trip_name:'Charter Mañana',trip_time:'09:30:00',trip_date:'2026-10-07'});
   chk('la etiqueta usa la hora y el nombre del acta', etiqueta==='09:30 — Charter Mañana', etiqueta);
   etiqueta=window.tripLabelDeActa({trip_id:'t1',trip_name:'Charter Mañana',trip_time:'09:30:00',trip_date:'2026-10-07'},{conFecha:true});
