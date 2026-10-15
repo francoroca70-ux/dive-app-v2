@@ -66,6 +66,36 @@ chk('arranca sin excepción',!boot,boot?String(boot).slice(0,200):'');
 try{
 const T=window.__t;
 
+// ─── 0 · Lo que la app ofrece tiene que entrar en la BASE ───
+//
+// El bug que esto viene a evitar, y lo encontró Fran al primer intento el 15/10:
+// `custom_checklists` tiene un CHECK en `cadence` que sólo aceptaba las cuatro
+// cadencias originales. La app ofrecía «noche» y la base la rechazaba con
+// `violates check constraint custom_checklists_cadence_check`.
+//
+// **La suite estaba en verde**, porque el stub de Supabase de jsdom no tiene
+// constraints: no puede saber qué valores acepta una columna. Tercera vez con
+// esta forma —la FK que daba PGRST200, el RLS que lanzaba 42501, y ahora un
+// CHECK— y la regla ya estaba escrita en CLAUDE.md: *para cambios de esquema,
+// jsdom no alcanza.*
+//
+// Esto es un ESPEJO del CHECK, no una medición: la lista de abajo está copiada
+// de la migración `cadencias_de_noche_y_semanal`. No prueba que la base esté
+// bien; prueba que **el código y la migración digan lo mismo**, así que agregar
+// una cadencia sin migrarla falla acá en vez de fallar en la cara de un centro.
+// La medición de verdad es correr el insert contra la base, y se hizo.
+const CADENCIAS_EN_LA_BASE = ['morning','eod','monthly','yearly','night','weekly'];
+const enElCodigo = Object.keys(window.__t.cad());
+chk('toda cadencia del código está permitida en la base',
+    enElCodigo.every(c => CADENCIAS_EN_LA_BASE.includes(c)),
+    enElCodigo.filter(c => !CADENCIAS_EN_LA_BASE.includes(c)).join(',') || 'todas');
+chk('y toda cadencia permitida en la base existe en el código',
+    CADENCIAS_EN_LA_BASE.every(c => enElCodigo.includes(c)),
+    CADENCIAS_EN_LA_BASE.filter(c => !enElCodigo.includes(c)).join(',') || 'todas');
+chk('y toda cadencia OFRECIDA entra en la base',
+    window.__t.ofrecidas().every(c => CADENCIAS_EN_LA_BASE.includes(c)),
+    window.__t.ofrecidas().join(','));
+
 // ─── 1 · El grano de cada cadencia, en un solo lugar ───
 chk('inicio del día es diario', T.grano('morning')==='dia');
 chk('fin del día es diario',    T.grano('eod')==='dia');
