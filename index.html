@@ -3322,6 +3322,7 @@ body { background: var(--navy); color: var(--text); }
                  `checklistsAbiertas`. Lo que queda a la vista con la tarjeta
                  cerrada es la barra de progreso y el estado, que es lo que un
                  capitán necesita de un vistazo. -->
+            <div id="dept-routine-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0;gap:8px;">
               <div style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;" onclick="toggleDeptAbierta()">
                 <span id="dept-routine-chev" style="color:var(--muted);font-size:0.9rem;">▸</span>
@@ -3341,6 +3342,7 @@ body { background: var(--navy); color: var(--text); }
                 </div>
               </div>
             </div>
+            </div><!-- /dept-routine-card -->
             <div id="dept-custom-list"></div>
           </div>
         </div>
@@ -4594,7 +4596,7 @@ const TRANSLATIONS = {
     // El sello. Sólo el número en pantalla: 64 caracteres de hexadecimal en una
     // lista no le sirven a nadie.
     svc_seal_btn: 'Seal record',
-    svc_seal_confirm: 'Seal this service record? Once sealed it can never be edited or deleted — not by you, not by anyone. That is what makes it worth something to an insurer. Make sure the cost, the date and what was done are right.',
+    svc_seal_confirm: 'Seal this service record?\n\nSealing closes the entry and records a fingerprint of its contents, together with the date and the account that sealed it. From that point the record cannot be edited or deleted by anyone, which is what allows it to be produced later as evidence that the work was logged when it says it was.\n\nCheck the cost, the date and the description before continuing. The next service date stays editable and is not covered by the seal.',
     svc_seal_failed: 'Could not seal this record: {why}',
     svc_cert_btn: "Certificate",
     svc_cert_work: "Service",
@@ -4612,7 +4614,7 @@ const TRANSLATIONS = {
     svc_cert_not_sealed: "This service has not been sealed yet. Seal it first — a certificate for a draft would claim something that is not true.",
     svc_cert_not_found: "That service could not be loaded.",
     svc_sealed_badge: 'Sealed',
-    svc_sealed_title: 'This record is sealed: it cannot be edited or deleted.',
+    svc_sealed_title: 'Sealed record — closed with a content fingerprint. It cannot be edited or deleted.',
     svc_sealed_meta: 'Sealed {date} · tamper-evident record',
     svc_sealed_meta_by: 'Sealed {date} from {name}\'s account · tamper-evident record',
     fleet_parts_prefix: 'Parts: ', fleet_cost_prefix: 'Cost: ', fleet_next_due_prefix: 'Next due: ', fleet_due_now: ' — due now',
@@ -5411,7 +5413,7 @@ const TRANSLATIONS = {
     prep_missing_partial: 'Se crearon {ok} listas y después se cortó: {why}',
     fleet_maint_remove_confirm: '¿Quitar este registro de mantenimiento?',
     svc_seal_btn: 'Sellar registro',
-    svc_seal_confirm: '¿Sellar este service? Una vez sellado no se puede editar ni borrar nunca más — ni vos ni nadie. Eso es justamente lo que lo hace valer ante un seguro. Revisá que el costo, la fecha y lo que se hizo estén bien.',
+    svc_seal_confirm: '¿Sellar este registro de service?\n\nEl sellado cierra el registro y guarda una huella de su contenido, junto con la fecha y la cuenta que lo selló. Desde ese momento el registro no puede ser modificado ni eliminado por nadie, y eso es lo que permite presentarlo después como constancia de que el trabajo quedó asentado cuando dice.\n\nConviene revisar el costo, la fecha y la descripción antes de continuar. La próxima fecha de service sigue siendo editable y no forma parte del sello.',
     svc_seal_failed: 'No se pudo sellar el registro: {why}',
     svc_cert_btn: "Constancia",
     svc_cert_work: "Service",
@@ -5429,7 +5431,7 @@ const TRANSLATIONS = {
     svc_cert_not_sealed: "Este service todavía no está sellado. Primero hay que sellarlo — una constancia de un borrador afirmaría algo que no es cierto.",
     svc_cert_not_found: "No se pudo cargar ese service.",
     svc_sealed_badge: 'Sellado',
-    svc_sealed_title: 'Este registro está sellado: no se puede editar ni borrar.',
+    svc_sealed_title: 'Registro sellado — cerrado con una huella de contenido. No se puede modificar ni eliminar.',
     svc_sealed_meta: 'Sellado el {date} · registro inalterable',
     svc_sealed_meta_by: 'Sellado el {date} desde la cuenta de {name} · registro inalterable',
     fleet_parts_prefix: 'Repuestos: ', fleet_cost_prefix: 'Costo: ', fleet_next_due_prefix: 'Próximo vencimiento: ', fleet_due_now: ' — vencido',
@@ -8881,7 +8883,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-16c');
+  console.info('[Seven Seas] build 2026-10-16d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -17563,14 +17565,14 @@ async function saveNewCustomChecklist() {
   document.getElementById('new-checklist-title').value = '';
   document.getElementById('new-checklist-items').value = '';
   await loadCustomChecklists();
-  renderDeptRoutine();
+  await refrescarDepartamento();
 }
 
 async function deleteCustomChecklist(id) {
   if (!(await showConfirmModal(t('cl_delete_checklist_confirm')))) return;
   if (!(await borrarOAvisar(sb.from('custom_checklists').delete().eq('id', id)))) return;
   await loadCustomChecklists();
-  renderDeptRoutine();
+  await refrescarDepartamento();
 }
 
 function canDeleteCustomChecklist(cc, myUserId) {
@@ -17873,7 +17875,9 @@ function initDeptChecklists() {
     chk.checked = acotado && deptShowAllEnabled();
   }
   document.getElementById('btn-show-new-checklist').style.display = myCreatableChecklistRoles().length ? 'inline-block' : 'none';
-  loadCustomChecklists().then(renderDeptRoutine);
+  // El `then` es lo que importa: las pestañas se arman DESPUÉS de saber qué
+  // checklists propias hay, no antes.
+  loadCustomChecklists().then(refrescarDepartamento);
   renderDeptCadenceTabs();
   renderDeptRoutine();
 }
@@ -17885,12 +17889,49 @@ function selectDeptDepartment(key) {
   renderDeptRoutine();
 }
 
+// Las cadencias que este departamento puede mostrar.
+//
+// Son las cableadas MÁS las que tengan al menos una checklist propia. Sin esa
+// segunda mitad, Fran creó el 16/10 una checklist semanal del capitán que
+// **ninguna pantalla podía mostrar**: la cadencia no se podía seleccionar, y
+// las propias se filtran por la cadencia seleccionada.
+//
+// Es la asimetría que el interruptor tenía escrita y yo no comprobé: controla
+// qué se OFRECE al crear, y nunca miré si el camino de LECTURA llegaba. Ofrecer
+// crear algo que después no se puede ver es peor que no ofrecerlo.
+//
+// El orden sale de `CHECKLIST_CADENCIAS`, que es el único lugar donde las
+// cadencias están declaradas y ordenadas.
+function cadenciasVisiblesDelDepartamento() {
+  const cableadas = Object.keys(departmentRoutinesGet()[currentDeptKey].cadences);
+  const conPropias = (customChecklists || [])
+    .filter(cc => cc.dept_key === currentDeptKey)
+    .map(cc => cc.cadence);
+  const todas = new Set([...cableadas, ...conPropias]);
+  return Object.keys(CHECKLIST_CADENCIAS).filter(k => todas.has(k));
+}
+
 function renderDeptCadenceTabs() {
-  const depts = departmentRoutinesGet();
-  const cadences = depts[currentDeptKey].cadences;
-  document.getElementById('dept-cadence-tabs').innerHTML = Object.keys(cadences).map(cadKey =>
-    `<option value="${cadKey}" ${cadKey===currentCadenceKey?'selected':''}>${cadences[cadKey].label}</option>`
+  // Las etiquetas salen de `CHECKLIST_CADENCIAS`, no de las que trae cada
+  // rutina cableada. Eran DOS juegos de nombres para las mismas cadencias, y
+  // el cambio de «Mañana» a «Inicio del día» del 15/10 había entrado en uno
+  // solo — así que esta pantalla seguía diciendo «Mañana» y la de al lado no.
+  const visibles = cadenciasVisiblesDelDepartamento();
+  // Borrar la última checklist propia de una cadencia hace que esa cadencia
+  // deje de ofrecerse. Si era la que estaba elegida, el selector quedaría
+  // apuntando a algo que ya no está: se vuelve a la primera que exista.
+  if (!visibles.includes(currentCadenceKey)) currentCadenceKey = visibles[0] || 'morning';
+  document.getElementById('dept-cadence-tabs').innerHTML = visibles.map(cadKey =>
+    `<option value="${cadKey}" ${cadKey===currentCadenceKey?'selected':''}>${escapeHtml(t(CHECKLIST_CADENCIAS[cadKey]))}</option>`
   ).join('');
+}
+
+// Las pestañas dependen de qué checklists propias hay, así que todo lo que
+// cambie esa lista tiene que redibujar las DOS cosas. Separarlas es cómo una
+// checklist semanal recién creada no aparecía hasta salir y volver a entrar.
+function refrescarDepartamento() {
+  renderDeptCadenceTabs();
+  return renderDeptRoutine();
 }
 
 function selectDeptCadence(key) {
@@ -17927,6 +17968,17 @@ function deptRoutinePeriodRange(cadenceKey) {
 // -- same pattern as renderInstructorChecklistForTrip's per-trip check.
 async function renderDeptRoutine() {
   const routine = currentDeptRoutine();
+  // Una cadencia puede existir SIN rutina cableada: las propias de noche y
+  // semanales viven en cadencias para las que nadie escribió una lista de
+  // departamento, y escribirlas sería inventar contenido. En ese caso la
+  // tarjeta de la rutina no se dibuja y la pestaña muestra sólo las propias.
+  const tarjeta = document.getElementById('dept-routine-card');
+  if (!routine) {
+    if (tarjeta) tarjeta.style.display = 'none';
+    await renderCustomChecklistsForCurrentView();
+    return;
+  }
+  if (tarjeta) tarjeta.style.display = '';
   const roleKey = routine.role;
   // Lo que ya esté tildado de esta instancia — por otro tripulante, o por uno
   // mismo ayer. Un control mensual se hace de a poco entre varios días.

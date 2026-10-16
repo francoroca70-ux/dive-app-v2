@@ -55,7 +55,7 @@ const MINIMOS = {
   'borrados-avisan.test.js':        16,
   'cambio-agendado.test.js':        28,
   'checklist-progress.test.js':     56,
-  'cadencias-noche-y-semanal.test.js': 49,
+  'cadencias-noche-y-semanal.test.js': 53,
   'constancia-de-service.test.js':  22,
   'cuenta-interna.test.js':         16,
   'titulo-de-acta.test.js':         32,

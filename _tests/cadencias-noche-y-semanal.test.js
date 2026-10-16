@@ -246,5 +246,36 @@ chk('y se puebla desde cadenciasQueSeOfrecen',
 
 }catch(e){ chk('el cuerpo del test corrió hasta el final',false,String(e).slice(0,300)); }
 
+
+// ─── La cadencia se puede VER, no sólo crear ───────────────────────────────
+//
+// Bug encontrado por Fran el 16/10 probando: creó una checklist semanal del
+// capitán y **ninguna pantalla podía mostrarla**. El selector de cadencia de
+// departamento se armaba sólo con las cuatro cableadas, y las propias se
+// filtran por la cadencia seleccionada — así que «Semanal» no se podía elegir
+// nunca.
+//
+// Es la asimetría que el interruptor tenía escrita: controla qué se OFRECE al
+// crear, y nadie comprobó que el camino de LECTURA llegara.
+chk('el selector de departamento ofrece las cadencias que tienen propias',
+    (html.match(/function cadenciasVisiblesDelDepartamento\(/g)||[]).length===1 &&
+    /\.filter\(cc => cc\.dept_key === currentDeptKey\)/.test(html),
+    'las cableadas MÁS las que tengan al menos una checklist propia');
+
+chk('y las etiquetas salen de CHECKLIST_CADENCIAS, no de un segundo juego',
+    /t\(CHECKLIST_CADENCIAS\[cadKey\]\)/.test(html) &&
+    !/\$\{cadences\[cadKey\]\.label\}/.test(html),
+    'había DOS juegos de nombres y el cambio del 15/10 entró en uno solo');
+
+chk('una cadencia sin rutina cableada esconde la tarjeta en vez de reventar',
+    /const tarjeta = document\.getElementById\('dept-routine-card'\);/.test(html) &&
+    /if \(!routine\) \{/.test(html),
+    'currentDeptRoutine() devuelve undefined para weekly en capitán');
+
+chk('recargar las propias redibuja también las pestañas',
+    (html.match(/function refrescarDepartamento\(/g)||[]).length===1 &&
+    !/await loadCustomChecklists\(\);\s*\n\s*renderDeptRoutine\(\);/.test(html),
+    'si no, una semanal recién creada no aparece hasta salir y volver');
+
 console.log(`\n${fail?'HAY FALLOS':'todo en verde'} — cadencias-noche-y-semanal`);
 process.exit(fail);
