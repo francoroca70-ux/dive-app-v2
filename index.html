@@ -4596,6 +4596,21 @@ const TRANSLATIONS = {
     svc_seal_btn: 'Seal record',
     svc_seal_confirm: 'Seal this service record? Once sealed it can never be edited or deleted — not by you, not by anyone. That is what makes it worth something to an insurer. Make sure the cost, the date and what was done are right.',
     svc_seal_failed: 'Could not seal this record: {why}',
+    svc_cert_btn: "Certificate",
+    svc_cert_work: "Service",
+    svc_cert_title: "Maintenance record — sealed",
+    svc_cert_item: "Equipment",
+    svc_cert_description: "Work carried out",
+    svc_cert_parts: "Parts used",
+    svc_cert_cost: "Cost",
+    svc_cert_performed_by: "Carried out by",
+    svc_cert_performed_date: "Date of work",
+    svc_cert_seal: "Seal",
+    svc_cert_sealed_at: "Sealed on",
+    svc_cert_sealed_by: "Sealed by",
+    svc_cert_note: "The fingerprint above was computed once, at the moment of sealing, over exactly the fields shown on this page. From that moment the record cannot be modified or deleted — recomputing the fingerprint over the stored record must give the same value, and any difference is itself the evidence. The next service date is not covered by the seal: it changes by design, which is why it does not appear here.",
+    svc_cert_not_sealed: "This service has not been sealed yet. Seal it first — a certificate for a draft would claim something that is not true.",
+    svc_cert_not_found: "That service could not be loaded.",
     svc_sealed_badge: 'Sealed',
     svc_sealed_title: 'This record is sealed: it cannot be edited or deleted.',
     svc_sealed_meta: 'Sealed {date} · tamper-evident record',
@@ -5397,6 +5412,21 @@ const TRANSLATIONS = {
     svc_seal_btn: 'Sellar registro',
     svc_seal_confirm: '¿Sellar este service? Una vez sellado no se puede editar ni borrar nunca más — ni vos ni nadie. Eso es justamente lo que lo hace valer ante un seguro. Revisá que el costo, la fecha y lo que se hizo estén bien.',
     svc_seal_failed: 'No se pudo sellar el registro: {why}',
+    svc_cert_btn: "Constancia",
+    svc_cert_work: "Service",
+    svc_cert_title: "Registro de mantenimiento — sellado",
+    svc_cert_item: "Equipo",
+    svc_cert_description: "Trabajo realizado",
+    svc_cert_parts: "Repuestos usados",
+    svc_cert_cost: "Costo",
+    svc_cert_performed_by: "Realizado por",
+    svc_cert_performed_date: "Fecha del trabajo",
+    svc_cert_seal: "Sello",
+    svc_cert_sealed_at: "Sellado el",
+    svc_cert_sealed_by: "Sellado por",
+    svc_cert_note: "La huella de arriba se calculó una sola vez, en el momento del sellado, sobre exactamente los campos que figuran en esta hoja. Desde ese momento el registro no se puede modificar ni borrar — recalcular la huella sobre el registro guardado tiene que dar el mismo valor, y cualquier diferencia es en sí misma la prueba. La próxima fecha de service no está cubierta por el sello: cambia por diseño, y por eso no aparece acá.",
+    svc_cert_not_sealed: "Este service todavía no está sellado. Primero hay que sellarlo — una constancia de un borrador afirmaría algo que no es cierto.",
+    svc_cert_not_found: "No se pudo cargar ese service.",
     svc_sealed_badge: 'Sellado',
     svc_sealed_title: 'Este registro está sellado: no se puede editar ni borrar.',
     svc_sealed_meta: 'Sellado el {date} · registro inalterable',
@@ -8849,7 +8879,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-16a');
+  console.info('[Seven Seas] build 2026-10-16b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -12679,6 +12709,28 @@ function indexWaiverRows(rows) {
   return { signed, medical };
 }
 
+// Abre una ventana, escribe el HTML y manda a imprimir.
+//
+// Existía SEIS veces copiada —el manifiesto, el waiver, los tres exports del
+// día y el cierre del centro— y esta constancia habría sido la séptima. El
+// cuerpo era idéntico en las seis; lo único que cambiaba era cómo avisar que
+// el navegador bloqueó la ventana emergente, y eso se queda en quien llama:
+// un `alert()`, un modal o un cartel en la pantalla son tres pieles legítimas
+// de la misma regla. Mismo patrón que `filaDeService(l, {conBarco})`.
+//
+// Devuelve true si la ventana se abrió, para que quien llama sepa si seguir.
+function abrirParaImprimir(html, avisarQueEstaBloqueado) {
+  const win = window.open('', '_blank');
+  if (!win) { if (avisarQueEstaBloqueado) avisarQueEstaBloqueado(); return false; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  // El retraso es para que el navegador termine de pintar antes del diálogo de
+  // impresión; sin él, Safari imprime una página en blanco.
+  setTimeout(() => win.print(), 300);
+  return true;
+}
+
 async function printManifest() {
   if (!currentTripId) return;
   const typeId = document.getElementById('trip-type-select').value;
@@ -12836,12 +12888,7 @@ async function printManifest() {
   ${tripStates.length ? `<p class="legend">${escapeHtml(t('rd_legend'))}</p>` : ''}
 </body></html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) { alert(t('mf_popup_blocked')); return; }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 300);
+  abrirParaImprimir(html, () => alert(t('mf_popup_blocked')));
 }
 
 // ─── WAIVERS ───
@@ -13221,12 +13268,7 @@ async function printWaiverCoverSheet(waiverId) {
   ${w.content_hash ? `<div class="seal">${escapeHtml(t('cert_seal'))}: ${escapeHtml(w.content_hash)}</div>` : ''}
 </body></html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) { await showAlertModal(t('wv_allow_popups_export')); return; }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 300);
+  if (!abrirParaImprimir(html)) { await showAlertModal(t('wv_allow_popups_export')); return; }
 }
 
 window.waiverLogView = 'daily';
@@ -13888,16 +13930,11 @@ async function exportWaiversForDay(date) {
   ${rowsHtml}
 </body></html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) {
+  if (!abrirParaImprimir(html)) {
     feedback.textContent = t('wv_allow_popups_export');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 300);
   feedback.textContent = '';
   feedback.className = 'save-feedback';
 }
@@ -13961,16 +13998,11 @@ async function exportChecklistsForDay(date) {
   ${rowsHtml}
 </body></html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) {
+  if (!abrirParaImprimir(html)) {
     feedback.textContent = t('wv_allow_popups_export');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 300);
   feedback.textContent = '';
   feedback.className = 'save-feedback';
 }
@@ -14050,16 +14082,11 @@ async function exportTripRecordsForDay(date) {
   ${tripsHtml}
 </body></html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) {
+  if (!abrirParaImprimir(html)) {
     feedback.textContent = t('wv_allow_popups_export');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 300);
   feedback.textContent = '';
   feedback.className = 'save-feedback';
 }
@@ -14159,16 +14186,11 @@ async function exportAllShopRecords() {
   ${tripsHtml}
 </body></html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) {
+  if (!abrirParaImprimir(html)) {
     feedback.textContent = t('wv_allow_popups_export');
     feedback.className = 'save-feedback error visible';
     return;
   }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 300);
 
   feedback.textContent = t('close_shop_export_done');
   feedback.className = 'save-feedback visible';
@@ -19208,7 +19230,10 @@ function filaDeService(l, { conBarco = false } = {}) {
   // igual —es ahí donde la regla vive— pero ofrecer un botón que sólo puede
   // fallar es la misma cosa que `manageBtn` sin cliente de Paddle.
   const acciones = sellado
-    ? `<span class="cl-role-badge" title="${escapeHtml(t('svc_sealed_title'))}">${escapeHtml(t('svc_sealed_badge'))}</span>`
+    ? `<span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+         <span class="cl-role-badge" title="${escapeHtml(t('svc_sealed_title'))}">${escapeHtml(t('svc_sealed_badge'))}</span>
+         <button class="btn-cancel" style="padding:4px 10px;font-size:0.78rem;" onclick="imprimirConstanciaDeService('${l.id}')">${escapeHtml(t('svc_cert_btn'))}</button>
+       </span>`
     : `<div style="display:flex;gap:6px;flex-wrap:wrap;">
          ${puedeSellarService() ? `<button class="btn-cancel" style="padding:4px 10px;font-size:0.78rem;" onclick="sellarService('${l.id}', ${conBarco})">${escapeHtml(t('svc_seal_btn'))}</button>` : ''}
          <button class="btn-icon danger" onclick="deleteMaintenanceLog('${l.id}', ${conBarco}, ${!conBarco})">${escapeHtml(t('fleet_remove'))}</button>
@@ -19235,6 +19260,85 @@ function filaDeService(l, { conBarco = false } = {}) {
 // El certificado, en pantalla. Igual que en los waivers: **sólo el número**.
 // 64 caracteres de hexadecimal en una lista no le sirven a nadie; el sello
 // completo es para el documento exportado.
+// ─── La constancia en papel de un service sellado ───────────────────────────
+//
+// El sello existía desde el 14/10 y **no se podía mostrar**. Un sello que no
+// sale del sistema no le sirve a un seguro, que es exactamente para quién se
+// construyó. Esto es la otra mitad.
+//
+// La regla que ordena qué va en la hoja: **sólo lo que la huella cubre.**
+// `maintenance_log_canonical_payload()` es la lista exacta, y la constancia la
+// repite en el mismo orden. `next_due_date` NO está —queda afuera del sello a
+// propósito, porque cambia por diseño— así que tampoco aparece acá: ponerlo al
+// lado del hash invitaría a creer que está sellado. Lo que no está protegido
+// no se imprime en una hoja que dice «constancia».
+function constanciaDeService(l, { contexto = '', selladoPor = '' } = {}) {
+  const fecha = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+  const momento = l.sealed_at ? new Date(l.sealed_at).toLocaleString() : '—';
+  const fila = (etiqueta, valor) => `<tr><th>${escapeHtml(etiqueta)}</th><td>${escapeHtml(valor || '—')}</td></tr>`;
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${escapeHtml(l.document_id || '')}</title>
+<style>
+  body { font-family: -apple-system, Arial, sans-serif; color:#1a2b3c; padding:34px; max-width:720px; }
+  h1 { font-size:19px; margin:0 0 2px; }
+  .doc { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; color:#555; margin:0 0 22px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:20px; }
+  th { text-align:left; width:180px; font-weight:600; color:#555; padding:7px 10px 7px 0;
+       border-bottom:1px solid #e6e6e6; vertical-align:top; }
+  td { padding:7px 0; border-bottom:1px solid #e6e6e6; vertical-align:top; }
+  .sello { background:#f6f6f3; padding:14px 16px; border-radius:6px; margin-bottom:18px; }
+  .sello h2 { font-size:13px; margin:0 0 8px; text-transform:uppercase; letter-spacing:0.06em; color:#555; }
+  .hash { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; word-break:break-all; color:#1a2b3c; }
+  .nota { font-size:11.5px; color:#666; line-height:1.6; border-top:1px solid #e6e6e6; padding-top:12px; }
+  @media print { body { padding:16px; } }
+</style></head><body>
+  <h1>${escapeHtml(t('svc_cert_title'))}</h1>
+  <p class="doc">${escapeHtml(l.document_id || '')}</p>
+
+  <table>
+    ${fila(t('svc_cert_item'), contexto)}
+    ${fila(t('svc_cert_work'), l.title)}
+    ${fila(t('svc_cert_description'), l.description)}
+    ${fila(t('svc_cert_parts'), l.parts_used)}
+    ${fila(t('svc_cert_cost'), l.cost != null ? (l.currency || 'USD') + ' ' + parseFloat(l.cost).toFixed(2) : '')}
+    ${fila(t('svc_cert_performed_by'), l.performed_by)}
+    ${fila(t('svc_cert_performed_date'), fecha(l.performed_date))}
+  </table>
+
+  <div class="sello">
+    <h2>${escapeHtml(t('svc_cert_seal'))}</h2>
+    <table style="margin:0;">
+      ${fila(t('svc_cert_sealed_at'), momento)}
+      ${fila(t('svc_cert_sealed_by'), selladoPor)}
+    </table>
+    <p style="margin:10px 0 3px;font-size:12px;font-weight:600;">SHA-256</p>
+    <p class="hash">${escapeHtml(l.content_hash || '')}</p>
+  </div>
+
+  <p class="nota">${escapeHtml(t('svc_cert_note'))}</p>
+</body></html>`;
+}
+
+// Se vuelve a leer la fila del servidor en vez de usar la que está dibujada.
+// Una constancia tiene que decir lo que la base dice HOY, no lo que la
+// pantalla cargó hace diez minutos.
+async function imprimirConstanciaDeService(id) {
+  const { data: l, error } = await sb.from('maintenance_logs')
+    .select('*, boats(name), engines(name), gear(name)')
+    .eq('id', id).single();
+  if (error || !l) { await showAlertModal(t('svc_cert_not_found')); return; }
+  // Sin sello no hay constancia. Un borrador impreso con este encabezado
+  // afirmaría algo que no es cierto.
+  if (!l.sealed_at) { await showAlertModal(t('svc_cert_not_sealed')); return; }
+
+  const contexto = [l.boats && l.boats.name, l.engines && l.engines.name, l.gear && l.gear.name]
+    .filter(Boolean).join(' · ');
+  await loadSignerStaff();
+  const html = constanciaDeService(l, { contexto, selladoPor: nombreDeTripulante(l.sealed_by) });
+  if (!abrirParaImprimir(html)) await showAlertModal(t('wv_allow_popups_export'));
+}
+
 function lineaDeSello(l) {
   const cuando = l.sealed_at
     ? new Date(l.sealed_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })

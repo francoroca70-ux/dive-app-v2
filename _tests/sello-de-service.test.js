@@ -17,7 +17,8 @@
 //  1 · la de equipo estaba ENTERA sin traducir
 //  2 · NINGUNA escapaba title/description/parts_used/performed_by
 //  3 · el sello habría tenido que escribirse dos veces
-const fs=require('fs'); const {JSDOM}=require('./jsdom');
+const fs=require('fs');
+const { llamadasA } = require('./contar'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
@@ -73,10 +74,12 @@ const sellado={...borrador,id:'ml-2',sealed_at:'2026-10-14T12:00:00Z',sealed_by:
   content_hash:'a1d89a9154b6ab2200000000000000000000000000000000000000000000beef'};
 
 // ─── 1 · Una sola función dibuja un service ───
+// Se cuentan LLAMADAS en código, no menciones: un comentario que la nombra no
+// la usa. Contar menciones falló cuatro veces en dos días — ver _tests/contar.js.
 chk('filaDeService es el único lugar que dibuja un service',
     (html.match(/function filaDeService/g)||[]).length===1 &&
-    (html.match(/filaDeService\(/g)||[]).length===3,
-    (html.match(/filaDeService\(/g)||[]).length+' menciones: declaración + las dos vistas');
+    llamadasA(html,'filaDeService')===2,
+    llamadasA(html,'filaDeService')+' llamadas en código (las dos vistas)');
 chk('y las dos vistas la llaman en vez de armar su propia fila',
     /logs\.map\(l => filaDeService\(l, \{ conBarco: true \}\)\)/.test(html) &&
     /logs\.map\(l => filaDeService\(l\)\)/.test(html));

@@ -18,6 +18,7 @@
 const { JSDOM } = require('./jsdom');
 const fs = require('fs');
 const path = require('path');
+const { lineasDeCodigoCon } = require('./contar');
 
 let pass = 0, fail = 0;
 function chk(nombre, ok, detalle) {
@@ -37,10 +38,7 @@ chk('el interruptor está APAGADO en producción',
 // menciones: un comentario que lo nombra no es un lector. Contar apariciones
 // ya falló dos veces el mismo día —con CHECKLIST_CADENCIAS y con
 // lineaDeFuenteDeLista—, así que acá se cuentan sólo las líneas de CÓDIGO.
-const lineasConPOS = html.split('\n')
-  .map(l => l.trim())
-  .filter(l => l.includes('POS_VENTAS'))
-  .filter(l => !l.startsWith('//') && !l.startsWith('<!--') && !l.startsWith('*'));
+const lineasConPOS = lineasDeCodigoCon(html, 'POS_VENTAS');
 chk('se declara una vez y lo lee una sola función',
     lineasConPOS.length === 2 &&
     lineasConPOS.some(l => l.startsWith('const POS_VENTAS')) &&
