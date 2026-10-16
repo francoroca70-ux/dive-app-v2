@@ -179,6 +179,23 @@
 .gear-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .gear-item-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
 .gear-item-unit { font-size: 0.75rem; color: var(--muted); }
+/* ─── POS · etapa 1 ─── */
+.pos-precio-fila { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.pos-check { display:flex; align-items:center; gap:6px; font-size:0.83rem; }
+.pos-moneda { font-size:0.78rem; color:var(--muted); }
+.pos-precio-input { max-width:110px; padding:5px 8px; font-size:0.85rem; }
+.pos-precio-ro { font-size:0.8rem; color:var(--muted); margin:10px 0 0;
+  padding-top:10px; border-top:1px solid var(--border); }
+.pos-linea { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:8px 0; border-bottom:1px solid var(--border); font-size:0.86rem; }
+.pos-linea-nombre { flex:1; min-width:140px; font-weight:600; }
+.pos-linea-precio { min-width:84px; }
+.pos-linea-stock { font-size:0.75rem; color:var(--muted); min-width:72px; }
+.pos-linea-cant { display:flex; align-items:center; gap:8px; }
+.pos-linea-cant strong { min-width:18px; text-align:center; }
+.pos-total { display:flex; align-items:center; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; margin-top:12px; font-size:0.95rem; }
 .gear-size-box { background: var(--foam); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 90px; }
 .gear-size-label { font-size: 0.7rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
 .gear-stock-value { font-weight: 700; color: var(--success); }
@@ -3413,6 +3430,10 @@ body { background: var(--navy); color: var(--text); }
           <div style="margin-bottom:14px;">
             <button class="btn-add" id="btn-add-gear-category" data-i18n="gr_add_category_btn">+ Add category</button>
           </div>
+          <!-- El mostrador. Sólo se dibuja con POS_VENTAS prendido: ver
+               `renderMostrador()`. Con el interruptor apagado este div queda
+               vacío y la pantalla es exactamente la de antes. -->
+          <div id="pos-mostrador"></div>
           <div id="inventory-categories"></div>
         </div>
 
@@ -4641,6 +4662,16 @@ const TRANSLATIONS = {
     cl_autor_title: 'Ticked from this crew member’s account',
     cl_participantes: 'Filled in together by {names}.',
     cl_ya_firmada: 'This checklist was already signed by {name} at {time}, so nothing was added. Signed records are never replaced — use Reset if you need to run it again.',
+    pos_mostrador: "Counter",
+    pos_a_la_venta: "For sale",
+    pos_falta_precio: "An item for sale needs a price. Set the price first, then mark it for sale.",
+    pos_nada_a_la_venta: "Nothing is marked for sale yet, or what is has no stock at this location. Open an item below, tick \"For sale\" and set a price.",
+    pos_en_stock: "in stock",
+    pos_total: "Total",
+    pos_cobrar: "Record sale",
+    pos_vaciar: "Clear",
+    pos_confirmar: "Record this sale and take the items out of stock?",
+    pos_sin_anular: "A recorded sale cannot be undone yet — it takes the items out of stock for good.",
     cl_custom_checklist_generic: 'Custom checklist',
     cl_motivos_titulo: 'Before signing',
     cl_motivos_intro: '{n} item(s) were not done. Why?',
@@ -5426,6 +5457,16 @@ const TRANSLATIONS = {
     cl_autor_title: 'Tildado desde la cuenta de esta persona',
     cl_participantes: 'La completaron entre {names}.',
     cl_ya_firmada: 'Esta checklist ya la firmó {name} a las {time}, así que no se agregó nada. Las actas firmadas no se reemplazan — si hay que hacerla de nuevo, usá Reset.',
+    pos_mostrador: "Mostrador",
+    pos_a_la_venta: "A la venta",
+    pos_falta_precio: "Un artículo a la venta necesita precio. Primero el precio, después la marca.",
+    pos_nada_a_la_venta: "Todavía no hay nada marcado a la venta, o lo que hay no tiene stock en esta sede. Abrí un artículo de abajo, tildá «A la venta» y poné el precio.",
+    pos_en_stock: "en stock",
+    pos_total: "Total",
+    pos_cobrar: "Registrar venta",
+    pos_vaciar: "Vaciar",
+    pos_confirmar: "¿Registrar esta venta y descontar los artículos del stock?",
+    pos_sin_anular: "Una venta registrada todavía no se puede anular — descuenta el stock de forma definitiva.",
     cl_custom_checklist_generic: 'Checklist propia',
     cl_motivos_titulo: 'Antes de firmar',
     cl_motivos_intro: 'Quedaron {n} ítem(s) sin hacer. ¿Por qué?',
@@ -6273,6 +6314,10 @@ function recordarEstadoDeSuscripcion(org, estadoPorDefecto) {
   window.currentOrgScheduledAction = (org && org.scheduled_change_action) || null;
   window.currentOrgScheduledAt = (org && org.scheduled_change_at) || null;
   window.currentOrgComped = !!(org && org.comped);
+  // La moneda va acá y no en una variable suelta: este es el único lugar
+  // que recuerda el estado de la organización, y los dos caminos que
+  // cargan una org pasan por él.
+  window.currentOrgCurrency = (org && org.currency) || 'USD';
 }
 
 // El cambio agendado en Paddle, y qué decirle al centro.
@@ -8804,7 +8849,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-15f');
+  console.info('[Seven Seas] build 2026-10-16a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -19724,7 +19769,221 @@ async function loadGearInventory() {
 
   renderGearInventory(categories, items || [], stockMap);
 }
+// ─── POS · etapa 1: catálogo y líneas de venta ──────────────────────────────
+//
+// **Interruptor, apagado en producción.** Regla 8 de CLAUDE.md: de 6/10 para
+// arriba el camino nuevo va al lado del viejo y se prende con una línea.
+//
+// Qué controla: **qué se OFRECE**, nunca qué se lee. Apagado, ni el mostrador
+// ni el editor de precios se dibujan, y la pantalla de inventario es idéntica
+// a la de antes. Mismo principio que `CADENCIAS_NUEVAS`: si un centro ya
+// hubiera registrado ventas, apagarlo no las borra.
+//
+// **Lo que falta antes de prenderlo, y es una sola cosa:** una venta
+// confirmada todavía no se puede anular. Descuenta stock y no hay vuelta
+// atrás. Eso es la etapa 2.
+//
+// Dos decisiones que son consecuencias medidas, no preferencias:
+//
+//  1 · **El catálogo NO es una tabla nueva.** `gear_items` ya lo es (178 filas
+//      medidas el 16/10). Una marca «a la venta» más precio encima, siguiendo
+//      «un motor, dos techos»: el regulador con el que se enseña no se vende,
+//      la remera sí, y los dos son el mismo ítem. Una tabla de productos
+//      aparte sería la TERCERA copia del mismo modelo.
+//  2 · **Una venta no cuelga de `payments`.** Medido: `payments.trip_id` es
+//      NOT NULL con FK a `trips`, y una venta de mostrador no tiene salida.
+//      Conectar venta con cobro es la etapa 2.
+const POS_VENTAS = false;
+
+// El único lector del interruptor. Todo lo demás pregunta por acá, y un test
+// afirma que la constante aparece exactamente dos veces — una tercera y dejó
+// de ser interruptor.
+function posEstaPrendido() { return POS_VENTAS === true; }
+
+// Lo que se lleva tildado antes de confirmar. Clave: `itemId|talle`, igual que
+// `stockMap`, para no inventar una segunda forma de identificar lo mismo.
+let carritoDeVenta = {};
+function claveDeCarrito(itemId, size) { return itemId + '|' + (size || 'total'); }
+
+// El precio se muestra con la moneda del centro. `organizations.currency` ya
+// existe y lo usan la flota y las reservas; acá se lee de lo mismo.
+function monedaDelCentro() { return (window.currentOrgCurrency || 'USD'); }
+
+// El nombre de quien registra la venta. `sold_by` es NOT NULL, así que esto
+// siempre devuelve algo: la fila de staff de la cuenta de la sesión, y si no
+// resuelve, un texto antes que un hueco. El id de la cuenta lo escribe el
+// servidor por su lado (`sold_by_account` desde `auth.uid()`), así que el
+// nombre es comodidad y el id es el hecho — igual que en el acta.
+async function nombreDeQuienVende() {
+  const porCache = nombreDeTripulante(currentUserId);
+  if (porCache) return porCache;
+  if (!currentUserId) return t('pos_mostrador');
+  const { data } = await sb.from('staff').select('full_name').eq('id', currentUserId).maybeSingle();
+  return (data && data.full_name) || t('pos_mostrador');
+}
+function precioEnPantalla(n) {
+  const v = Number(n);
+  return `${monedaDelCentro()} ${Number.isFinite(v) ? v.toFixed(2) : '0.00'}`;
+}
+
+// Quién puede poner precios: lo mismo que edita una plantilla de checklist.
+// No se escribe una segunda regla de permisos — RLS no distingue, así que la
+// pantalla y el servidor dirían cosas distintas y ganaría el servidor.
+function puedeEditarPrecios() { return puedeEditarPlantillas(); }
+
+// El bloque de «a la venta» dentro de un ítem del catálogo. Devuelve string
+// vacío con el interruptor apagado, que es lo que hace que la pantalla vieja
+// quede intacta.
+function bloqueDeVentaDeItem(item) {
+  if (!posEstaPrendido()) return '';
+  const puede = puedeEditarPrecios();
+  const precio = item.sale_price != null ? Number(item.sale_price).toFixed(2) : '';
+  const marcado = item.for_sale ? 'checked' : '';
+  if (!puede) {
+    return item.for_sale
+      ? `<p class="pos-precio-ro">${escapeHtml(t('pos_a_la_venta'))} · <strong>${escapeHtml(precioEnPantalla(item.sale_price))}</strong></p>`
+      : '';
+  }
+  return `<div class="pos-precio-fila">
+    <label class="pos-check"><input type="checkbox" id="pos-vende-${item.id}" ${marcado}
+      onchange="guardarPrecioDeVenta('${item.id}')"> ${escapeHtml(t('pos_a_la_venta'))}</label>
+    <span class="pos-moneda">${escapeHtml(monedaDelCentro())}</span>
+    <input type="number" min="0" step="0.01" class="sf-input pos-precio-input"
+      id="pos-precio-${item.id}" value="${escapeHtml(precio)}"
+      placeholder="0.00" onchange="guardarPrecioDeVenta('${item.id}')">
+  </div>`;
+}
+
+// Guarda la marca y el precio. «A la venta sin precio» lo rechaza el CHECK de
+// la base, así que acá se avisa ANTES en vez de dejar que vuelva un 23514 que
+// no le dice nada a nadie.
+async function guardarPrecioDeVenta(itemId) {
+  const chk = document.getElementById(`pos-vende-${itemId}`);
+  const inp = document.getElementById(`pos-precio-${itemId}`);
+  if (!chk || !inp) return;
+  const quiereVender = chk.checked;
+  const precio = inp.value === '' ? null : Number(inp.value);
+  if (quiereVender && (precio == null || !(precio >= 0))) {
+    await showAlertModal(t('pos_falta_precio'));
+    chk.checked = false;
+    return;
+  }
+  const { error } = await sb.from('gear_items')
+    .update({ for_sale: quiereVender, sale_price: quiereVender ? precio : null })
+    .eq('id', itemId);
+  if (error) {
+    await showAlertModal(motivoDeFalloAlEscribir(error, 'guardar'));
+    return;
+  }
+  await loadGearInventory();
+}
+
+// Lo que se puede vender HOY en esta sede: marcado a la venta, con precio, y
+// con stock. Un artículo a la venta sin stock no se ofrece — ofrecerlo sería
+// dejar que alguien lo tilde para que el servidor lo rechace después.
+function itemsVendibles(items, stockMap) {
+  const salida = [];
+  (items || []).filter(i => i.for_sale && i.sale_price != null).forEach(item => {
+    const talles = item.track_sizes
+      ? (item.gear_item_sizes || []).slice().sort((a, b) => a.sort_order - b.sort_order).map(s => s.size_label)
+      : ['total'];
+    talles.forEach(sz => {
+      const disp = (stockMap[item.id + '|' + sz] || {}).available_count || 0;
+      if (disp > 0) salida.push({ item, size: sz, disponible: disp });
+    });
+  });
+  return salida;
+}
+
+function renderMostrador(items, stockMap) {
+  const el = document.getElementById('pos-mostrador');
+  if (!el) return;
+  if (!posEstaPrendido()) { el.innerHTML = ''; return; }
+
+  const vendibles = itemsVendibles(items, stockMap);
+  if (!vendibles.length) {
+    el.innerHTML = `<div class="inline-form" style="margin-bottom:18px;">
+      <div class="card-section-title" style="margin-top:0;">${escapeHtml(t('pos_mostrador'))}</div>
+      <p class="card-desc" style="margin:0;">${escapeHtml(t('pos_nada_a_la_venta'))}</p>
+    </div>`;
+    return;
+  }
+
+  let total = 0;
+  const filas = vendibles.map(v => {
+    const k = claveDeCarrito(v.item.id, v.size);
+    const cant = carritoDeVenta[k] || 0;
+    total += cant * Number(v.item.sale_price);
+    return `<div class="pos-linea">
+      <span class="pos-linea-nombre">${escapeHtml(trGearItemName(v.item.name))}${v.item.track_sizes ? ' · ' + escapeHtml(trGearSizeLabel(v.size)) : ''}</span>
+      <span class="pos-linea-precio">${escapeHtml(precioEnPantalla(v.item.sale_price))}</span>
+      <span class="pos-linea-stock">${v.disponible} ${escapeHtml(t('pos_en_stock'))}</span>
+      <span class="pos-linea-cant">
+        <button class="gear-action-btn" onclick="cambiarCantidad('${v.item.id}','${v.size}',-1)">−</button>
+        <strong id="pos-cant-${k.replace('|','-')}">${cant}</strong>
+        <button class="gear-action-btn add" onclick="cambiarCantidad('${v.item.id}','${v.size}',1,${v.disponible})">+</button>
+      </span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="inline-form" style="margin-bottom:18px;">
+    <div class="card-section-title" style="margin-top:0;">${escapeHtml(t('pos_mostrador'))}</div>
+    ${filas}
+    <div class="pos-total">
+      <span>${escapeHtml(t('pos_total'))} <strong>${escapeHtml(precioEnPantalla(total))}</strong></span>
+      <span class="settings-actions" style="margin:0;">
+        <button class="btn-save" ${total > 0 ? '' : 'disabled'} onclick="confirmarVenta()">${escapeHtml(t('pos_cobrar'))}</button>
+        <button class="btn-cancel" onclick="vaciarCarrito()">${escapeHtml(t('pos_vaciar'))}</button>
+      </span>
+    </div>
+    <p class="card-desc" style="margin:10px 0 0;">${escapeHtml(t('pos_sin_anular'))}</p>
+  </div>`;
+}
+
+function cambiarCantidad(itemId, size, delta, tope) {
+  const k = claveDeCarrito(itemId, size);
+  const nuevo = (carritoDeVenta[k] || 0) + delta;
+  // El tope es el stock de esta sede. El servidor lo vuelve a comprobar dentro
+  // de la transacción —ahí es donde vale— pero frenarlo acá evita ofrecer algo
+  // que va a ser rechazado.
+  if (nuevo < 0) return;
+  if (tope != null && nuevo > tope) return;
+  if (nuevo === 0) delete carritoDeVenta[k]; else carritoDeVenta[k] = nuevo;
+  loadGearInventory();
+}
+
+function vaciarCarrito() { carritoDeVenta = {}; loadGearInventory(); }
+
+// Confirma la venta. **Una sola llamada**: `registrar_venta()` escribe la
+// venta, sus líneas, el movimiento de stock y el descuento dentro de UNA
+// transacción. Hacerlo con varios `insert()` desde acá dejaría stock
+// descontado sin venta si se corta la señal a mitad — ver
+// `El borrado que perdía la mitad`.
+async function confirmarVenta() {
+  const lineas = Object.keys(carritoDeVenta).map(k => {
+    const [gear_item_id, size_label] = k.split('|');
+    return { gear_item_id, size_label, qty: carritoDeVenta[k] };
+  });
+  if (!lineas.length) return;
+  if (!(await showConfirmModal(t('pos_confirmar')))) return;
+
+  const { error } = await sb.rpc('registrar_venta', {
+    p_org: currentOrgId, p_location: currentLocationId,
+    p_sold_by: await nombreDeQuienVende(),
+    p_lineas: lineas
+  });
+  if (error) {
+    // El servidor manda: si rechazó, el carrito se conserva para corregir en
+    // vez de perderse.
+    await showAlertModal(error.message || motivoDeFalloAlEscribir(error, 'guardar'));
+    return;
+  }
+  carritoDeVenta = {};
+  await loadGearInventory();
+}
+
 function renderGearInventory(categories, items, stockMap) {
+  renderMostrador(items, stockMap);
   const el = document.getElementById('inventory-categories');
   // Preserve which categories/items are currently expanded across re-renders.
   // Every add/repair/return/discard action calls loadGearInventory() to
@@ -19810,7 +20069,7 @@ function renderGearInventory(categories, items, stockMap) {
             <span id="${itemBodyId}-arrow" class="expand-caret">▸</span>
           </span>
         </div>
-        <div id="${itemBodyId}" style="display:none;">${stockHtml}</div>
+        <div id="${itemBodyId}" style="display:none;">${stockHtml}${bloqueDeVentaDeItem(item)}</div>
       </div>`;
     }).join('');
     return `<div class="inline-form" style="margin-bottom:20px;">
