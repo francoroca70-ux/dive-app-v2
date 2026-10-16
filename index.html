@@ -4668,6 +4668,7 @@ const TRANSLATIONS = {
     esc_sin_permiso: "You don't have permission to do this.",
     esc_otro_motivo: "Couldn't save that: {error}",
     cl_signed_partial: 'Signed {hechos}/{total}',
+    cl_acta_pendiente: "Signed on this device and not yet synced. It will upload on its own when there is signal — until then, nobody else can see it.",
     cl_acta_nota: 'Signed record — what was checked and what was missed. Tap Reset to run a fresh check.',
     // Sólo aparece cuando la lista firmada NO era la del centro. Si era la
     // propia no se dice nada (sería ruido en todas las actas), y en las actas
@@ -5481,6 +5482,7 @@ const TRANSLATIONS = {
     esc_sin_permiso: 'No tenés permiso para hacer esto.',
     esc_otro_motivo: 'No se pudo guardar: {error}',
     cl_signed_partial: 'Firmada {hechos}/{total}',
+    cl_acta_pendiente: "Firmada en este dispositivo y todavía sin sincronizar. Se sube sola cuando haya señal — hasta entonces, nadie más la ve.",
     cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
     cl_acta_lista_generica: 'Revisada contra la lista estándar, no contra una lista armada por este centro. Armá la propia en Configuración → Tipos de Salida para que las actas siguientes reflejen el procedimiento del centro.',
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
@@ -8879,7 +8881,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-16b');
+  console.info('[Seven Seas] build 2026-10-16c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15965,6 +15967,33 @@ const COLUMNAS_DE_ACTA_LISTADO =
 // La usan los dos momentos que tienen que coincidir: al dibujar la pantalla y
 // **justo antes de insertar**. Lo segundo es lo que hacía falta y no estaba —
 // ver el comentario de `firmarUnaSolaVez()`.
+// El acta que se firmó sin señal y todavía está en la cola.
+//
+// Reportado por Fran el 14/10: firmando en modo avión, el acta aparece dos
+// segundos y la pantalla vuelve a la lista viva. La causa, leída del código:
+// `guardarActa()` encola bien y devuelve true, se pinta «firmada», y acto
+// seguido el redibujo le pregunta al SERVIDOR por un acta que el servidor
+// nunca recibió. Sin red esa consulta falla, devolvía `null` —o sea «no hay
+// acta», lo contrario exacto de la verdad— y la pantalla volvía atrás.
+//
+// Los dos segundos son lo que tarda el pedido en fallar.
+//
+// Es el mismo principio que `tildesPendientes`: **lo del servidor es la base,
+// y lo pendiente va encima.** La cola ya guardaba el payload entero, así que
+// alcanza con buscarlo por lo mismo que identifica una instancia.
+function actaEncoladaPara({ role, tripId = null, periodo = null }) {
+  const candidatas = getOfflineQueue()
+    .filter(a => a.type === 'checklist_completion' && a.payload && a.payload.role === role)
+    .map(a => a.payload)
+    .filter(p => !tripId || p.trip_id === tripId)
+    .filter(p => !periodo || (p.signed_at >= periodo.start && p.signed_at <= periodo.end))
+    .sort((a, b) => String(b.signed_at || '').localeCompare(String(a.signed_at || '')));
+  if (!candidatas.length) return null;
+  // `pendiente` es lo que evita que la pantalla afirme de más: el acta existe
+  // en este teléfono y todavía no en el servidor, y eso se dice.
+  return Object.assign({}, candidatas[0], { pendiente: true });
+}
+
 async function buscarActaVigente({ role, tripId = null, periodo = null }) {
   if (!currentOrgId) return null;
   let q = sb.from('checklist_completions').select(COLUMNAS_DE_ACTA)
@@ -15972,8 +16001,15 @@ async function buscarActaVigente({ role, tripId = null, periodo = null }) {
   if (tripId) q = q.eq('trip_id', tripId);
   if (periodo) q = q.gte('signed_at', periodo.start).lte('signed_at', periodo.end);
   const { data, error } = await q.order('signed_at', { ascending: false }).limit(1);
-  if (error) { console.warn('[ACTA] no se pudo comprobar si ya hay acta', error); return null; }
-  return (data && data[0]) || null;
+  // Sin red la consulta falla. Devolver null acá era decir «no hay acta», que
+  // es justo lo contrario de la verdad cuando se acaba de firmar sin señal.
+  if (error) {
+    console.warn('[ACTA] no se pudo comprobar si ya hay acta', error);
+    return actaEncoladaPara({ role, tripId, periodo });
+  }
+  // El servidor manda cuando contesta: si el acta ya entró, esa gana. La
+  // encolada sólo aparece cuando el servidor no tiene ninguna.
+  return (data && data[0]) || actaEncoladaPara({ role, tripId, periodo });
 }
 
 // Una checklist firmada NO se puede volver a firmar: se esconden el selector de
@@ -17138,6 +17174,14 @@ async function instructorSignOff() {
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
       pintarFirmaDelInstructor(signer.name, done, instructorItems.length, t('cl_saved_offline_sync'));
+      // Y redibuja, igual que el camino con red. Hasta el 16/10 este camino
+      // sólo pintaba el cartel: según lo que `navigator.onLine` hubiera dicho,
+      // firmar sin señal dejaba la pantalla en dos estados distintos — con
+      // `false` el cartel y la lista viva, con `true` (la mentira de a bordo)
+      // el acta apareciendo y desapareciendo. Una regla, dos comportamientos.
+      // El progreso NO se borra acá: el acta está en la cola y todavía puede
+      // no entrar, así que los tildes se quedan de red de seguridad.
+      await renderInstructorChecklistForTrip(tripId);
       return true;
     }
     // El progreso se borra SÓLO si el acta quedó guardada o encolada.
@@ -17303,6 +17347,14 @@ function lineaDeFuenteDeLista(acta) {
   return `<div class="cl-acta-nota" style="border-left:3px solid var(--warning, #d9822b);">${escapeHtml(t('cl_acta_lista_generica'))}</div>`;
 }
 
+// Un acta que todavía no llegó al servidor se dice. Callarlo sería mostrar un
+// registro firmado que ningún otro teléfono puede ver todavía — y con el
+// progreso compartido, eso es exactamente lo que confunde a una tripulación.
+function lineaDeActaPendiente(acta) {
+  if (!acta || !acta.pendiente) return '';
+  return `<div class="cl-acta-nota" style="border-left:3px solid var(--warning, #d9822b);">${escapeHtml(t('cl_acta_pendiente'))}</div>`;
+}
+
 function renderActaItems(containerId, snapshot, progressId, acta) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -17311,6 +17363,7 @@ function renderActaItems(containerId, snapshot, progressId, acta) {
 
   el.innerHTML =
     `<div class="cl-acta-nota">${escapeHtml(t('cl_acta_nota'))}</div>` +
+    lineaDeActaPendiente(acta) +
     lineaDeFuenteDeLista(acta) +
     lineaDeParticipantes(participantesDeActa(items)) +
     items.map(item => filaDeActa(item)).join('');
@@ -17575,6 +17628,14 @@ async function customChecklistSignOff(checklistId) {
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
       pintar(t('cl_saved_offline_sync'));
+      // Y redibuja, igual que el camino con red. Hasta el 16/10 este camino
+      // sólo pintaba el cartel: según lo que `navigator.onLine` hubiera dicho,
+      // firmar sin señal dejaba la pantalla en dos estados distintos — con
+      // `false` el cartel y la lista viva, con `true` (la mentira de a bordo)
+      // el acta apareciendo y desapareciendo. Una regla, dos comportamientos.
+      // El progreso NO se borra acá: el acta está en la cola y todavía puede
+      // no entrar, así que los tildes se quedan de red de seguridad.
+      await renderCustomChecklistsForCurrentView();
       return true;
     }
     if (!(await guardarActa(payload))) return false;
@@ -17966,6 +18027,14 @@ async function deptRoutineSignOff() {
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
       pintarFirmaDeRutina(signer.name, done, routine.items.length, t('cl_saved_offline_sync'));
+      // Y redibuja, igual que el camino con red. Hasta el 16/10 este camino
+      // sólo pintaba el cartel: según lo que `navigator.onLine` hubiera dicho,
+      // firmar sin señal dejaba la pantalla en dos estados distintos — con
+      // `false` el cartel y la lista viva, con `true` (la mentira de a bordo)
+      // el acta apareciendo y desapareciendo. Una regla, dos comportamientos.
+      // El progreso NO se borra acá: el acta está en la cola y todavía puede
+      // no entrar, así que los tildes se quedan de red de seguridad.
+      await renderDeptRoutine();
       return true;
     }
     if (!(await guardarActa(payload))) return false;
