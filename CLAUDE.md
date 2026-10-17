@@ -125,7 +125,20 @@ Está en el procedimiento desde el 24/09. La primera vez que se corrió en serio
 huérfana y un `type` inventado (`referencia` no existe — los válidos son `moc`,
 `note`, `decision`, `procedimiento`, `postmortem`, `person`, `project`).
 
-**Dos skills guardadas encapsulan este flujo** y conviene usarlas en vez de
+**Y desde el 17/10 hay un chequeo más grande: `python3 _scripts/salud_boveda.py`**,
+que corre el anterior y después **verifica contra el código lo que la bóveda
+afirma**: la posición medida de cada interruptor, los dos números del
+despliegue, y los identificadores o archivos que una nota cita y ya no existen.
+Es la respuesta mecánica al error más caro del proyecto —leer una nota en vez de
+medir, cuatro veces—. Se corre en **la primera sesión de cada lunes, miércoles y
+viernes**, o diciendo «chequeá la bóveda» (skill `seven-seas-salud-boveda`).
+
+**No se puede programar.** Las tareas programadas corren en la nube y no llegan
+al disco de Fran, así que una corrida automática devolvería hallazgos
+inventados. Por eso es un paso del arranque de sesión. Ver
+`Operativa/Salud de la bóveda.md`.
+
+**Tres skills guardadas encapsulan este flujo** y conviene usarlas en vez de
 reconstruirlo de memoria, que es lo que lo hacía distinto cada vez:
 `seven-seas-investigar` (antes de tocar algo: leer el vault, medir el sistema
 vivo, tratar la nota como hipótesis) y `seven-seas-cerrar-cambio` (después: qué
