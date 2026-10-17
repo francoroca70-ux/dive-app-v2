@@ -20,6 +20,10 @@
 const fs=require('fs');
 const { llamadasA } = require('./contar'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
+// Las fechas no se afirman ya formateadas: siguen el idioma de la MÁQUINA.
+const { fechaDeDiaEnLaApp } = require('./contar');
+// La app formatea con `localeDeLaApp()`; estos tests corren en inglés.
+const elDia = (d) => fechaDeDiaEnLaApp(d, 'en');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
 const {window}=dom;
@@ -97,8 +101,9 @@ chk('un sellado NO ofrece quitar',
     'el trigger lo rechaza igual, pero un botón que sólo puede fallar no se ofrece');
 chk('ni ofrece volver a sellar',   !/sellarService/.test(f));
 chk('lleva la insignia de sellado', /Sealed/.test(f));
-chk('dice cuándo y de qué cuenta', /14 Oct 2026|Oct 14, 2026/.test(f) && /Pau Giménez/.test(f),
-    'desde la cuenta de, igual que los tildes');
+chk('dice cuándo y de qué cuenta',
+    f.includes(elDia('2026-10-14')) && /Pau Giménez/.test(f),
+    'esperaba ' + elDia('2026-10-14') + ' — desde la cuenta de, igual que los tildes');
 chk('muestra el número de documento', /SVC-20261014-311E5BDB/.test(f));
 chk('y NO vuelca los 64 caracteres del hash en la lista',
     !/a1d89a9154b6ab22/.test(f),
@@ -169,9 +174,21 @@ await T.sellar('ml-1', true);
 chk('si se cancela la confirmación NO se sella nada', updates.length===0);
 T.confirmar(true);
 
-chk('el texto de confirmación dice QUÉ se pierde, no «¿estás seguro?»',
-    /never be edited or deleted/.test(html) && /nunca más/.test(html),
-    'es irreversible: el aviso tiene que informar');
+// Se afirma la REGLA, no la redacción: el aviso de un acto irreversible tiene
+// que decir qué deja de ser posible y qué conviene revisar antes. Pinchar la
+// frase exacta hizo que reescribir el texto el 16/10 rompiera el test sin que
+// nada estuviera mal — el guardián tiene que sobrevivir a una reescritura.
+chk('el aviso de sellado dice qué deja de ser posible',
+    /cannot be edited or deleted by anyone/.test(html) &&
+    /no puede ser modificado ni eliminado por nadie/.test(html),
+    'es irreversible: el aviso tiene que informar, no preguntar');
+chk('y dice qué revisar antes de continuar',
+    /Check the cost, the date and the description/.test(html) &&
+    /revisar el costo, la fecha y la descripción/.test(html));
+// Lo que NO está cubierto por el sello se nombra, para que nadie crea de más.
+chk('y aclara que la próxima fecha de service no está sellada',
+    /next service date stays editable and is not covered by the seal/.test(html) &&
+    /no forma parte del sello/.test(html));
 
 // ─── 8 · Los textos en los dos idiomas ───
 const claves=['gear_no_maint_item','fleet_maint_remove_confirm','svc_seal_btn',

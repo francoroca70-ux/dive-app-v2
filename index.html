@@ -6043,7 +6043,7 @@ function refreshDynamicTranslations() {
   }
   const dateEl = document.getElementById('home-date');
   if (dateEl && dateEl.textContent !== 'Loading...') {
-    dateEl.textContent = new Date().toLocaleDateString(currentLanguage === 'es' ? 'es-ES' : 'en-US', {
+    dateEl.textContent = new Date().toLocaleDateString(localeDeLaApp(), {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
   }
@@ -6341,6 +6341,31 @@ function queueOfflineAction(type, payload) {
 // agendado habría hecho cinco asignaciones × dos lugares, que es exactamente la
 // forma donde el defecto aparece donde la copia FALTA — una pantalla leyendo un
 // dato que el otro camino nunca cargó.
+// El idioma con el que la app formatea fechas y horas.
+//
+// Un solo lugar, y lo trajo una medición del 16/10: la suite daba 1037/0 en el
+// sandbox y 1037/5 en el Windows de Fran, sobre el mismo commit. La causa era
+// `toLocaleDateString()` sin idioma, que usa el de la **máquina** — así que la
+// app bilingüe mostraba las fechas en el idioma del sistema operativo y no en
+// el que la persona eligió. Un centro en Tailandia con la app en inglés, sobre
+// una tablet tailandesa, veía fechas en tailandés.
+//
+// Y había TRES redacciones de esta misma regla conviviendo, dos de ellas ya
+// divergidas: `es-AR`/`en-GB` en dos lugares, `es-ES`/`en-US` en tres, y nada
+// en el resto. La misma fecha se veía distinta en el banner de suscripción que
+// en la planilla de tripulación.
+//
+//   es-419  →  17 oct 2026        en-GB  →  17 Oct 2026
+//
+// `es-419` es el código de **español latinoamericano**, que es exactamente lo
+// que `CLAUDE.md` dice que tiene que ser el castellano de la app — no
+// rioplatense. Y `en-GB` pone el día primero, igual que el castellano, así que
+// las dos versiones de la app ordenan la fecha igual. `es-AR` daba «17 de oct
+// de 2026» y `en-US` «Oct 17, 2026»: las dos contradecían eso.
+function localeDeLaApp() {
+  return currentLanguage === 'es' ? 'es-419' : 'en-GB';
+}
+
 function recordarEstadoDeSuscripcion(org, estadoPorDefecto) {
   window.currentOrgSubscriptionStatus = (org && org.subscription_status) || estadoPorDefecto;
   window.currentOrgTrialEndsAt = (org && org.trial_ends_at) || null;
@@ -6374,7 +6399,7 @@ function textoDeCambioAgendado(accion, cuando) {
   // algo que no entendemos sobre la facturación de alguien.
   if (!clave) return '';
   return t(clave).replace('{date}', fecha.toLocaleDateString(
-    currentLanguage === 'es' ? 'es-AR' : 'en-GB',
+    localeDeLaApp(),
     { day: 'numeric', month: 'long', year: 'numeric' }));
 }
 
@@ -6839,7 +6864,7 @@ function updateBillingCard(org) {
       // money.
       trialLine.textContent = t(daysLeft === 1 ? 'set_billing_trial_left_one' : 'set_billing_trial_left')
         .replace('{days}', daysLeft)
-        .replace('{date}', endsAt.toLocaleDateString(currentLanguage === 'es' ? 'es-AR' : 'en-GB',
+        .replace('{date}', endsAt.toLocaleDateString(localeDeLaApp(),
           { day: 'numeric', month: 'short', year: 'numeric' }));
     }
     chooseBtn.style.display = '';
@@ -7541,7 +7566,7 @@ function rwRenderList() {
   document.getElementById('rw-list-view').style.display = 'block';
   const tripLabel = trTypeName(d.trip.tripType) || t('cal_trip_fallback');
   const dateLabel = d.trip.tripDate
-    ? new Date(d.trip.tripDate + 'T12:00:00').toLocaleDateString(currentLanguage === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    ? new Date(d.trip.tripDate + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { weekday: 'long', month: 'long', day: 'numeric' })
     : '';
   document.getElementById('rw-trip-title').textContent = d.org.name || '';
   document.getElementById('rw-trip-meta').textContent =
@@ -7930,7 +7955,7 @@ function initHome(user) {
   const hour = now.getHours();
   const greeting = hour < 12 ? t('greeting_morning') : hour < 17 ? t('greeting_afternoon') : t('greeting_evening');
   document.getElementById('home-greeting').textContent = greeting;
-  document.getElementById('home-date').textContent = now.toLocaleDateString(currentLanguage === 'es' ? 'es-ES' : 'en-US', {
+  document.getElementById('home-date').textContent = now.toLocaleDateString(localeDeLaApp(), {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
@@ -8164,12 +8189,12 @@ async function buildFinanceCardHtml() {
     <div class="stat-grid" style="margin-top:14px;margin-bottom:0;">
       <div class="stat-card">
         <div class="stat-label">${t('home_finance_today')}</div>
-        <div class="stat-value">$${todayTotal.toLocaleString()}</div>
+        <div class="stat-value">$${todayTotal.toLocaleString(localeDeLaApp())}</div>
         <div class="stat-sub">${t('home_finance_from_cashups')}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">${t('home_finance_yesterday')}</div>
-        <div class="stat-value">$${yestTotal.toLocaleString()}</div>
+        <div class="stat-value">$${yestTotal.toLocaleString(localeDeLaApp())}</div>
         <div class="stat-sub">${t('home_finance_from_cashups')}</div>
       </div>
     </div>
@@ -8485,7 +8510,7 @@ async function renderRosterGrid() {
     document.getElementById('roster-title').textContent = '';
     return;
   }
-  const rosterLocale = currentLanguage === 'es' ? 'es-ES' : 'en-US';
+  const rosterLocale = localeDeLaApp();
   let weekBlocks = [];
   if (rosterView === 'week') {
     const start = new Date(rosterDate);
@@ -8883,7 +8908,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-16d');
+  console.info('[Seven Seas] build 2026-10-17a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9864,7 +9889,7 @@ function renderTextTemplateEditor(type, template) {
       <button class="btn-save" onclick="saveTextWaiverTemplate('${type}')">${t('wt_save_template')}</button>
       <span class="save-feedback" id="wt-save-feedback"></span>
     </div>
-    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">${t('wt_last_updated')} ${new Date(template.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
+    ${template?.updated_at ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">${t('wt_last_updated')} ${new Date(template.updated_at).toLocaleString(localeDeLaApp(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
   `;
 }
 
@@ -10159,7 +10184,7 @@ function addDays(d, n) {
 }
 
 function calTitleText() {
-  const loc = currentLanguage === 'es' ? 'es-ES' : 'en-US';
+  const loc = localeDeLaApp();
   const opts = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
   const wOpts = { month: 'long', year: 'numeric' };
   if (calView === 'day') return calDate.toLocaleDateString(loc, opts);
@@ -10266,7 +10291,7 @@ function tripOccursOnDate(trip, dateStr) {
 // Formats a multi-day trip's span as "Jul 18 – Jul 20" (locale-aware) for display
 // wherever a booking's start/end dates need to be shown instead of just times.
 function tripDateRangeLabel(trip) {
-  const loc = currentLanguage === 'es' ? 'es-ES' : 'en-US';
+  const loc = localeDeLaApp();
   const opts = { month: 'short', day: 'numeric' };
   const startLabel = new Date(trip.trip_date + 'T12:00:00').toLocaleDateString(loc, opts);
   const endLabel = new Date(trip.end_date + 'T12:00:00').toLocaleDateString(loc, opts);
@@ -11621,7 +11646,7 @@ function renderCashUp(payments, existing, date, expenses) {
         <button class="btn-save" id="btn-save-cashup">${t('cu_close_out_day')}</button>
         <span class="save-feedback" id="cashup-save-feedback"></span>
       </div>
-      ${existing?.closed_by ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">${t('cu_last_closed_by')} ${existing.closed_by} · ${new Date(existing.closed_at).toLocaleString()}</p>` : ''}
+      ${existing?.closed_by ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">${t('cu_last_closed_by')} ${existing.closed_by} · ${new Date(existing.closed_at).toLocaleString(localeDeLaApp())}</p>` : ''}
     </div>
   `;
   document.getElementById('btn-save-cashup').addEventListener('click', () => saveCashUp(date, cashTotal, cardTotal, transferTotal, expensesTotal));
@@ -12024,8 +12049,8 @@ function reportsBucketKey(dateStr, mode) {
 }
 function reportsFormatBucketLabel(key, mode) {
   const d = new Date(key + 'T12:00:00');
-  if (mode === 'monthly') return d.toLocaleDateString([], { month: 'short', year: '2-digit' });
-  const label = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  if (mode === 'monthly') return d.toLocaleDateString(localeDeLaApp(), { month: 'short', year: '2-digit' });
+  const label = d.toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric' });
   return mode === 'weekly' ? 'Wk ' + label : label;
 }
 
@@ -12288,7 +12313,7 @@ function renderArchivedTrips(trips, isAllShops) {
   }
   listEl.innerHTML = filas.map(tr => {
     const fecha = tr.trip_date
-      ? new Date(tr.trip_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+      ? new Date(tr.trip_date + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' })
       : '';
     const hora = (tr.trip_time || '').slice(0, 5);
     const nombre = tr.trip_name || tr.trip_type || t('rep_archived_untitled');
@@ -12299,7 +12324,7 @@ function renderArchivedTrips(trips, isAllShops) {
     // dado de baja no está en la caché de activos, y una fecha sin nombre es
     // mejor que «archivada por» seguido de nada.
     const quien = nombreDeTripulante(tr.archived_by);
-    const cuando = tr.archived_at ? new Date(tr.archived_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const cuando = tr.archived_at ? new Date(tr.archived_at).toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' }) : '';
     // Sin fecha no se dibuja la línea: «Archived» a secas es una etiqueta
     // colgando. En los datos reales `archived_at` siempre está —lo pone
     // trip_archive_or_delete()— pero el dibujo no tiene por qué confiar en eso.
@@ -12379,7 +12404,7 @@ function renderDiscrepancyReport(cashUps) {
     chartEl.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('rep_no_closed_days')}</p>`;
   } else {
     const chartData = withDiff.map(({ c, diff }) => ({
-      label: new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' }),
+      label: new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric' }),
       value: diff,
       color: Math.abs(diff) < 0.01 ? 'var(--success)' : 'var(--error)'
     }));
@@ -12392,7 +12417,7 @@ function renderDiscrepancyReport(cashUps) {
   } else {
     listEl.innerHTML = flagged.map(({ c, diff }) => `<div class="gear-item-row">
         <div class="gear-item-header">
-          <span class="gear-item-name">${new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          <span class="gear-item-name">${new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           <span style="color:var(--error);font-weight:700;">${diff > 0 ? '+' : ''}$${diff.toFixed(2)}</span>
         </div>
         <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('rep_closed_by')} ${c.closed_by || '—'}${c.notes ? ' · ' + c.notes : ''}</div>
@@ -12414,7 +12439,7 @@ function renderMissedCashUps(payments, cashUps) {
   } else {
     listEl.innerHTML = missed.map(d => `<div class="gear-item-row">
         <div class="gear-item-header">
-          <span class="gear-item-name">${new Date(d + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          <span class="gear-item-name">${new Date(d + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           <span style="color:var(--error);font-weight:600;">$${paymentDates[d].toFixed(2)} ${t('rep_taken_not_closed')}</span>
         </div>
       </div>`).join('');
@@ -13208,7 +13233,7 @@ function waiverLogRowHtml(w) {
   return `<div class="participant-row">
     <div>
       <div class="p-name">${escapeHtml(w.participants?.full_name) || t('wv_unknown_guest')}</div>
-      <div style="font-size:0.78rem;color:var(--muted);">${waiverTypeLabels[w.waiver_type] || w.waiver_type} · ${w.method === 'paper' ? t('wv_paper') : t('wv_digital')} · ${new Date(w.signed_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + w.signed_by_name : ''}</div>
+      <div style="font-size:0.78rem;color:var(--muted);">${waiverTypeLabels[w.waiver_type] || w.waiver_type} · ${w.method === 'paper' ? t('wv_paper') : t('wv_digital')} · ${new Date(w.signed_at).toLocaleString(localeDeLaApp(), {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + w.signed_by_name : ''}</div>
       ${w.guardian_printed_name ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${t('wv_cosigned_by')} ${escapeHtml(w.guardian_printed_name)}</div>` : ''}
       ${w.document_id ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:3px;font-family:ui-monospace,Menlo,Consolas,monospace;">${escapeHtml(w.document_id)}</div>` : ''}
     </div>
@@ -13236,7 +13261,7 @@ async function printWaiverCoverSheet(waiverId) {
 
   const orgNameEl = document.getElementById('org-name');
   const shopName = (orgNameEl && orgNameEl.value) || '';
-  const fecha = w.signed_at ? new Date(w.signed_at).toLocaleDateString() : '—';
+  const fecha = w.signed_at ? new Date(w.signed_at).toLocaleDateString(localeDeLaApp()) : '—';
   const fila = (etiqueta, valor) =>
     `<tr><th>${escapeHtml(etiqueta)}</th><td>${escapeHtml(valor || '—')}</td></tr>`;
 
@@ -13329,7 +13354,7 @@ async function renderWaiverLog() {
     });
     const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
     logListEl.innerHTML = dates.map(d => `
-      <div class="card-section-title" style="margin-top:14px;">${new Date(d + 'T12:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · ${byDate[d].length}</div>
+      <div class="card-section-title" style="margin-top:14px;">${new Date(d + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { weekday: 'short', month: 'short', day: 'numeric' })} · ${byDate[d].length}</div>
       ${byDate[d].map(w => waiverLogRowHtml(w)).join('')}
     `).join('');
   }
@@ -13888,7 +13913,7 @@ async function exportWaiversForDay(date) {
         <strong>${escapeHtml(w.participants?.full_name || 'Unknown guest')}</strong>
         <span>${waiverTypeLabels[w.waiver_type] || escapeHtml(w.waiver_type)}</span>
         <span>${w.method === 'paper' ? 'Logged on paper' : 'Signed digitally'}</span>
-        <span>${new Date(w.signed_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+        <span>${new Date(w.signed_at).toLocaleTimeString(localeDeLaApp(), {hour:'2-digit', minute:'2-digit'})}</span>
         <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
       </div>
       <div class="waiver-entry-signee">Printed name: ${escapeHtml(w.participant_printed_name || w.participants?.full_name || '—')} &nbsp;·&nbsp; Date: ${w.participant_signed_date || '—'}</div>
@@ -13898,7 +13923,7 @@ async function exportWaiversForDay(date) {
       ${w.waiver_type === 'medical' && w.medical_status ? `
         <div class="waiver-entry-medical">${w.medical_status === 'cleared'
           ? 'Cleared to dive' : 'Physician sign-off needed'}${w.medical_checked_at
-          ? ' · ' + new Date(w.medical_checked_at).toLocaleString() : ''}</div>
+          ? ' · ' + new Date(w.medical_checked_at).toLocaleString(localeDeLaApp()) : ''}</div>
       ` : ''}
       ${w.body_snapshot ? `<div class="waiver-entry-body">${escapeHtml(w.body_snapshot)}</div>` : ''}
       ${w.method === 'digital' && w.signature_data ? `<img src="${w.signature_data}" style="max-width:280px;border:1px solid #ccc;margin-top:6px;">` : '<p style="font-size:12px;color:#888;">Paper copy on file — no digital signature.</p>'}
@@ -13979,7 +14004,7 @@ async function exportChecklistsForDay(date) {
         <strong>${tripLabel}</strong>${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}
         ${roleLabel ? `<span>${roleLabel}</span>` : ''}
         <span>${r.completed_items}/${r.total_items} items ✓</span>
-        <span>${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        <span>${new Date(r.signed_at).toLocaleTimeString(localeDeLaApp(), { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
       <div class="cl-export-entry-signee">Signed off by: ${escapeHtml(r.signed_by || '—')}</div>
     </div>`;
@@ -14133,7 +14158,7 @@ async function exportAllShopRecords() {
     <div class="ex-entry">
       <strong>${escapeHtml(w.participants?.full_name || 'Unknown guest')}</strong>
       <span>${waiverTypeLabels[w.waiver_type] || escapeHtml(w.waiver_type)}</span>
-      <span>${w.signed_at ? new Date(w.signed_at).toLocaleString() : '—'}</span>
+      <span>${w.signed_at ? new Date(w.signed_at).toLocaleString(localeDeLaApp()) : '—'}</span>
       <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
       ${w.document_id ? `<div class="ex-sub" style="font-family:ui-monospace,Menlo,Consolas,monospace;">${escapeHtml(w.document_id)}</div>` : ''}
     </div>`).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
@@ -14146,7 +14171,7 @@ async function exportAllShopRecords() {
       <strong>${tripLabel}</strong>${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}
       ${roleLabel ? `<span>${roleLabel}</span>` : ''}
       <span>${r.completed_items}/${r.total_items} ✓</span>
-      <span>${r.signed_at ? new Date(r.signed_at).toLocaleString() : '—'} — ${escapeHtml(r.signed_by || '—')}</span>
+      <span>${r.signed_at ? new Date(r.signed_at).toLocaleString(localeDeLaApp()) : '—'} — ${escapeHtml(r.signed_by || '—')}</span>
     </div>`;
   }).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
 
@@ -14165,7 +14190,7 @@ async function exportAllShopRecords() {
 
   const orgNameEl = document.getElementById('org-name');
   const shopName = escapeHtml((orgNameEl && orgNameEl.value) || 'Shop');
-  const generatedAt = new Date().toLocaleString();
+  const generatedAt = new Date().toLocaleString(localeDeLaApp());
 
   const html = `<!DOCTYPE html>
 <html><head><title>${shopName} — Full Export</title>
@@ -15774,7 +15799,7 @@ async function loadCrewStatus(tripId) {
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
       <div>
         <div style="font-weight:600;font-size:0.875rem;">${escapeHtml(checklistRoleLabel(s.role))}</div>
-        <div style="font-size:0.75rem;color:var(--muted);">${t('cl_signed_by')}${escapeHtml(s.signed_by || '—')} · ${new Date(s.signed_at).toLocaleTimeString()}</div>
+        <div style="font-size:0.75rem;color:var(--muted);">${t('cl_signed_by')}${escapeHtml(s.signed_by || '—')} · ${new Date(s.signed_at).toLocaleTimeString(localeDeLaApp())}</div>
       </div>
       <div class="cl-role-badge done">${s.completed_items}/${s.total_items} ✓</div>
     </div>`).join('');
@@ -15925,7 +15950,7 @@ async function renderInstructorChecklistForTrip(tripId) {
   if (s) {
     pintarEstadoDeActa('cl-instructor-status', s);
     doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ` +
-      `${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
+      `${new Date(s.signed_at).toLocaleString(localeDeLaApp())} (${s.completed_items}/${s.total_items})`;
     doneBanner.style.display = 'block';
     mostrarActaSiHay('cl-instructor-items', s, null);
     // Firmada: no se vuelve a firmar. Antes el botón seguía ahí ARRIBA del acta
@@ -16058,7 +16083,7 @@ async function firmarUnaSolaVez(claveDeInstancia, instancia, hacerlo) {
       // correcto: las actas no se tocan ni se reemplazan.
       await showAlertModal(t('cl_ya_firmada')
         .replace('{name}', yaHay.signed_by || '')
-        .replace('{time}', new Date(yaHay.signed_at).toLocaleString()));
+        .replace('{time}', new Date(yaHay.signed_at).toLocaleString(localeDeLaApp())));
       return false;
     }
     const ok = await hacerlo();
@@ -17210,7 +17235,7 @@ async function instructorSignOff() {
 function pintarFirmaDelInstructor(nombre, hechos, total, extra) {
   const el = document.getElementById('cl-instructor-done');
   if (!el) return;
-  el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(nombre)}</strong> at ${new Date().toLocaleString()}` +
+  el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(nombre)}</strong> at ${new Date().toLocaleString(localeDeLaApp())}` +
     (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
   el.style.display = 'block';
   // El estado lo decide estadoDeActa(), no el hecho de haber firmado: firmar
@@ -17609,7 +17634,7 @@ async function customChecklistSignOff(checklistId) {
   const pintar = (extra) => {
     const el = document.getElementById(`custom-cl-done-${checklistId}`);
     if (!el) return;
-    el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(name)}</strong> at ${new Date().toLocaleString()}` +
+    el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(name)}</strong> at ${new Date().toLocaleString(localeDeLaApp())}` +
       (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
     el.style.display = 'block';
   };
@@ -17678,7 +17703,7 @@ async function dibujarActaDeChecklistPropia(cc) {
   pintarEstadoDeActa(ids.estado, s);
   if (cartel) {
     cartel.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ` +
-      `${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
+      `${new Date(s.signed_at).toLocaleString(localeDeLaApp())} (${s.completed_items}/${s.total_items})`;
     cartel.style.display = 'block';
   }
   mostrarActaSiHay(ids.items, s, ids.progreso);
@@ -18016,7 +18041,7 @@ async function renderDeptRoutine() {
   if (s) {
     pintarEstadoDeActa('dept-routine-status', s);
     if (doneBanner) {
-      doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ${new Date(s.signed_at).toLocaleString()} (${s.completed_items}/${s.total_items})`;
+      doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ${new Date(s.signed_at).toLocaleString(localeDeLaApp())} (${s.completed_items}/${s.total_items})`;
       doneBanner.style.display = 'block';
     }
     mostrarActaSiHay('dept-list', s, 'dept-routine-progress');
@@ -18101,7 +18126,7 @@ async function deptRoutineSignOff() {
 function pintarFirmaDeRutina(nombre, hechos, total, extra) {
   const el = document.getElementById('dept-routine-done');
   if (!el) return;
-  el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(nombre)}</strong> at ${new Date().toLocaleString()}` +
+  el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(nombre)}</strong> at ${new Date().toLocaleString(localeDeLaApp())}` +
     (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
   el.style.display = 'block';
   pintarEstadoDeActa('dept-routine-status', { completed_items: hechos, total_items: total });
@@ -18163,7 +18188,7 @@ async function loadLoggedChecklists() {
   const days = Object.keys(byDay).sort((a, b) => b.localeCompare(a));
 
   list.innerHTML = days.map(day => {
-    const dayLabel = new Date(day + 'T12:00:00').toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const dayLabel = new Date(day + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const rowsHtml = byDay[day].map(r => {
       // Se escapa, que antes no se hacía: el nombre de la salida lo escribe
       // una persona y termina insertado como HTML.
@@ -18190,7 +18215,7 @@ async function loadLoggedChecklists() {
       return `<div class="cl-logged-row" onclick="toggleLoggedDetail('${r.id}')">
         <div>
           <div class="cl-logged-row-title">${tripLabel}${r.boat_name ? ' · ' + escapeHtml(r.boat_name) : ''}</div>
-          <div class="cl-logged-row-meta">${roleLabel ? escapeHtml(roleLabel) + ' · ' : ''}${t('cl_signed_by')}${escapeHtml(r.signed_by || '—')} · ${new Date(r.signed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          <div class="cl-logged-row-meta">${roleLabel ? escapeHtml(roleLabel) + ' · ' : ''}${t('cl_signed_by')}${escapeHtml(r.signed_by || '—')} · ${new Date(r.signed_at).toLocaleTimeString(localeDeLaApp(), { hour: '2-digit', minute: '2-digit' })}</div>
         </div>
         <div class="${badge}">${r.completed_items}/${r.total_items} ${estadoDeActa(r).clase === 'done' ? '✓' : ''}</div>
       </div>
@@ -18454,7 +18479,7 @@ async function loadPendingInvites() {
     <div class="invite-item">
       <div>
         <div class="invite-email">${inv.email}</div>
-        <div class="invite-meta">${crewRoleLabel(inv.role)} · ${inv.locations?.name || t('crew_no_location')} · ${t('crew_invited_prefix')}${new Date(inv.created_at).toLocaleDateString()}</div>
+        <div class="invite-meta">${crewRoleLabel(inv.role)} · ${inv.locations?.name || t('crew_no_location')} · ${t('crew_invited_prefix')}${new Date(inv.created_at).toLocaleDateString(localeDeLaApp())}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="invite-status">${t('crew_status_pending_badge')}</span>
@@ -18989,7 +19014,7 @@ function setCardExpanded(bodyId, expanded) {
 function engineLogRowHtml(l) {
   return `<div style="font-size:0.8rem;color:var(--muted);padding:4px 0;">
     <div style="display:flex;align-items:center;gap:10px;">
-      <span>${new Date(l.logged_at).toLocaleDateString()} · ${escapeHtml(l.logged_by) || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('fleet_serviced')}</strong>`:''}</span>
+      <span>${new Date(l.logged_at).toLocaleDateString(localeDeLaApp())} · ${escapeHtml(l.logged_by) || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('fleet_serviced')}</strong>`:''}</span>
       <span>${l.event_type==='service' ? '' : l.hours_run+'h'}</span>
     </div>
     ${l.note ? `<div style="color:var(--navy);margin-top:2px;">${escapeHtml(l.note)}</div>` : ''}
@@ -19000,7 +19025,7 @@ function engineMaintRowHtml(m) {
   return `<div style="font-size:0.8rem;padding:6px 0;border-bottom:1px solid var(--border);">
     <div style="display:flex;align-items:center;gap:10px;">
       <strong>${m.title}</strong>
-      <span style="color:var(--muted);">${new Date(m.performed_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+      <span style="color:var(--muted);">${new Date(m.performed_date + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric' })}</span>
     </div>
     <div style="color:var(--muted);margin-top:2px;">${m.description}${m.performed_by ? ' · ' + m.performed_by : ''}</div>
   </div>`;
@@ -19336,7 +19361,7 @@ async function loadBoatDetailMaintenance(boatId) {
 function filaDeService(l, { conBarco = false } = {}) {
   const today = new Date().toISOString().split('T')[0];
   const dueSoon = l.next_due_date && l.next_due_date <= today;
-  const fecha = (d) => new Date(d + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  const fecha = (d) => new Date(d + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' });
 
   const contexto = [];
   if (conBarco) {
@@ -19394,8 +19419,8 @@ function filaDeService(l, { conBarco = false } = {}) {
 // lado del hash invitaría a creer que está sellado. Lo que no está protegido
 // no se imprime en una hoja que dice «constancia».
 function constanciaDeService(l, { contexto = '', selladoPor = '' } = {}) {
-  const fecha = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
-  const momento = l.sealed_at ? new Date(l.sealed_at).toLocaleString() : '—';
+  const fecha = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+  const momento = l.sealed_at ? new Date(l.sealed_at).toLocaleString(localeDeLaApp()) : '—';
   const fila = (etiqueta, valor) => `<tr><th>${escapeHtml(etiqueta)}</th><td>${escapeHtml(valor || '—')}</td></tr>`;
 
   return `<!DOCTYPE html>
@@ -19462,7 +19487,7 @@ async function imprimirConstanciaDeService(id) {
 
 function lineaDeSello(l) {
   const cuando = l.sealed_at
-    ? new Date(l.sealed_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+    ? new Date(l.sealed_at).toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' })
     : '';
   const quien = nombreDeTripulante(l.sealed_by);
   const texto = quien
@@ -19702,7 +19727,7 @@ function renderGearRegistry(items) {
         </div>
         <span class="role-badge" style="background:rgba(0,0,0,0.06);color:${statusColor};">${gearRegistryStatusLabel(g.status)}</span>
       </div>
-      ${g.next_service_date ? `<p style="font-size:0.8rem;margin-top:8px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">${t('gear_next_service_prefix')}${new Date(g.next_service_date + 'T12:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? t('gear_due_now') : ''}</p>` : ''}
+      ${g.next_service_date ? `<p style="font-size:0.8rem;margin-top:8px;color:${dueSoon ? 'var(--error)' : 'var(--muted)'};">${t('gear_next_service_prefix')}${new Date(g.next_service_date + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' })}${dueSoon ? t('gear_due_now') : ''}</p>` : ''}
     </div>
   `;
   }).join('');
@@ -20485,7 +20510,7 @@ async function loadCompressors() {
 function compressorLogRowHtml(l) {
   return `<div style="font-size:0.8rem;color:var(--muted);padding:4px 0;">
     <div style="display:flex;align-items:center;gap:10px;">
-      <span>${new Date(l.logged_at).toLocaleDateString()} · ${escapeHtml(l.logged_by) || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('gear_filter_replaced')}</strong>`:''}</span>
+      <span>${new Date(l.logged_at).toLocaleDateString(localeDeLaApp())} · ${escapeHtml(l.logged_by) || '—'}${l.event_type==='service'?` · <strong style="color:var(--success)">${t('gear_filter_replaced')}</strong>`:''}</span>
       <span>${l.event_type==='service' ? '' : (l.start_time && l.stop_time ? l.start_time+'-'+l.stop_time+' ('+l.hours_run+'h)' : l.hours_run+'h')}</span>
     </div>
     ${l.note ? `<div style="color:var(--navy);margin-top:2px;">${escapeHtml(l.note)}</div>` : ''}
@@ -20802,7 +20827,7 @@ function switchInspectionCategory(catName) {
 function renderInspectionActiveCategory() {
   const { groups, compMap, month, activeCat, editMode } = _inspectionState;
   const el = document.getElementById('inspection-categories');
-  const monthLabel = new Date(month + '-01T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const monthLabel = new Date(month + '-01T00:00:00').toLocaleDateString(localeDeLaApp(), { month: 'long', year: 'numeric' });
   const catItems = groups[activeCat] || [];
   const isLeader = ['owner','manager','captain'].includes(currentUserRole);
   const itemsHtml = catItems.map(item => {
@@ -20817,7 +20842,7 @@ function renderInspectionActiveCategory() {
           <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
         </div>
         <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${comp.completed_by} · ${new Date(comp.completed_at).toLocaleDateString()}${comp.notes ? ' · ' + comp.notes : ''}</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${comp.completed_by} · ${new Date(comp.completed_at).toLocaleDateString(localeDeLaApp())}${comp.notes ? ' · ' + comp.notes : ''}</div>
         ${deleteBtn ? `<div style="margin-top:8px;">${deleteBtn}</div>` : ''}
       </div>`;
     } else {

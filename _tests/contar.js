@@ -38,3 +38,36 @@ function llamadasA(html, nombre) {
 }
 
 module.exports = { lineasDeCodigoCon, llamadasA };
+
+// ─── Fechas, con el idioma de la APP ──────────────────────────────────────
+//
+// Esto nació el 16/10 porque la suite daba 1037/0 en el sandbox y 1037/5 en el
+// Windows de Fran: las aserciones comparaban contra una fecha ya formateada y
+// `toLocaleDateString([])` seguía el idioma de la MÁQUINA.
+//
+// El 17/10 se arregló la causa de raíz —la app ahora formatea con
+// `localeDeLaApp()`— así que este ayudante cambió con ella: ya no calcula «como
+// la ve esta máquina» sino «como la formatea la app en ese idioma».
+//
+// **Es un espejo, no una medición.** Repite la regla de `localeDeLaApp()` en
+// `index.html`; si una de las dos cambia y la otra no, el test pasa a mentir.
+// Por eso hay una comprobación aparte que afirma que las dos dicen lo mismo —
+// igual que el espejo del CHECK de las cadencias.
+function localeDeLaApp(idioma) {
+  return idioma === 'es' ? 'es-419' : 'en-GB';
+}
+
+function fechaEnLaApp(iso, idioma, opciones) {
+  return new Date(iso).toLocaleDateString(localeDeLaApp(idioma), opciones ||
+    { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Para fechas de sólo día (`2026-10-07`), que la app ancla al mediodía para
+// que no se corra un día según la zona horaria.
+function fechaDeDiaEnLaApp(yyyymmdd, idioma, opciones) {
+  return fechaEnLaApp(yyyymmdd + 'T12:00:00', idioma, opciones);
+}
+
+module.exports.localeDeLaApp = localeDeLaApp;
+module.exports.fechaEnLaApp = fechaEnLaApp;
+module.exports.fechaDeDiaEnLaApp = fechaDeDiaEnLaApp;

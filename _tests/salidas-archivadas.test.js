@@ -22,6 +22,12 @@
 //    elegir cuál se está corriendo.
 const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
+// Las fechas NO se afirman ya formateadas: la app formatea con `localeDeLaApp()`
+// y no con el idioma de la máquina, y eso hacía que la suite diera 0 fallos en el sandbox
+// y 5 en el Windows de Fran sobre el mismo commit. Ver _tests/contar.js.
+const { fechaDeDiaEnLaApp } = require('./contar');
+// La app formatea con `localeDeLaApp()`; estos tests corren en inglés.
+const elDia = (d) => fechaDeDiaEnLaApp(d, 'en');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
 const {window}=dom;
@@ -82,10 +88,10 @@ const unaFila=[{id:'t1',trip_date:'2026-10-07',trip_time:'10:00:00',
 window.__t.dibujar(unaFila,false);
 let tx=texto();
 chk('dice qué salida era',   /Island Hopping AM/.test(tx), tx.slice(0,140));
-chk('dice cuándo era',       /Oct 7, 2026/.test(tx));
+chk('dice cuándo era',       tx.includes(elDia('2026-10-07')), elDia('2026-10-07'));
 chk('dice la hora',          /10:00/.test(tx));
 chk('dice en qué barco iba', /Sea Dragon/.test(tx));
-chk('dice cuándo se archivó',/Archived Oct 7, 2026/.test(tx));
+chk('dice cuándo se archivó',tx.includes('Archived ' + elDia('2026-10-07')));
 chk('y de qué cuenta salió', /from Pau Giménez's account/.test(tx), tx.slice(0,200));
 
 // ─── El local sólo cuando se están viendo todos ───
@@ -102,7 +108,7 @@ window.__t.tripulacion([]);
 window.__t.dibujar(unaFila,false);
 tx=texto();
 chk('sin poder resolver el nombre sigue diciendo cuándo se archivó',
-    /Archived Oct 7, 2026/.test(tx), tx.slice(0,140));
+    tx.includes('Archived ' + elDia('2026-10-07')), tx.slice(0,140));
 chk('y NO deja un «desde la cuenta de» colgando sin nombre',
     !/account/.test(tx), tx.slice(0,160));
 chk('la resolución del uuid es la misma función que la autoría de un tilde',
