@@ -54,7 +54,7 @@ Objetivo: USD 1.500/mes de ingreso semi-pasivo.
 | | |
 |---|---|
 | **Código** | esta carpeta (`~/dive-app-v2`) |
-| **Memoria del proyecto** | el vault de Obsidian en `~/Desktop/Fran´s Vult` |
+| **Memoria del proyecto** | el vault de Obsidian en `~/Desktop/AI Projects/Fran´s Vult` |
 | Web app | Render, servicio con URL `dive-app-v2.onrender.com` |
 | Landing | **`sevenseasops.com/landing.html`**, y **tecleando el dominio pelado se llega ahí**: la raíz sirve `index.html` pero ese archivo redirige. Ver abajo |
 | Base y auth | Supabase, proyecto `ggtbxjwstkuhnabwpgdz`, región `sa-east-1` |
@@ -71,7 +71,7 @@ Empezar por `Home.md`, después `Convenciones del vault.md` y
 `Datos canónicos.md`.
 
 Si el vault no está montado en la sesión, pedirle a Fran que lo agregue con
-`/add-dir "C:\Users\franc\Desktop\Fran´s Vult"`.
+`/add-dir "C:\Users\franc\Desktop\AI Projects\Fran´s Vult"`.
 
 ---
 
@@ -119,24 +119,38 @@ normales), no CMD ni PowerShell.
 código anda: está terminado cuando la nota dice lo mismo que el código. Es una
 instrucción permanente de Fran. Ver `Operativa/Cerrar un cambio.md`.
 
-**Y el paso que más se saltea es correr `python3 _scripts/chequeo_vault.py`.**
-Está en el procedimiento desde el 24/09. La primera vez que se corrió en serio
-(09/10) encontró tres hallazgos de una sola sesión: un enlace roto, una nota
-huérfana y un `type` inventado (`referencia` no existe — los válidos son `moc`,
-`note`, `decision`, `procedimiento`, `postmortem`, `person`, `project`).
+**El chequeo de la bóveda es un solo comando, y está en Node:**
 
-**Y desde el 17/10 hay un chequeo más grande: `python3 _scripts/salud_boveda.py`**,
-que corre el anterior y después **verifica contra el código lo que la bóveda
-afirma**: la posición medida de cada interruptor, los dos números del
-despliegue, y los identificadores o archivos que una nota cita y ya no existen.
+```bash
+cd "/c/Users/franc/Desktop/AI Projects/Fran´s Vult" && node "_scripts/salud-boveda.js"
+```
+
+O diciendo «chequeá la bóveda» (skill `seven-seas-salud-boveda`). Mira la bóveda
+por dentro —enlaces, huérfanas, tipos, borradores, números contra
+`Datos canónicos`— y después **verifica contra el código lo que la bóveda
+afirma**: la posición medida de cada interruptor, los dos números del despliegue,
+los identificadores o archivos que una nota cita y ya no existen, la ruta de la
+bóveda, y que los comandos que una nota manda correr se puedan correr de verdad.
 Es la respuesta mecánica al error más caro del proyecto —leer una nota en vez de
-medir, cuatro veces—. Se corre en **la primera sesión de cada lunes, miércoles y
-viernes**, o diciendo «chequeá la bóveda» (skill `seven-seas-salud-boveda`).
+medir, cuatro veces—.
 
-**No se puede programar.** Las tareas programadas corren en la nube y no llegan
-al disco de Fran, así que una corrida automática devolvería hallazgos
-inventados. Por eso es un paso del arranque de sesión. Ver
-`Operativa/Salud de la bóveda.md`.
+**Cuándo: al abrir la primera sesión del día.** Un health check, no una hora
+fija. **No se puede programar**: las tareas programadas corren en la nube y no
+llegan al disco de Fran, así que una corrida automática devolvería hallazgos
+inventados. Si ya se corrió hoy, no se repite.
+
+> [!warning] Estuvo en Python tres semanas y Fran nunca lo pudo correr
+> Medido el 17/10 en su máquina: los `python.exe` y `python3.exe` del PATH son
+> los stubs del Microsoft Store, de **0 bytes**. **No tiene Python.** El chequeo
+> estructural era paso obligatorio desde el 24/09 y lo corría una sola de las dos
+> personas, en un sandbox donde sí había. Mismo error que los tests con
+> `require('/tmp/node_modules/jsdom')`.
+>
+> De ahí dos cosas: **un solo runtime, Node**, el que Fran ya usa para la suite;
+> y el chequeo ahora **se mide a sí mismo** — si una nota manda correr algo con un
+> runtime que no está en esta máquina, es un hallazgo. Ver
+> `Operativa/Salud de la bóveda.md` y
+> `Errores y aprendizajes/El chequeo que Fran no podía correr.md`.
 
 **Tres skills guardadas encapsulan este flujo** y conviene usarlas en vez de
 reconstruirlo de memoria, que es lo que lo hacía distinto cada vez:
