@@ -4656,7 +4656,7 @@ const TRANSLATIONS = {
     cl_tab_tripprep: 'Trip Prep', cl_tab_captain: 'Captain', cl_tab_department: 'Department Checklists', cl_tab_logged: 'Logged Checklists',
     cl_logged_title: 'Logged Checklists', cl_logged_sub: 'Every gear and vessel sign-off, organized by day.',
     cl_logged_search_date: 'Search a date', cl_logged_clear: 'Clear', cl_logged_none: 'No checklists logged yet.',
-    cl_tick_failed: "That tick couldn't be saved, so it's been undone. Check your connection and try again.",
+    cl_tick_failed: "That tick couldn't be saved, so it's been undone. {why}",
     cl_acta_failed: "The signed record couldn't be saved: {error}. Nothing was cleared — try signing again.",
     del_sin_conexion: "No connection, so nothing was deleted. Try again once you're back online.",
     del_tiene_historia: 'This can\'t be deleted because there are records attached to it — bookings, payments, logs or signed paperwork. Nothing was removed.',
@@ -5473,7 +5473,7 @@ const TRANSLATIONS = {
     cl_tab_tripprep: 'Preparación de Salida', cl_tab_captain: 'Capitán', cl_tab_department: 'Checklists por Departamento', cl_tab_logged: 'Checklists Logueadas',
     cl_logged_title: 'Checklists Logueadas', cl_logged_sub: 'Cada confirmación de equipo y de embarcación, organizada por día.',
     cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
-    cl_tick_failed: 'Ese tilde no se pudo guardar, así que se deshizo. Revisá la conexión y probá de nuevo.',
+    cl_tick_failed: 'Ese tilde no se pudo guardar, así que se deshizo. {why}',
     cl_acta_failed: 'El acta no se pudo guardar: {error}. No se borró nada — probá firmar de nuevo.',
     del_sin_conexion: 'Sin conexión, así que no se borró nada. Probá de nuevo cuando vuelva la señal.',
     del_tiene_historia: 'Esto no se puede borrar porque tiene registros asociados — reservas, pagos, logs o documentación firmada. No se borró nada.',
@@ -8908,7 +8908,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-17a');
+  console.info('[Seven Seas] build 2026-10-20a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -16618,10 +16618,18 @@ async function hayRedDeVerdad() {
 // Y 23503 NO significa lo mismo en los dos casos: al borrar es «algo cuelga de
 // esto»; al guardar es «lo que esto referencia ya no existe». Mismo código,
 // causas opuestas.
-async function motivoDeFalloAlEscribir(error, operacion) {
+// `yaHabiaRed` lo pasa quien **ya midió** la red antes de llamar. No es un
+// atajo de rendimiento: es que medirla dos veces abre la puerta a que las dos
+// mediciones no coincidan, y entonces el cartel contradice la decisión que ya se
+// tomó. El tilde es el caso: `saveChecklistTick()` mide la red y, si no hay,
+// **encola** en vez de avisar — así que si llegamos al cartel es porque había
+// red y el servidor dijo no. Un segundo sondeo que falle por un segundo malo
+// haría que el cartel dijera «sin conexión» sobre un tilde que el servidor
+// rechazó, que es exactamente la mentira que esto vino a sacar.
+async function motivoDeFalloAlEscribir(error, operacion, { yaHabiaRed = false } = {}) {
   const borrando = operacion === 'borrar';
   // La red primero: si nunca llegamos, el código de Postgres no significa nada.
-  if (pareceFalloDeRed(error) || !(await hayRedDeVerdad())) {
+  if (!yaHabiaRed && (pareceFalloDeRed(error) || !(await hayRedDeVerdad()))) {
     return t(borrando ? 'del_sin_conexion' : 'esc_sin_conexion');
   }
   if (error.code === '23503') return t(borrando ? 'del_tiene_historia' : 'esc_falta_referencia');
@@ -16643,14 +16651,22 @@ async function borrarOAvisar(consulta) {
 // Guarda un tilde. La llaman los tres toggles DESPUÉS de haber pintado la
 // pantalla, no antes: ver el comentario en marcarTilde().
 //
-// Devuelve true si quedó guardado (o encolado sin conexión) y false si falló,
-// para que quien la llamó pueda deshacer el tilde en pantalla. Antes no
-// devolvía nada y no miraba el error: un tilde que no se guardaba se veía
-// igual que uno que sí, hasta que alguien recargaba y descubría que faltaba.
+// Devuelve `null` si quedó guardado (o encolado sin conexión) y **el error del
+// servidor** si falló, para que quien la llamó pueda deshacer el tilde en
+// pantalla Y decir por qué. Antes no devolvía nada y no miraba el error: un
+// tilde que no se guardaba se veía igual que uno que sí, hasta que alguien
+// recargaba y descubría que faltaba.
+//
+// Y hasta el 20/10 devolvía `true`/`false`, que es lo mismo que tirar el motivo:
+// esta función es la única que lo tiene en la mano y el cartel lo pintaba otra.
+// Un booleano en un borde es una decisión de no contar lo que se sabe. Lo
+// destapó Juanma probando desde su celular: dijo que no podía tildar, y la base
+// mostraba su tilde guardado — así que lo que había que mirar era el cartel, no
+// el permiso, y el cartel decía «revisá la conexión» sin haber mirado la red.
 async function saveChecklistTick(scopeKey, meta, itemId, checked) {
   const cache = progressCache[scopeKey] = progressCache[scopeKey] || {};
   if (checked) cache[itemId] = true; else delete cache[itemId];
-  if (!currentOrgId) return true;
+  if (!currentOrgId) return null;
 
   // El id sale de `currentUserId`, cacheado al arrancar la sesión. Antes esto
   // hacía `await sb.auth.getUser()` en CADA tilde, que es un viaje de red de
@@ -16671,7 +16687,7 @@ async function saveChecklistTick(scopeKey, meta, itemId, checked) {
 
   if (isOffline) {
     queueOfflineAction(checked ? 'checklist_tick' : 'checklist_untick', payload);
-    return true;
+    return null;
   }
   const { error } = checked
     ? await sb.from('checklist_progress').upsert(payload, { onConflict: 'org_id,scope_key,item_id' })
@@ -16686,11 +16702,11 @@ async function saveChecklistTick(scopeKey, meta, itemId, checked) {
     console.warn('[CHECKLIST] sin red al guardar el tilde, va a la cola', error);
     queueOfflineAction(checked ? 'checklist_tick' : 'checklist_untick', payload);
     updateOfflineBanner();
-    return true;
+    return null;
   }
   if (!error) {
     olvidarPendiente(scopeKey, itemId);   // confirmado por el servidor
-    return true;
+    return null;
   }
   // Llegamos al servidor y dijo no.
   console.error('[CHECKLIST] el servidor rechazó el tilde:', error);
@@ -16700,7 +16716,7 @@ async function saveChecklistTick(scopeKey, meta, itemId, checked) {
   // nuevo es un objeto DISTINTO del que dibuja la pantalla — así que el revert
   // tocaba el que nadie mira y el tilde quedaba marcado igual. Un dueño por
   // estado.
-  return false;
+  return error;
 }
 
 // Tilda o destilda un ítem: pinta primero, guarda después.
@@ -16746,8 +16762,8 @@ async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
   anotarPendiente(scopeKey, itemId, quedoTildado);
   dibujar();
 
-  const ok = await saveChecklistTick(scopeKey, meta, itemId, quedoTildado);
-  if (!ok) {
+  const fallo = await saveChecklistTick(scopeKey, meta, itemId, quedoTildado);
+  if (fallo) {
     // Vuelve a como estaba. Un tilde que no se guardó no puede verse igual
     // que uno que sí: alguien está revisando un barco contra esta lista.
     if (estabaTildado) checks[itemId] = true; else delete checks[itemId];
@@ -16757,7 +16773,14 @@ async function marcarTilde({ scopeKey, meta, itemId, checks, dibujar }) {
     if (autorPrevio) autores[itemId] = autorPrevio; else delete autores[itemId];
     olvidarPendiente(scopeKey, itemId);
     dibujar();
-    await showAlertModal(t('cl_tick_failed'));
+    // El motivo lo dice la función que lo dice en todo el resto de la app, no un
+    // texto propio de acá. El cartel decía «revisá la conexión» para cualquier
+    // rechazo — y a esta altura ya sabemos que NO era la conexión: si lo fuera,
+    // `saveChecklistTick()` habría encolado el tilde y no estaríamos acá. Era
+    // el único cartel de escritura que había quedado afuera del arreglo del
+    // 11/10, y es el que más se ve, porque tildar es lo que más se hace.
+    await showAlertModal(t('cl_tick_failed').replace('{why}',
+      await motivoDeFalloAlEscribir(fallo, 'guardar', { yaHabiaRed: true })));
   }
 }
 
@@ -20122,7 +20145,7 @@ async function guardarPrecioDeVenta(itemId) {
     .update({ for_sale: quiereVender, sale_price: quiereVender ? precio : null })
     .eq('id', itemId);
   if (error) {
-    await showAlertModal(motivoDeFalloAlEscribir(error, 'guardar'));
+    await showAlertModal(await motivoDeFalloAlEscribir(error, 'guardar'));
     return;
   }
   await loadGearInventory();
@@ -20225,7 +20248,7 @@ async function confirmarVenta() {
   if (error) {
     // El servidor manda: si rechazó, el carrito se conserva para corregir en
     // vez de perderse.
-    await showAlertModal(error.message || motivoDeFalloAlEscribir(error, 'guardar'));
+    await showAlertModal(error.message || await motivoDeFalloAlEscribir(error, 'guardar'));
     return;
   }
   carritoDeVenta = {};

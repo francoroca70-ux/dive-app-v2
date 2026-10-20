@@ -349,7 +349,7 @@ function hayPrecioEnElDOM() {
   // Que haya que editar estas dos líneas en cada cambio es a propósito: la
   // regla 5 de CLAUDE.md dice que los dos números suben juntos, y esto es lo
   // que lo convierte en un paso que falla si se saltea.
-  const ESPERADO={ build:'2026-10-17a', sw:'seven-seas-v66' };
+  const ESPERADO={ build:'2026-10-20a', sw:'seven-seas-v67' };
   chk('el build subió a '+ESPERADO.build, html.includes('build '+ESPERADO.build));
   const sw=fs.readFileSync(require('path').join(__dirname,'..','sw.js'),'utf8');
   chk('y el service worker a '+ESPERADO.sw, sw.includes(ESPERADO.sw));

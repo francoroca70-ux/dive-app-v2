@@ -160,14 +160,27 @@ window.__t.setUser('u-ana');   // lo que initAuthInner() hace desde la sesión
   // ── Si la escritura falla, el tilde se deshace ──
   // Un tilde que no se guardó no puede verse igual que uno que sí: alguien
   // está revisando un barco contra esa lista.
+  // Desde el 20/10 `saveChecklistTick()` devuelve **el error** y no un booleano:
+  // el cartel tiene que decir POR QUÉ, y un booleano tira el motivo en el borde
+  // entre la función que lo sabe y la que habla. Así que el doble acá es el
+  // error del servidor, no un `false` — y se afirma que el motivo LLEGA al
+  // cartel, que es lo único que Juanma podía ver desde su celular.
   let avisos=[]; window.showAlertModal=async(m)=>{avisos.push(String(m));};
-  window.saveChecklistTick=async()=>false;
+  window.saveChecklistTick=async()=>({ code:'42501', message:'new row violates row-level security policy' });
   const checks2={};
   await window.marcarTilde({ scopeKey:mensual, meta, itemId:'i10', checks:checks2,
                              dibujar:()=>{} });
   chk('si falla la escritura, el tilde se revierte en pantalla',
       checks2.i10===undefined, JSON.stringify(checks2));
   chk('y se le avisa a quien estaba tildando', avisos.length===1, avisos[0]||'(ningún aviso)');
+  // El cartel viejo decía «revisá la conexión» para cualquier rechazo. Un 42501
+  // es un permiso, y mandar a alguien a mirar el wifi por un permiso es peor que
+  // no decir nada: se va a quedar un rato probando lo que no es.
+  chk('el cartel dice el motivo real y no manda a revisar la conexión',
+      avisos.length===1 && !/conexi[óo]n|connection/i.test(avisos[0]), avisos[0]||'(ningún aviso)');
+  chk('y no quedó un {why} sin reemplazar ni una promesa sin resolver',
+      avisos.length===1 && !avisos[0].includes('{why}') && !avisos[0].includes('[object'),
+      avisos[0]||'(ningún aviso)');
   window.saveChecklistTick=saveOriginal;
 
   // ── Señal cortada que el navegador todavía no notó ──
