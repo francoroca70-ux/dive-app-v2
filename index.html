@@ -8910,7 +8910,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-21b');
+  console.info('[Seven Seas] build 2026-10-21c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15288,10 +15288,17 @@ async function refrescarProgresoVisible() {
   }
 
   if (visible('cl-department')) {
-    const { routine, scopeKey } = deptScope();
+    const { routine, scopeKey, items } = deptScope();
     const checks = await loadChecklistProgress(scopeKey, { forzar: true });
     deptRoutineChecks[routine.role] = checks;
-    renderCheckItems('dept-list', routine.items, checks, 'toggleDeptItem', 'dept-routine-progress');
+    // `items` y no `routine.items`, y éste era el peor de los seis lugares: es
+    // el refresco de cada 10 segundos. Con el interruptor prendido, redibujar
+    // con la lista cableada mientras los tildes vienen de la plantilla haría que
+    // **toda la tripulación viera sus tildes perdidos, cada diez segundos** —
+    // están guardados con la otra llave. El camino de las salidas, dos líneas
+    // más arriba, ya pedía su lista por función; el de departamento era la copia
+    // que faltaba, y el defecto habría aparecido justo ahí.
+    renderCheckItems('dept-list', items, checks, 'toggleDeptItem', 'dept-routine-progress');
     // Las checklists propias del centro viven en la misma pestaña.
     for (const cc of customChecklists) {
       const sc = customScope(cc).scopeKey;
@@ -15333,8 +15340,18 @@ function refrescarChecklistVisible() {
 // versión guardaba el texto resuelto y el test la agarró: alguien que guardaba
 // la lista en español y después cambiaba la app a inglés seguía viendo español
 // sin señal. El idioma es de quien mira, no de cuando se guardó.
-async function cargarConTresCapas({ nombreEnCache, leerDeLaBase, cableado, convertir }) {
-  if (FUENTE_PLANTILLAS !== 'base') return cableado();
+// `fuente` lo pasa quien llama, y es su propio interruptor.
+//
+// Antes esta función miraba `FUENTE_PLANTILLAS` directamente. Eso estuvo bien
+// mientras hubo un solo camino de plantillas; al sumarse las rutinas de
+// departamento (A1) dejaría a las rutinas gobernadas por el interruptor de las
+// **salidas** — dos cosas distintas con una sola llave, que es lo contrario de
+// lo que un interruptor tiene que ser.
+//
+// Las tres capas siguen siendo una sola implementación. Lo que cada camino trae
+// propio es su interruptor y de dónde lee.
+async function cargarConTresCapas({ fuente, nombreEnCache, leerDeLaBase, cableado, convertir }) {
+  if (fuente !== 'base') return cableado();
 
   if (!isOffline && currentOrgId) {
     try {
@@ -15388,6 +15405,7 @@ function nombreEnCacheDePlantilla(tripTypeId) {
 
 async function filasDePlantillaParaTipo(tripTypeId) {
   return cargarConTresCapas({
+    fuente: FUENTE_PLANTILLAS,
     nombreEnCache: nombreEnCacheDePlantilla(tripTypeId),
     cableado: () => null,
     convertir: (filas) => filas,
@@ -15956,6 +15974,103 @@ function itemsDeLaSalida(tripId) {
 // Así que la lista de una salida se fija al abrirla y se mantiene mientras la
 // sesión dure. Recargar la página es lo que la vuelve a resolver, y ahí la
 // instancia arranca de cero igual.
+// ─── A1-a · Las rutinas de departamento, detrás de un interruptor ───────────
+//
+// Las rutinas del capitán, de cubierta, de instructores y de stewards están
+// cableadas en `DEPARTMENT_ROUTINES_I18N`: 4 departamentos × 4 cadencias, 102
+// ítems, y **ningún centro puede tocarlas**. Un dueño que quiere corregir la
+// rutina de la mañana de su capitán hoy no tiene cómo.
+//
+// Esto construye el camino de lectura al lado del cableado, apagado. Medido
+// antes de escribir una línea (21/10):
+//
+//   plantillas scope='department'     0
+//   actas con rol de departamento     7   (captain, captain_eod, deck_morning…)
+//   filas de progreso                26
+//   RLS para scope='department'       ya escrita, con head_steward→steward
+//   columna `department`              ya existe, 0 de 44 filas la usan
+//
+// O sea: la mitad del camino ya estaba, y la columna que hacía falta también.
+// Lo único que pidió migración fue **ensanchar** el CHECK, que sólo admitía
+// `daily|monthly|yearly` para este scope y rechazaba dos de las cuatro
+// cadencias reales de la app. Aplicado por Fran el 21/10.
+//
+// ─── Por qué esto es un 7 y no un 4 ───
+//
+// Porque los ids de ítem son la llave de los tildes: lo cableado usa posiciones
+// (`'0'`, `'1'`…) y una plantilla usa uuid. Si una rutina **abierta** resolviera
+// su lista en cada dibujo, un corte de red a media mañana la pasaría de uuid a
+// posicional y **la tripulación vería todos sus tildes perdidos** — están
+// guardados con la otra llave.
+//
+// La defensa es la misma que la de una salida, con una diferencia: la instancia
+// de una salida es el viaje, y la de una rutina es **el período**. De ahí que
+// esto se indexe por `scopeKey` (que lleva el rol y el período) y no por el rol:
+// la instancia de hoy conserva su lista aunque el dueño edite la plantilla al
+// mediodía, y la de mañana arranca con la nueva. **Para algo en curso,
+// estabilidad le gana a frescura.**
+let FUENTE_RUTINAS_DEPTO = 'cableado';   // 'cableado' | 'base'
+
+// scopeKey → filas bilingües de la plantilla, o el centinela 'cableado'.
+//
+// La caída a lo cableado **también se guarda**, por lo mismo que en las salidas:
+// si no, el día que la plantilla apareciera a media mañana la lista cambiaría de
+// llave con la tripulación tildando.
+const rutinaItemsPorInstancia = {};
+
+function nombreEnCacheDeRutina(deptKey, cadence) { return `rutina_${deptKey}_${cadence}`; }
+
+async function filasDePlantillaDeRutina(deptKey, cadence) {
+  return cargarConTresCapas({
+    fuente: FUENTE_RUTINAS_DEPTO,
+    nombreEnCache: nombreEnCacheDeRutina(deptKey, cadence),
+    cableado: () => null,
+    convertir: (filas) => filas,
+    leerDeLaBase: async () => {
+      if (!deptKey || !cadence) return null;
+      const { data, error } = await sb.from('checklist_templates')
+        .select('id, checklist_template_items(id, order_index, text_en, text_es, active)')
+        .eq('org_id', currentOrgId).eq('department', deptKey).eq('cadence', cadence)
+        .eq('scope', 'department').eq('active', true).limit(1);
+      if (error) throw error;
+      const plantilla = (data || [])[0];
+      if (!plantilla) return null;
+      // Filas crudas: el filtrado y el orden son de la plantilla, el idioma es
+      // de quien mira. Si la caché guardara el texto ya resuelto, congelaría el
+      // idioma — el error que la 3a arregló y yo repetí doce líneas más abajo.
+      return (plantilla.checklist_template_items || [])
+        .filter(i => i.active !== false)
+        .sort((a, b) => a.order_index - b.order_index);
+    }
+  });
+}
+
+function itemsCableadosDeLaRutina(deptKey, cadence) {
+  const dept = departmentRoutinesGet()[deptKey];
+  const cad = dept && dept.cadences[cadence];
+  return (cad && cad.items) || [];
+}
+
+// Sincrónica, y resuelve el idioma en cada lectura: es lo que piden los cinco
+// lugares que dibujan o firman una rutina.
+function itemsDeLaRutina({ scopeKey, deptKey, cadence }) {
+  const guardado = rutinaItemsPorInstancia[scopeKey];
+  return (Array.isArray(guardado) && guardado.length)
+    ? itemsDePlantilla(guardado)
+    : itemsCableadosDeLaRutina(deptKey, cadence);
+}
+
+// Resuelve UNA vez por instancia. Se llama antes de dibujar y antes de leer los
+// tildes, nunca en medio.
+async function fijarItemsDeLaRutina({ scopeKey, deptKey, cadence }) {
+  if (!scopeKey || rutinaItemsPorInstancia[scopeKey]) {
+    return itemsDeLaRutina({ scopeKey, deptKey, cadence });
+  }
+  const filas = await filasDePlantillaDeRutina(deptKey, cadence);
+  rutinaItemsPorInstancia[scopeKey] = (filas && filas.length) ? filas : 'cableado';
+  return itemsDeLaRutina({ scopeKey, deptKey, cadence });
+}
+
 async function fijarItemsDeLaSalida(tripId) {
   if (!tripId || instructorItemsByTrip[tripId]) return itemsDeLaSalida(tripId);
   const salida = checklistTripById[tripId] || null;
@@ -17076,7 +17191,7 @@ function buildItemsSnapshot(items, estaTildado, autorDe, motivos) {
 // Devuelve null cuando no se sabe, y eso es una respuesta: **no se afirma una
 // procedencia que no se midió.** Mismo criterio que no inventar el nombre de un
 // tripulante que no resuelve.
-function fuenteDeLaLista(role, tripId) {
+function fuenteDeLaLista(role, tripId, scopeKey) {
   // La lista de preparación de una salida es la única que puede venir de una
   // plantilla del centro. `instructorItemsByTrip` guarda las filas, o el
   // centinela 'cableado' cuando el tipo de salida no tiene plantilla.
@@ -17087,11 +17202,27 @@ function fuenteDeLaLista(role, tripId) {
   }
   // Una checklist propia del centro es, por definición, del centro.
   if (typeof role === 'string' && role.startsWith('custom_')) return 'template';
-  // Y las rutinas de departamento están cableadas en `DEPARTMENT_ROUTINES_I18N`:
-  // `scope='department'` tiene CERO plantillas, medido el 13/10. Hasta que el A1
-  // se construya, un acta de rutina es siempre contra la lista cableada — y
-  // decirlo es más honesto que no decirlo.
-  if (typeof role === 'string' && role) return 'hardwired';
+  // Una rutina de departamento mira su propio centinela, igual que una salida.
+  //
+  // Hasta el A1-a esto devolvía `'hardwired'` para cualquier rol, y era cierto:
+  // `scope='department'` tenía cero plantillas. Pero dejarlo así ahora que el
+  // camino existe haría que el acta **afirmara algo que no midió** en cuanto el
+  // interruptor se prenda — y en la dirección más cara, diciendo «lista
+  // genérica» sobre una rutina que el centro sí había escrito.
+  //
+  // Y de paso cierra el A7: el aviso en pantalla manda a armar la lista en
+  // Configuración, y para una rutina de departamento eso **no existía**. Con el
+  // interruptor apagado el centinela sigue dando `'hardwired'`, que es la
+  // verdad; lo que ya no hay es una afirmación cableada que no puede cambiar.
+  // `scopeKey` lo pasa quien firma, porque es **él** el que sabe qué instancia
+  // está cerrando. Derivarlo acá del rol habría sido buscar «alguna instancia
+  // de este rol», y dos instancias del mismo rol conviven en una sesión (la de
+  // hoy y la de ayer, si alguien dejó la app abierta).
+  if (scopeKey) {
+    const instancia = rutinaItemsPorInstancia[scopeKey];
+    if (!instancia) return null;   // no se resolvió todavía: no se afirma nada
+    return (Array.isArray(instancia) && instancia.length) ? 'template' : 'hardwired';
+  }
   return null;
 }
 
@@ -17122,11 +17253,11 @@ function nombreDeChecklistParaActa(role) {
   return (cc && cc.title) || null;
 }
 
-function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, checks, motivos }) {
+function buildRecordPayload({ role, tripId, items, estaTildado, signer, hechos, checks, motivos, scopeKey }) {
   const salida = (tripId && checklistTripById[tripId]) || null;
   const autores = autoriaDe(checks);
   return {
-    items_source: fuenteDeLaLista(role, tripId),
+    items_source: fuenteDeLaLista(role, tripId, scopeKey),
     checklist_name: nombreDeChecklistParaActa(role),
     org_id: currentOrgId,
     trip_id: tripId || null,
@@ -18133,10 +18264,16 @@ async function renderDeptRoutine() {
   }
   if (tarjeta) tarjeta.style.display = '';
   const roleKey = routine.role;
+  // La lista se fija ANTES de leer los tildes, y por la misma razón que en una
+  // salida: los tildes están guardados con la llave de la lista con la que se
+  // marcaron. Leerlos primero y resolver la lista después sería mirar un mapa
+  // con las llaves de otro.
+  await fijarItemsDeLaRutina(deptScope());
   // Lo que ya esté tildado de esta instancia — por otro tripulante, o por uno
   // mismo ayer. Un control mensual se hace de a poco entre varios días.
   const periodKeyDept = periodKeyForCadence(currentCadenceKey, null);
   deptRoutineChecks[roleKey] = await loadChecklistProgress(progressScopeKey(roleKey, periodKeyDept));
+  const itemsDept = deptScope().items;
   document.getElementById('dept-routine-title').textContent = routine.label;
   // Plegado o desplegado según lo que la persona dejó, por rutina: cada depto +
   // cadencia es su propia tarjeta aunque compartan el mismo lugar en pantalla.
@@ -18154,7 +18291,7 @@ async function renderDeptRoutine() {
   if (doneBanner) doneBanner.style.display = 'none';
   const status = document.getElementById('dept-routine-status');
   if (status) { status.textContent = t('cl_pending'); status.classList.remove('done'); }
-  renderCheckItems('dept-list', routine.items, deptRoutineChecks[roleKey], 'toggleDeptItem', 'dept-routine-progress');
+  renderCheckItems('dept-list', itemsDept, deptRoutineChecks[roleKey], 'toggleDeptItem', 'dept-routine-progress');
   renderCustomChecklistsForCurrentView();
 
   pintarZonaDeFirma({ selectId: 'dept-routine-name', botonId: 'dept-routine-signoff-btn', acta: null });
@@ -18173,16 +18310,20 @@ async function renderDeptRoutine() {
       doneBanner.style.display = 'block';
     }
     mostrarActaSiHay('dept-list', s, 'dept-routine-progress');
+    // El acta manda sobre la lista viva, así que la lista que se fijó arriba ya
+    // no se dibuja — pero no se borra de `rutinaItemsPorInstancia`: si alguien
+    // hace Reset y abre una segunda pasada, la llave tiene que seguir siendo la
+    // misma con la que se tildó.
     pintarZonaDeFirma({ selectId: 'dept-routine-name', botonId: 'dept-routine-signoff-btn', acta: s });
   }
 }
 
 async function resetDeptRoutine() {
-  const { routine, scopeKey } = deptScope();
+  const { routine, scopeKey, items } = deptScope();
   const hayActa = !!(currentOrgId && await buscarActaVigente({
     role: routine.role, periodo: deptRoutinePeriodRange(currentCadenceKey) }));
   await reiniciarPasada({
-    scopeKey, items: routine.items,
+    scopeKey, items,
     checks: deptRoutineChecks[routine.role] || {},
     hayActa,
     redibujar: async () => {
@@ -18194,28 +18335,40 @@ async function resetDeptRoutine() {
 
 // Una instancia por período: la de mañana es diaria, el control mensual es
 // uno por mes.
+// Devuelve también `items`, y ésa es la pieza del A1-a que importa: los cinco
+// lugares que dibujan o firman una rutina preguntan **acá** en vez de leer
+// `routine.items` cada uno por su cuenta. Mientras la lista estuvo sólo cableada
+// eso daba igual; con dos fuentes posibles, cinco lecturas independientes son
+// cinco lugares donde una puede quedar con la lista vieja — y el defecto
+// aparecería donde la copia falta, como siempre acá.
+//
+// `items` es una propiedad y no una función para que el cambio en los cinco
+// lugares sea de una palabra: `routine.items` → `scope.items`.
 function deptScope() {
   const routine = currentDeptRoutine();
   const periodKey = periodKeyForCadence(currentCadenceKey, null);
-  return { routine, periodKey,
-           scopeKey: progressScopeKey(routine.role, periodKey),
+  const scopeKey = progressScopeKey(routine.role, periodKey);
+  const deptKey = currentDeptKey;
+  const cadence = currentCadenceKey;
+  return { routine, periodKey, scopeKey, deptKey, cadence,
+           items: itemsDeLaRutina({ scopeKey, deptKey, cadence }),
            meta: { role: routine.role, periodKey, tripId: null } };
 }
 
 async function toggleDeptItem(id) {
-  const { routine, scopeKey, meta } = deptScope();
+  const { routine, scopeKey, meta, items } = deptScope();
   const checks = deptRoutineChecks[routine.role] = progressCache[scopeKey] || {};
   await marcarTilde({ scopeKey, meta, itemId: id, checks,
-    dibujar: () => renderCheckItems('dept-list', routine.items, checks, 'toggleDeptItem', 'dept-routine-progress') });
+    dibujar: () => renderCheckItems('dept-list', items, checks, 'toggleDeptItem', 'dept-routine-progress') });
 }
 
 async function deptRoutineSignOff() {
-  const routine = currentDeptRoutine();
+  const { routine, items } = deptScope();
   const checks = deptRoutineChecks[routine.role] || {};
   const signer = readSigner('dept-routine-name');
-  const done = routine.items.filter(i => checks[i.id]).length;
+  const done = items.filter(i => checks[i.id]).length;
   if (!signer) { await showAlertModal(t('cl_enter_your_name')); return; }
-  const confirmado = await confirmarFirma(routine.items, (it) => checks[it.id]);
+  const confirmado = await confirmarFirma(items, (it) => checks[it.id]);
   if (!confirmado) return;
 
   // La instancia de una rutina es su rol + su período: la de mañana es una por
@@ -18223,15 +18376,15 @@ async function deptRoutineSignOff() {
   // dos actas.
   const periodo = deptRoutinePeriodRange(currentCadenceKey);
   await firmarUnaSolaVez(deptScope().scopeKey, { role: routine.role, periodo }, async () => {
-    if (!currentOrgId) { pintarFirmaDeRutina(signer.name, done, routine.items.length); return true; }
+    if (!currentOrgId) { pintarFirmaDeRutina(signer.name, done, items.length); return true; }
     const payload = buildRecordPayload({
-      role: routine.role, tripId: null,
-      items: routine.items, estaTildado: (it) => checks[it.id],
+      role: routine.role, tripId: null, scopeKey: deptScope().scopeKey,
+      items, estaTildado: (it) => checks[it.id],
       signer, hechos: done, checks, motivos: confirmado.motivos
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
-      pintarFirmaDeRutina(signer.name, done, routine.items.length, t('cl_saved_offline_sync'));
+      pintarFirmaDeRutina(signer.name, done, items.length, t('cl_saved_offline_sync'));
       // Y redibuja, igual que el camino con red. Hasta el 16/10 este camino
       // sólo pintaba el cartel: según lo que `navigator.onLine` hubiera dicho,
       // firmar sin señal dejaba la pantalla en dos estados distintos — con

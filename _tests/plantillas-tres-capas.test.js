@@ -13,6 +13,7 @@
 // La 3a construye el camino y lo deja probado sin mover el interruptor. La app
 // sigue leyendo lo cableado; estos tests llaman al camino nuevo directamente,
 // que es lo que impide que sea código muerto.
+const { lineasDeCodigoCon } = require('./contar');
 const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
@@ -231,13 +232,19 @@ const FILAS=[{ id:'tpl-1', checklist_template_items:[
       (html.match(/async function cargarConTresCapas\(/g)||[]).length===1);
   chk('el interruptor está en base en el código que se despliega',
       /let FUENTE_PLANTILLAS = 'base'/.test(html), 'lo encendió la 3b el 09/10');
-  // Y la vuelta atrás tiene que seguir siendo UNA línea: nadie más que
-  // `cargarConTresCapas` puede mirar el interruptor, o apagarlo dejaría medio
-  // camino encendido.
-  chk('sólo cargarConTresCapas mira el interruptor',
-      (html.match(/FUENTE_PLANTILLAS !== 'base'/g)||[]).length===1 &&
-      (html.match(/FUENTE_PLANTILLAS/g)||[]).length===2,
-      (html.match(/FUENTE_PLANTILLAS/g)||[]).length+' menciones: la declaración y la comprobación');
+  // Y la vuelta atrás tiene que seguir siendo UNA línea: el interruptor de las
+  // salidas lo mira un solo lugar, o apagarlo dejaría medio camino encendido.
+  //
+  // **Se cuentan líneas de CÓDIGO, no menciones.** El 21/10 esta aserción falló
+  // con el código sano: al sumarse el interruptor de las rutinas de departamento
+  // (A1-a), `cargarConTresCapas()` pasó a recibir el interruptor como parámetro
+  // —para que cada camino traiga el suyo— y un comentario quedó nombrando a
+  // `FUENTE_PLANTILLAS`. Quinta vez que contar menciones se equivoca; de ahí
+  // `contar.js`, que existe exactamente para esto.
+  const lineasFuente = lineasDeCodigoCon(html, 'FUENTE_PLANTILLAS');
+  chk('el interruptor de las salidas se lee en un solo lugar',
+      lineasFuente.length===2 && lineasFuente.some(l => l.includes('fuente: FUENTE_PLANTILLAS')),
+      lineasFuente.length+' líneas de código: '+lineasFuente.join(' | ').slice(0,160));
 
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,400)); }
   process.exit(fail);

@@ -48,7 +48,11 @@ chk('el acta del servidor le gana a la encolada',
 chk('los tres caminos offline redibujan',
     /pintarFirmaDelInstructor\(signer\.name, done, instructorItems\.length, t\('cl_saved_offline_sync'\)\);[\s\S]{0,700}?await renderInstructorChecklistForTrip\(tripId\);/.test(html) &&
     /pintar\(t\('cl_saved_offline_sync'\)\);[\s\S]{0,700}?await renderCustomChecklistsForCurrentView\(\);/.test(html) &&
-    /pintarFirmaDeRutina\(signer\.name, done, routine\.items\.length, t\('cl_saved_offline_sync'\)\);[\s\S]{0,700}?await renderDeptRoutine\(\);/.test(html));
+    // `items.length` y no `routine.items.length` desde el A1-a del 21/10: la
+    // lista de una rutina ahora la resuelve `deptScope()` una sola vez, porque
+    // puede venir de la plantilla del centro o de lo cableado. Lo que esta
+    // aserción cuida sigue siendo lo mismo: que el camino sin señal redibuje.
+    /pintarFirmaDeRutina\(signer\.name, done, items\.length, t\('cl_saved_offline_sync'\)\);[\s\S]{0,700}?await renderDeptRoutine\(\);/.test(html));
 
 // El progreso NO se borra sin señal: el acta todavía puede no entrar.
 chk('firmar sin señal no borra el progreso',

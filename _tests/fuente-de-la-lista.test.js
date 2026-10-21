@@ -70,11 +70,21 @@ chk('y un array vacío también cuenta como genérica, no como plantilla',
 // ─── 3 · Los otros dos tipos de checklist ───
 chk('una checklist propia del centro es del centro, por definición',
     T.fuente('custom_abc123', null)==='template');
-chk('una rutina de departamento es cableada — scope=department tiene 0 plantillas',
-    T.fuente('captain_eod', null)==='hardwired', T.fuente('captain_eod', null));
-chk('…y las cuatro cadencias dan lo mismo',
+// **Cambió con el A1-a (21/10) y la aserción cambió con él.** Antes esto
+// devolvía `'hardwired'` cableado para cualquier rol de departamento, y era
+// cierto: `scope='department'` tenía cero plantillas. Ahora una rutina mira su
+// propio centinela, igual que una salida — porque dejarlo fijo haría que el acta
+// afirmara «lista genérica» sobre una rutina que el centro sí escribió, en
+// cuanto el interruptor se prenda.
+//
+// Sin `scopeKey` no hay instancia que mirar, así que **no se afirma nada**. Eso
+// no es una regresión: es la misma regla que ya regía para una salida sin
+// resolver, y es lo que distingue «no se midió» de «era la genérica».
+chk('una rutina de departamento sin instancia resuelta no afirma nada',
+    T.fuente('captain_eod', null)===null, String(T.fuente('captain_eod', null)));
+chk('…y las cuatro cadencias se comportan igual',
     ['captain','captain_eod','captain_monthly','instructor_morning']
-      .every(r=>T.fuente(r,null)==='hardwired'));
+      .every(r=>T.fuente(r,null)===null));
 chk('sin rol no se afirma nada', T.fuente(null,null)===null && T.fuente('',null)===null);
 
 // ─── 4 · Llega al acta, y lo decide UN solo lugar ───
