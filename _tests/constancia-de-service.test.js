@@ -34,19 +34,27 @@ chk('sólo UN lugar abre una ventana para imprimir',
     (html.match(/window\.open\('', '_blank'\)/g) || []).length + ' lugares');
 
 chk('y está dentro de abrirParaImprimir',
-    /function abrirParaImprimir\(html, avisarQueEstaBloqueado\) \{[\s\S]{0,200}window\.open/.test(html));
+    /function abrirParaImprimir\(html\) \{[\s\S]{0,600}window\.open/.test(html));
 
 chk('las seis exportaciones que ya existían pasan por ahí',
     (html.match(/abrirParaImprimir\(/g) || []).length >= 7,
     (html.match(/abrirParaImprimir\(/g) || []).length + ' menciones (1 declaración + llamadas)');
 
-// Las tres formas de avisar que el navegador bloqueó la ventana siguen siendo
-// tres: un alert, un modal y un cartel en pantalla. Son pieles legítimas de la
-// misma regla y se quedan en quien llama — mismo patrón que filaDeService.
-chk('cómo se avisa la ventana bloqueada sigue decidiéndolo quien llama',
-    /abrirParaImprimir\(html, \(\) => alert\(/.test(html) &&
-    /if \(!abrirParaImprimir\(html\)\) \{ await showAlertModal/.test(html) &&
-    /if \(!abrirParaImprimir\(html\)\) \{\s*\n\s*feedback\.textContent/.test(html));
+// **Cambió el 21/10 y esta aserción cambió con él.** Antes decía que cada lugar
+// decidía *cómo avisar Y qué decir*, y los tres textos eran variantes de
+// «permití las ventanas emergentes» — mentira en la app instalada, donde no hay
+// ningún bloqueador que permitir.
+//
+// Ahora la división es más fina y es la correcta: **la superficie sigue siendo
+// de quien llama** (un modal o un cartel al lado del botón, que son sitios
+// legítimamente distintos) y **el motivo sale de un solo lugar**. Lo que ya no
+// existe es el `alert()` del navegador, que era la tercera piel y la peor.
+// Detalle en `_tests/imprimir-en-nativo.test.js`.
+chk('la superficie del aviso sigue siendo de quien llama',
+    /if \(noSePudo\) await showAlertModal\(motivoDeNoPoderImprimir/.test(html) &&
+    /feedback\.textContent = motivoDeNoPoderImprimir\(noSePudo\)/.test(html));
+chk('pero el motivo ya no lo arma cada uno',
+    !/abrirParaImprimir\(html, /.test(html) && !/alert\(t\('mf_popup_blocked'\)\)/.test(html));
 
 // ─── 2 · La constancia ──────────────────────────────────────────────────────
 

@@ -5032,6 +5032,7 @@ const TRANSLATIONS = {
     wv_export_day_checklists: "Export day's checklists",
     wv_export_day_trips: "Export day's trip records",
     wv_export_role_note: 'Only owners, managers and front desk can download records to a computer. Ask them if you need a copy.',
+    exp_solo_desde_la_web: 'Exporting and printing are not available in the installed app yet. They work from sevenseasops.com in a browser, on a computer or on this phone.',
     wv_export_safety_note: "For safety, export and save a copy of each day's records to your own computer at the end of every day.",
     wv_pending_today: 'Not ready yet — Today', wv_waiver_log: 'Waiver Log', wv_daily: 'Daily', wv_weekly: 'Weekly',
     wv_search_guest_ph: 'Search by guest name...',
@@ -5849,7 +5850,8 @@ const TRANSLATIONS = {
     wv_export_day: 'Exportar formularios del día',
     wv_export_day_checklists: 'Exportar checklists del día',
     wv_export_day_trips: 'Exportar registros de salidas del día',
-    wv_export_role_note: 'Solo propietarios, gerentes y recepción pueden descargar registros a una computadora. Pídeles una copia si la necesitas.',
+    wv_export_role_note: 'Solo propietarios, gerentes y recepción pueden descargar registros a una computadora. Para obtener una copia, conviene pedírsela a alguno de ellos.',
+    exp_solo_desde_la_web: 'Exportar e imprimir todavía no están disponibles en la app instalada. Funcionan desde sevenseasops.com en un navegador, en una computadora o en este mismo teléfono.',
     wv_export_safety_note: 'Por seguridad, exporta y guarda una copia de los registros de cada día en tu computadora al final de cada jornada.',
     wv_pending_today: 'Todavía no listos — Hoy', wv_waiver_log: 'Registro de Formularios', wv_daily: 'Diario', wv_weekly: 'Semanal',
     wv_search_guest_ph: 'Buscar por nombre de huésped...',
@@ -8908,7 +8910,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-21a');
+  console.info('[Seven Seas] build 2026-10-21b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -12748,17 +12750,53 @@ function indexWaiverRows(rows) {
 // de la misma regla. Mismo patrón que `filaDeService(l, {conBarco})`.
 //
 // Devuelve true si la ventana se abrió, para que quien llama sepa si seguir.
-function abrirParaImprimir(html, avisarQueEstaBloqueado) {
+// Devuelve `null` si se abrió, o **el motivo** por el que no: `'nativo'` o
+// `'bloqueado'`. No un booleano — ver abajo, es el mismo error que ya pagamos
+// dos veces esta semana.
+//
+// ─── Por qué el motivo y no un sí/no ───
+//
+// Los ocho lugares que imprimen o exportan tenían cada uno su propio cartel, y
+// todos decían alguna variante de *«permití las ventanas emergentes»*. En la app
+// instalada eso es mentira: **no existe ningún bloqueador de ventanas emergentes
+// que se pueda permitir.** El WebView simplemente no abre ventanas, así que la
+// persona va a buscar una opción que no existe.
+//
+// Lo encontró Fran el 21/10 en la app empaquetada, yendo a Logged Checklists.
+// Misma forma exacta que el «revisá la conexión» del tilde: un cartel que manda
+// a hacer algo imposible. Y la misma causa de fondo: la función que sabe por qué
+// falló devolvía un booleano, así que cada lugar tenía que adivinar el motivo.
+//
+// **Esto NO arregla exportar desde el celular** —eso necesita la hoja de
+// compartir de iOS y un plugin de Capacitor— sólo deja de mentir sobre por qué
+// no se puede. El arreglo de verdad es el A6 grande.
+function abrirParaImprimir(html) {
+  // Se corta ANTES de intentar: en nativo no hay nada que intentar, y probar
+  // para después interpretar el fallo es cómo se llegó al cartel equivocado.
+  if (isNativeAppShell()) return 'nativo';
   const win = window.open('', '_blank');
-  if (!win) { if (avisarQueEstaBloqueado) avisarQueEstaBloqueado(); return false; }
+  if (!win) return 'bloqueado';
   win.document.write(html);
   win.document.close();
   win.focus();
   // El retraso es para que el navegador termine de pintar antes del diálogo de
   // impresión; sin él, Safari imprime una página en blanco.
   setTimeout(() => win.print(), 300);
-  return true;
+  return null;
 }
+
+// El texto de por qué no se pudo, en un solo lugar. Lo muestran los ocho que
+// imprimen, cada uno en su propia superficie —un modal, un cartel al lado del
+// botón— y eso sí es legítimo que sea distinto; el motivo no.
+function motivoDeNoPoderImprimir(razon) {
+  return t(razon === 'nativo' ? 'exp_solo_desde_la_web' : 'wv_allow_popups_export');
+}
+
+// ¿Se le puede ofrecer a esta persona exportar o imprimir?
+//
+// Se usa para apagar los botones en la app instalada. Un botón que existe y
+// nunca puede funcionar es peor que uno que no está: invita a apretarlo.
+function sePuedeImprimir() { return !isNativeAppShell(); }
 
 async function printManifest() {
   if (!currentTripId) return;
@@ -12917,7 +12955,10 @@ async function printManifest() {
   ${tripStates.length ? `<p class="legend">${escapeHtml(t('rd_legend'))}</p>` : ''}
 </body></html>`;
 
-  abrirParaImprimir(html, () => alert(t('mf_popup_blocked')));
+  // El manifiesto tenía su propio texto (`mf_popup_blocked`) y un `alert()` del
+  // navegador en vez del modal de la app. Ahora el motivo sale de un lugar.
+  const noSePudo = abrirParaImprimir(html);
+  if (noSePudo) await showAlertModal(motivoDeNoPoderImprimir(noSePudo));
 }
 
 // ─── WAIVERS ───
@@ -12944,11 +12985,28 @@ async function loadWaivers() {
   const exportDateEl = document.getElementById('waiver-export-date');
   if (exportDateEl && !exportDateEl.value) exportDateEl.value = new Date().toISOString().split('T')[0];
 
-  const canExport = canExportShopRecords();
+  // Dos razones distintas para no poder exportar, y conviene no mezclarlas: el
+  // ROL (no sos dueño) y la PLATAFORMA (la app instalada no puede abrir una
+  // ventana para imprimir). La segunda se suma el 21/10; antes los botones
+  // estaban habilitados en el celular y fallaban al apretarlos, con un cartel
+  // que mandaba a permitir ventanas emergentes que no existen ahí.
+  const canExport = canExportShopRecords() && sePuedeImprimir();
   document.getElementById('btn-export-waivers').disabled = !canExport;
   document.getElementById('btn-export-checklists').disabled = !canExport;
   document.getElementById('btn-export-trips').disabled = !canExport;
-  document.getElementById('waiver-export-role-note').style.display = canExport ? 'none' : 'block';
+  // El aviso dice el motivo que corresponde. Si falta el rol lo dice primero:
+  // es el que la persona puede resolver pidiéndole acceso a alguien.
+  const avisoDeExport = document.getElementById('waiver-export-role-note');
+  avisoDeExport.style.display = canExport ? 'none' : 'block';
+  if (!canExport) {
+    // Se cambia la CLAVE y no sólo el texto, así `applyTranslations()` lo
+    // sigue manteniendo al cambiar de idioma. Escribir el texto a mano y
+    // dejar el `data-i18n` viejo haría que el aviso volviera al otro motivo
+    // en cuanto alguien toque el idioma.
+    const clave = canExportShopRecords() ? 'exp_solo_desde_la_web' : 'wv_export_role_note';
+    avisoDeExport.setAttribute('data-i18n', clave);
+    avisoDeExport.textContent = t(clave);
+  }
   document.getElementById('card-waiver-export').style.opacity = canExport ? '1' : '0.6';
 
   if (!window.waiversEnabled) {
@@ -13297,7 +13355,8 @@ async function printWaiverCoverSheet(waiverId) {
   ${w.content_hash ? `<div class="seal">${escapeHtml(t('cert_seal'))}: ${escapeHtml(w.content_hash)}</div>` : ''}
 </body></html>`;
 
-  if (!abrirParaImprimir(html)) { await showAlertModal(t('wv_allow_popups_export')); return; }
+  const noSePudo = abrirParaImprimir(html);
+  if (noSePudo) { await showAlertModal(motivoDeNoPoderImprimir(noSePudo)); return; }
 }
 
 window.waiverLogView = 'daily';
@@ -13959,8 +14018,9 @@ async function exportWaiversForDay(date) {
   ${rowsHtml}
 </body></html>`;
 
-  if (!abrirParaImprimir(html)) {
-    feedback.textContent = t('wv_allow_popups_export');
+  const noSePudo = abrirParaImprimir(html);
+  if (noSePudo) {
+    feedback.textContent = motivoDeNoPoderImprimir(noSePudo);
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -14027,8 +14087,9 @@ async function exportChecklistsForDay(date) {
   ${rowsHtml}
 </body></html>`;
 
-  if (!abrirParaImprimir(html)) {
-    feedback.textContent = t('wv_allow_popups_export');
+  const noSePudo = abrirParaImprimir(html);
+  if (noSePudo) {
+    feedback.textContent = motivoDeNoPoderImprimir(noSePudo);
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -14111,8 +14172,9 @@ async function exportTripRecordsForDay(date) {
   ${tripsHtml}
 </body></html>`;
 
-  if (!abrirParaImprimir(html)) {
-    feedback.textContent = t('wv_allow_popups_export');
+  const noSePudo = abrirParaImprimir(html);
+  if (noSePudo) {
+    feedback.textContent = motivoDeNoPoderImprimir(noSePudo);
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -14215,8 +14277,9 @@ async function exportAllShopRecords() {
   ${tripsHtml}
 </body></html>`;
 
-  if (!abrirParaImprimir(html)) {
-    feedback.textContent = t('wv_allow_popups_export');
+  const noSePudo = abrirParaImprimir(html);
+  if (noSePudo) {
+    feedback.textContent = motivoDeNoPoderImprimir(noSePudo);
     feedback.className = 'save-feedback error visible';
     return;
   }
@@ -19547,7 +19610,8 @@ async function imprimirConstanciaDeService(id) {
     .filter(Boolean).join(' · ');
   await loadSignerStaff();
   const html = constanciaDeService(l, { contexto, selladoPor: nombreDeTripulante(l.sealed_by) });
-  if (!abrirParaImprimir(html)) await showAlertModal(t('wv_allow_popups_export'));
+  const noSePudo = abrirParaImprimir(html);
+  if (noSePudo) await showAlertModal(motivoDeNoPoderImprimir(noSePudo));
 }
 
 function lineaDeSello(l) {
