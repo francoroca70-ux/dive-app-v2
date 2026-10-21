@@ -64,6 +64,7 @@ const MINIMOS = {
   'dept-visibility.test.js':        29,
   'editor-de-plantillas.test.js':   84,
   'etapa-3b-lista-por-tipo.test.js':25,
+  'firmar-sin-senal.test.js':       16,
   'firmar-una-sola-vez.test.js':    27,
   'idioma-de-las-fechas.test.js':   12,
   'fuente-de-la-lista.test.js':     25,

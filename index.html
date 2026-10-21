@@ -8908,7 +8908,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-20a');
+  console.info('[Seven Seas] build 2026-10-21a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -16126,16 +16126,55 @@ function mostrarActaSiHay(containerId, acta, progressId) {
 // Pisarla con el rol de la persona rompería Logged Checklists entero.
 let signerStaffCache = null;
 
+// La lista se guarda TAMBIÉN en `localStorage`, por organización.
+//
+// Encontrado por Fran el 21/10 probando la app empaquetada en modo avión: la
+// checklist se podía tildar, pero **al firmar el selector de firmante salía
+// vacío** y el botón exigía elegir a alguien, así que no se podía firmar. Y los
+// tildes no mostraban el nombre de quien los hizo. **Una sola causa**: sin red
+// esta consulta no trae nada, y todo lo que traduce un id a un nombre
+// —`nombreDeTripulante()`, `opcionesDeFirmante()`— sale de acá.
+//
+// Es exactamente el mismo agujero que las listas de preparación tenían antes de
+// la etapa 3a, y se tapa igual: **la copia local guarda las filas crudas.**
+//
+// Y el error que estaba escondido debajo: `signerStaffCache = data || []`
+// **cacheaba el vacío de un fallo**, y el `if (signerStaffCache)` de arriba lo
+// devolvía para siempre. Así que un corte de red de un segundo al abrir dejaba
+// la app sin poder firmar **hasta recargarla**, con señal o sin ella. Misma regla
+// que `cargarConTresCapas()`: un vacío que vino de un error no se guarda.
 async function loadSignerStaff() {
   if (signerStaffCache) return signerStaffCache;
   if (!currentOrgId) return [];
-  const { data } = await sb.from('staff')
+  const { data, error } = await sb.from('staff')
     .select('id, full_name, role, custom_role_name')
     .eq('org_id', currentOrgId)
     .not('active', 'is', false)
     .order('full_name');
-  signerStaffCache = data || [];
+  if (error || !data) {
+    console.warn('[FIRMANTE] no se pudo leer la tripulación, se usa la copia local', error);
+    // Ojo: la copia local NO se guarda en `signerStaffCache`. Si se guardara,
+    // el `if` de arriba la volvería permanente y no se volvería a pedir nunca
+    // al recuperar la señal — la copia es para este momento, no para siempre.
+    return cacheLocalLeer(nombreEnCacheDeTripulacion()) || [];
+  }
+  signerStaffCache = data;
+  cacheLocalGuardar(nombreEnCacheDeTripulacion(), data);
   return signerStaffCache;
+}
+
+function nombreEnCacheDeTripulacion() { return 'tripulacion'; }
+
+// La tripulación que conocemos AHORA, venga de donde venga: lo leído en esta
+// sesión o la copia local. Es el único lugar desde donde se traduce un id a una
+// persona.
+//
+// Antes los tres lugares que la necesitaban miraban `signerStaffCache` a mano, y
+// por eso la copia local no habría servido de nada: la consulta la hubiera
+// guardado y nadie la hubiera leído. El agujero aparecería donde la copia falta,
+// como siempre.
+function tripulacionConocida() {
+  return signerStaffCache || cacheLocalLeer(nombreEnCacheDeTripulacion()) || [];
 }
 
 // Se vacía al cambiar de local o de organización, para no ofrecer tripulación
@@ -16176,7 +16215,7 @@ async function populateSignerSelects(root) {
 // previene: se REGISTRA en `signed_by_account`, y queda auditable. Mismo
 // principio que el certificado de autenticidad de los waivers.
 function opcionesDeFirmante(autores) {
-  const staff = signerStaffCache || [];
+  const staff = tripulacionConocida();
   const participaron = Object.keys(autores || {})
     .map(id => autores[id] && autores[id].id)
     .filter(Boolean);
@@ -16399,7 +16438,7 @@ function autoriaDe(checks) {
 // inventado.
 function nombreDeTripulante(staffId) {
   if (!staffId) return '';
-  const s = (signerStaffCache || []).find(x => x.id === staffId);
+  const s = tripulacionConocida().find(x => x.id === staffId);
   return (s && s.full_name) || '';
 }
 
@@ -17191,7 +17230,10 @@ async function guardarActa(payload) {
 function readSigner(selectId) {
   const sel = document.getElementById(selectId);
   if (!sel || !sel.value) return null;
-  const s = (signerStaffCache || []).find(x => x.id === sel.value);
+  // Sale de `tripulacionConocida()` y no de la variable en memoria: sin red la
+  // variable está vacía, así que esto devolvía null sobre una opción que la
+  // persona acababa de elegir — el firmado se negaba sin decir por qué.
+  const s = tripulacionConocida().find(x => x.id === sel.value);
   if (!s) return null;
   return { staff_id: s.id, name: s.full_name || '' };
 }
