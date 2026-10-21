@@ -95,9 +95,22 @@ const consulta=(error)=>Promise.resolve({error});
   // Los que recogen el error a mano: el replay de la cola (2, que LANZAN para
   // que la cola reintente), el tilde, la limpieza post-firma y el equipo.
   const aMano=(html.match(/const \{ error[^}]*\} = await sb\.from\('[a-z_]+'\)\.delete/g)||[]).length;
+  // Y el que recoge el error en una variable con otro nombre, porque ya hay un
+  // `error` en ese alcance: la limpieza de una plantilla de rutina que se creó
+  // y a la que le fallaron los ítems (A1-b1, 21/10).
+  //
+  // **Es una excepción declarada, no un número que subí para que pase.** No usa
+  // `borrarOAvisar()` por la misma razón que la limpieza post-firma: quien la
+  // llamó ya va a mostrar el motivo real del fallo de los ítems, y un segundo
+  // cartel encima haría dudar de cuál es el problema. Se registra en consola y
+  // se sigue. Una plantilla sin ítems activos es peor que ninguna: el barco
+  // caería a la lista cableada sin aviso.
+  const conOtroNombre=(html.match(/const \w+ = await sb\.from\('[a-z_]+'\)\.delete\(\)/g)||[]).length;
   chk('todos los borrados miran el error',
-      envueltos + aMano + 1 >= total,   // +1: el delete del ternario del tilde
-      `${total} borrados = ${envueltos} envueltos + ${aMano} a mano + 1 ternario`);
+      envueltos + aMano + conOtroNombre + 1 >= total,   // +1: el ternario del tilde
+      `${total} borrados = ${envueltos} envueltos + ${aMano} a mano + ${conOtroNombre} con otro nombre + 1 ternario`);
+  chk('y el de la limpieza de una rutina registra el fallo',
+      /if \(limpio\.error\) console\.error/.test(html));
   chk('y son bastantes: esto no se podía resolver copiando un if',
       envueltos >= 25, envueltos+' envueltos');
   chk('la regla vive en una sola función',

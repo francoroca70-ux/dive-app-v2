@@ -4227,6 +4227,26 @@ body { background: var(--navy); color: var(--text); }
           </div>
         </div>
 
+        <!-- Rutinas por departamento · A1-b1 (21/10) ─────────────────────────
+             Las rutinas del capitán, de cubierta, de instructores y de
+             stewards están cableadas en el código: 4 departamentos × 4
+             cadencias, 102 ítems, y hasta hoy ningún centro podía tocarlas.
+             Desde acá un centro se queda con SU copia.
+             El editor de ítems viene después (A1-b2); esta pantalla existe
+             primero porque sin una copia que editar el interruptor no cambia
+             nada, y una función que nadie puede disparar es la trampa de la
+             etapa 3a repetida. -->
+        <div class="card" id="card-dept-routines">
+          <div class="card-section-title expandable-title" onclick="toggleExpandSection('card-dept-routines-body')">
+            <span data-i18n="rut_card_title">Department Routines</span>
+            <span id="card-dept-routines-body-arrow" class="expand-caret">▸</span>
+          </div>
+          <div id="card-dept-routines-body" style="display:none;">
+          <p class="card-desc" data-i18n="rut_card_desc">The captain, deck, instructor and steward routines ship as a standard list. Make a copy to turn one into this shop's own.</p>
+          <div id="dept-routines-list" style="margin: 14px 0;"></div>
+          </div>
+        </div>
+
         <!-- Permissions card -->
         <div class="card" id="card-permissions">
           <div class="card-section-title" data-i18n="set_permissions">Permissions</div>
@@ -4903,6 +4923,13 @@ const TRANSLATIONS = {
     prep_btn: 'Prep checklist', prep_header: 'Trip prep checklist',
     prep_desc: 'This is the list the crew works through before this trip goes out. Edit the wording, add what you check that nobody else does, retire what does not apply to your operation.',
     prep_read_only: 'Only the owner or a manager can edit this list.',
+    rut_card_title: 'Department Routines',
+    rut_card_desc: "The captain, deck, instructor and steward routines ship as a standard list. Make a copy to turn one into this shop's own.",
+    rut_standard: 'standard list · {n} items',
+    rut_own_copy: "this shop's list · {n} items",
+    rut_make_own: 'Make it ours',
+    rut_copy_error: 'That routine has no standard list to copy.',
+    rut_load_error: "Couldn't read which routines already have a copy, so nothing is shown rather than guessing.",
     prep_count: '{n} items on the list',
     prep_none_yet: 'This trip type has no list of its own yet, so the crew sees the generic dive list. Give it its own.',
     prep_seed_from_standard: 'Start from the standard list', prep_start_blank: 'Start from scratch',
@@ -5722,6 +5749,13 @@ const TRANSLATIONS = {
     prep_btn: 'Lista de preparación', prep_header: 'Lista de preparación de la salida',
     prep_desc: 'Es la lista que la tripulación recorre antes de que salga esta salida. Cambia el texto, agrega lo que revisan ustedes y nadie más, retira lo que no aplica a tu operación.',
     prep_read_only: 'Sólo el dueño o un encargado puede editar esta lista.',
+    rut_card_title: 'Rutinas por Departamento',
+    rut_card_desc: 'Las rutinas de capitán, cubierta, instructores y stewards vienen con una lista estándar. Hacer una copia las convierte en la lista de este centro.',
+    rut_standard: 'lista estándar · {n} ítems',
+    rut_own_copy: 'lista de este centro · {n} ítems',
+    rut_make_own: 'Hacerla propia',
+    rut_copy_error: 'Esa rutina no tiene lista estándar para copiar.',
+    rut_load_error: 'No se pudo leer cuáles rutinas ya tienen copia, así que no se muestra nada en vez de adivinar.',
     prep_count: '{n} ítems en la lista',
     prep_none_yet: 'Este tipo de salida todavía no tiene su propia lista, así que la tripulación ve la lista genérica de buceo. Dale la suya.',
     prep_seed_from_standard: 'Arrancar de la lista estándar', prep_start_blank: 'Arrancar de cero',
@@ -8910,7 +8944,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-21c');
+  console.info('[Seven Seas] build 2026-10-21d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9730,6 +9764,10 @@ async function loadSettings(user) {
     // hit Save to add it, uncheck one and Save to deactivate it).
     await syncCategoryCheckboxes();
     await renderTripTypesList();
+    // Las rutinas por departamento se dibujan acá, con el resto de Configuración:
+    // son 16 filas fijas y UNA consulta, así que no hay nada que diferir. Y si la
+    // consulta falla, la tarjeta lo dice en vez de quedar vacía.
+    await dibujarRutinasDeDepartamento();
 
     // Keep the account switcher's saved copy of this session in sync,
     // including a friendly org/role label for its dropdown -- this is the one
@@ -21723,6 +21761,120 @@ async function dibujarPanelDePreparacion(tripTypeId) {
 // editor resolviera distinto, un centro editaría una línea y vería otra.
 function textoDeItemEnMiIdioma(it) {
   return (currentLanguage === 'es' ? it.text_es : it.text_en) || it.text_en || it.text_es || '';
+}
+
+// ─── A1-b1 · Un centro se queda con SU copia de una rutina ─────────────────
+//
+// Esta pantalla va antes que el editor de ítems, y el orden no es casual: sin
+// una copia que editar, prender `FUENTE_RUTINAS_DEPTO` no cambiaría nada, y una
+// función que nadie puede disparar es exactamente la trampa de la etapa 3a —
+// tres días con un interruptor que no hacía nada y la suite en verde.
+//
+// La «lista estándar» de una rutina no vive en `checklist_seeds` como la de un
+// tipo de salida: vive **en el código**, en `DEPARTMENT_ROUTINES_I18N`. Así que
+// no hace falta ninguna tabla nueva.
+//
+// Y se copia del objeto CRUDO, no de `departmentRoutinesGet()`: ése resuelve el
+// idioma de quien mira, y copiarlo guardaría la rutina en un solo idioma para
+// siempre. Es el mismo error que la 3a arregló para la caché y que repetí doce
+// líneas más abajo en la 3b. Los ítems de plantilla son bilingües a propósito.
+async function copiarRutinaEstandar(deptKey, cadence) {
+  const dept = DEPARTMENT_ROUTINES_I18N[deptKey];
+  const cad = dept && dept.cadences[cadence];
+  if (!cad || !cad.items || !cad.items.length) return t('rut_copy_error');
+
+  const { data: creada, error: errPl } = await sb.from('checklist_templates').insert({
+    org_id: currentOrgId,
+    scope: 'department',
+    department: deptKey,
+    cadence,
+    // El CHECK exige `trip_type_id` nulo y `department` no nulo para este
+    // scope. `role_scope` queda nulo a propósito: su significado lo fija RLS
+    // (es un ROL del staff) y una rutina es del departamento, no de un rol —
+    // 'deck' y 'stewards' no son roles. La convención la copia la tabla
+    // hermana `custom_checklists`, que separa `dept_key` de `role_scope`.
+    title: cad.label.en || deptKey,
+    active: true,
+    created_by: currentUserId || null
+  }).select('id').limit(1);
+  if (errPl || !(creada || []).length) {
+    console.error('[RUTINAS] no se pudo crear la plantilla', errPl);
+    return await motivoDeFalloAlEscribir(errPl || {}, 'guardar');
+  }
+
+  const templateId = creada[0].id;
+  const { error: errIt } = await sb.from('checklist_template_items').insert(
+    cad.items.map((it, idx) => ({
+      template_id: templateId, order_index: idx,
+      text_en: it.en || null, text_es: it.es || null, active: true
+    })));
+  if (errIt) {
+    console.error('[RUTINAS] no se pudieron copiar los ítems', errIt);
+    // La plantilla quedó sin ítems, y eso es peor que no tenerla: con cero
+    // activos el barco cae a la lista cableada **sin aviso**. Se borra, y si el
+    // borrado también falla se dice — no se deja a medias en silencio.
+    const limpio = await sb.from('checklist_templates').delete().eq('id', templateId);
+    if (limpio.error) console.error('[RUTINAS] y quedó una plantilla vacía', limpio.error);
+    return await motivoDeFalloAlEscribir(errIt, 'guardar');
+  }
+  cacheLocalBorrar(nombreEnCacheDeRutina(deptKey, cadence));
+  return null;
+}
+
+// Cuáles de las 16 rutinas ya tienen copia del centro. Una consulta, no
+// dieciséis.
+async function rutinasConCopia() {
+  if (!currentOrgId) return null;
+  const { data, error } = await sb.from('checklist_templates')
+    .select('department, cadence, checklist_template_items(id, active)')
+    .eq('org_id', currentOrgId).eq('scope', 'department').eq('active', true);
+  if (error) { console.warn('[RUTINAS] no se pudieron leer las copias', error); return null; }
+  const mapa = {};
+  (data || []).forEach(p => {
+    const activos = (p.checklist_template_items || []).filter(i => i.active !== false).length;
+    mapa[`${p.department}:${p.cadence}`] = activos;
+  });
+  return mapa;
+}
+
+async function dibujarRutinasDeDepartamento() {
+  const cont = document.getElementById('dept-routines-list');
+  if (!cont) return;
+  const puede = puedeEditarPlantillas();
+  const copias = await rutinasConCopia();
+  // **Si no se pudo medir, no se afirma.** Decir «esta rutina usa la lista
+  // estándar» sin haber podido leer las copias podría ser falso, y ofrecer
+  // copiar una que ya existe duplicaría la plantilla. Misma regla que el aviso
+  // de listas que faltan del A5.
+  if (!copias) {
+    cont.innerHTML = `<p style="font-size:0.8rem;color:var(--danger,#c53030);">${t('rut_load_error')}</p>`;
+    return;
+  }
+  const rutinas = departmentRoutinesGet();
+  cont.innerHTML = Object.entries(rutinas).map(([deptKey, dept]) => `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.78rem;font-weight:700;color:var(--blue);margin-bottom:6px;">${escapeHtml(dept.label)}</div>
+      ${Object.entries(dept.cadences).map(([cadKey, cad]) => {
+        const activos = copias[`${deptKey}:${cadKey}`];
+        const propia = activos != null;
+        return `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <span style="flex:1;font-size:0.85rem;">${escapeHtml(cad.label)}</span>
+          <span style="font-size:0.74rem;color:var(--muted);">${propia
+            ? t('rut_own_copy').replace('{n}', activos)
+            : t('rut_standard').replace('{n}', cad.items.length)}</span>
+          ${(!propia && puede) ? `<button class="btn-cancel" style="font-size:0.74rem;padding:4px 9px;"
+              onclick="arrancarRutinaPropia('${deptKey}', '${cadKey}')">${t('rut_make_own')}</button>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('') + (puede ? '' : `<p style="font-size:0.78rem;color:var(--muted);">${t('prep_read_only')}</p>`);
+}
+
+async function arrancarRutinaPropia(deptKey, cadence) {
+  const motivo = await copiarRutinaEstandar(deptKey, cadence);
+  if (motivo) { await showAlertModal(motivo); return; }
+  await dibujarRutinasDeDepartamento();
 }
 
 async function haySemillasParaTipo(tt) {
