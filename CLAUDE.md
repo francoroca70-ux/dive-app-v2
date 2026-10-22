@@ -1346,6 +1346,47 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
 
 ---
 
+## Riesgo legal: la base está en Brasil
+
+Medido el 21/10/2026. **Es el único riesgo regulatorio que existe hoy con cero
+clientes**, y no sale de a quién le vendemos: sale de dónde están los datos.
+
+La **LGPD brasileña** se activa por **tres disparadores independientes** y basta
+uno. El primero es **«tratamiento realizado en territorio nacional»** — y la base
+de Supabase está en **São Paulo**. No hay umbral de tamaño ni de facturación, y
+**el domicilio de la empresa es irrelevante**, así que «somos uno solo y sin
+clientes brasileños» no es defensa.
+
+**Si alojar ahí basta para activarla no tiene respuesta clara en ninguna
+dirección** — no se encontró fuente que lo resuelva. Es la primera pregunta para
+un abogado.
+
+**Mitigarlo es barato si molesta:** Supabase permite elegir región, así que mover
+la base es configuración, no reescritura. **Pero no se mueve sin preguntar:**
+São Paulo es la mejor latencia para los diez mercados objetivo, y cambiarla por un
+riesgo no medido sería pagar en rendimiento por una hipótesis.
+
+**Dos correcciones del mismo relevamiento, las dos a afirmaciones mías:**
+- **Bonaire y Curazao NO están bajo el RGPD.** Son territorios de ultramar, fuera
+  del acervo comunitario, con su propia ley y sin registro ni delegado.
+- **Paddle no es subencargado: es un responsable separado** (merchant of record).
+  No va en la lista de subencargados, los datos de tarjeta nunca pasan por la app,
+  **pero la política de privacidad tiene que decir que el pago lo procesa Paddle
+  como responsable independiente.**
+
+**Y una restricción de diseño que sale de ahí:** por C-184/20 del TJUE, un dato
+que revela una categoría especial **indirectamente** es dato del art. 9. «Firmó»
+no revela nada; un campo **«habilitado / no habilitado / requiere firma médica»**
+probablemente sí. **Un semáforo de aptitud médica es justo el diseño que cruza esa
+línea** — si alguna vez se piensa agregar uno, la pregunta va antes de
+construirlo. (Y el DPA de Supabase prohíbe mandar información de salud bajo HIPAA
+sin un BAA aparte.)
+
+Detalle, fuentes y los catorce puntos sin verificar, en
+`Operativa/Protección de datos y DPA.md`.
+
+---
+
 ## Lo que nunca se toca sin preguntar
 
 - Los precios. Viven en `Datos canónicos.md` del vault y en ningún otro lado.
