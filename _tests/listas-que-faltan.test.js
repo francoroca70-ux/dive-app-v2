@@ -184,8 +184,16 @@ T.confirmar(true);
 inserts=[]; const dichos2=[]; T.avisos(dichos2);
 errorEnInsert={code:'42501',message:'permission denied'};
 await T.armar();
+// Afirma la REGLA, no la redacción: el cartel tiene que decir que se cortó y
+// cuántas entraron. La primera versión pedía la frase literal «and then it
+// stopped» y falló el 22/10 cuando el texto se reescribió a «Then it stopped»
+// — con la conducta intacta. Un guardián que se rompe por una mayúscula entrena
+// a desactivarlo, que es peor que no tenerlo.
 chk('un fallo no se reporta como éxito',
-    dichos2.length===1 && /and then it stopped/.test(dichos2[0]), dichos2[0]||'(nada)');
+    dichos2.length===1 && /stopped/i.test(dichos2[0]) && /\b0\b/.test(dichos2[0]),
+    dichos2[0]||'(nada)');
+chk('y no se parece al cartel de éxito',
+    !/\bDone\b/.test(dichos2[0]||''), dichos2[0]||'');
 chk('y el cartel dice el motivo real, no «revisá la conexión»',
     !/connection/i.test(dichos2[0]||''), dichos2[0]||'');
 // El hallazgo del 14/10: la función se renombró el 11/10 y sus textos siguieron

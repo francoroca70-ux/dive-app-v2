@@ -251,6 +251,45 @@ const ITEMS=[{id:'0',text:'Check tanks'},{id:'1',text:'Load towels'},
   chk('el texto se escapa también en el historial',
       !/<img/.test(malicioso) && /&lt;img/.test(malicioso));
 
+  // ─── Un motivo que nadie tipeó no entra ──────────────────────────────────
+  //
+  // Medido el 22/10 firmando una rutina de capitán en la app en vivo: el último
+  // campo de motivos tenía **`francoroca70@gmail.com`** adentro sin que nadie lo
+  // escribiera, y quedó guardado en el acta. En esa misma página había dos
+  // marcas de 1Password, así que el culpable fue una extensión, no la app.
+  //
+  // Pero la app tenía su parte: `autocomplete="off"` solo no alcanza —Chrome lo
+  // toma como sugerencia y las extensiones lo ignoran— y la defensa completa YA
+  // existía en el HTML, en los campos de invitar tripulación. Estaba copiada, y
+  // el defecto apareció donde la copia faltaba.
+  //
+  // Y pega más fuerte acá que en cualquier otro campo porque **un acta es
+  // inmutable**: un dato que nadie escribió entra una vez y no se corrige nunca.
+  chk('los atributos anti-autocompletado se declaran en UN lugar',
+      (html.match(/const SIN_AUTOCOMPLETADO/g)||[]).length===1);
+  chk('y cubren navegador y gestores de contraseñas',
+      /autocomplete="off"/.test(html.slice(html.indexOf('const SIN_AUTOCOMPLETADO'),
+                                           html.indexOf('const SIN_AUTOCOMPLETADO')+260))
+      && /data-1p-ignore/.test(html.slice(html.indexOf('const SIN_AUTOCOMPLETADO'),
+                                          html.indexOf('const SIN_AUTOCOMPLETADO')+260))
+      && /data-lpignore/.test(html.slice(html.indexOf('const SIN_AUTOCOMPLETADO'),
+                                         html.indexOf('const SIN_AUTOCOMPLETADO')+260)),
+      'autocomplete solo no alcanza');
+
+  const campoMotivo = html.slice(html.indexOf('id="cl-motivo-${i}"') - 220,
+                                 html.indexOf('id="cl-motivo-${i}"') + 220);
+  chk('el campo de motivo usa la constante, no sus propios atributos',
+      /\$\{SIN_AUTOCOMPLETADO\}/.test(campoMotivo), campoMotivo.slice(0,160));
+  chk('y lleva un name que no invita a autocompletar',
+      /noautofill/.test(campoMotivo),
+      'un name vacío o semántico es lo que los gestores miran');
+
+  // La regla vale para los dos lugares que la tenían antes: si alguien le saca
+  // la defensa a los campos de invitación, también falla.
+  chk('los campos de invitar tripulación siguen protegidos',
+      (html.match(/data-1p-ignore/g)||[]).length>=3,
+      'los dos de invitación más la constante');
+
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,500)); }
   process.exit(fail);
 })();

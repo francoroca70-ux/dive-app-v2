@@ -4606,12 +4606,19 @@ const TRANSLATIONS = {
     // entonces es la lista cableada genérica, que parece correcta y no es la del
     // centro — peor que un error.
     prep_missing_title: '{n} trip types have no prep list of their own',
+    prep_missing_title_one: 'One trip type has no prep list of its own',
     prep_missing_desc: 'On the boat these fall back to a generic list instead of yours. That list looks right, which is exactly what makes it worth fixing.',
     prep_missing_fix: 'Set up the {n} missing lists',
+    prep_missing_fix_one: 'Set up the missing list',
     prep_missing_no_seed: '{n} of them have no standard list to copy — those have to be written by hand, from the «Prep list» button on each one.',
+    prep_missing_no_seed_one: 'That one has no standard list to copy — it has to be written by hand, from its «Prep list» button.',
     prep_missing_confirm: 'Copy the standard list into {n} trip types? You can edit each one afterwards, and nothing already set up gets touched.',
+    prep_missing_confirm_one: 'Copy the standard list into one trip type? You can edit it afterwards, and nothing already set up gets touched.',
     prep_missing_done: 'Done — {n} prep lists created. Edit any of them from its «Prep list» button.',
-    prep_missing_partial: '{ok} lists created, and then it stopped: {why}',
+    prep_missing_done_one: 'Done — one prep list created. Edit it from its «Prep list» button.',
+    // Sin plural: el número va después de los dos puntos, así que 1 y 7 se leen
+    // igual de bien y no hace falta una segunda clave.
+    prep_missing_partial: 'Lists created: {ok}. Then it stopped: {why}',
     fleet_maint_remove_confirm: 'Remove this maintenance entry?',
     // El sello. Sólo el número en pantalla: 64 caracteres de hexadecimal en una
     // lista no le sirven a nadie.
@@ -4696,6 +4703,13 @@ const TRANSLATIONS = {
     // propia no se dice nada (sería ruido en todas las actas), y en las actas
     // anteriores al 14/10 tampoco, porque no se sabe.
     cl_acta_lista_generica: 'Checked against the standard list, not a list set up by this shop. Set one up in Settings → Trip Types so future records reflect your own procedure.',
+    // Y el mismo hecho, para una rutina de departamento, SIN la instrucción: el
+    // texto de arriba manda a Trip Types, que no es donde se arma una rutina, y
+    // además armarla no cambiaría nada mientras el camino de plantillas de
+    // departamento siga apagado. Un cartel que manda a hacer algo que no surte
+    // efecto es la misma falla que «permitir ventanas emergentes» en una app
+    // nativa — cuarta vez con esta forma.
+    cl_acta_lista_generica_depto: 'Checked against the standard list. Department routines don\'t use a shop list yet, so this is expected — and nothing set up in Settings would change it.',
     cl_acta_missed: 'not done', cl_acta_sin_detalle: 'Signed before item-level records existed, so only the totals were kept.',
     cl_autor_title: 'Ticked from this crew member’s account',
     cl_participantes: 'Filled in together by {names}.',
@@ -5433,12 +5447,17 @@ const TRANSLATIONS = {
     fleet_error_prefix: 'Error: ', fleet_no_maint_boat: 'Aún no hay mantenimiento registrado para esta embarcación.',
     gear_no_maint_item: 'Aún no hay mantenimiento registrado para este artículo.',
     prep_missing_title: '{n} tipos de salida no tienen su propia lista de preparación',
+    prep_missing_title_one: 'Un tipo de salida no tiene su propia lista de preparación',
     prep_missing_desc: 'En el barco estos caen a una lista genérica en vez de la del centro. Esa lista parece correcta, y es justamente por eso que vale arreglarlo.',
     prep_missing_fix: 'Armar las {n} listas que faltan',
+    prep_missing_fix_one: 'Armar la lista que falta',
     prep_missing_no_seed: '{n} de ellos no tienen lista estándar para copiar — ésos hay que escribirlos a mano, desde el botón «Lista de preparación» de cada uno.',
-    prep_missing_confirm: '¿Copiar la lista estándar en {n} tipos de salida? Después podés editar cada una, y no se toca nada de lo que ya estaba armado.',
-    prep_missing_done: 'Listo — se crearon {n} listas de preparación. Podés editar cualquiera desde su botón «Lista de preparación».',
-    prep_missing_partial: 'Se crearon {ok} listas y después se cortó: {why}',
+    prep_missing_no_seed_one: 'Ése no tiene lista estándar para copiar — hay que escribirlo a mano, desde su botón «Lista de preparación».',
+    prep_missing_confirm: '¿Copiar la lista estándar en {n} tipos de salida? Después se puede editar cada una, y no se toca nada de lo que ya estaba armado.',
+    prep_missing_confirm_one: '¿Copiar la lista estándar en un tipo de salida? Después se puede editar, y no se toca nada de lo que ya estaba armado.',
+    prep_missing_done: 'Listo — se crearon {n} listas de preparación. Se puede editar cualquiera desde su botón «Lista de preparación».',
+    prep_missing_done_one: 'Listo — se creó una lista de preparación. Se puede editar desde su botón «Lista de preparación».',
+    prep_missing_partial: 'Listas creadas: {ok}. Después se cortó: {why}',
     fleet_maint_remove_confirm: '¿Quitar este registro de mantenimiento?',
     svc_seal_btn: 'Sellar registro',
     svc_seal_confirm: '¿Sellar este registro de service?\n\nEl sellado cierra el registro y guarda una huella de su contenido, junto con la fecha y la cuenta que lo selló. Desde ese momento el registro no puede ser modificado ni eliminado por nadie, y eso es lo que permite presentarlo después como constancia de que el trabajo quedó asentado cuando dice.\n\nConviene revisar el costo, la fecha y la descripción antes de continuar. La próxima fecha de service sigue siendo editable y no forma parte del sello.',
@@ -5514,7 +5533,8 @@ const TRANSLATIONS = {
     cl_signed_partial: 'Firmada {hechos}/{total}',
     cl_acta_pendiente: "Firmada en este dispositivo y todavía sin sincronizar. Se sube sola cuando haya señal — hasta entonces, nadie más la ve.",
     cl_acta_nota: 'Acta firmada — lo que se revisó y lo que faltó. Toca Reiniciar para hacer una pasada nueva.',
-    cl_acta_lista_generica: 'Revisada contra la lista estándar, no contra una lista armada por este centro. Armá la propia en Configuración → Tipos de Salida para que las actas siguientes reflejen el procedimiento del centro.',
+    cl_acta_lista_generica: 'Revisada contra la lista estándar, no contra una lista armada por este centro. La propia se arma en Configuración → Tipos de Salida, y desde ahí las actas siguientes reflejan el procedimiento del centro.',
+    cl_acta_lista_generica_depto: 'Revisada contra la lista estándar. Las rutinas por departamento todavía no usan una lista propia del centro, así que esto es lo esperado — y nada de lo que se arme en Configuración lo cambia.',
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
     cl_autor_title: 'Tildado desde la cuenta de esta persona',
     cl_participantes: 'La completaron entre {names}.',
@@ -6048,6 +6068,29 @@ function escapeHtml(s) {
 
 function t(key) {
   return (TRANSLATIONS[currentLanguage] && TRANSLATIONS[currentLanguage][key]) || TRANSLATIONS.en[key] || key;
+}
+
+// Un contador que puede valer 1 necesita DOS textos. Lo medido el 22/10 en la
+// cuenta de Fran, que tiene un solo tipo sin lista: la pantalla decía
+// «1 trip types have no prep list of their own». Con siete (Blue water, donde
+// se había probado) el defecto es invisible — probar en otra cuenta es lo que
+// lo destapó.
+//
+// Por qué una función y no «(s)» en el texto: la app ya tenía CUATRO formas de
+// resolver lo mismo (`_singular`/`_plural`, `{s}`, «(s)» escrito a mano, y los
+// contadores que no lo resuelven en absoluto). Ésta es la convención que ya
+// existía y no miente —`rw_pending_one` / `rw_pending_many`— y vive acá para que
+// el próximo contador no invente una quinta.
+//
+// Degrada a lo de antes: sin la clave `_one`, devuelve el mismo texto que hoy.
+function hayClave(clave) {
+  return !!((TRANSLATIONS[currentLanguage] && TRANSLATIONS[currentLanguage][clave])
+            || TRANSLATIONS.en[clave]);
+}
+
+function textoConCantidad(clave, n) {
+  const k = (n === 1 && hayClave(clave + '_one')) ? clave + '_one' : clave;
+  return t(k).replace('{n}', n);
 }
 
 function applyTranslations() {
@@ -8944,7 +8987,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-21d');
+  console.info('[Seven Seas] build 2026-10-22a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -17229,6 +17272,16 @@ function buildItemsSnapshot(items, estaTildado, autorDe, motivos) {
 // Devuelve null cuando no se sabe, y eso es una respuesta: **no se afirma una
 // procedencia que no se midió.** Mismo criterio que no inventar el nombre de un
 // tripulante que no resuelve.
+// Qué clase de checklist es, por su rol. Vive en una función porque lo preguntan
+// DOS lugares con consecuencias distintas: de qué centinela sale la procedencia
+// (acá abajo) y qué texto se muestra en el acta (`lineaDeFuenteDeLista`). Cuando
+// se midió el 22/10, el segundo no lo preguntaba y mostraba el texto de las
+// salidas sobre una rutina de departamento — mandando a Configuración → Tipos de
+// Salida, que no es donde se arma una rutina.
+function esRolDeDepartamento(role) {
+  return typeof role === 'string' && role !== 'instructor' && !role.startsWith('custom_');
+}
+
 function fuenteDeLaLista(role, tripId, scopeKey) {
   // La lista de preparación de una salida es la única que puede venir de una
   // plantilla del centro. `instructorItemsByTrip` guarda las filas, o el
@@ -17256,7 +17309,7 @@ function fuenteDeLaLista(role, tripId, scopeKey) {
   // está cerrando. Derivarlo acá del rol habría sido buscar «alguna instancia
   // de este rol», y dos instancias del mismo rol conviven en una sesión (la de
   // hoy y la de ayer, si alguien dejó la app abierta).
-  if (scopeKey) {
+  if (scopeKey && esRolDeDepartamento(role)) {
     const instancia = rutinaItemsPorInstancia[scopeKey];
     if (!instancia) return null;   // no se resolvió todavía: no se afirma nada
     return (Array.isArray(instancia) && instancia.length) ? 'template' : 'hardwired';
@@ -17668,7 +17721,13 @@ function filaDeActa(item, { compacto = false } = {}) {
 // como una garantía.
 function lineaDeFuenteDeLista(acta) {
   if (!acta || acta.items_source !== 'hardwired') return '';
-  return `<div class="cl-acta-nota" style="border-left:3px solid var(--warning, #d9822b);">${escapeHtml(t('cl_acta_lista_generica'))}</div>`;
+  // El hecho es el mismo; la salida no. Para una salida, armar la plantilla
+  // cambia las actas siguientes y vale decir dónde. Para una rutina de
+  // departamento no cambia nada todavía, así que se dice el hecho y no se manda
+  // a ninguna parte.
+  const clave = esRolDeDepartamento(acta.role)
+    ? 'cl_acta_lista_generica_depto' : 'cl_acta_lista_generica';
+  return `<div class="cl-acta-nota" style="border-left:3px solid var(--warning, #d9822b);">${escapeHtml(t(clave))}</div>`;
 }
 
 // Un acta que todavía no llegó al servidor se dice. Callarlo sería mostrar un
@@ -21977,17 +22036,17 @@ async function pintarAvisoDeListasQueFaltan(types) {
   el.style.display = 'block';
   el.innerHTML = `
     <div class="card" style="margin:0 0 14px;border-left:3px solid var(--warning, #d9822b);">
-      <div style="font-weight:600;margin-bottom:4px;">${escapeHtml(t('prep_missing_title').replace('{n}', faltan.length))}</div>
+      <div style="font-weight:600;margin-bottom:4px;">${escapeHtml(textoConCantidad('prep_missing_title', faltan.length))}</div>
       <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">${escapeHtml(t('prep_missing_desc'))}</p>
-      ${conSemilla.length ? `<button class="btn-primary" style="font-size:0.8rem;padding:7px 12px;" onclick="armarListasQueFaltan()">${escapeHtml(t('prep_missing_fix').replace('{n}', conSemilla.length))}</button>` : ''}
-      ${conSemilla.length < faltan.length ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">${escapeHtml(t('prep_missing_no_seed').replace('{n}', faltan.length - conSemilla.length))}</p>` : ''}
+      ${conSemilla.length ? `<button class="btn-primary" style="font-size:0.8rem;padding:7px 12px;" onclick="armarListasQueFaltan()">${escapeHtml(textoConCantidad('prep_missing_fix', conSemilla.length))}</button>` : ''}
+      ${conSemilla.length < faltan.length ? `<p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">${escapeHtml(textoConCantidad('prep_missing_no_seed', faltan.length - conSemilla.length))}</p>` : ''}
     </div>`;
 }
 
 async function armarListasQueFaltan() {
   const ids = window._tiposConSemillaPendiente || [];
   if (!ids.length) return;
-  if (!(await showConfirmModal(t('prep_missing_confirm').replace('{n}', ids.length)))) return;
+  if (!(await showConfirmModal(textoConCantidad('prep_missing_confirm', ids.length)))) return;
   let hechas = 0; let primerMotivo = null;
   for (const id of ids) {
     const motivo = await copiarListaEstandar(id);
@@ -21997,7 +22056,7 @@ async function armarListasQueFaltan() {
   // centro tiene que saber que le quedan dos.
   await showAlertModal(primerMotivo
     ? t('prep_missing_partial').replace('{ok}', hechas).replace('{why}', primerMotivo)
-    : t('prep_missing_done').replace('{n}', hechas));
+    : textoConCantidad('prep_missing_done', hechas));
   await renderTripTypesList();
 }
 
@@ -22287,6 +22346,24 @@ function showTwoFieldModal(message, placeholder1, placeholder2) {
 // Un objeto vacío es una respuesta válida y significa «firmo sin explicar».
 let _motivosResolve = null;
 
+// Los atributos que le dicen al navegador y a los gestores de contraseñas que
+// NO toquen un campo. En un lugar porque ya había dos copias en el HTML (los
+// campos de invitar tripulación) y el defecto apareció donde la copia faltaba —
+// el modo de falla de siempre acá.
+//
+// Medido el 22/10 firmando una rutina en la app real: el último campo de motivos
+// apareció con **`francoroca70@gmail.com`** adentro, que nadie tipeó, y se
+// guardó en el acta. `autocomplete="off"` ya estaba y no alcanzó: Chrome lo
+// trata como una sugerencia y las extensiones directamente lo ignoran — en esa
+// misma página había dos marcas de 1Password.
+//
+// Por qué importa más acá que en cualquier otro campo: **un acta es inmutable.**
+// Un dato que nadie escribió entra una vez y no se corrige nunca, y encima
+// parece un dato. Es exactamente lo que el proyecto viene evitando con
+// «registrar el hecho, no el documento».
+const SIN_AUTOCOMPLETADO =
+  'autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"';
+
 function pedirMotivos(faltantes) {
   return new Promise(resolve => {
     _motivosResolve = resolve;
@@ -22296,7 +22373,8 @@ function pedirMotivos(faltantes) {
       <div style="margin-bottom:12px;">
         <label class="sf-label" style="display:block;margin-bottom:4px;">${escapeHtml(it.text)}</label>
         <input class="sf-input" type="text" data-item-id="${escapeHtml(String(it.id))}"
-               id="cl-motivo-${i}" autocomplete="off"
+               id="cl-motivo-${i}" ${SIN_AUTOCOMPLETADO}
+               name="cl-motivo-${i}-noautofill"
                placeholder="${escapeHtml(t('cl_motivos_ph'))}">
       </div>`).join('');
     document.getElementById('modal-motivos').style.display = 'flex';

@@ -156,5 +156,52 @@ chk('y queda escrito que la ausencia de línea NO es una garantía',
     /ausencia de línea no significa «estaba bien»/.test(html),
     'o estaba bien o es vieja — para que nadie lo lea al revés');
 
+// ─── 9 · Una rutina de departamento no se manda a Tipos de Salida ─────────
+//
+// Encontrado el 22/10 firmando una rutina de capitán en la app real: el acta
+// mostraba el texto de las salidas, que dice «Set one up in Settings → Trip
+// Types». Para una rutina de departamento eso está mal dos veces — no es donde
+// se arma, y armarla no cambiaría nada mientras el camino de plantillas de
+// departamento siga apagado.
+//
+// Es la cuarta vez con esta forma exacta: un cartel que manda a hacer algo que
+// no surte efecto (el «permitir ventanas emergentes» en nativo, el «revisá la
+// conexión» del tilde, el «no tenés permiso para borrar» al guardar).
+const deDepto = T.linea({items_source:'hardwired', role:'captain'});
+const deSalida = T.linea({items_source:'hardwired', role:'instructor'});
+chk('una rutina de departamento NO manda a Tipos de Salida',
+    !/Trip Types|Tipos de Salida/.test(deDepto), deDepto.slice(0,120));
+chk('y sigue diciendo contra qué lista se firmó',
+    /standard list/.test(deDepto), deDepto.slice(0,120));
+chk('una lista de salida sí dice dónde armarla',
+    /Settings → Trip Types/.test(deSalida));
+chk('los dos textos son distintos', deDepto !== deSalida);
+
+// Una checklist propia nunca llega acá con 'hardwired' —es del centro por
+// definición— pero si llegara, el texto de salida es el correcto: lo que hay que
+// cuidar es que `custom_` NO se clasifique como departamento.
+chk('una checklist propia no cuenta como rutina de departamento',
+    !/standard list\. Department/.test(T.linea({items_source:'hardwired', role:'custom_abc'})));
+
+// El predicado vive en UN lugar y lo usan los dos que lo necesitan.
+chk('esRolDeDepartamento se declara una vez',
+    (html.match(/function esRolDeDepartamento/g)||[]).length===1);
+chk('y lo preguntan la procedencia y el texto del acta',
+    (html.match(/esRolDeDepartamento\(/g)||[]).length>=3,
+    'la declaración más los dos lectores');
+
+chk('el texto de departamento está en los dos idiomas',
+    (html.match(/\bcl_acta_lista_generica_depto:/g)||[]).length===2,
+    (html.match(/\bcl_acta_lista_generica_depto:/g)||[]).length+' definiciones');
+
+// Y el español de estos dos textos no vosea — la regla del 07/10, que estos
+// habían quedado sin cumplir («Armá la propia en…»).
+const es = html.slice(html.indexOf('  es: {'));
+const bloque = es.slice(es.indexOf('cl_acta_lista_generica:'),
+                        es.indexOf('cl_acta_lista_generica_depto:') + 400);
+chk('y no vosea en español',
+    !/\b(armá|podés|tenés|revisá|fijate)\b/i.test(bloque),
+    bloque.match(/\b(armá|podés|tenés|revisá|fijate)\b/i)?.[0] || '');
+
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,400)); }
 process.exit(fail);
