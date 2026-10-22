@@ -18,6 +18,7 @@
 // guardián dejaría de proteger y pasaría a BLOQUEAR — el mismo error que casi
 // se cometió con las dos actividades en un barco.
 const fs=require('fs'); const {JSDOM}=require('./jsdom');
+const {lineasDeCodigoCon}=require('./contar');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
@@ -166,7 +167,81 @@ const ITEMS=[{id:'0',text:'Tanks'},{id:'1',text:'Towels'},{id:'2',text:'Kit'}];
       T.abiertas().has('k6'));
   T.abiertas().delete('k6');
 
+  // ─── LA PARTE NUEVA (22/10): al redibujar, la pasada ya está cerrada ───
+  //
+  // El bug: cada callback que firma termina redibujando, y los tres redibujos
+  // cortan temprano si hay una pasada abierta —que es lo que hace que Reset
+  // muestre la lista viva—. La pasada se cerraba DESPUÉS del callback, así que el
+  // redibujo de después de firmar corría con la pasada todavía abierta y dibujaba
+  // la lista viva: tras una segunda pasada la pantalla quedaba en PENDING con el
+  // botón de firmar ahí.
+  //
+  // Medido en la app en vivo, no deducido: dos actas en la base (2/16 y 1/16) y
+  // la pantalla en PENDING. Un redibujo a mano mostraba SIGNED 1/16 al instante,
+  // que es lo que señaló que el estado estaba bien y el orden no.
+  T.abiertas().add('k8');
+  let abiertaAlRedibujar = null;
+  await T.firmar('k8', { role:'instructor', tripId:'trip-8' }, async ({ actaEntro }) => {
+    actaEntro();
+    // Esto es el redibujo: lo único que importa es qué ve en este momento.
+    abiertaAlRedibujar = T.abiertas().has('k8');
+    return true;
+  });
+  chk('al redibujar después de firmar, la pasada YA está cerrada',
+      abiertaAlRedibujar === false,
+      'si está abierta, el redibujo dibuja la lista viva en vez del acta');
+
+  // Y la contracara, que es la que prueba que el cambio CAMBIA algo: un callback
+  // que no avisa se comporta como antes del arreglo. La etapa 3a tuvo tres días
+  // un interruptor que no cambiaba nada con la suite en verde; esto es lo que
+  // evita repetirlo.
+  T.abiertas().add('k9');
+  let abiertaSinAvisar = null;
+  await T.firmar('k9', { role:'instructor', tripId:'trip-9b' }, async () => {
+    abiertaSinAvisar = T.abiertas().has('k9');
+    return true;
+  });
+  chk('sin avisar, al redibujar sigue abierta — el comportamiento viejo',
+      abiertaSinAvisar === true);
+  chk('pero la red de seguridad la cierra igual', !T.abiertas().has('k9'),
+      'un camino que se olvide de avisar degrada, no rompe');
+
+  // Avisar no alcanza para cerrarla si el acta no entró: el callback que falla
+  // devuelve false y la pasada tiene que quedar abierta para reintentar.
+  T.abiertas().add('k10');
+  await T.firmar('k10', { role:'instructor', tripId:'trip-10' }, async () => false);
+  chk('un fallo deja la pasada abierta aunque el callback reciba el aviso',
+      T.abiertas().has('k10'));
+  T.abiertas().delete('k10');
+
   // ─── Guardianes estructurales ───
+  //
+  // Los tres caminos que firman reciben el aviso Y lo usan antes de redibujar.
+  // Cuenta la regla, no «los tres que conozco»: un cuarto camino que firme sin
+  // pedirlo hace fallar esto.
+  chk('los tres callbacks que firman reciben el aviso',
+      (html.match(/async \(\{ actaEntro \}\)/g)||[]).length===3,
+      (html.match(/async \(\{ actaEntro \}\)/g)||[]).length+' de 3');
+  chk('y lo llaman en los seis caminos (con red y sin red)',
+      (html.match(/\n\s*actaEntro\(\);/g)||[]).length===6,
+      (html.match(/\n\s*actaEntro\(\);/g)||[]).length+' llamadas');
+
+  // Lo que de verdad hay que cuidar es el ORDEN: avisar después de redibujar no
+  // arregla nada. Se comprueba por posición en cada uno de los tres bloques.
+  for (const [quien, render] of [
+        ['preparación de la salida', 'renderInstructorChecklistForTrip(tripId);'],
+        ['checklist propia',         'renderCustomChecklistsForCurrentView();'],
+        ['rutina de departamento',   'renderDeptRoutine();']]) {
+    const i = html.indexOf('actaEntro();', html.indexOf('async ({ actaEntro })',
+                 html.indexOf(render) - 4000));
+    const j = html.indexOf(render, i);
+    chk('en ' + quien + ', avisar va ANTES de redibujar', i !== -1 && j !== -1 && i < j);
+  }
+
+  chk('cerrar una pasada sigue siendo cosa de una sola función',
+      (html.match(/pasadasAbiertas\.delete\(/g)||[]).length===2,
+      'el aviso inyectado más la red de seguridad, las dos dentro de firmarUnaSolaVez');
+
   chk('qué significa Reset vive en una sola función',
       (html.match(/async function reiniciarPasada\(/g)||[]).length===1 &&
       (html.match(/await reiniciarPasada\(/g)||[]).length===3,
@@ -175,9 +250,13 @@ const ITEMS=[{id:'0',text:'Tanks'},{id:'1',text:'Towels'},{id:'2',text:'Kit'}];
       !/ChecksBy[A-Za-z]*\[[^\]]+\] = \{\};\s*\n\s*(render|await render)/.test(
         html.replace(/redibujar: async \(\) => \{[\s\S]*?\}/g, '')),
       'el borrado pasa por reiniciarPasada');
-  chk('los tres renders respetan la pasada abierta',
-      (html.match(/pasadasAbiertas\.has\(/g)||[]).length===4,
-      (html.match(/pasadasAbiertas\.has\(/g)||[]).length+' (3 renders + el guardián)');
+  // Cuenta líneas de CÓDIGO, no menciones. Esta aserción falló el 22/10 con el
+  // código sano porque un comentario nuevo —el que explica justamente este
+  // arreglo— nombra `pasadasAbiertas.has(...)`. **Sexta vez** con esta forma, y
+  // `contar.js` existe desde el 16/10 exactamente para esto.
+  const lectores = lineasDeCodigoCon(html, 'pasadasAbiertas.has(').length;
+  chk('los tres renders respetan la pasada abierta', lectores===4,
+      lectores+' lectores en código (3 renders + el guardián)');
   chk('la pasada se cierra sólo si el acta entró',
       /if \(ok\) pasadasAbiertas\.delete\(claveDeInstancia\);/.test(html));
   chk('limpiar avisa en un Reset y calla después de firmar',

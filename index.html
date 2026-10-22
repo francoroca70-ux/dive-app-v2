@@ -8987,7 +8987,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-22a');
+  console.info('[Seven Seas] build 2026-10-22b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -16345,10 +16345,30 @@ async function firmarUnaSolaVez(claveDeInstancia, instancia, hacerlo) {
         .replace('{time}', new Date(yaHay.signed_at).toLocaleString(localeDeLaApp())));
       return false;
     }
-    const ok = await hacerlo();
-    // La pasada se cierra al firmarla, no antes: si el acta no entró, sigue
-    // abierta y se puede volver a intentar. Cerrarla de más dejaría la pantalla
-    // mostrando el acta vieja con el trabajo nuevo perdido.
+    // `actaEntro` es el momento exacto en que la pasada deja de estar abierta, y
+    // lo sabe el callback: es él el que ve si el acta se guardó o se encoló.
+    //
+    // Por qué no alcanza con cerrarla DESPUÉS, que es como estaba (22/10): cada
+    // callback termina redibujando, y los tres redibujos cortan temprano si hay
+    // una pasada abierta —`if (pasadasAbiertas.has(...)) return;`, que es lo que
+    // hace que Reset muestre la lista viva—. Así que el redibujo de después de
+    // firmar corría con la pasada todavía abierta y dibujaba la lista viva: tras
+    // una segunda pasada la pantalla quedaba en PENDING con el botón de firmar,
+    // invitando a apretarlo otra vez. No duplicaba el acta —el guardián de más
+    // arriba lo frena— pero es la misma secuencia que el 09/10 dejó dos actas
+    // idénticas separadas por 1,7 segundos.
+    //
+    // Las dos piezas eran correctas por separado; lo que estaba mal era el orden
+    // entre ellas. Ver `El redibujo que corre antes de cerrar la pasada.md`.
+    //
+    // Se inyecta en vez de que cada callback haga el `delete`: la regla de qué
+    // significa cerrar una pasada vive acá, en un lugar, y el callback sólo dice
+    // CUÁNDO.
+    const ok = await hacerlo({ actaEntro: () => pasadasAbiertas.delete(claveDeInstancia) });
+    // Red de seguridad, y la razón de que siga existiendo: si un camino nuevo se
+    // olvida de llamar a `actaEntro`, la pasada se cierra igual —como antes del
+    // 22/10— y lo único que se pierde es que su pantalla no se actualice sola.
+    // Un olvido así degrada, no rompe.
     if (ok) pasadasAbiertas.delete(claveDeInstancia);
     return ok;
   } finally {
@@ -17541,7 +17561,7 @@ async function instructorSignOff() {
   // texto** — y desde que Reset abre pasadas, el guardián y el Reset tienen que
   // mirar el MISMO conjunto o la pasada abierta no se ve. Dos nombres para una
   // instancia es un bug esperando.
-  await firmarUnaSolaVez(instructorScope().scopeKey, { role: 'instructor', tripId }, async () => {
+  await firmarUnaSolaVez(instructorScope().scopeKey, { role: 'instructor', tripId }, async ({ actaEntro }) => {
     if (!currentOrgId) { pintarFirmaDelInstructor(signer.name, done, instructorItems.length); return true; }
     const payload = buildRecordPayload({
       role: 'instructor', tripId,
@@ -17550,6 +17570,10 @@ async function instructorSignOff() {
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
+      // El acta existe para este teléfono —encolada, y el redibujo la muestra
+      // como pendiente de sincronizar—, así que la pasada se cierra acá y el
+      // redibujo de abajo puede mostrarla.
+      actaEntro();
       pintarFirmaDelInstructor(signer.name, done, instructorItems.length, t('cl_saved_offline_sync'));
       // Y redibuja, igual que el camino con red. Hasta el 16/10 este camino
       // sólo pintaba el cartel: según lo que `navigator.onLine` hubiera dicho,
@@ -17563,6 +17587,7 @@ async function instructorSignOff() {
     }
     // El progreso se borra SÓLO si el acta quedó guardada o encolada.
     if (!(await guardarActa(payload))) return false;
+    actaEntro();
     // Firmada: la instancia se cierra. El acta pasa a ser el registro y el
     // trabajo en curso deja de existir, para que nadie siga tildando sobre
     // algo ya firmado.
@@ -17997,7 +18022,7 @@ async function customChecklistSignOff(checklistId) {
 
   const { scopeKey } = customScope(cc);
   await firmarUnaSolaVez(scopeKey,
-    { role: `custom_${checklistId}`, periodo: deptRoutinePeriodRange(cc.cadence) }, async () => {
+    { role: `custom_${checklistId}`, periodo: deptRoutinePeriodRange(cc.cadence) }, async ({ actaEntro }) => {
     if (!currentOrgId) { pintar(); return true; }
     const payload = buildRecordPayload({
       role: `custom_${checklistId}`, tripId: null,
@@ -18010,6 +18035,7 @@ async function customChecklistSignOff(checklistId) {
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
+      actaEntro();
       pintar(t('cl_saved_offline_sync'));
       // Y redibuja, igual que el camino con red. Hasta el 16/10 este camino
       // sólo pintaba el cartel: según lo que `navigator.onLine` hubiera dicho,
@@ -18022,6 +18048,7 @@ async function customChecklistSignOff(checklistId) {
       return true;
     }
     if (!(await guardarActa(payload))) return false;
+    actaEntro();
     await clearChecklistProgress(scopeKey);
     pintar();
     // Y redibuja, que ahora sí muestra el acta: `renderCustomChecklistsForCurrentView`
@@ -18472,7 +18499,7 @@ async function deptRoutineSignOff() {
   // día, el control mensual es uno por mes. Esa es la unidad que no puede tener
   // dos actas.
   const periodo = deptRoutinePeriodRange(currentCadenceKey);
-  await firmarUnaSolaVez(deptScope().scopeKey, { role: routine.role, periodo }, async () => {
+  await firmarUnaSolaVez(deptScope().scopeKey, { role: routine.role, periodo }, async ({ actaEntro }) => {
     if (!currentOrgId) { pintarFirmaDeRutina(signer.name, done, items.length); return true; }
     const payload = buildRecordPayload({
       role: routine.role, tripId: null, scopeKey: deptScope().scopeKey,
@@ -18481,6 +18508,7 @@ async function deptRoutineSignOff() {
     });
     if (isOffline) {
       queueOfflineAction('checklist_completion', payload);
+      actaEntro();
       pintarFirmaDeRutina(signer.name, done, items.length, t('cl_saved_offline_sync'));
       // Y redibuja, igual que el camino con red. Hasta el 16/10 este camino
       // sólo pintaba el cartel: según lo que `navigator.onLine` hubiera dicho,
@@ -18493,6 +18521,7 @@ async function deptRoutineSignOff() {
       return true;
     }
     if (!(await guardarActa(payload))) return false;
+    actaEntro();
     await clearChecklistProgress(deptScope().scopeKey);
     // Redibuja para mostrar el ACTA en vez de la lista viva, y con eso
     // desaparece el botón. Sin esto, firmar sólo cambiaba el cartel.

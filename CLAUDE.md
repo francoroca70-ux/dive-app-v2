@@ -1116,6 +1116,26 @@ cartel de «suscripción vencida» que vio Fran NO era ésa: era su propia cuent
 quedó en **`canceled`** desde la prueba de cobro real del 30/09. Es correcto que
 esté así.
 
+**Y aun así Fran entra sin portón, porque su org tiene `comped = true`** —
+verificado en producción el 22/10: estado `canceled`, `comped` en true, bloqueo
+no levantado. `esCuentaInterna()` se pregunta **antes que todo lo demás** en
+`enforceSubscriptionGate()`.
+
+Por qué es una columna aparte y no un `subscription_status = 'active'` a mano:
+**el webhook de Paddle escribe esa columna y lo hace sin guardia de orden**, así
+que un evento viejo que llegara tarde le devolvería `canceled` y el paywall
+reaparecería, con suerte en medio de una demo. El webhook no toca `comped`
+nunca. Y es honesta en los datos: esa org no paga y es a propósito; poner
+`active` afirmaría una suscripción que no existe.
+
+**Para probar en la app conviene usar la cuenta de Fran, no la demo.** `Blue
+water` es la que mira el revisor de Apple, así que escribir ahí le cambia los
+datos al revisor. Y hay una razón más fuerte que la prudencia: el 22/10 los tres
+bugs de mensajes aparecieron **sólo** porque las dos cuentas tienen datos
+distintos — Blue water tiene 7 tipos de salida sin lista de preparación y la de
+Fran tiene **1**, y el plural se rompe con 1. **Probar siempre en la misma cuenta
+es probar siempre el mismo camino.**
+
 **Y la demo NO cuelga de una suscripción viva — medido en Paddle el 11/10.**
 Primero dije que sí y que podía morirse a mitad de la revisión: lo **deduje** de
 que la columna `paddle_subscription_id` estaba cargada, sin mirar el otro lado.
