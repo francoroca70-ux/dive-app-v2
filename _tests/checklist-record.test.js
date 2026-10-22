@@ -7,6 +7,7 @@
 // su id. Las plantillas van a cambiar (checklists por tipo de salida) y un
 // registro con ids se vuelve ilegible en cuanto cambien.
 const fs=require('fs'); const {JSDOM}=require('./jsdom');
+const {lineasDeCodigoCon}=require('./contar');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
@@ -137,9 +138,14 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   // Los caminos que muestran una firmada usan la MISMA función. Eran dos
   // (salida y rutina de departamento); desde el 11/10 son tres — las checklists
   // propias se sumaron, y hasta entonces ni consultaban su acta.
+  // Cuenta líneas de CÓDIGO, no menciones: el 22/10 esta aserción falló con el
+  // código sano porque un comentario nuevo —el del refresco que ya no pisa el
+  // acta— nombra esta función para explicar en qué contenedor dibuja. `contar.js`
+  // existe desde el 16/10 exactamente para esto.
+  const dibujanActa = lineasDeCodigoCon(html, 'mostrarActaSiHay(').length;
   chk('los tres caminos que muestran una firmada comparten el arreglo',
-      (html.match(/mostrarActaSiHay\(/g)||[]).length===4, // 1 declaración + 3 usos
-      (html.match(/mostrarActaSiHay\(/g)||[]).length+' menciones');
+      dibujanActa===4,                        // 1 declaración + 3 usos
+      dibujanActa+' líneas de código');
   chk('y el de las checklists propias es uno de ellos',
       /mostrarActaSiHay\(ids\.items, s, ids\.progreso\)/.test(html));
   // Desde el 09/10 las columnas están en UNA constante y la consulta en UNA

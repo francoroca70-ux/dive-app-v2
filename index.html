@@ -9113,7 +9113,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-22c');
+  console.info('[Seven Seas] build 2026-10-22d');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -15476,8 +15476,54 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && !isOffline) refrescarProgresoVisible();
 });
 
-// Relee el progreso del scope que esté a la vista y redibuja. No toca el acta
-// ni el resto de la pantalla: sólo los tildes.
+// ¿Está el acta a la vista en este contenedor? El DOM es el estado de la
+// pantalla, así que preguntárselo a él es medir y no suponer — y evita guardar
+// una segunda copia de «qué se está mostrando», que es donde las dos se
+// desincronizan.
+function pantallaMuestraActa(containerId) {
+  const el = document.getElementById(containerId);
+  return !!(el && el.querySelector('.cl-item.acta'));
+}
+
+// Qué tiene que hacer el refresco de diez segundos con la instancia que está a
+// la vista: **nada**, el **render completo**, o **parchar los tildes**.
+//
+// El agujero que cierra, medido en producción el 22/10: el refresco redibujaba
+// los ítems con `renderCheckItems()` en el MISMO contenedor donde
+// `mostrarActaSiHay()` dibuja el acta, así que a los diez segundos de firmar el
+// acta desaparecía y volvía la lista viva, tildable, con la insignia diciendo
+// `SIGNED 2/16`. En cada firma, sin necesidad de Reset.
+//
+// Y el comentario que estaba acá afirmaba «**No toca el acta** ni el resto de la
+// pantalla: sólo los tildes». Era cierto el 08/10, cuando se escribió, y dejó de
+// serlo el 11/10 cuando el acta pasó a usar ese contenedor. Un comentario que
+// afirma una garantía es el más caro de todos: el que lo lee deja de buscar ahí.
+//
+// Devuelve el motivo y no un booleano, que es la regla de la casa: tres estados
+// no entran en dos valores.
+async function queHaceElRefresco({ containerId, scopeKey, instancia }) {
+  // Si el acta ya está en pantalla no hay nada que traer: al firmar, el progreso
+  // se borra. Y así una pantalla firmada no gasta **ni una** consulta cada diez
+  // segundos — sale más barato que antes del arreglo.
+  if (pantallaMuestraActa(containerId)) return 'nada';
+  // Una pasada abierta por Reset muestra la lista viva a propósito, aunque haya
+  // acta. Es la misma excepción que hacen los tres renders y el guardián de
+  // firmar: sin ella, el refresco le taparía la segunda pasada con el acta
+  // vieja.
+  if (scopeKey && pasadasAbiertas.has(scopeKey)) return 'tildes';
+  const acta = await buscarActaVigente(instancia);
+  // Sin red, `buscarActaVigente` devuelve lo encolado; si no puede medir nada,
+  // devuelve null y se parchan los tildes — exactamente lo que hacía antes.
+  // **Nunca se esconde un acta por no haber podido medir.**
+  return acta ? 'render' : 'tildes';
+}
+
+// Relee el trabajo en curso del scope que esté a la vista y redibuja.
+//
+// Ojo: esto SÍ puede tocar el acta, y tiene que poder — ver
+// `queHaceElRefresco()`. Y es además lo que hace que, si Juanma firma en su
+// celular, esta pantalla se entere: antes el refresco sólo miraba tildes, así
+// que nunca descubría una firma ajena.
 async function refrescarProgresoVisible() {
   const visible = (id) => {
     const el = document.getElementById(id);
@@ -15489,24 +15535,47 @@ async function refrescarProgresoVisible() {
 
   if (visible('cl-tripprep') && currentChecklistTripId) {
     const { scopeKey } = instructorScope();
-    const checks = await loadChecklistProgress(scopeKey, { forzar: true });
-    instructorChecksByTrip[currentChecklistTripId] = checks;
-    renderCheckItems('cl-instructor-items', itemsDeLaSalida(currentChecklistTripId), checks, 'toggleInstructor', null);
+    const accion = await queHaceElRefresco({
+      containerId: 'cl-instructor-items', scopeKey,
+      instancia: { role: 'instructor', tripId: currentChecklistTripId }
+    });
+    if (accion === 'render') {
+      await renderInstructorChecklistForTrip(currentChecklistTripId);
+    } else if (accion === 'tildes') {
+      const checks = await loadChecklistProgress(scopeKey, { forzar: true });
+      instructorChecksByTrip[currentChecklistTripId] = checks;
+      renderCheckItems('cl-instructor-items', itemsDeLaSalida(currentChecklistTripId), checks, 'toggleInstructor', null);
+    }
   }
 
   if (visible('cl-department')) {
     const { routine, scopeKey, items } = deptScope();
-    const checks = await loadChecklistProgress(scopeKey, { forzar: true });
-    deptRoutineChecks[routine.role] = checks;
-    // `items` y no `routine.items`, y éste era el peor de los seis lugares: es
-    // el refresco de cada 10 segundos. Con el interruptor prendido, redibujar
-    // con la lista cableada mientras los tildes vienen de la plantilla haría que
-    // **toda la tripulación viera sus tildes perdidos, cada diez segundos** —
-    // están guardados con la otra llave. El camino de las salidas, dos líneas
-    // más arriba, ya pedía su lista por función; el de departamento era la copia
-    // que faltaba, y el defecto habría aparecido justo ahí.
-    renderCheckItems('dept-list', items, checks, 'toggleDeptItem', 'dept-routine-progress');
-    // Las checklists propias del centro viven en la misma pestaña.
+    const accion = await queHaceElRefresco({
+      containerId: 'dept-list', scopeKey,
+      instancia: { role: routine.role, periodo: deptRoutinePeriodRange(currentCadenceKey) }
+    });
+    if (accion === 'render') {
+      await renderDeptRoutine();
+    } else if (accion === 'tildes') {
+      const checks = await loadChecklistProgress(scopeKey, { forzar: true });
+      deptRoutineChecks[routine.role] = checks;
+      // `items` y no `routine.items`, y éste era el peor de los seis lugares: es
+      // el refresco de cada 10 segundos. Con el interruptor prendido, redibujar
+      // con la lista cableada mientras los tildes vienen de la plantilla haría
+      // que **toda la tripulación viera sus tildes perdidos, cada diez
+      // segundos** — están guardados con la otra llave. El camino de las
+      // salidas, dos líneas más arriba, ya pedía su lista por función; el de
+      // departamento era la copia que faltaba.
+      renderCheckItems('dept-list', items, checks, 'toggleDeptItem', 'dept-routine-progress');
+    }
+    // Las checklists propias del centro viven en la misma pestaña, y van
+    // AFUERA del `if`: pase lo que pase con la rutina de departamento, las
+    // propias se refrescan igual.
+    //
+    // Y éstas NO necesitan lo de arriba, que es la corrección a lo que yo mismo
+    // reporté: el refresco las redibuja con `renderCustomChecklistsForCurrentView()`,
+    // que es su render COMPLETO y consulta el acta desde el 11/10. Los dos
+    // caminos que parchaban ítems directo eran la salida y el departamento.
     for (const cc of customChecklists) {
       const sc = customScope(cc).scopeKey;
       customChecklistChecks[cc.id] = await loadChecklistProgress(sc, { forzar: true });

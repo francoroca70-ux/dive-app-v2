@@ -254,9 +254,13 @@ const ITEMS=[{id:'0',text:'Tanks'},{id:'1',text:'Towels'},{id:'2',text:'Kit'}];
   // código sano porque un comentario nuevo —el que explica justamente este
   // arreglo— nombra `pasadasAbiertas.has(...)`. **Sexta vez** con esta forma, y
   // `contar.js` existe desde el 16/10 exactamente para esto.
+  // Cinco lectores desde el 22/10, y el quinto es un cambio de conducta, no un
+  // comentario: el refresco de diez segundos también tiene que respetar la
+  // pasada abierta. Sin eso le taparía la segunda pasada con el acta vieja.
   const lectores = lineasDeCodigoCon(html, 'pasadasAbiertas.has(').length;
-  chk('los tres renders respetan la pasada abierta', lectores===4,
-      lectores+' lectores en código (3 renders + el guardián)');
+  chk('los tres renders, el guardián de firmar y el refresco respetan la pasada abierta',
+      lectores===5,
+      lectores+' lectores en código (3 renders + guardián + refresco)');
   chk('la pasada se cierra sólo si el acta entró',
       /if \(ok\) pasadasAbiertas\.delete\(claveDeInstancia\);/.test(html));
   chk('limpiar avisa en un Reset y calla después de firmar',

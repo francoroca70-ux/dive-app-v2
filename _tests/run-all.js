@@ -76,6 +76,7 @@ const MINIMOS = {
   'plan-limits.test.js':            14,
   'pos-etapa-1.test.js':           24,
   'plantillas-tres-capas.test.js':  30,
+  'refresco-no-pisa-el-acta.test.js': 23,
   'reset-segunda-pasada.test.js':   40,
   'rutina-propia-del-centro.test.js': 31,
   'rutinas-de-departamento.test.js': 30,
