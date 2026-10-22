@@ -309,6 +309,36 @@ body { background: var(--navy); color: var(--text); }
   background: rgba(255,255,255,0.09);
 }
 .form-group input::placeholder { color: rgba(255,255,255,0.25); }
+/* El ojo para ver la contraseña, para los ocho campos.
+
+   El COLOR tiene que seguir al campo, no al contenedor. Primero puse
+   `currentColor` pensando que se adaptaba solo, y medido en la pantalla real dio
+   **#1a2a3a — el navy— sobre el campo oscuro**: casi invisible. El botón es
+   hermano del input, así que hereda de `.login-card`, que es navy; el que es
+   blanco es el input.
+
+   Medido el 22/10 en la app: el campo de autenticación es blanco (#fff) sobre
+   `rgba(255,255,255,0.06)` encima de oscuro, y el de Configuración es #1a2a3a
+   sobre blanco. Son **dos temas de campo**, y cada uno ya declara su propio
+   `color` — así que el ojo declara el suyo en los mismos dos lugares. No es una
+   regla duplicada: es el tema, donde ya vive el tema. */
+.pw-wrap { position: relative; display: block; }
+.pw-wrap > input { padding-right: 44px; }
+.pw-ojo {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  /* 34px y no 20: esto se aprieta con el pulgar en una tablet mojada. */
+  width: 34px; height: 34px; padding: 0;
+  background: none; border: 0; border-radius: 8px;
+  color: var(--text); opacity: 0.5; cursor: pointer;
+  transition: opacity 0.15s;
+}
+/* Las pantallas de autenticación, que son oscuras. Mismo lugar donde
+   `.form-group input` declara su `color: var(--white)`. */
+.form-group .pw-ojo { color: var(--white); }
+.pw-ojo:hover { opacity: 0.85; }
+.pw-ojo:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; opacity: 0.9; }
+.pw-ojo svg { width: 18px; height: 18px; display: block; }
 .btn-login {
   width: 100%; padding: 13px;
   background: var(--teal); color: var(--navy);
@@ -4390,6 +4420,8 @@ const TRANSLATIONS = {
 
     login_title: 'Sign in to your account', login_tagline: 'Water operations platform',
     login_email_label: 'Email', login_password_label: 'Password', login_signin_btn: 'Sign in', login_remember_me: 'Remember me',
+    // El ojo de las contraseñas. Un solo par de textos para los ocho campos.
+    pw_show: 'Show password', pw_hide: 'Hide password',
     login_forgot_link: 'Forgot password?', login_new_operation: 'New operation?', login_request_access: 'Request access',
 
     signup_back: '← Back to sign in', signup_title: "Create your shop's account",
@@ -5237,6 +5269,8 @@ const TRANSLATIONS = {
 
     login_title: 'Inicia sesión en tu cuenta', login_tagline: 'Plataforma de operaciones marítimas',
     login_email_label: 'Correo electrónico', login_password_label: 'Contraseña', login_signin_btn: 'Iniciar sesión', login_remember_me: 'Recordarme',
+    // En infinitivo, como el resto de los botones — regla del 15/10.
+    pw_show: 'Mostrar la contraseña', pw_hide: 'Ocultar la contraseña',
     login_forgot_link: '¿Olvidaste tu contraseña?', login_new_operation: '¿Nueva operación?', login_request_access: 'Solicitar acceso',
 
     signup_back: '← Volver a iniciar sesión', signup_title: 'Creá la cuenta de tu comercio',
@@ -6104,6 +6138,15 @@ function applyTranslations() {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
   });
+  // Para botones que son sólo un ícono: su texto vive en `aria-label` y en el
+  // `title`, no en el contenido. Sin esto, un `data-i18n` les borraría el SVG.
+  // Lo pide el ojo de las contraseñas, y queda genérico porque el próximo botón
+  // de ícono va a necesitar lo mismo.
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const txt = t(el.getAttribute('data-i18n-aria'));
+    el.setAttribute('aria-label', txt);
+    el.title = txt;
+  });
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLanguage));
 }
 
@@ -6383,7 +6426,85 @@ function renderHelpPage() {
 document.addEventListener('DOMContentLoaded', () => {
   const searchEl = document.getElementById('help-search');
   if (searchEl) searchEl.addEventListener('input', renderHelpPage);
+  ponerOjoEnContrasenas();
 });
+
+// ─── Ver la contraseña que se está tipeando ───
+//
+// Pedido por Fran el 22/10 para la pantalla de login. Se puso en los OCHO campos
+// de contraseña —login, alta (dos), restablecer (dos), aceptar invitación, y los
+// dos de cambiar la contraseña en Configuración— y no sólo en el del login,
+// porque la razón por la que hace falta es la misma en todos: se tipea en un
+// celular, muchas veces con una mano, y una contraseña mal tipeada no se puede
+// leer para corregirla.
+//
+// **Y no se agrega el botón ocho veces a mano**: se recorren los campos de
+// contraseña y se les inyecta. Escribirlo ocho veces en el HTML serían ocho
+// lugares donde puede faltar, y el defecto aparecería donde falta la copia — el
+// modo de falla de este proyecto. Así, un campo de contraseña nuevo lo recibe
+// sin que nadie se acuerde.
+const OJO_ABIERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const OJO_TACHADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+// El estado se lee del `type` del campo, que es el hecho, en vez de guardarse
+// aparte. Dos fuentes para lo mismo es lo que hace que una se desactualice.
+function contrasenaVisible(input) { return input.type === 'text'; }
+
+function pintarOjo(input, btn) {
+  const visible = contrasenaVisible(input);
+  btn.innerHTML = visible ? OJO_TACHADO : OJO_ABIERTO;
+  btn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+  // La clave de traducción se guarda en el atributo, así que un cambio de idioma
+  // lo reetiqueta solo desde `applyTranslations()` sin pasar por acá.
+  btn.setAttribute('data-i18n-aria', visible ? 'pw_hide' : 'pw_show');
+  const txt = t(visible ? 'pw_hide' : 'pw_show');
+  btn.setAttribute('aria-label', txt);
+  btn.title = txt;
+}
+
+function alternarContrasena(input, btn) {
+  const pos = input.selectionStart;
+  input.type = contrasenaVisible(input) ? 'password' : 'text';
+  pintarOjo(input, btn);
+  // Cambiar el `type` mueve el cursor al final en algunos navegadores, y alguien
+  // que está corrigiendo una letra en el medio pierde el lugar.
+  input.focus();
+  try { if (pos != null) input.setSelectionRange(pos, pos); } catch {}
+}
+
+function ponerOjoEnContrasenas(raiz = document) {
+  (raiz || document).querySelectorAll('input[type="password"]').forEach(input => {
+    if (input.dataset.conOjo) return;     // idempotente: puede correr dos veces
+    input.dataset.conOjo = '1';
+    const cont = document.createElement('div');
+    cont.className = 'pw-wrap';
+    input.parentNode.insertBefore(cont, input);
+    cont.appendChild(input);
+    const btn = document.createElement('button');
+    // `type="button"` o un Enter dentro de un form lo apretaría en vez de
+    // enviar. Y `tabIndex -1` NO se usa: con el teclado también se tiene que
+    // poder llegar.
+    btn.type = 'button';
+    btn.className = 'pw-ojo';
+    btn.addEventListener('click', () => alternarContrasena(input, btn));
+    cont.appendChild(btn);
+    pintarOjo(input, btn);
+  });
+}
+
+// Al cambiar de pantalla, toda contraseña vuelve a estar tapada.
+//
+// El caso real: la tablet del barco, compartida. Alguien se loguea con la
+// contraseña a la vista, pasa a la app y la deja — el campo sigue ahí con el
+// texto visible para el que entre después. Volver a taparlas cuesta una línea y
+// se hace en `showScreen()`, que es el único lugar que cambia de pantalla.
+function taparContrasenas() {
+  document.querySelectorAll('input[type="text"][data-con-ojo]').forEach(input => {
+    input.type = 'password';
+    const btn = input.parentNode && input.parentNode.querySelector('.pw-ojo');
+    if (btn) pintarOjo(input, btn);
+  });
+}
 
 // ─── OFFLINE SUPPORT (light resilience layer) ───
 // Scope: checklists, waiver signing, and maintenance/gear logs queue locally and sync
@@ -7930,6 +8051,7 @@ document.getElementById('chk-gear-warn-enabled')?.addEventListener('change', asy
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + id).classList.add('active');
+  taparContrasenas();
 }
 
 // Safety net for the whole .cl-view tab pattern: if a page arrives with every
@@ -7968,6 +8090,10 @@ function showPage(id) {
   });
   ensurePageViewVisible('page-' + id);
   closeSidebar();
+  // Los dos campos de cambiar la contraseña viven en Configuración, que no es
+  // una «pantalla» sino una página: sin esto, revelarla y navegar a otra parte
+  // la dejaría visible al volver.
+  taparContrasenas();
   // Home's "Getting started" checklist and its financial summary are only
   // computed once at login/settings-save (updateHomeBanner). Without this,
   // finishing a setup step (e.g. pricing a trip type) in Settings and then
@@ -8987,7 +9113,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-22b');
+  console.info('[Seven Seas] build 2026-10-22c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
