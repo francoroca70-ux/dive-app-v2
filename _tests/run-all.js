@@ -82,6 +82,7 @@ const MINIMOS = {
   'rutinas-de-departamento.test.js': 30,
   'salidas-archivadas.test.js':     31,
   'texto-con-cantidad.test.js':     25,
+  'texto-de-personas-escapado.test.js': 27,
   'ver-la-contrasena.test.js':      33,
   'sello-de-service.test.js':       36,
   'signer.test.js':                 31,

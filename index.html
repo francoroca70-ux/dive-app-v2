@@ -6100,6 +6100,51 @@ function escapeHtml(s) {
   return (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+// Un valor que va DENTRO de un manejador: onclick="fn('ACÁ')".
+//
+// `escapeHtml` no sirve para esto y es la trampa: escapa `& < > "` y **no toca
+// el apóstrofo**, que es justamente el carácter que rompe el literal de
+// JavaScript. Medido el 24/10: el botón de dar de baja a un tripulante armaba
+// `removeStaff('id', 'O'Brien')`, que es un error de sintaxis — el botón no
+// hacía nada. No es una hipótesis: O'Brien, O'Connor y D'Souza son nombres
+// corrientes en una tripulación angloparlante.
+//
+// Son DOS capas y en ESTE orden: primero literal de JavaScript (barra invertida
+// y apóstrofo), después escape de atributo HTML. Al revés, el `&amp;` que
+// produce la segunda capa se volvería a escapar.
+//
+// Y la defensa existía: `(p.full_name||'').replace(/'/g, "\\'")`, escrita a mano
+// **dos veces**, y el defecto apareció donde faltaba la copia. Encima esas dos
+// copias sólo cubrían el apóstrofo: un nombre con una barra invertida o una
+// comilla doble las pasaba igual.
+function escapeJsEnAtributo(valor) {
+  const literal = String(valor == null ? '' : valor)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'");
+  return escapeHtml(literal);
+}
+
+// El texto del waiver que el huésped LEE antes de firmar, en un solo lugar.
+//
+// Estaba escrito dos veces, idéntico —la firma remota y la firma en el local— y
+// las dos veces metía `template.title` y `template.body_text` **sin escapar**.
+// Un centro que pega una cláusula con un `<` o un `&` le muestra al huésped un
+// texto distinto del que escribió, y eso es el documento que después firma. Lo
+// que se guarda en el acta es `body_snapshot`, el texto crudo, así que lo
+// mostrado y lo guardado podían diferir.
+//
+// `white-space: pre-wrap` es lo que conserva los saltos de línea: escapar el
+// HTML no se los lleva, porque son caracteres de salto y no etiquetas `<br>`.
+function vistaPreviaDeWaiver(template) {
+  const titulo = (template && template.title)
+    ? `<p class="sf-label" style="margin-bottom:6px;">${escapeHtml(template.title)}</p>` : '';
+  const cuerpo = escapeHtml((template && template.body_text) || '');
+  return `
+    ${titulo}
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${cuerpo}</div>
+  `;
+}
+
 function t(key) {
   return (TRANSLATIONS[currentLanguage] && TRANSLATIONS[currentLanguage][key]) || TRANSLATIONS.en[key] || key;
 }
@@ -7775,7 +7820,7 @@ function rwRenderList() {
   let allSigned = true;
   const listEl = document.getElementById('rw-participant-list');
   listEl.innerHTML = d.participants.map(p => {
-    const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
+    const nameEsc = escapeJsEnAtributo(p.full_name);
     return p.waivers.map(w => {
       if (!w.signed) allSigned = false;
       const label = waiverTypeLabels[w.type] || w.type;
@@ -7891,10 +7936,7 @@ function rwRenderTemplateContent(type, template) {
     document.getElementById('rw-guardian-canvas-wrap').style.display = 'block';
   }
 
-  container.innerHTML = `
-    ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
-    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
-  `;
+  container.innerHTML = vistaPreviaDeWaiver(template);
 }
 
 function rwClearCanvas() {
@@ -8227,7 +8269,7 @@ async function updateAppContext(orgName) {
     if (shopLabelEl) shopLabelEl.textContent = locations[0].name;
   } else {
     locWrap.style.display = 'inline-flex';
-    picker.innerHTML = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+    picker.innerHTML = locations.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('');
     if (!currentLocationId || !locations.some(l => l.id === currentLocationId)) {
       currentLocationId = locations[0].id;
     }
@@ -8700,7 +8742,7 @@ async function loadRoster() {
   const { data: staffList } = await sb.from('staff').select('id, full_name, staff_locations(location_id, locations(name))').eq('org_id', currentOrgId);
   rosterStaffAll = staffList || [];
   const dayoffSel = document.getElementById('dayoff-staff-select');
-  if (dayoffSel) dayoffSel.innerHTML = rosterStaffAll.map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
+  if (dayoffSel) dayoffSel.innerHTML = rosterStaffAll.map(s => `<option value="${s.id}">${escapeHtml(s.full_name)}</option>`).join('');
   const saved = loadRosterFilterFromStorage();
   rosterSelectedStaffIds = saved ? saved.filter(id => rosterStaffAll.some(s => s.id === id)) : rosterStaffAll.map(s => s.id);
   renderRosterFilterCheckboxes();
@@ -8774,7 +8816,7 @@ async function renderRosterGrid() {
         const label = info.name.length > 10 ? info.name.slice(0,9)+'…' : info.name;
         return `<td style="padding:4px;text-align:center;border-bottom:1px solid var(--border);"><div onclick="openRosterCellEditor('${s.id}','${dateStr}')" style="cursor:pointer;background:rgba(47,133,90,0.12);color:var(--success);border-radius:5px;padding:4px 2px;font-size:0.68rem;font-weight:600;">${label}</div></td>`;
       }).join('');
-      return `<tr><td style="position:sticky;left:0;background:var(--white);padding:8px;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;">${s.full_name}</td>${cells}</tr>`;
+      return `<tr><td style="position:sticky;left:0;background:var(--white);padding:8px;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;">${escapeHtml(s.full_name)}</td>${cells}</tr>`;
     }).join('');
     html += `</tbody></table></div>`;
     return html;
@@ -8796,7 +8838,7 @@ async function openRosterCellEditor(staffId, dateStr) {
   document.getElementById('roster-cell-title').textContent = `${staffObj?.full_name || t('crew_fallback')} — ${dateStr}`;
   const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId);
   const sel = document.getElementById('roster-cell-location');
-  sel.innerHTML = (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  sel.innerHTML = (locs || []).map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('');
   document.getElementById('modal-roster-cell').style.display = 'flex';
 }
 function closeRosterCellModal() {
@@ -8834,7 +8876,7 @@ async function loadTasks() {
   if (!currentOrgId) return;
   const { data: staffList } = await sb.from('staff').select('id, full_name').eq('org_id', currentOrgId);
   const sel = document.getElementById('tasklist-assignee-select');
-  sel.innerHTML = `<option value="">${t('tk_select_crew_member')}</option>` + (staffList || []).map(s => `<option value="${s.id}" data-name="${s.full_name}">${s.full_name}</option>`).join('');
+  sel.innerHTML = `<option value="">${t('tk_select_crew_member')}</option>` + (staffList || []).map(s => `<option value="${s.id}" data-name="${escapeHtml(s.full_name)}">${escapeHtml(s.full_name)}</option>`).join('');
   await renderTasksMine();
   await renderTasksAll();
 }
@@ -8868,7 +8910,7 @@ function removeTaskListAssignee(id) {
 }
 function renderTaskListAssigneeTags() {
   document.getElementById('tasklist-assignee-tags').innerHTML = taskListAssigneeIds.map(a => `
-    <span class="crew-member-tag-v2">${a.name}<button onclick="removeTaskListAssignee('${a.id}')">×</button></span>
+    <span class="crew-member-tag-v2">${escapeHtml(a.name)}<button onclick="removeTaskListAssignee('${a.id}')">×</button></span>
   `).join('');
 }
 document.getElementById('btn-save-task-list').addEventListener('click', async () => {
@@ -8915,7 +8957,7 @@ async function renderTasksMine() {
     const isComplete = items.length > 0 && doneCount === items.length;
     return `<div class="gear-item-row" onclick="openTaskDetail('${a.task_list_id}')" style="cursor:pointer;">
       <div class="gear-item-header">
-        <span class="gear-item-name">${a.task_lists.title}</span>
+        <span class="gear-item-name">${escapeHtml(a.task_lists.title)}</span>
         <span style="font-size:0.75rem;color:${isComplete ? 'var(--success)' : 'var(--muted)'};font-weight:600;">${doneCount}/${items.length} ${t('tk_complete')}</span>
       </div>
       <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${a.task_lists.due_date || t('tk_no_due_date')}</div>
@@ -8969,7 +9011,7 @@ function renderTaskDetailItems() {
     const isChecked = currentTaskMyCompletedIds.includes(it.id);
     return `<div class="cl-item ${isChecked ? 'checked' : ''}" ${currentTaskIsAssignedToMe ? `onclick="toggleTaskItem('${it.id}')"` : ''} style="cursor:${currentTaskIsAssignedToMe ? 'pointer' : 'default'};">
       <div class="cl-checkbox">${isChecked ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>' : ''}</div>
-      <div class="cl-item-text">${it.text}</div>
+      <div class="cl-item-text">${escapeHtml(it.text)}</div>
     </div>`;
   }).join('');
 }
@@ -9113,7 +9155,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-22d');
+  console.info('[Seven Seas] build 2026-10-24a');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -9983,7 +10025,7 @@ async function loadLocations() {
   list.innerHTML = locs.map(l => `
     <div class="location-item">
       <div>
-        <div class="location-name">${l.name}</div>
+        <div class="location-name">${escapeHtml(l.name)}</div>
         <div class="location-meta">${l.country || ''} · ${l.timezone || 'UTC'}</div>
       </div>
       <button class="location-delete" onclick="deleteLocation('${l.id}')">${t('fleet_remove')}</button>
@@ -10088,11 +10130,17 @@ function renderTextTemplateEditor(type, template) {
     <div style="margin-bottom:10px;">${statusHtml}</div>
     <div class="sf-group">
       <label class="sf-label">${t('wt_title_label')}</label>
-      <input class="sf-input" type="text" id="wt-title" value="${(template?.title || '').replace(/"/g, '&quot;')}" placeholder="${t('wt_title_ph')}">
+      <input class="sf-input" type="text" id="wt-title" value="${escapeHtml(template?.title || '')}" placeholder="${t('wt_title_ph')}">
     </div>
     <div class="sf-group">
       <label class="sf-label">${t('wt_body_label')}</label>
-      <textarea class="sf-input" id="wt-body" rows="10" placeholder="${t('wt_body_ph')}">${template?.body_text || ''}</textarea>
+      <!-- Escapado: un cuerpo que contenga una etiqueta de cierre de textarea
+           cerraría el campo y partiría el formulario, y un ampersand se
+           decodificaría al cargarlo, así que el texto se iría degradando en
+           cada guardado. El value de arriba escapaba sólo la comilla doble:
+           media defensa. (Y ojo con los backticks en un comentario como éste:
+           van DENTRO de una plantilla de texto y la cierran. Me pasó.) -->
+      <textarea class="sf-input" id="wt-body" rows="10" placeholder="${t('wt_body_ph')}">${escapeHtml(template?.body_text || '')}</textarea>
     </div>
     <div class="settings-actions">
       <button class="btn-save" onclick="saveTextWaiverTemplate('${type}')">${t('wt_save_template')}</button>
@@ -11139,7 +11187,7 @@ async function buildTabOptionsHtml(selectedTabId) {
     .eq('location_id', currentLocationId)
     .eq('status', 'open');
   return '<option value="">No tab — pay per trip</option>' +
-    (openTabs || []).map(t => `<option value="${t.id}" ${t.id === selectedTabId ? 'selected' : ''}>${t.guest_name}</option>`).join('');
+    (openTabs || []).map(t => `<option value="${t.id}" ${t.id === selectedTabId ? 'selected' : ''}>${escapeHtml(t.guest_name)}</option>`).join('');
 }
 
 // Private bookings (the whole boat, e.g. most charter/yacht trips) charge one trip
@@ -11601,7 +11649,7 @@ async function populateTripBoats(selectedId) {
   const { data: boats } = await boatsQuery;
   const sel = document.getElementById('trip-boat');
   sel.innerHTML = `<option value="">${t('tt_no_boat_select')}</option>` +
-    (boats || []).map(b => `<option value="${b.id}" data-capacity="${b.capacity||''}" ${b.id===selectedId?'selected':''}>${b.name}${b.capacity ? ' · Max ' + b.capacity : ''}</option>`).join('');
+    (boats || []).map(b => `<option value="${b.id}" data-capacity="${b.capacity||''}" ${b.id===selectedId?'selected':''}>${escapeHtml(b.name)}${b.capacity ? ' · Max ' + b.capacity : ''}</option>`).join('');
   sel.onchange = () => { checkBoatConflict(); };
 }
 
@@ -11961,7 +12009,7 @@ async function loadGuestTabs() {
     const statusColor = tab.status === 'closed' ? 'var(--success)' : isOverdue ? 'var(--error)' : 'var(--warning)';
     return `<div class="gear-item-row">
       <div class="gear-item-header">
-        <span class="gear-item-name">${tab.guest_name}</span>
+        <span class="gear-item-name">${escapeHtml(tab.guest_name)}</span>
         <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
       </div>
       <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${linkedGroups?.length || 0} ${t('gt_bookings_label')} · ${t('gt_settle_by_label')} ${tab.settle_by_date}</div>
@@ -12050,7 +12098,7 @@ async function openTabDetail(tabId) {
 
   let html = `
     <button class="btn-cancel" onclick="loadGuestTabs()" style="margin-bottom:16px;">${t('gt_back_to_tabs')}</button>
-    <div class="card-section-title">${tab.guest_name}</div>
+    <div class="card-section-title">${escapeHtml(tab.guest_name)}</div>
     <div style="font-size:0.8rem;color:var(--muted);margin-bottom:16px;">
       ${tab.guest_email || ''}${tab.guest_email && tab.guest_phone ? ' · ' : ''}${tab.guest_phone || ''}
       ${tab.guest_country ? ' · ' + tab.guest_country : ''}<br>
@@ -12215,7 +12263,7 @@ async function populateReportsScopeSelect() {
   const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId).order('name');
   const sel = document.getElementById('reports-scope-select');
   const prev = sel.value || window.reportsScope || 'all';
-  sel.innerHTML = `<option value="all">${t('rep_all_shops_combined')}</option>` + (locs || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  sel.innerHTML = `<option value="all">${t('rep_all_shops_combined')}</option>` + (locs || []).map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   window.reportsScope = sel.value;
 }
@@ -13306,7 +13354,7 @@ async function loadWaivers() {
   const pendingListEl = document.getElementById('pending-waivers-list');
   pendingListEl.innerHTML = guestRows.length ? guestRows.map(({ p, trip, isMinor, pendingWaivers, medicalRequired, medical, state }) => {
     const tripLabel = trip ? `${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
-    const nameEsc = (p.full_name || '').replace(/'/g, "\\'");
+    const nameEsc = escapeJsEnAtributo(p.full_name);
     const bits = readinessReasons({ pendingWaivers, medicalRequired, medical });
 
     const actions = pendingWaivers.map(ty =>
@@ -13754,10 +13802,7 @@ function renderSignTemplateContent(type, template) {
   saveBtn.disabled = false;
   saveBtn.style.opacity = '1';
 
-  container.innerHTML = `
-    ${template.title ? `<p class="sf-label" style="margin-bottom:6px;">${template.title}</p>` : ''}
-    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:220px;overflow-y:auto;background:var(--foam);font-size:0.85rem;white-space:pre-wrap;line-height:1.5;">${template.body_text}</div>
-  `;
+  container.innerHTML = vistaPreviaDeWaiver(template);
 }
 
 // The clearance is a state of the paperwork, so any of the three can follow
@@ -14582,7 +14627,7 @@ async function renderTripCrewSection() {
   const optionsHtml = availableStaff.map(s => {
     const rate = parseFloat(s.day_rate) || 0;
     const rateLabel = rate > 0 ? (days > 1 ? ` — $${rate.toFixed(2)}/day` : ` — $${rate.toFixed(2)}`) : '';
-    return `<option value="${s.id}" data-name="${s.full_name.replace(/"/g,'&quot;')}" data-rate="${rate}">${s.full_name}${rateLabel}</option>`;
+    return `<option value="${s.id}" data-name="${escapeHtml(s.full_name)}" data-rate="${rate}">${escapeHtml(s.full_name)}${rateLabel}</option>`;
   }).join('');
 
   const crewHireTotal = tripCrewCache.reduce((sum, c) => sum + (parseFloat(c.day_rate) || 0) * days, 0);
@@ -18890,7 +18935,7 @@ async function loadCrew() {
       <div class="crew-info">
         <div class="crew-avatar">${initials}</div>
         <div class="crew-details">
-          <div class="crew-name">${s.full_name} <span class="role-badge ${isOwner ? 'owner' : ''}">${roleName}</span></div>
+          <div class="crew-name">${escapeHtml(s.full_name)} <span class="role-badge ${isOwner ? 'owner' : ''}">${roleName}</span></div>
           <div class="crew-meta">${s.email} · ${location}</div>
         </div>
       </div>
@@ -18906,7 +18951,7 @@ async function loadCrew() {
         <input class="sf-input" type="number" style="width:60px;text-align:center;padding:6px 4px;margin-bottom:0;" value="${s.banked_days || 0}" ${canEditBanked ? '' : 'disabled'} onchange="updateBankedDays('${s.id}', this.value)">
       </div>
       <div class="boat-actions">
-        ${!isOwner ? `<button class="btn-icon danger" onclick="removeStaff('${s.id}', '${s.full_name}')">${t('crew_remove')}</button>` : `<span style="font-size:0.75rem;color:var(--muted)">${t('crew_account_owner')}</span>`}
+        ${!isOwner ? `<button class="btn-icon danger" onclick="removeStaff('${s.id}', '${escapeJsEnAtributo(s.full_name)}')">${t('crew_remove')}</button>` : `<span style="font-size:0.75rem;color:var(--muted)">${t('crew_account_owner')}</span>`}
       </div>
     </div>`;
   }).join('');
@@ -18971,7 +19016,7 @@ async function loadDayOffRequests() {
   }
   const { data: staffList } = await sb.from('staff').select('id, full_name').eq('org_id', currentOrgId);
   const sel = document.getElementById('dayoff-staff-select');
-  sel.innerHTML = (staffList || []).map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
+  sel.innerHTML = (staffList || []).map(s => `<option value="${s.id}">${escapeHtml(s.full_name)}</option>`).join('');
 
   const { data: requests } = await sb.from('day_off_requests').select('*, staff(full_name)').eq('org_id', currentOrgId).order('requested_at', { ascending: false });
 
@@ -18984,7 +19029,7 @@ async function loadDayOffRequests() {
         <div class="gear-item-header">
           <span class="gear-item-name">${r.staff?.full_name || t('crew_unknown')} — ${r.start_date}${t('crew_to')}${r.end_date}</span>
         </div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('crew_reason_prefix')}${r.reason}</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('crew_reason_prefix')}${escapeHtml(r.reason)}</div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <button class="gear-action-btn" onclick="approveDayOffRequest('${r.id}','${r.staff_id}','${r.start_date}','${r.end_date}')">${t('crew_approve')}</button>
           <button class="gear-action-btn" onclick="openDenyDayOffModal('${r.id}')">${t('crew_deny')}</button>
@@ -19002,7 +19047,7 @@ async function loadDayOffRequests() {
             <span class="gear-item-name">${r.staff?.full_name || t('crew_unknown')} — ${r.start_date}${t('crew_to')}${r.end_date}</span>
             <span style="font-size:0.75rem;color:${color};font-weight:600;text-transform:capitalize;">${statusLabel}</span>
           </div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('crew_reason_prefix')}${r.reason}</div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('crew_reason_prefix')}${escapeHtml(r.reason)}</div>
           ${r.manager_note ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">${t('crew_manager_note_prefix')}${r.manager_note}</div>` : ''}
         </div>`;
       }).join('')
@@ -19133,7 +19178,7 @@ async function populateInviteLocations() {
     .eq('org_id', currentOrgId);
   const sel = document.getElementById('invite-location');
   sel.innerHTML = locs && locs.length
-    ? locs.map(l => `<option value="${l.id}">${l.name}</option>`).join('')
+    ? locs.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('')
     : `<option value="">${t('crew_no_locations_settings')}</option>`;
 }
 
@@ -19249,7 +19294,7 @@ async function loadFleet() {
   document.getElementById('stat-boats').textContent = boats.filter(b => b.active).length;
 
   const prevSelected = manageSel.value;
-  manageSel.innerHTML = `<option value="">${t('fleet_choose_boat')}</option>` + boats.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  manageSel.innerHTML = `<option value="">${t('fleet_choose_boat')}</option>` + boats.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
   if (prevSelected && boats.some(b => b.id === prevSelected)) manageSel.value = prevSelected;
 
   const boatIds = boats.map(b => b.id);
@@ -19284,7 +19329,7 @@ async function loadFleet() {
   list.innerHTML = boatsToShow.map(b => `
     <div class="boat-card" style="cursor:pointer;" onclick="openBoatDetail('${b.id}')">
       <div class="boat-info">
-        <div class="boat-name">${b.name}${dueSoonBoatIds.has(b.id) ? ` <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">${t('fleet_service_due')}</span>` : ''}</div>
+        <div class="boat-name">${escapeHtml(b.name)}${dueSoonBoatIds.has(b.id) ? ` <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">${t('fleet_service_due')}</span>` : ''}</div>
         <div class="boat-meta">
           <span>${boatTypeLabel(b.type)}</span>
           ${b.capacity ? `<span>${b.capacity} ${t('cal_guests_suffix')}</span>` : ''}
@@ -19322,7 +19367,7 @@ async function populateBoatLocations() {
     .eq('org_id', currentOrgId);
   const sel = document.getElementById('boat-location');
   sel.innerHTML = locs && locs.length
-    ? locs.map(l => `<option value="${l.id}">${l.name}</option>`).join('')
+    ? locs.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('')
     : `<option value="">${t('fleet_no_locations')}</option>`;
 }
 
@@ -19774,7 +19819,7 @@ function renderEngineCard(e, logs, maintLogs) {
   <div class="card" id="engine-card-${e.id}">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
-        <h2 style="margin:0;">${e.name}</h2>
+        <h2 style="margin:0;">${escapeHtml(e.name)}</h2>
         <p style="margin:0;">${t('fleet_total_hours')}: ${hoursVal}h</p>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -19849,7 +19894,7 @@ async function populateBoatDetailMaintenanceGearSelect() {
   const { data: gear } = await sb.from('gear').select('id, name, serial_number').eq('org_id', currentOrgId).order('name');
   const sel = document.getElementById('bdm-gear');
   sel.innerHTML = `<option value="">${t('fleet_not_linked_gear')}</option>` +
-    (gear || []).map(g => `<option value="${g.id}">${g.name}${g.serial_number ? ' (' + g.serial_number + ')' : ''}</option>`).join('');
+    (gear || []).map(g => `<option value="${g.id}">${escapeHtml(g.name)}${g.serial_number ? ' (' + escapeHtml(g.serial_number) + ')' : ''}</option>`).join('');
 }
 
 async function populateBoatDetailMaintenanceEngineSelect() {
@@ -19860,7 +19905,7 @@ async function populateBoatDetailMaintenanceEngineSelect() {
     return;
   }
   const { data: engines } = await sb.from('engines').select('id, name').eq('boat_id', boatId).order('name');
-  sel.innerHTML = `<option value="">${t('fleet_not_engine_specific')}</option>` + (engines || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  sel.innerHTML = `<option value="">${t('fleet_not_engine_specific')}</option>` + (engines || []).map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
 }
 
 document.getElementById('btn-save-boat-maintenance').addEventListener('click', async () => {
@@ -20325,7 +20370,7 @@ function renderGearRegistry(items) {
     <div class="card" style="margin-bottom:12px;cursor:pointer;" onclick="openGearDetail('${g.id}')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div>
-          <h2 style="margin-bottom:2px;">${g.name}${dueSoon ? ` <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">${t('gear_service_due')}</span>` : ''}</h2>
+          <h2 style="margin-bottom:2px;">${escapeHtml(g.name)}${dueSoon ? ` <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">${t('gear_service_due')}</span>` : ''}</h2>
           <p style="font-size:0.8rem;color:var(--muted);">${trGearCategory(g.category)}${g.size ? ' · ' + g.size : ''}${g.serial_number ? ' · SN ' + g.serial_number : ''}${g.locations?.name ? ' · ' + g.locations.name : ''}</p>
         </div>
         <span class="role-badge" style="background:rgba(0,0,0,0.06);color:${statusColor};">${gearRegistryStatusLabel(g.status)}</span>
@@ -21048,7 +21093,7 @@ async function populateCompressorSelects(selectedLoc, selectedBoat) {
   const { data: locs } = await sb.from('locations').select('id,name').eq('org_id', currentOrgId);
   const locSel = document.getElementById('compressor-location');
   const effectiveLoc = selectedLoc || currentLocationId || (locs && locs[0] && locs[0].id) || '';
-  locSel.innerHTML = (locs || []).map(l => `<option value="${l.id}" ${l.id===effectiveLoc?'selected':''}>${l.name}</option>`).join('') || '<option value="">No locations — add in Settings</option>';
+  locSel.innerHTML = (locs || []).map(l => `<option value="${l.id}" ${l.id===effectiveLoc?'selected':''}>${escapeHtml(l.name)}</option>`).join('') || '<option value="">No locations — add in Settings</option>';
   await populateCompressorBoatSelect(effectiveLoc, selectedBoat);
   locSel.onchange = () => populateCompressorBoatSelect(locSel.value, null);
 }
@@ -21056,7 +21101,7 @@ async function populateCompressorBoatSelect(locationId, selectedBoat) {
   const boatSel = document.getElementById('compressor-boat');
   if (!locationId) { boatSel.innerHTML = '<option value="">— Shop-based, no boat —</option>'; return; }
   const { data: boats } = await sb.from('boats').select('id,name').eq('org_id', currentOrgId).eq('active', true).eq('location_id', locationId);
-  boatSel.innerHTML = '<option value="">— Shop-based, no boat —</option>' + (boats || []).map(b => `<option value="${b.id}" ${b.id===selectedBoat?'selected':''}>${b.name}</option>`).join('');
+  boatSel.innerHTML = '<option value="">— Shop-based, no boat —</option>' + (boats || []).map(b => `<option value="${b.id}" ${b.id===selectedBoat?'selected':''}>${escapeHtml(b.name)}</option>`).join('');
 }
 
 document.getElementById('btn-save-compressor').addEventListener('click', async () => {
@@ -21441,20 +21486,20 @@ function renderInspectionActiveCategory() {
       const statusLabel = comp.status === 'pass' ? 'Pass' : comp.status === 'attention' ? 'Needs Attention' : 'Failed';
       return `<div class="gear-item-row">
         <div class="gear-item-header">
-          <span class="gear-item-name">${item.label}</span>
+          <span class="gear-item-name">${escapeHtml(item.label)}</span>
           <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
         </div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${escapeHtml(item.note || '')}</div>
         <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${comp.completed_by} · ${new Date(comp.completed_at).toLocaleDateString(localeDeLaApp())}${comp.notes ? ' · ' + comp.notes : ''}</div>
         ${deleteBtn ? `<div style="margin-top:8px;">${deleteBtn}</div>` : ''}
       </div>`;
     } else {
       return `<div class="gear-item-row">
         <div class="gear-item-header">
-          <span class="gear-item-name">${item.label}</span>
+          <span class="gear-item-name">${escapeHtml(item.label)}</span>
           <span style="font-size:0.75rem;color:var(--muted);">Not checked</span>
         </div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${item.note || ''}</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${escapeHtml(item.note || '')}</div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
           <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','pass')">Pass</button>
           <button class="gear-action-btn" onclick="tickInspectionItem('${item.id}','attention')">Needs Attention</button>
