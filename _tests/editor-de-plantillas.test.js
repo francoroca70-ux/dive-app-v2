@@ -27,7 +27,7 @@
 // Y la tercera, que es la que se rompe sola con el tiempo: **los cinco caminos
 // de escritura invalidan la caché local.** Son cinco lugares y el que se
 // olvide deja al centro editando contra una copia vieja.
-const fs=require('fs'); const {JSDOM}=require('./jsdom');
+const fs=require('fs'); const {lineasDeCodigoCon}=require('./contar'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
@@ -117,7 +117,11 @@ window.__t={
   mover:(tt,it,d)=>moverItemDePlantilla(tt,it,d),
   desdeEstandar:(tt)=>arrancarDeLaListaEstandar(tt),
   desdeCero:(tt)=>arrancarListaVacia(tt),
-  leerParaEditar:(tt)=>plantillaDeTipoParaEditar(tt)
+  leerParaEditar:(dest)=>plantillaParaEditar(dest),
+  destTipo:(id)=>destinoDeTipo(id), destRutina:(a,b)=>destinoDeRutina(a,b),
+  partes:(d)=>partesDelDestino(d), idPanel:(d)=>idDePanelDeEdicion(d),
+  cacheDestino:(d)=>nombreEnCacheDelDestino(d),
+  modo:(d)=>alternarModoEdicion(d), enEdicion:()=>destinosEnEdicion
 };`;
 let boot=null; try{window.eval(hook);}catch(e){boot=e;}
 let fail=0;
@@ -127,19 +131,21 @@ if(boot) process.exit(1);
 
 const T=window.__t;
 const TT='tipo-1';
+const DEST='tt:'+TT;   // el destino, que es lo que ahora reciben las ocho funciones
 function prepararDOM(){
   const d=window.document.createElement('div');
-  d.id='prep-checklist-'+TT; d.style.display='block';
+  d.id=T.idPanel(DEST); d.style.display='block';
   window.document.body.appendChild(d);
 }
-function panel(){ return window.document.getElementById('prep-checklist-'+TT); }
+function panel(){ return window.document.getElementById(T.idPanel(DEST)); }
 // El campo de "agregar" lo dibuja el panel, así que hay que usar EL del panel.
 // La primera versión de este test creaba uno suelto con el mismo id y
 // `getElementById` devolvía el del panel —vacío— así que "agregar" no hacía
 // nada y el test se caía culpando al código.
 async function escribirNuevo(valor){
-  await T.dibujar(TT);
-  const campo = window.document.getElementById('prep-new-'+TT);
+  await T.dibujar(DEST);
+  // El id del campo también se deriva del destino desde el A1-b2.
+  const campo = window.document.getElementById('prep-new-'+String(DEST).replace(/:/g,'-'));
   if (campo) campo.value = valor;
   return !!campo;
 }
@@ -152,6 +158,32 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   T.setOrg('org-1'); T.usuario('u-fran'); T.idioma('en'); T.rol('owner');
   T.tipos([{ id:TT, name:'Island Hopping', category:'charter_yacht' }]);
   plantilla = { id:'tpl-1', title:'Island Hopping', checklist_template_items: itemsDePrueba() };
+
+  // ─── 0 · Mirar y editar son dos modos (A1-b2, pedido por Fran el 24/10) ───
+  //
+  // El editor de la etapa 4 mostraba los controles siempre, así que la lista se
+  // leía como un formulario — y esta pantalla en el barco se usa para MIRAR.
+  // De acá en adelante el resto del archivo corre EN modo edición, porque es
+  // donde viven los controles; este bloque es el que prueba que el modo existe.
+  await T.dibujar(DEST);
+  chk('en modo mirar no hay campos de texto',
+      panel().querySelectorAll('input').length===0,
+      panel().querySelectorAll('input').length+' campos');
+  chk('ni botones de quitar', panel().querySelectorAll('.pw-quitar').length===0);
+  chk('pero los ítems se leen igual', /Check tanks/.test(panel().textContent||''));
+  chk('y hay un botón para pasar a editar', /alternarModoEdicion/.test(panel().innerHTML));
+
+  await T.modo(DEST);
+  chk('al editar aparecen los campos', panel().querySelectorAll('input').length>0);
+  chk('y el círculo rojo de quitar, uno por ítem',
+      panel().querySelectorAll('.pw-quitar').length===3,
+      panel().querySelectorAll('.pw-quitar').length+' botones para 3 ítems activos');
+  chk('el destino queda marcado como en edición', T.enEdicion().has(DEST));
+
+  await T.modo(DEST);
+  chk('y se puede volver a mirar', panel().querySelectorAll('input').length===0 &&
+      !T.enEdicion().has(DEST));
+  await T.modo(DEST);   // el resto del archivo necesita los controles
 
   // ─── 1 · La UI dice lo mismo que RLS ───
   //
@@ -170,7 +202,7 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   //
   // La comprobación que protege las actas firmadas y los tildes en curso.
   limpiar();
-  await T.retirar(TT, 'it-2', 3);
+  await T.retirar(DEST, 'it-2', 3);
   chk('retirar NO borra ninguna fila',
       escrituras('checklist_template_items','delete').length===0,
       escrituras('checklist_template_items','delete').length+' deletes');
@@ -183,7 +215,7 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
 
   // Y si el usuario dice que no, no se escribe nada.
   limpiar(); window.__respuestaConfirm=false;
-  await T.retirar(TT, 'it-2', 3);
+  await T.retirar(DEST, 'it-2', 3);
   chk('si se cancela la confirmación no se escribe nada',
       escrituras('checklist_template_items','update').length===0);
 
@@ -191,7 +223,7 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   //
   // Con cero activos el barco ve la lista CABLEADA, no un error.
   limpiar();
-  await T.retirar(TT, 'it-1', 1);
+  await T.retirar(DEST, 'it-1', 1);
   chk('no se puede retirar el último ítem activo',
       escrituras('checklist_template_items','update').length===0);
   chk('y se explica por qué, nombrando la lista genérica',
@@ -201,7 +233,7 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   // Vaciar el texto tampoco es una salida: el CHECK de la base exige texto en
   // al menos un idioma, y vaciar el campo es casi siempre un dedo.
   limpiar();
-  await T.guardarTexto(TT, 'it-1', '   ');
+  await T.guardarTexto(DEST, 'it-1', '   ');
   chk('un texto en blanco no se guarda',
       escrituras('checklist_template_items','update').length===0);
   chk('y se apunta al botón que sí conserva la historia',
@@ -214,13 +246,13 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   // nunca va a llenar el español: pedirle los dos campos es pedirle trabajo
   // para nadie.
   limpiar(); T.idioma('en');
-  await T.guardarTexto(TT, 'it-1', 'Check tanks twice');
+  await T.guardarTexto(DEST, 'it-1', 'Check tanks twice');
   let p = escrituras('checklist_template_items','update')[0].payload;
   chk('en inglés se escribe text_en', p.text_en==='Check tanks twice');
   chk('y text_es NO se toca', !('text_es' in p), JSON.stringify(p));
 
   limpiar(); T.idioma('es');
-  await T.guardarTexto(TT, 'it-1', 'Chequear tanques dos veces');
+  await T.guardarTexto(DEST, 'it-1', 'Chequear tanques dos veces');
   p = escrituras('checklist_template_items','update')[0].payload;
   chk('en español se escribe text_es', p.text_es==='Chequear tanques dos veces');
   chk('y text_en NO se toca', !('text_en' in p), JSON.stringify(p));
@@ -229,7 +261,7 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   T.idioma('es');
   chk('el panel dibuja el campo para agregar', await escribirNuevo('Revisar el ancla'));
   limpiar();
-  await T.agregar(TT);
+  await T.agregar(DEST);
   const insNuevo = escrituras('checklist_template_items','insert');
   chk('agregar inserta un ítem', insNuevo.length===1, insNuevo.length+' inserts');
   p = insNuevo.length ? insNuevo[0].payload : {};
@@ -262,11 +294,11 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
       /nombreEnCache: nombreEnCacheDePlantilla\(tripTypeId\)/.test(html));
 
   const caminos = [
-    ['guardar texto', async()=>{ T.idioma('en'); await T.guardarTexto(TT,'it-1','Nuevo texto'); }],
-    ['agregar',       async()=>{ await escribirNuevo('Otro ítem'); await T.agregar(TT); }],
-    ['retirar',       async()=>{ await T.retirar(TT,'it-2',3); }],
-    ['devolver',      async()=>{ await T.devolver(TT,'it-4'); }],
-    ['mover',         async()=>{ await T.mover(TT,'it-2',-1); }]
+    ['guardar texto', async()=>{ T.idioma('en'); await T.guardarTexto(DEST,'it-1','Nuevo texto'); }],
+    ['agregar',       async()=>{ await escribirNuevo('Otro ítem'); await T.agregar(DEST); }],
+    ['retirar',       async()=>{ await T.retirar(DEST,'it-2',3); }],
+    ['devolver',      async()=>{ await T.devolver(DEST,'it-4'); }],
+    ['mover',         async()=>{ await T.mover(DEST,'it-2',-1); }]
   ];
   for (const [etiqueta, correr] of caminos) {
     limpiar();
@@ -285,18 +317,18 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   // Los retirados conservan su order_index. Intercambiar con el vecino de la
   // tabla en vez del vecino ACTIVO haría que la flecha mueva dos lugares.
   limpiar(); T.idioma('en');
-  await T.mover(TT, 'it-3', 1);   // it-3 es el último ACTIVO; it-4 está retirado
+  await T.mover(DEST, 'it-3', 1);   // it-3 es el último ACTIVO; it-4 está retirado
   chk('la flecha del último activo no hace nada (el retirado no cuenta)',
       escrituras('checklist_template_items','update').length===0,
       escrituras('checklist_template_items','update').length+' updates');
 
   limpiar();
-  await T.mover(TT, 'it-1', -1);
+  await T.mover(DEST, 'it-1', -1);
   chk('la flecha del primero tampoco',
       escrituras('checklist_template_items','update').length===0);
 
   limpiar();
-  await T.mover(TT, 'it-2', -1);
+  await T.mover(DEST, 'it-2', -1);
   const movs = escrituras('checklist_template_items','update');
   chk('mover intercambia el order_index de dos ítems', movs.length===2, movs.length+' updates');
   chk('y los índices quedan cruzados, no duplicados',
@@ -309,7 +341,7 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   // semillas se copian al activarla. En *Blue water* los 7 tipos de buceo
   // tienen CERO ítems por eso.
   limpiar(); plantilla = null; semillas = [];
-  await T.dibujar(TT);
+  await T.dibujar(DEST);
   chk('sin plantilla se avisa que la tripulación ve la lista genérica',
       /generic|genérica/i.test(panel().textContent), panel().textContent.slice(0,100));
   chk('y sin semillas sólo se ofrece arrancar de cero',
@@ -317,7 +349,7 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
 
   limpiar();
   semillas = [{ order_index:0, text_en:'Seed one', text_es:'Semilla uno' }];
-  await T.dibujar(TT);
+  await T.dibujar(DEST);
   chk('con semillas se ofrece arrancar de la lista estándar',
       /standard|estándar/i.test(panel().innerHTML));
 
@@ -401,16 +433,16 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   //
   // Editar sobre una copia cacheada —o peor, sobre la lista cableada— sería
   // editar algo que no es lo que está guardado.
-  const cuerpo = html.slice(html.indexOf('async function plantillaDeTipoParaEditar'),
+  const cuerpo = html.slice(html.indexOf('async function plantillaParaEditar'),
                             html.indexOf('async function trasEditarPlantilla'));
-  chk('plantillaDeTipoParaEditar NO pasa por cargarConTresCapas',
+  chk('plantillaParaEditar NO pasa por cargarConTresCapas',
       !/cargarConTresCapas/.test(cuerpo));
   chk('ni cae a la lista cableada', !/INSTRUCTOR_ITEMS_get/.test(cuerpo));
 
   // Y trae los retirados, que es lo que permite devolverlos.
   limpiar();
   plantilla = { id:'tpl-1', title:'Island Hopping', checklist_template_items: itemsDePrueba() };
-  const leida = await T.leerParaEditar(TT);
+  const leida = await T.leerParaEditar(DEST);
   chk('el editor trae también los ítems retirados',
       leida.items.length===4 && leida.items.some(i=>i.active===false),
       leida.items.length+' ítems');
@@ -420,7 +452,7 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
 
   // ─── 9 · LO QUE VE QUIEN NO PUEDE EDITAR ───
   limpiar(); T.rol('deckhand'); T.idioma('en');
-  await T.dibujar(TT);
+  await T.dibujar(DEST);
   chk('sin permiso no aparece el campo para agregar',
       !panel().querySelector('#prep-new-'+TT));
   chk('ni botones de retirar', !/prep_retire|onclick="retirarItemDePlantilla/.test(panel().innerHTML));
@@ -445,7 +477,8 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
 
   // El botón entró en el patrón que ya existía, no en una pestaña nueva.
   chk('el panel cuelga de la fila del tipo de salida',
-      /id="prep-checklist-\$\{tt\.id\}"/.test(html));
+      /id="\$\{idDePanelDeEdicion\(destinoDeTipo\(tt\.id\)\)\}"/.test(html),
+      'el id lo deriva el destino, no se escribe a mano');
   chk('y el botón está junto a los otros tres del tipo de salida',
       /togglePrepChecklist\('\$\{tt\.id\}'\)/.test(html));
 
@@ -473,7 +506,12 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   const PANELES = ['gear-fields', 'rental-fees', 'required-waivers', 'prep-checklist'];
   for (const p of PANELES) {
     const d = window.document.createElement('div');
-    d.className = 'tt-panel'; d.id = `${p}-${TT}`; d.style.display = 'none';
+    d.className = 'tt-panel';
+    // El de preparación ya no se llama `prep-checklist-<tipo>`: desde el A1-b2
+    // su id lo decide `idDePanelDeEdicion(destino)`, porque el mismo panel
+    // sirve para un tipo de salida y para una rutina de departamento.
+    d.id = p === 'prep-checklist' ? T.idPanel(DEST) : `${p}-${TT}`;
+    d.style.display = 'none';
     lista.appendChild(d);
   }
   // Un panel de OTRO tipo de salida: abrir uno de ésos alargaba la pantalla
@@ -489,14 +527,14 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
       !!T.abrirSolo(`required-waivers-${TT}`));
   chk('y queda abierto', abierto(`required-waivers-${TT}`));
 
-  T.abrirSolo(`prep-checklist-${TT}`);
+  T.abrirSolo(T.idPanel(DEST));
   chk('abrir otro cierra el primero', !abierto(`required-waivers-${TT}`));
   chk('y queda UNO solo abierto en toda la lista', cuantosAbiertos()===1,
       cuantosAbiertos()+' abiertos');
 
   T.abrirSolo('gear-fields-tipo-2');
   chk('abrir el panel de otro tipo de salida también cierra el anterior',
-      !abierto(`prep-checklist-${TT}`) && cuantosAbiertos()===1);
+      !abierto(T.idPanel(DEST)) && cuantosAbiertos()===1);
 
   // Y sigue siendo un toggle: el mismo botón dos veces cierra.
   chk('volver a apretar el mismo devuelve null, no el panel',
@@ -512,12 +550,20 @@ const escrituras = (tabla,verbo)=>ops.filter(o=>o.tabla===tabla&&o.verbo===verbo
   chk('el cierre es por clase, no por una lista de ids',
       /querySelectorAll\('\.tt-panel'\)/.test(html) &&
       !/\['gear-fields', 'rental-fees'/.test(html));
-  chk('los cuatro paneles llevan la clase',
-      (html.match(/class="tt-panel" id="/g)||[]).length===4,
-      (html.match(/class="tt-panel" id="/g)||[]).length+' de 4');
-  chk('y los cuatro botones pasan por la misma función',
-      (html.match(/abrirSoloEstePanel\(/g)||[]).length===5, // 1 declaración + 4 usos
-      (html.match(/abrirSoloEstePanel\(/g)||[]).length+' menciones');
+  // **Cinco desde el A1-b2**: los cuatro del tipo de salida más el panel de
+  // ítems de una rutina de departamento, que es el mismo editor en otra
+  // pantalla. El número sube con su explicación, que es lo que diferencia un
+  // guardián que hace su trabajo de uno que hay que silenciar.
+  chk('los cinco paneles llevan la clase',
+      (html.match(/class="tt-panel" id="/g)||[]).length===5,
+      (html.match(/class="tt-panel" id="/g)||[]).length+' de 5');
+  // Cuenta líneas de CÓDIGO, no menciones: con menciones esto falla el día que
+  // un comentario nombre la función, que ya pasó ocho veces en este proyecto.
+  // **Seis lectores desde el A1-b2**: los cuatro del tipo de salida más el
+  // editor de ítems de una rutina, más la declaración.
+  const abridores = lineasDeCodigoCon(html, 'abrirSoloEstePanel(').length;
+  chk('y los cinco botones pasan por la misma función', abridores===6,
+      abridores+' líneas de código (1 declaración + 5 usos)');
   chk('ya no queda ningún toggle con su propia lógica de abrir/cerrar',
       !/if \(panel\.style\.display === 'block'\) \{ panel\.style\.display = 'none'; return; \}/.test(html));
 

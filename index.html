@@ -358,6 +358,23 @@ body { background: var(--navy); color: var(--text); }
 .pw-ojo:hover { opacity: 0.85; }
 .pw-ojo:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; opacity: 0.9; }
 .pw-ojo svg { width: 18px; height: 18px; display: block; }
+/* El círculo rojo con la línea blanca para quitar un ítem, como lo pidió Fran
+   el 24/10 con la referencia de los menús de Apple. Dos piezas en un SVG: el
+   círculo lleno y un rectángulo encima en el color del fondo del panel, así la
+   «línea blanca» es un hueco y no un trazo que haya que mantener a juego.
+   28 px: más chico que el ojo porque va en una fila de lista, pero sigue
+   entrando con el pulgar. */
+.pw-quitar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0; flex-shrink: 0;
+  background: none; border: 0; border-radius: 50%; cursor: pointer;
+  color: var(--error, #e53e3e);
+}
+.pw-quitar svg { width: 20px; height: 20px; display: block; }
+.pw-quitar svg circle { fill: currentColor; }
+.pw-quitar svg rect { fill: var(--foam, #fff); }
+.pw-quitar:hover { opacity: 0.82; }
+.pw-quitar:focus-visible { outline: 2px solid var(--error, #e53e3e); outline-offset: 2px; }
 .btn-login {
   width: 100%; padding: 13px;
   background: var(--teal); color: var(--navy);
@@ -5000,6 +5017,12 @@ const TRANSLATIONS = {
     rut_standard: 'standard list · {n} items',
     rut_own_copy: "this shop's list · {n} items",
     rut_make_own: 'Make it ours',
+    rut_items: 'Items',
+    rut_none_yet_editor: 'This routine still uses the standard list. Make it this shop\'s first, with the button above, and then its items can be edited here.',
+    // Dice «Done» y no «Save» a propósito: cada cambio se guarda en el momento.
+    // Un botón llamado Save afirmaría que hay trabajo sin guardar.
+    prep_edit: 'Edit', prep_done: 'Done',
+    prep_view_desc: 'This is what the crew works through. Tap Edit to change the wording, add items or retire what does not apply.',
     rut_copy_error: 'That routine has no standard list to copy.',
     rut_load_error: "Couldn't read which routines already have a copy, so nothing is shown rather than guessing.",
     prep_count: '{n} items on the list',
@@ -5834,6 +5857,10 @@ const TRANSLATIONS = {
     rut_standard: 'lista estándar · {n} ítems',
     rut_own_copy: 'lista de este centro · {n} ítems',
     rut_make_own: 'Hacerla propia',
+    rut_items: 'Ítems',
+    rut_none_yet_editor: 'Esta rutina todavía usa la lista estándar. Primero hay que hacerla propia, con el botón de arriba, y desde ahí se pueden editar sus ítems.',
+    prep_edit: 'Editar', prep_done: 'Listo',
+    prep_view_desc: 'Es lo que la tripulación recorre. Tocá Editar para cambiar el texto, agregar ítems o retirar lo que no aplica.',
     rut_copy_error: 'Esa rutina no tiene lista estándar para copiar.',
     rut_load_error: 'No se pudo leer cuáles rutinas ya tienen copia, así que no se muestra nada en vez de adivinar.',
     prep_count: '{n} ítems en la lista',
@@ -9181,7 +9208,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-24b');
+  console.info('[Seven Seas] build 2026-10-24c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -21805,7 +21832,7 @@ async function renderTripTypesList() {
     <div class="tt-panel" id="gear-fields-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     <div class="tt-panel" id="rental-fees-${tt.id}" style="display:none;margin:6px 0 0;"></div>
     <div class="tt-panel" id="required-waivers-${tt.id}" style="display:none;margin:6px 0 0;"></div>
-    <div class="tt-panel" id="prep-checklist-${tt.id}" style="display:none;margin:6px 0 0;"></div>
+    <div class="tt-panel" id="${idDePanelDeEdicion(destinoDeTipo(tt.id))}" style="display:none;margin:6px 0 0;"></div>
     </div>
   `).join('');
 
@@ -21983,13 +22010,62 @@ function puedeEditarPlantillas() {
   return ['owner', 'manager'].includes(currentUserRole);
 }
 
-// La plantilla de un tipo, SIN caché y SIN caída a lo cableado. Trae también
+// ─── A1-b2 · El DESTINO de una edición ─────────────────────────────────────
+//
+// El editor de la etapa 4 iba por `tripTypeId` de punta a punta. Al sumarse las
+// rutinas de departamento, copiarlo habría sido catorce lugares nuevos donde
+// puede estar mal, y el defecto habría aparecido donde faltara la copia.
+//
+// Así que las ocho funciones de edición reciben un **destino**, y hay UN lugar
+// que sabe traducirlo a tres cosas: la consulta, el nombre de la caché y el id
+// del panel. Eso es todo lo que `tripTypeId` hacía de verdad; el resto del
+// editor ya iba por `itemId` y por el id de la plantilla.
+//
+//   tt:<uuid>                 la lista de preparación de un tipo de salida
+//   dept:<depto>:<cadencia>   los ítems de una rutina de departamento
+//
+// Es un string y no un objeto porque viaja dentro de un `onclick`, donde un
+// objeto habría que serializarlo igual.
+function destinoDeTipo(tripTypeId) { return 'tt:' + tripTypeId; }
+function destinoDeRutina(deptKey, cadencia) { return 'dept:' + deptKey + ':' + cadencia; }
+
+function partesDelDestino(destino) {
+  const p = String(destino || '').split(':');
+  return p[0] === 'dept'
+    ? { clase: 'dept', deptKey: p[1], cadencia: p[2] }
+    : { clase: 'tt', tripTypeId: p[1] };
+}
+
+// Los dos puntos son válidos en un id de HTML pero rompen un selector de CSS.
+// `getElementById` no se entera; el día que alguien escriba un selector, sí.
+function idDePanelDeEdicion(destino) {
+  return 'prep-checklist-' + String(destino).replace(/:/g, '-');
+}
+
+// La caché que hay que tirar al editar. Son dos nombres distintos porque son
+// dos caminos de lectura distintos, y cada uno ya tenía el suyo desde la 3a y
+// la A1-a. Acá sólo se elige.
+function nombreEnCacheDelDestino(destino) {
+  const d = partesDelDestino(destino);
+  return d.clase === 'dept'
+    ? nombreEnCacheDeRutina(d.deptKey, d.cadencia)
+    : nombreEnCacheDePlantilla(d.tripTypeId);
+}
+
+// La plantilla de un destino, SIN caché y SIN caída a lo cableado. Trae también
 // los ítems retirados, que el editor muestra aparte para poder devolverlos.
-async function plantillaDeTipoParaEditar(tripTypeId) {
-  const { data, error } = await sb.from('checklist_templates')
+async function plantillaParaEditar(destino) {
+  const d = partesDelDestino(destino);
+  let q = sb.from('checklist_templates')
     .select('id, title, checklist_template_items(id, order_index, text_en, text_es, active)')
-    .eq('org_id', currentOrgId).eq('trip_type_id', tripTypeId)
-    .eq('scope', 'trip_type').eq('active', true).limit(1);
+    .eq('org_id', currentOrgId).eq('active', true);
+  // El scope decide por qué columnas se filtra, y las dos ramas son excluyentes
+  // por el CHECK `checklist_templates_scope_coherente`: un tipo de salida tiene
+  // `trip_type_id` y `department` nulo, una rutina al revés.
+  q = d.clase === 'dept'
+    ? q.eq('scope', 'department').eq('department', d.deptKey).eq('cadence', d.cadencia)
+    : q.eq('scope', 'trip_type').eq('trip_type_id', d.tripTypeId);
+  const { data, error } = await q.limit(1);
   if (error) throw error;
   const plantilla = (data || [])[0];
   if (!plantilla) return null;
@@ -22007,25 +22083,28 @@ async function plantillaDeTipoParaEditar(tripTypeId) {
 // abierta, estabilidad le gana a frescura — y acá importa igual: si la
 // tripulación está tildando y el dueño edita la plantilla desde la oficina,
 // cambiarle la lista debajo movería la llave de los tildes.
-async function trasEditarPlantilla(tripTypeId) {
-  cacheLocalBorrar(nombreEnCacheDePlantilla(tripTypeId));
-  await dibujarPanelDePreparacion(tripTypeId);
+async function trasEditarPlantilla(destino) {
+  cacheLocalBorrar(nombreEnCacheDelDestino(destino));
+  await dibujarPanelDePreparacion(destino);
 }
 
 async function togglePrepChecklist(tripTypeId) {
-  if (!abrirSoloEstePanel('prep-checklist-' + tripTypeId)) return;
-  await dibujarPanelDePreparacion(tripTypeId);
+  const destino = destinoDeTipo(tripTypeId);
+  if (!abrirSoloEstePanel(idDePanelDeEdicion(destino))) return;
+  await dibujarPanelDePreparacion(destino);
 }
 
-async function dibujarPanelDePreparacion(tripTypeId) {
-  const panel = document.getElementById('prep-checklist-' + tripTypeId);
+async function dibujarPanelDePreparacion(destino) {
+  const panel = document.getElementById(idDePanelDeEdicion(destino));
   if (!panel) return;
   panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);">${t('common_loading')}</p>`;
 
-  const tt = (window._settingsTripTypes || []).find(x => x.id === tripTypeId);
+  const d = partesDelDestino(destino);
+  const tt = d.clase === 'tt'
+    ? (window._settingsTripTypes || []).find(x => x.id === d.tripTypeId) : null;
   let plantilla = null;
   try {
-    plantilla = await plantillaDeTipoParaEditar(tripTypeId);
+    plantilla = await plantillaParaEditar(destino);
   } catch (e) {
     console.warn('[PLANTILLAS] no se pudo leer la plantilla para editar', e);
     panel.innerHTML = `<p style="font-size:0.8rem;color:var(--danger,#c53030);padding:4px 0 12px;">${t('prep_load_error')}</p>`;
@@ -22039,6 +22118,19 @@ async function dibujarPanelDePreparacion(tripTypeId) {
   // que esos tipos quedan con cero ítems y en el barco sale la lista cableada.
   // Desde acá se arranca de la lista estándar o de cero.
   if (!plantilla) {
+    // Una rutina de departamento no se arranca desde acá: su lista estándar
+    // vive en el código y la copia la hace «Hacerla propia» (A1-b1). Ofrecer
+    // «arrancar de la lista estándar» acá sería un segundo camino para lo
+    // mismo, y dos caminos para una cosa es donde empiezan a divergir.
+    if (d.clase === 'dept') {
+      panel.innerHTML = `
+        <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
+          ${cab(t('prep_header'))}
+          <p style="font-size:0.78rem;color:var(--muted);">${t('rut_none_yet_editor')}</p>
+        </div>
+      `;
+      return;
+    }
     const haySemillas = await haySemillasParaTipo(tt);
     panel.innerHTML = `
       <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
@@ -22046,8 +22138,8 @@ async function dibujarPanelDePreparacion(tripTypeId) {
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">${t('prep_none_yet')}</p>
         ${puedeEditarPlantillas() ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            ${haySemillas ? `<button class="btn-primary" style="font-size:0.78rem;padding:7px 12px;" onclick="arrancarDeLaListaEstandar('${tripTypeId}')">${t('prep_seed_from_standard')}</button>` : ''}
-            <button class="btn-cancel" style="font-size:0.78rem;padding:7px 12px;" onclick="arrancarListaVacia('${tripTypeId}')">${t('prep_start_blank')}</button>
+            ${haySemillas ? `<button class="btn-primary" style="font-size:0.78rem;padding:7px 12px;" onclick="arrancarDeLaListaEstandar('${d.tripTypeId}')">${t('prep_seed_from_standard')}</button>` : ''}
+            <button class="btn-cancel" style="font-size:0.78rem;padding:7px 12px;" onclick="arrancarListaVacia('${d.tripTypeId}')">${t('prep_start_blank')}</button>
           </div>
         ` : `<p style="font-size:0.78rem;color:var(--muted);">${t('prep_read_only')}</p>`}
       </div>
@@ -22059,48 +22151,64 @@ async function dibujarPanelDePreparacion(tripTypeId) {
   const retirados = plantilla.items.filter(i => i.active === false);
   const puede = puedeEditarPlantillas();
   const otroIdioma = currentLanguage === 'es' ? 'text_en' : 'text_es';
+  // Modo mirar / modo editar, pedido por Fran el 24/10 con la referencia de
+  // Spotify y los menús de Apple. El editor de la etapa 4 mostraba los
+  // controles siempre, así que la lista se leía como un formulario — y en el
+  // barco esta pantalla se usa para MIRAR. Separar los dos modos es lo que
+  // hace que mirar sea mirar.
+  const editando = puede && destinosEnEdicion.has(destino);
 
   panel.innerHTML = `
     <div style="background:var(--foam);border-radius:10px;padding:14px;margin-bottom:4px;">
-      ${cab(t('prep_header'))}
-      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">${puede ? t('prep_desc') : t('prep_read_only')}</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+        ${cab(t('prep_header'))}
+        ${puede ? `<button class="btn-cancel" style="font-size:0.74rem;padding:4px 10px;"
+            onclick="alternarModoEdicion('${destino}')">${editando ? t('prep_done') : t('prep_edit')}</button>` : ''}
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">${!puede ? t('prep_read_only') : (editando ? t('prep_desc') : t('prep_view_desc'))}</p>
 
       <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">${t('prep_count').replace('{n}', activos.length)}</div>
 
-      ${activos.map((it, idx) => `
+      ${activos.map((it, idx) => editando ? `
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
           <span style="font-size:0.72rem;color:var(--muted);min-width:1.4em;text-align:right;">${idx + 1}</span>
           <input class="sf-input" type="text" style="margin-bottom:0;flex:1;font-size:0.85rem;"
-            value="${escapeHtml(textoDeItemEnMiIdioma(it))}" ${puede ? '' : 'disabled'}
-            onchange="guardarTextoDeItem('${tripTypeId}', '${it.id}', this.value, this)">
+            value="${escapeHtml(textoDeItemEnMiIdioma(it))}"
+            onchange="guardarTextoDeItem('${destino}', '${it.id}', this.value, this)">
           ${!it[otroIdioma] ? `<span title="${t('prep_other_lang_missing')}" style="font-size:0.7rem;color:var(--muted);">${t('prep_one_lang_badge')}</span>` : ''}
-          ${puede ? `
-            <button class="btn-icon" ${idx === 0 ? 'disabled' : ''} title="${t('prep_move_up')}"
-              onclick="moverItemDePlantilla('${tripTypeId}', '${it.id}', -1)">↑</button>
-            <button class="btn-icon" ${idx === activos.length - 1 ? 'disabled' : ''} title="${t('prep_move_down')}"
-              onclick="moverItemDePlantilla('${tripTypeId}', '${it.id}', 1)">↓</button>
-            <button class="btn-icon danger" title="${t('prep_retire')}"
-              onclick="retirarItemDePlantilla('${tripTypeId}', '${it.id}', ${activos.length})">✕</button>
-          ` : ''}
+          <button class="btn-icon" ${idx === 0 ? 'disabled' : ''} title="${t('prep_move_up')}"
+            onclick="moverItemDePlantilla('${destino}', '${it.id}', -1)">↑</button>
+          <button class="btn-icon" ${idx === activos.length - 1 ? 'disabled' : ''} title="${t('prep_move_down')}"
+            onclick="moverItemDePlantilla('${destino}', '${it.id}', 1)">↓</button>
+          <button class="pw-quitar" title="${t('prep_retire')}" aria-label="${t('prep_retire')}"
+            onclick="retirarItemDePlantilla('${destino}', '${it.id}', ${activos.length})">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11"/><rect x="6" y="10.8" width="12" height="2.4" rx="1.2"/></svg>
+          </button>
+        </div>
+      ` : `
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px;">
+          <span style="font-size:0.72rem;color:var(--muted);min-width:1.4em;text-align:right;">${idx + 1}</span>
+          <span style="flex:1;font-size:0.85rem;">${escapeHtml(textoDeItemEnMiIdioma(it))}</span>
+          ${!it[otroIdioma] ? `<span title="${t('prep_other_lang_missing')}" style="font-size:0.7rem;color:var(--muted);">${t('prep_one_lang_badge')}</span>` : ''}
         </div>
       `).join('')}
 
-      ${puede ? `
+      ${editando ? `
         <div style="display:flex;gap:6px;margin-top:10px;">
-          <input class="sf-input" type="text" id="prep-new-${tripTypeId}" style="margin-bottom:0;flex:1;font-size:0.85rem;"
+          <input class="sf-input" type="text" id="prep-new-${String(destino).replace(/:/g,'-')}" style="margin-bottom:0;flex:1;font-size:0.85rem;"
             placeholder="${t('prep_new_ph')}"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();agregarItemDePlantilla('${tripTypeId}');}">
-          <button class="btn-primary" style="font-size:0.78rem;padding:7px 12px;" onclick="agregarItemDePlantilla('${tripTypeId}')">${t('prep_add')}</button>
+            onkeydown="if(event.key==='Enter'){event.preventDefault();agregarItemDePlantilla('${destino}');}">
+          <button class="btn-primary" style="font-size:0.78rem;padding:7px 12px;" onclick="agregarItemDePlantilla('${destino}')">${t('prep_add')}</button>
         </div>
       ` : ''}
 
-      ${retirados.length ? `
+      ${(editando && retirados.length) ? `
         <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border,#dde);">
           <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;">${t('prep_retired_header').replace('{n}', retirados.length)}</div>
           ${retirados.map(it => `
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
               <span style="flex:1;font-size:0.82rem;color:var(--muted);text-decoration:line-through;">${escapeHtml(textoDeItemEnMiIdioma(it))}</span>
-              ${puede ? `<button class="btn-cancel" style="font-size:0.72rem;padding:4px 8px;" onclick="devolverItemDePlantilla('${tripTypeId}', '${it.id}')">${t('prep_restore')}</button>` : ''}
+              <button class="btn-cancel" style="font-size:0.72rem;padding:4px 8px;" onclick="devolverItemDePlantilla('${destino}', '${it.id}')">${t('prep_restore')}</button>
             </div>
           `).join('')}
           <p style="font-size:0.72rem;color:var(--muted);margin-top:6px;">${t('prep_retired_note')}</p>
@@ -22115,6 +22223,26 @@ async function dibujarPanelDePreparacion(tripTypeId) {
 // editor resolviera distinto, un centro editaría una línea y vería otra.
 function textoDeItemEnMiIdioma(it) {
   return (currentLanguage === 'es' ? it.text_es : it.text_en) || it.text_en || it.text_es || '';
+}
+
+// Qué destinos están en modo edición. En memoria y no en `localStorage` a
+// propósito: es un estado de la sesión, no del centro, y dejarlo guardado haría
+// que alguien abra la pantalla mañana con los controles puestos sin pedirlos.
+const destinosEnEdicion = new Set();
+
+// El botón de arriba. Al entrar en edición se transforma —aparecen el campo de
+// agregar, las flechas y el círculo rojo— y pasa a decir «Listo».
+//
+// **Dice «Listo» y no «Guardar», y es a propósito:** cada cambio se guarda en el
+// momento en que se hace. Un botón llamado Guardar afirmaría que hay trabajo sin
+// guardar y que se puede perder saliendo sin apretarlo, y las dos cosas son
+// falsas. Es la misma regla que el resto del proyecto — un cartel que afirma de
+// más cuesta más que uno que falta.
+async function alternarModoEdicion(destino) {
+  if (!puedeEditarPlantillas()) return;
+  if (destinosEnEdicion.has(destino)) destinosEnEdicion.delete(destino);
+  else destinosEnEdicion.add(destino);
+  await dibujarPanelDePreparacion(destino);
 }
 
 // ─── A1-b1 · Un centro se queda con SU copia de una rutina ─────────────────
@@ -22211,6 +22339,7 @@ async function dibujarRutinasDeDepartamento() {
       ${Object.entries(dept.cadences).map(([cadKey, cad]) => {
         const activos = copias[`${deptKey}:${cadKey}`];
         const propia = activos != null;
+        const destino = destinoDeRutina(deptKey, cadKey);
         return `
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
           <span style="flex:1;font-size:0.85rem;">${escapeHtml(cad.label)}</span>
@@ -22219,7 +22348,10 @@ async function dibujarRutinasDeDepartamento() {
             : t('rut_standard').replace('{n}', cad.items.length)}</span>
           ${(!propia && puede) ? `<button class="btn-cancel" style="font-size:0.74rem;padding:4px 9px;"
               onclick="arrancarRutinaPropia('${deptKey}', '${cadKey}')">${t('rut_make_own')}</button>` : ''}
-        </div>`;
+          ${(propia && EDITOR_RUTINAS) ? `<button class="btn-cancel" style="font-size:0.74rem;padding:4px 9px;"
+              onclick="toggleEditorDeRutina('${deptKey}', '${cadKey}')">${t('rut_items')}</button>` : ''}
+        </div>
+        ${EDITOR_RUTINAS ? `<div class="tt-panel" id="${idDePanelDeEdicion(destino)}" style="display:none;margin:2px 0 8px;"></div>` : ''}`;
       }).join('')}
     </div>
   `).join('') + (puede ? '' : `<p style="font-size:0.78rem;color:var(--muted);">${t('prep_read_only')}</p>`);
@@ -22229,6 +22361,29 @@ async function arrancarRutinaPropia(deptKey, cadence) {
   const motivo = await copiarRutinaEstandar(deptKey, cadence);
   if (motivo) { await showAlertModal(motivo); return; }
   await dibujarRutinasDeDepartamento();
+}
+
+// ─── A1-b2 · El interruptor ────────────────────────────────────────────────
+//
+// Por la regla 8 este cambio va detrás de un interruptor apagado en producción,
+// y lo que el interruptor controla es **lo que se OFRECE**: con `false`, la
+// tarjeta de rutinas no muestra el botón de editar ítems ni dibuja el panel. El
+// camino viejo —«Hacerla propia», y el editor de los tipos de salida— queda
+// entero y no se toca.
+//
+// Y ojo con lo que este interruptor NO hace, que es la parte honesta: editar los
+// ítems de una rutina **no cambia lo que se ve en el barco** mientras
+// `FUENTE_RUTINAS_DEPTO` siga en `'cableado'`. Son dos interruptores para dos
+// cosas distintas, a propósito, y el orden para probarlo es: prender éste,
+// editar, prender el otro, y comprobar en el barco. Prender sólo éste deja un
+// editor que escribe algo que nadie lee — el mismo error que dejar «Hacerla
+// propia» sin editor, un nivel más arriba.
+let EDITOR_RUTINAS = false;   // false | true
+
+async function toggleEditorDeRutina(deptKey, cadKey) {
+  const destino = destinoDeRutina(deptKey, cadKey);
+  if (!abrirSoloEstePanel(idDePanelDeEdicion(destino))) return;
+  await dibujarPanelDePreparacion(destino);
 }
 
 async function haySemillasParaTipo(tt) {
@@ -22275,7 +22430,9 @@ async function copiarListaEstandar(tripTypeId) {
 async function arrancarDeLaListaEstandar(tripTypeId) {
   const motivo = await copiarListaEstandar(tripTypeId);
   if (motivo) { await showAlertModal(motivo); return; }
-  await trasEditarPlantilla(tripTypeId);
+  // Estos dos arranques son sólo de tipos de salida: la lista estándar de una
+  // rutina vive en el código y la copia «Hacerla propia».
+  await trasEditarPlantilla(destinoDeTipo(tripTypeId));
 }
 
 // ─── A5: el hueco de la siembra por categoría ───
@@ -22369,7 +22526,7 @@ async function arrancarListaVacia(tripTypeId) {
     text_es: currentLanguage === 'es' ? t('prep_first_item') : null
   });
   if (error) { await showAlertModal(await motivoDeFalloAlEscribir(error)); return; }
-  await trasEditarPlantilla(tripTypeId);
+  await trasEditarPlantilla(destinoDeTipo(tripTypeId));
 }
 
 // `is_system_default` queda en false: esta plantilla la creó el centro, no la
@@ -22396,14 +22553,14 @@ async function crearPlantillaVacia(tripTypeId, tt) {
   return { id: data.id };
 }
 
-async function guardarTextoDeItem(tripTypeId, itemId, valor, inputEl) {
+async function guardarTextoDeItem(destino, itemId, valor, inputEl) {
   const texto = (valor || '').trim();
   if (!texto) {
     // El CHECK de la base exige que quede texto en al menos un idioma. Vaciar
     // el campo es casi siempre un dedo, no una intención: se repone y se avisa
     // cuál es la salida de verdad.
     await showAlertModal(t('prep_empty_text'));
-    await dibujarPanelDePreparacion(tripTypeId);
+    await dibujarPanelDePreparacion(destino);
     return;
   }
   const campo = currentLanguage === 'es' ? 'text_es' : 'text_en';
@@ -22412,21 +22569,21 @@ async function guardarTextoDeItem(tripTypeId, itemId, valor, inputEl) {
   if (error) {
     console.warn('[PLANTILLAS] no se pudo guardar el texto', error);
     await showAlertModal(await motivoDeFalloAlEscribir(error));
-    await dibujarPanelDePreparacion(tripTypeId);
+    await dibujarPanelDePreparacion(destino);
     return;
   }
-  cacheLocalBorrar(nombreEnCacheDePlantilla(tripTypeId));
+  cacheLocalBorrar(nombreEnCacheDelDestino(destino));
   if (inputEl) {
     inputEl.style.borderColor = 'var(--success, #2f855a)';
     setTimeout(() => { inputEl.style.borderColor = ''; }, 800);
   }
 }
 
-async function agregarItemDePlantilla(tripTypeId) {
-  const input = document.getElementById('prep-new-' + tripTypeId);
+async function agregarItemDePlantilla(destino) {
+  const input = document.getElementById('prep-new-' + String(destino).replace(/:/g, '-'));
   const texto = ((input && input.value) || '').trim();
   if (!texto) return;
-  const plantilla = await plantillaDeTipoParaEditar(tripTypeId);
+  const plantilla = await plantillaParaEditar(destino);
   if (!plantilla) return;
   const ultimo = plantilla.items.reduce((m, i) => Math.max(m, i.order_index || 0), -1);
   const { error } = await sb.from('checklist_template_items').insert({
@@ -22439,12 +22596,12 @@ async function agregarItemDePlantilla(tripTypeId) {
     await showAlertModal(await motivoDeFalloAlEscribir(error));
     return;
   }
-  await trasEditarPlantilla(tripTypeId);
+  await trasEditarPlantilla(destino);
 }
 
 // Retirar, no borrar. El id es la llave de los tildes y de lo que quedó escrito
 // en las actas; una fila borrada deja ambas cosas apuntando a nada.
-async function retirarItemDePlantilla(tripTypeId, itemId, activosAhora) {
+async function retirarItemDePlantilla(destino, itemId, activosAhora) {
   if (activosAhora <= 1) {
     // Sin ningún ítem activo, en el barco sale la lista CABLEADA y nadie se
     // entera. Se niega el último antes que dejar esa trampa.
@@ -22459,10 +22616,10 @@ async function retirarItemDePlantilla(tripTypeId, itemId, activosAhora) {
     await showAlertModal(await motivoDeFalloAlEscribir(error));
     return;
   }
-  await trasEditarPlantilla(tripTypeId);
+  await trasEditarPlantilla(destino);
 }
 
-async function devolverItemDePlantilla(tripTypeId, itemId) {
+async function devolverItemDePlantilla(destino, itemId) {
   const { error } = await sb.from('checklist_template_items')
     .update({ active: true }).eq('id', itemId);
   if (error) {
@@ -22470,14 +22627,14 @@ async function devolverItemDePlantilla(tripTypeId, itemId) {
     await showAlertModal(await motivoDeFalloAlEscribir(error));
     return;
   }
-  await trasEditarPlantilla(tripTypeId);
+  await trasEditarPlantilla(destino);
 }
 
 // Mover intercambia el `order_index` con el vecino ACTIVO, no con el de al lado
 // en la tabla: los retirados conservan su índice y saltearlos es lo que hace
 // que la flecha mueva un lugar y no dos.
-async function moverItemDePlantilla(tripTypeId, itemId, direccion) {
-  const plantilla = await plantillaDeTipoParaEditar(tripTypeId);
+async function moverItemDePlantilla(destino, itemId, direccion) {
+  const plantilla = await plantillaParaEditar(destino);
   if (!plantilla) return;
   const activos = plantilla.items.filter(i => i.active !== false);
   const i = activos.findIndex(x => String(x.id) === String(itemId));
@@ -22503,11 +22660,11 @@ async function moverItemDePlantilla(tripTypeId, itemId, direccion) {
     if (error) {
       console.warn('[PLANTILLAS] no se pudo reordenar', error);
       await showAlertModal(await motivoDeFalloAlEscribir(error));
-      await trasEditarPlantilla(tripTypeId);
+      await trasEditarPlantilla(destino);
       return;
     }
   }
-  await trasEditarPlantilla(tripTypeId);
+  await trasEditarPlantilla(destino);
 }
 
 async function toggleRentalFees(tripTypeId) {
