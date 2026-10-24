@@ -2086,7 +2086,17 @@ body { background: var(--navy); color: var(--text); }
         <div class="sf-row">
           <div class="sf-group">
             <label class="sf-label" data-i18n="wv_printed_name">Printed name</label>
-            <input class="sf-input" type="text" autocomplete="off" id="sig-printed-name">
+            <!-- El nombre del FIRMANTE de un waiver, que es un registro
+                 inmutable. `autocomplete="off"` solo no alcanza: Chrome lo trata
+                 como una sugerencia y los gestores de contraseñas lo ignoran.
+                 Medido el 24/10 en el campo de motivos de una checklist, donde
+                 apareció el mail de Fran sin que nadie lo tipeara.
+                 Acá pesa más: un nombre autocompletado pone al dueño del centro
+                 como firmante del documento de un huésped, y un waiver no se
+                 corrige. Ver `SIN_AUTOCOMPLETADO`. -->
+            <input class="sf-input" type="text" id="sig-printed-name"
+              autocomplete="off" data-lpignore="true" data-1p-ignore="true"
+              data-form-type="other" name="sig-printed-name-noautofill">
           </div>
           <div class="sf-group">
             <label class="sf-label" data-i18n="wv_date">Date</label>
@@ -2100,7 +2110,9 @@ body { background: var(--navy); color: var(--text); }
         <div class="sf-row">
           <div class="sf-group">
             <label class="sf-label" data-i18n="wv_guardian_printed_name">Parent/guardian printed name</label>
-            <input class="sf-input" type="text" autocomplete="off" id="sig-guardian-name">
+            <input class="sf-input" type="text" id="sig-guardian-name"
+              autocomplete="off" data-lpignore="true" data-1p-ignore="true"
+              data-form-type="other" name="sig-guardian-name-noautofill">
           </div>
           <div class="sf-group">
             <label class="sf-label" data-i18n="wv_date">Date</label>
@@ -2557,7 +2569,11 @@ body { background: var(--navy); color: var(--text); }
         <div class="sf-row">
           <div class="sf-group">
             <label class="sf-label" data-i18n="wv_printed_name">Printed name</label>
-            <input class="sf-input" type="text" autocomplete="off" id="rw-printed-name">
+            <!-- Firma remota: el mismo caso, y encima la abre un huésped en su
+                 propio teléfono, con sus propios datos guardados. -->
+            <input class="sf-input" type="text" id="rw-printed-name"
+              autocomplete="off" data-lpignore="true" data-1p-ignore="true"
+              data-form-type="other" name="rw-printed-name-noautofill">
           </div>
           <div class="sf-group">
             <label class="sf-label" data-i18n="wv_date">Date</label>
@@ -2576,7 +2592,9 @@ body { background: var(--navy); color: var(--text); }
           <div class="sf-row">
             <div class="sf-group">
               <label class="sf-label" data-i18n="wv_guardian_printed_name">Parent/guardian printed name</label>
-              <input class="sf-input" type="text" autocomplete="off" id="rw-guardian-name">
+              <input class="sf-input" type="text" id="rw-guardian-name"
+                autocomplete="off" data-lpignore="true" data-1p-ignore="true"
+                data-form-type="other" name="rw-guardian-name-noautofill">
             </div>
             <div class="sf-group">
               <label class="sf-label" data-i18n="wv_date">Date</label>
@@ -3318,10 +3336,15 @@ body { background: var(--navy); color: var(--text); }
               <div class="card-section-title" style="margin-bottom:0;" data-i18n="cl_instructor_dm">Instructor / DM — Gear Prep</div>
               <div class="cl-role-badge" id="cl-instructor-status" data-i18n="cl_pending">Pending</div>
             </div>
+            <!-- El cartel del firmante va ARRIBA de la lista, no al pie: es lo
+                 único que prueba que esto es un acta y no una checklist sin
+                 hacer, y abajo de dieciséis ítems queda fuera del pliegue.
+                 Medido el 24/10 en la pantalla de Fran: insignia en y=418,
+                 cartel en y=1389. Ver `pintarFirmaDeChecklist()`. -->
+            <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
             <div id="cl-instructor-items"></div>
             <div class="cl-signoff">
               <select class="sf-input signer-select" id="cl-instructor-name"></select>
-              <div class="cl-done-banner" id="cl-instructor-done" style="display:none;"></div>
               <div class="settings-actions" style="margin-top:12px;">
                 <button class="btn-save" id="cl-instructor-signoff-btn" onclick="instructorSignOff()" data-i18n="cl_sign_off_gear">Sign Off — Gear Ready</button>
                 <button class="btn-cancel" onclick="resetInstructorChecklist()" data-i18n="cl_reset">Reset</button>
@@ -3405,10 +3428,11 @@ body { background: var(--navy); color: var(--text); }
             </div>
             <div class="cl-progress-bar"><div class="cl-progress-fill" id="dept-routine-progress"></div></div>
             <div id="dept-routine-body" style="display:none;">
-              <div id="dept-list"></div>
+              <!-- Arriba de la lista, por lo mismo que el del instructor. -->
+            <div class="cl-done-banner" id="dept-routine-done" style="display:none;"></div>
+            <div id="dept-list"></div>
               <div class="cl-signoff">
                 <select class="sf-input signer-select" id="dept-routine-name"></select>
-                <div class="cl-done-banner" id="dept-routine-done" style="display:none;"></div>
                 <div class="settings-actions" style="margin-top:12px;">
                   <button class="btn-save" id="dept-routine-signoff-btn" onclick="deptRoutineSignOff()" data-i18n="cl_sign_off_routine">Sign Off</button>
                   <button class="btn-cancel" onclick="resetDeptRoutine()" data-i18n="cl_reset">Reset</button>
@@ -7862,6 +7886,17 @@ function rwApplyQueuedToLocalStatus() {
 function rwRenderList() {
   const d = window.rwData;
   document.getElementById('rw-list-view').style.display = 'block';
+  // **Éste NO se escapa, y es lo contrario de lo que parece.** Lo había
+  // envuelto en `escapeHtml()` junto con los otros `tripLabel`, y una revisión
+  // independiente lo agarró: su destino es `rw-trip-meta.textContent`, no un
+  // `innerHTML`. `textContent` no interpreta entidades, así que un tipo de
+  // salida llamado «Dive & Snorkel» se le mostraría al huésped como
+  // «Dive &amp;amp; Snorkel» — en la pantalla de firma remota, que es la que ve
+  // alguien de afuera del centro.
+  //
+  // La regla, que vale para toda la pasada de escapado: **escapar es correcto
+  // según el DESTINO, no según el origen.** Un texto de persona que va a
+  // `textContent` ya está seguro, y escaparlo lo rompe.
   const tripLabel = trTypeName(d.trip.tripType) || t('cal_trip_fallback');
   const dateLabel = d.trip.tripDate
     ? new Date(d.trip.tripDate + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { weekday: 'long', month: 'long', day: 'numeric' })
@@ -9208,7 +9243,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-24c');
+  console.info('[Seven Seas] build 2026-10-24e');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -10676,14 +10711,14 @@ function tripCard(trip, paid) {
             ? `<span>${tripDateRangeLabel(trip)}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}</span>`
             : `<span>${trip.trip_time ? trip.trip_time.slice(0,5) : '—'}${trip.arrival_time ? ' – ' + trip.arrival_time.slice(0,5) : ''}</span>`}
           <span>${trip.boats?.name || t('cal_no_boat')}</span>
-          <span>${trTypeName(trip.trip_type)?.replace(/_/g,' ') || ''}</span>
+          <span>${escapeHtml(trTypeName(trip.trip_type)?.replace(/_/g,' ') || '')}</span>
         </div>
       </div>
       <span class="trip-status-badge ${trip.status}">${trip.status}</span>
     </div>
     <div class="trip-card-footer">
       <div class="trip-stat">${t('trip_guests')}: <strong>${guestCount}${capacity ? '/' + capacity : ''}</strong></div>
-      ${trip.trip_crew?.length ? `<div class="trip-stat">${t('trip_crew')}: <strong>${trip.trip_crew.map(c => c.staff?.full_name).filter(Boolean).join(', ')}</strong></div>` : ''}
+      ${trip.trip_crew?.length ? `<div class="trip-stat">${t('trip_crew')}: <strong>${escapeHtml(trip.trip_crew.map(c => c.staff?.full_name).filter(Boolean).join(', '))}</strong></div>` : ''}
       ${isDive && tanks ? `<div class="trip-stat"><strong>${tanks}</strong> ${t('trip_tanks_needed')}</div>` : ''}
       ${total > 0 ? `<div class="trip-stat" style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};">${owed > 0 ? t('trip_owed') : t('trip_paid')}: <strong>${trip.currency || ''} ${Math.abs(owed).toFixed(2)}</strong></div>` : ''}
     </div>
@@ -10841,8 +10876,8 @@ function tripTypeOptionsHtml(selectedId) {
     grouped[cat].push(tType);
   });
   return Object.entries(grouped).map(([cat, items]) =>
-    `<optgroup label="${cat}">` +
-    items.map(tType => `<option value="${tType.id}" ${tType.id === selectedId ? 'selected' : ''}>${trTypeName(tType.name)}</option>`).join('') +
+    `<optgroup label="${escapeHtml(cat)}">` +
+    items.map(tType => `<option value="${tType.id}" ${tType.id === selectedId ? 'selected' : ''}>${escapeHtml(trTypeName(tType.name))}</option>`).join('') +
     `</optgroup>`
   ).join('');
 }
@@ -11356,7 +11391,7 @@ async function groupCardHTML(g, index) {
     <div class="sf-row">
       <div class="sf-group">
         <label class="sf-label">${t('tt_lead_contact_name')} <span class="required-star">*</span></label>
-        <input class="sf-input" type="text" autocomplete="off" value="${(g.contact_name||'').replace(/"/g,'&quot;')}" placeholder="e.g. John Smith" onblur="updateGroupField('${key}','contact_name', this.value)">
+        <input class="sf-input" type="text" autocomplete="off" value="${escapeHtml(g.contact_name||'')}" placeholder="e.g. John Smith" onblur="updateGroupField('${key}','contact_name', this.value)">
       </div>
       <div class="sf-group">
         <label class="sf-label">${t('tt_phone')} <span class="required-star">*</span></label>
@@ -11400,7 +11435,7 @@ async function groupCardHTML(g, index) {
 
     <div class="sf-group" style="margin-top:16px;">
       <label class="sf-label">${t('tt_notes')}</label>
-      <input class="sf-input" type="text" autocomplete="off" value="${(g.notes||'').replace(/"/g,'&quot;')}" placeholder="Any additional info for this group" onblur="updateGroupField('${key}','notes', this.value)">
+      <input class="sf-input" type="text" autocomplete="off" value="${escapeHtml(g.notes||'')}" placeholder="Any additional info for this group" onblur="updateGroupField('${key}','notes', this.value)">
     </div>
   </div>`;
 }
@@ -11855,10 +11890,10 @@ function renderCashUp(payments, existing, date, expenses) {
     const isTabPayment = (p.note || '').toLowerCase().includes('tab settlement');
     return `<div class="gear-item-row">
       <div class="gear-item-header">
-        <span class="gear-item-name">${trip?.contact_name || '—'}</span>
+        <span class="gear-item-name">${escapeHtml(trip?.contact_name || '—')}</span>
         <span style="font-size:0.95rem;font-weight:700;">$${amount.toFixed(2)}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${trip?.trip_type || ''}${trip?.boats ? ' · ' + trip.boats.name : ''}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${escapeHtml(trip?.trip_type || '')}${trip?.boats ? ' · ' + escapeHtml(trip.boats.name) : ''}</div>
       <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:4px;text-transform:capitalize;">${method || t('cu_unknown')}${isTabPayment ? ` <span style="background:rgba(26,107,138,0.12);color:var(--blue);padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;text-transform:none;margin-left:6px;">${t('cu_tab_badge')}</span>` : ''}</div>
     </div>`;
   }).join('');
@@ -11868,7 +11903,7 @@ function renderCashUp(payments, existing, date, expenses) {
   const expensesRowsHtml = expenses.map(e => `
     <div class="gear-item-row">
       <div class="gear-item-header">
-        <span class="gear-item-name">${e.description}</span>
+        <span class="gear-item-name">${escapeHtml(e.description)}</span>
         <span style="font-size:0.95rem;font-weight:700;">-$${parseFloat(e.amount).toFixed(2)}</span>
       </div>
       <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;display:flex;justify-content:space-between;align-items:center;">
@@ -11950,7 +11985,7 @@ function renderCashUp(payments, existing, date, expenses) {
       ${discrepancy !== null ? `<p style="color:${discrepancy === 0 ? 'var(--success)' : 'var(--error)'};font-weight:600;">${t('cu_discrepancy')} $${discrepancy.toFixed(2)}</p>` : ''}
       <div class="sf-group">
         <label class="sf-label">${t('cu_notes')}</label>
-        <input class="sf-input" type="text" id="cashup-notes" value="${existing?.notes || ''}" placeholder="${t('cu_notes_ph')}">
+        <input class="sf-input" type="text" id="cashup-notes" value="${escapeHtml(existing?.notes || '')}" placeholder="${t('cu_notes_ph')}">
       </div>
       <div class="settings-actions">
         <button class="btn-save" id="btn-save-cashup">${t('cu_close_out_day')}</button>
@@ -12153,8 +12188,8 @@ async function openTabDetail(tabId) {
     <button class="btn-cancel" onclick="loadGuestTabs()" style="margin-bottom:16px;">${t('gt_back_to_tabs')}</button>
     <div class="card-section-title">${escapeHtml(tab.guest_name)}</div>
     <div style="font-size:0.8rem;color:var(--muted);margin-bottom:16px;">
-      ${tab.guest_email || ''}${tab.guest_email && tab.guest_phone ? ' · ' : ''}${tab.guest_phone || ''}
-      ${tab.guest_country ? ' · ' + tab.guest_country : ''}<br>
+      ${escapeHtml(tab.guest_email || '')}${tab.guest_email && tab.guest_phone ? ' · ' : ''}${escapeHtml(tab.guest_phone || '')}
+      ${tab.guest_country ? ' · ' + escapeHtml(tab.guest_country) : ''}<br>
       ${t('gt_settle_by_label')} ${tab.settle_by_date}${tab.notes ? ' · ' + tab.notes : ''}
     </div>
   `;
@@ -12179,7 +12214,7 @@ async function openTabDetail(tabId) {
       html += `
         <div class="gear-item-row">
           <div class="gear-item-header">
-            <span class="gear-item-name">${g.contact_name || tripType} — ${tripDate}</span>
+            <span class="gear-item-name">${escapeHtml(g.contact_name || tripType)} — ${escapeHtml(tripDate)}</span>
             <span style="color:${owed > 0 ? 'var(--error)' : 'var(--success)'};font-weight:600;">${owed > 0 ? t('gt_owed_dollar') + owed.toFixed(2) : t('gt_paid_in_full')}</span>
           </div>
           <button class="gear-action-btn" style="margin-top:8px;" onclick="openTrip('${g.trip_id}')">${t('gt_open_trip_log_payment')}</button>
@@ -12390,7 +12425,7 @@ function svgPieChart(entries) {
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.78rem;padding:3px 0;">
       <span style="display:flex;align-items:center;gap:6px;overflow:hidden;">
         <span style="width:9px;height:9px;border-radius:2px;background:${e.color};flex-shrink:0;"></span>
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.label}</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(e.label)}</span>
       </span>
       <span style="font-weight:600;flex-shrink:0;">${(e.value / total * 100).toFixed(0)}%</span>
     </div>
@@ -12730,7 +12765,7 @@ function renderDiscrepancyReport(cashUps) {
           <span class="gear-item-name">${new Date(c.cash_up_date + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           <span style="color:var(--error);font-weight:700;">${diff > 0 ? '+' : ''}$${diff.toFixed(2)}</span>
         </div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('rep_closed_by')} ${c.closed_by || '—'}${c.notes ? ' · ' + c.notes : ''}</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('rep_closed_by')} ${escapeHtml(c.closed_by || '—')}${c.notes ? ' · ' + escapeHtml(c.notes) : ''}</div>
       </div>`).join('');
   }
 }
@@ -13406,7 +13441,9 @@ async function loadWaivers() {
 
   const pendingListEl = document.getElementById('pending-waivers-list');
   pendingListEl.innerHTML = guestRows.length ? guestRows.map(({ p, trip, isMinor, pendingWaivers, medicalRequired, medical, state }) => {
-    const tripLabel = trip ? `${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
+    // Escapado al armarse, por lo mismo que el del calendario: el nombre del
+    // tipo de salida lo escribe el centro.
+    const tripLabel = trip ? escapeHtml(`${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}`) : '';
     const nameEsc = escapeJsEnAtributo(p.full_name);
     const bits = readinessReasons({ pendingWaivers, medicalRequired, medical });
 
@@ -13475,7 +13512,9 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
       if (missingTypes.length) missing.push({ id: p.id, name: p.full_name, types: missingTypes.map(mt => waiverTypeLabels[mt] || mt).join(', ') });
     });
 
-    const tripLabel = trip ? `${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}` : '';
+    // Escapado al armarse, por lo mismo que el del calendario: el nombre del
+    // tipo de salida lo escribe el centro.
+    const tripLabel = trip ? escapeHtml(`${trTypeName(trip.trip_type) || t('wv_trip_fallback')}${trip.trip_time ? ' · ' + trip.trip_time.slice(0,5) : ''}`) : '';
     const statusHtml = missing.length
       ? `<div style="margin-top:4px;">
           <div style="font-size:0.8rem;color:var(--error);">${t('wv_group_missing_prefix')}</div>
@@ -13599,7 +13638,7 @@ function waiverLogRowHtml(w) {
   return `<div class="participant-row">
     <div>
       <div class="p-name">${escapeHtml(w.participants?.full_name) || t('wv_unknown_guest')}</div>
-      <div style="font-size:0.78rem;color:var(--muted);">${waiverTypeLabels[w.waiver_type] || w.waiver_type} · ${w.method === 'paper' ? t('wv_paper') : t('wv_digital')} · ${new Date(w.signed_at).toLocaleString(localeDeLaApp(), {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + w.signed_by_name : ''}</div>
+      <div style="font-size:0.78rem;color:var(--muted);">${escapeHtml(waiverTypeLabels[w.waiver_type] || w.waiver_type)} · ${w.method === 'paper' ? t('wv_paper') : t('wv_digital')} · ${new Date(w.signed_at).toLocaleString(localeDeLaApp(), {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}${w.signed_by_name ? ' · ' + escapeHtml(w.signed_by_name) : ''}</div>
       ${w.guardian_printed_name ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${t('wv_cosigned_by')} ${escapeHtml(w.guardian_printed_name)}</div>` : ''}
       ${w.document_id ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:3px;font-family:ui-monospace,Menlo,Consolas,monospace;">${escapeHtml(w.document_id)}</div>` : ''}
     </div>
@@ -14667,7 +14706,7 @@ async function renderTripCrewSection() {
     const rate = parseFloat(c.day_rate) || 0;
     const costNote = rate > 0 ? (days > 1 ? ` — $${rate.toFixed(2)}/day × ${days} = $${(rate*days).toFixed(2)}` : ` — $${rate.toFixed(2)}`) : '';
     return `
-    <span class="crew-member-tag-v2">${c.full_name}${costNote}
+    <span class="crew-member-tag-v2">${escapeHtml(c.full_name)}${costNote}
       <button onclick="removeTripCrewFromCache('${c.staff_id}')">×</button>
     </span>
   `;
@@ -14788,7 +14827,7 @@ async function groupPaymentHTML(g, participants) {
   const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
   const balance = total - paid;
   const paymentsHtml = (payments || []).map(p => `
-    <div class="crew-member-tag-v2">${p.method} — $${parseFloat(p.amount).toFixed(2)} · ${p.payment_date}${p.note ? ' · ' + p.note : ''}
+    <div class="crew-member-tag-v2">${p.method} — $${parseFloat(p.amount).toFixed(2)} · ${p.payment_date}${p.note ? ' · ' + escapeHtml(p.note) : ''}
       <button onclick="removeGroupPayment('${p.id}','${g.id}')">×</button>
     </div>
   `).join('');
@@ -15113,7 +15152,7 @@ function renderGroupParticipantsBlock(groupId, participants) {
       ? `<span title="${escapeHtml(readinessReasons(r).join(' · ') || t('rd_ready'))}" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${READINESS[r.state].color};margin-right:7px;flex:none;vertical-align:middle;"></span>`
       : '';
     const reasonLine = (r && r.state !== 'ready')
-      ? `<div class="p-meta" style="color:${READINESS[r.state].color};">${readinessReasons(r).join(' · ')}</div>` : '';
+      ? `<div class="p-meta" style="color:${READINESS[r.state].color};">${readinessReasons(r).map(escapeHtml).join(' · ')}</div>` : '';
     return `
     <div class="participant-row">
       <div>
@@ -16161,7 +16200,7 @@ async function loadTodaysTripList() {
       defaultNumTanks: tr.trip_types?.num_tanks || 1, defaultNeedsTanks: !!tr.trip_types?.needs_tank_count };
     return `<div class="cl-trip-pill ${currentChecklistTripId===tr.id?'selected':''}"
       onclick="selectChecklistTrip(${JSON.stringify(clickPayload).replace(/"/g,'&quot;')})">
-      <div style="font-weight:600;font-size:0.875rem;">${time ? time+' — ' : ''}${name}</div>
+      <div style="font-weight:600;font-size:0.875rem;">${time ? escapeHtml(time)+' — ' : ''}${escapeHtml(name)}</div>
       <div style="font-size:0.75rem;color:var(--muted);">${guests} ${guests!==1?t('cl_guest_plural'):t('cl_guest_singular')}${tanks?' · '+tanks:''}</div>
     </div>`;
   }).join('');
@@ -16501,8 +16540,8 @@ async function renderInstructorChecklistForTrip(tripId) {
   const s = await buscarActaVigente({ role: 'instructor', tripId });
   if (s) {
     pintarEstadoDeActa('cl-instructor-status', s);
-    doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ` +
-      `${new Date(s.signed_at).toLocaleString(localeDeLaApp())} (${s.completed_items}/${s.total_items})`;
+    doneBanner.innerHTML = lineaDeFirma({ nombre: s.signed_by, cuando: s.signed_at,
+                                          hechos: s.completed_items, total: s.total_items });
     doneBanner.style.display = 'block';
     mostrarActaSiHay('cl-instructor-items', s, null);
     // Firmada: no se vuelve a firmar. Antes el botón seguía ahí ARRIBA del acta
@@ -17900,16 +17939,56 @@ async function instructorSignOff() {
 // Antes se pintaba primero y, si el servidor rechazaba, quedaba diciendo
 // «✓ firmada por Franco» arriba de un acta que no existía — el mismo error que
 // costó la pérdida de tildes del 08/10, en otra forma.
-function pintarFirmaDelInstructor(nombre, hechos, total, extra) {
-  const el = document.getElementById('cl-instructor-done');
+// ─── C9 · La línea que dice quién firmó y cuándo ───────────────────────────
+//
+// UNA función, para los SEIS lugares que la escribían a mano: los tres caminos
+// que acaban de firmar y los tres que la arman desde el acta guardada.
+//
+// Dos cosas que la copia dejaba mal, y las dos se encontraron al unificar:
+//
+// · Los tres de «recién firmada» metían un **`at` en inglés** en medio de la
+//   frase. En español se leía «Confirmado por Franco **at** 24/10/2026». El
+//   separador «·» no se traduce y se lee igual en los dos idiomas, así que no
+//   hace falta una clave nueva para una preposición.
+// · Y las dos formas **no decían lo mismo**: los de «recién firmada» no
+//   incluían cuántos ítems se habían hecho y los del acta sí. El número es lo
+//   que convierte «firmada» en algo con lo que se le contesta a un cliente, así
+//   que ahora va siempre.
+function lineaDeFirma({ nombre, cuando, hechos, total, extra }) {
+  const fecha = cuando ? new Date(cuando) : new Date();
+  const cuenta = (hechos != null && total != null) ? ` · ${hechos}/${total}` : '';
+  return `✓ ${escapeHtml(t('cl_signed_off_by'))}<strong>${escapeHtml(nombre || '')}</strong>` +
+         ` · ${escapeHtml(fecha.toLocaleString(localeDeLaApp()))}${cuenta}` +
+         (extra ? `<span style="opacity:0.75;">${escapeHtml(extra)}</span>` : '');
+}
+
+// Y el cartel entero, para los tres caminos que acaban de firmar: la línea, el
+// estado y esconder la zona de firma. Eran tres funciones con el MISMO cuerpo y
+// distintos ids.
+//
+// **Por qué el cartel se movió arriba de la lista** (pedido por Fran el 24/10):
+// medido en su pantalla, la insignia estaba en y=418 y el cartel del firmante en
+// y=1389 — 900 px más abajo, después de los 16 ítems. Lo único que *prueba* que
+// esto es un registro y no una checklist sin hacer quedaba abajo del pliegue, y
+// Fran leyó el acta como «se limpió la checklist». El dato estaba perfecto; lo
+// que estaba mal era dónde se decía.
+function pintarFirmaDeChecklist({ cartelId, estadoId, selectId, botonId, nombre, cuando, hechos, total, extra }) {
+  const el = document.getElementById(cartelId);
   if (!el) return;
-  el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(nombre)}</strong> at ${new Date().toLocaleString(localeDeLaApp())}` +
-    (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
+  el.innerHTML = lineaDeFirma({ nombre, cuando, hechos, total, extra });
   el.style.display = 'block';
   // El estado lo decide estadoDeActa(), no el hecho de haber firmado: firmar
   // una lista con huecos no la completa.
-  pintarEstadoDeActa('cl-instructor-status', { completed_items: hechos, total_items: total });
-  pintarZonaDeFirma({ selectId: 'cl-instructor-name', botonId: 'cl-instructor-signoff-btn', acta: true });
+  if (estadoId) pintarEstadoDeActa(estadoId, { completed_items: hechos, total_items: total });
+  if (selectId) pintarZonaDeFirma({ selectId, botonId, acta: true });
+}
+
+function pintarFirmaDelInstructor(nombre, hechos, total, extra) {
+  pintarFirmaDeChecklist({
+    cartelId: 'cl-instructor-done', estadoId: 'cl-instructor-status',
+    selectId: 'cl-instructor-name', botonId: 'cl-instructor-signoff-btn',
+    nombre, hechos, total, extra
+  });
 }
 
 // ─── SHARED RENDER ───
@@ -17955,7 +18034,7 @@ function renderCheckItems(containerId, items, checks, toggleFn, progressId) {
   el.innerHTML = lineaDeParticipantes(participantesDeAutoria(autores)) + items.map(item => `
     <div class="cl-item ${checks[item.id]?'checked':''}" onclick="${toggleFn}('${item.id}')">
       <div class="cl-checkbox">${checks[item.id]?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>':''}</div>
-      <div class="cl-item-text">${item.text}</div>
+      <div class="cl-item-text">${escapeHtml(item.text)}</div>
       ${checks[item.id] ? chipDeAutor(autores[item.id]) : ''}
     </div>`).join('');
   // El selector de firmante se rellena en cada dibujo, porque la lista de quién
@@ -18214,7 +18293,9 @@ async function loadCustomChecklists() {
 function populateNewChecklistRoleSelect() {
   const sel = document.getElementById('new-checklist-role');
   const roles = myCreatableChecklistRoles();
-  sel.innerHTML = roles.map(r => `<option value="${r}">${crewRoleLabel(r)}</option>`).join('');
+  // `crewRoleLabel()` cae al valor crudo del rol cuando no está en el mapa, y
+  // un rol «custom» lleva el nombre que le puso el centro.
+  sel.innerHTML = roles.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(crewRoleLabel(r))}</option>`).join('');
 }
 
 // El selector de frecuencia se arma desde `cadenciasQueSeOfrecen()` y no desde
@@ -18305,13 +18386,13 @@ async function customChecklistSignOff(checklistId) {
   const confirmado = await confirmarFirma(cc.items, (_it, idx) => checks[idx]);
   if (!confirmado) return;
 
-  const pintar = (extra) => {
-    const el = document.getElementById(`custom-cl-done-${checklistId}`);
-    if (!el) return;
-    el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(name)}</strong> at ${new Date().toLocaleString(localeDeLaApp())}` +
-      (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
-    el.style.display = 'block';
-  };
+  // El tercero de los tres. No pinta estado ni esconde la zona de firma —
+  // `renderCustomChecklistsForCurrentView()` redibuja la tarjeta entera después
+  // y lo hace él— así que pasa sólo el cartel.
+  const pintar = (extra) => pintarFirmaDeChecklist({
+    cartelId: `custom-cl-done-${checklistId}`,
+    nombre: name, hechos: done, total: cc.items.length, extra
+  });
 
   const { scopeKey } = customScope(cc);
   await firmarUnaSolaVez(scopeKey,
@@ -18378,8 +18459,8 @@ async function dibujarActaDeChecklistPropia(cc) {
   if (!s) return;
   pintarEstadoDeActa(ids.estado, s);
   if (cartel) {
-    cartel.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ` +
-      `${new Date(s.signed_at).toLocaleString(localeDeLaApp())} (${s.completed_items}/${s.total_items})`;
+    cartel.innerHTML = lineaDeFirma({ nombre: s.signed_by, cuando: s.signed_at,
+                                      hechos: s.completed_items, total: s.total_items });
     cartel.style.display = 'block';
   }
   mostrarActaSiHay(ids.items, s, ids.progreso);
@@ -18513,10 +18594,11 @@ async function renderCustomChecklistsForCurrentView() {
       <div class="cl-progress-bar"><div class="cl-progress-fill" id="custom-cl-progress-${cc.id}" style="width:${cc.items.length ? (done / cc.items.length * 100) : 0}%;"></div></div>
       <div class="cl-role-badge" id="custom-cl-status-${cc.id}" style="margin-bottom:10px;">${escapeHtml(t('cl_pending'))}</div>
       <div id="custom-cl-body-${cc.id}" style="display:${abierta ? 'block' : 'none'};">
+        <!-- Arriba de la lista, igual que los otros dos. -->
+        <div class="cl-done-banner" id="custom-cl-done-${cc.id}" style="display:none;"></div>
         <div id="custom-cl-items-${cc.id}">${itemsHtml}</div>
         <div class="cl-signoff">
           <select class="sf-input signer-select" id="custom-cl-name-${cc.id}"></select>
-          <div class="cl-done-banner" id="custom-cl-done-${cc.id}" style="display:none;"></div>
           <div class="settings-actions" style="margin-top:12px;">
             <button class="btn-save" id="custom-cl-signoff-${cc.id}" onclick="customChecklistSignOff('${cc.id}')">${t('cl_sign_off_routine')}</button>
             <button class="btn-cancel" onclick="resetCustomChecklist('${cc.id}')">${escapeHtml(t('cl_reset'))}</button>
@@ -18723,7 +18805,8 @@ async function renderDeptRoutine() {
   if (s) {
     pintarEstadoDeActa('dept-routine-status', s);
     if (doneBanner) {
-      doneBanner.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(s.signed_by || '')}</strong> ${new Date(s.signed_at).toLocaleString(localeDeLaApp())} (${s.completed_items}/${s.total_items})`;
+      doneBanner.innerHTML = lineaDeFirma({ nombre: s.signed_by, cuando: s.signed_at,
+                                            hechos: s.completed_items, total: s.total_items });
       doneBanner.style.display = 'block';
     }
     mostrarActaSiHay('dept-list', s, 'dept-routine-progress');
@@ -18824,13 +18907,11 @@ async function deptRoutineSignOff() {
 }
 
 function pintarFirmaDeRutina(nombre, hechos, total, extra) {
-  const el = document.getElementById('dept-routine-done');
-  if (!el) return;
-  el.innerHTML = `✓ ${t('cl_signed_off_by')}<strong>${escapeHtml(nombre)}</strong> at ${new Date().toLocaleString(localeDeLaApp())}` +
-    (extra ? `<span style="opacity:0.75;">${extra}</span>` : '');
-  el.style.display = 'block';
-  pintarEstadoDeActa('dept-routine-status', { completed_items: hechos, total_items: total });
-  pintarZonaDeFirma({ selectId: 'dept-routine-name', botonId: 'dept-routine-signoff-btn', acta: true });
+  pintarFirmaDeChecklist({
+    cartelId: 'dept-routine-done', estadoId: 'dept-routine-status',
+    selectId: 'dept-routine-name', botonId: 'dept-routine-signoff-btn',
+    nombre, hechos, total, extra
+  });
 }
 
 // ─── NAV ───
@@ -18988,8 +19069,8 @@ async function loadCrew() {
       <div class="crew-info">
         <div class="crew-avatar">${initials}</div>
         <div class="crew-details">
-          <div class="crew-name">${escapeHtml(s.full_name)} <span class="role-badge ${isOwner ? 'owner' : ''}">${roleName}</span></div>
-          <div class="crew-meta">${s.email} · ${location}</div>
+          <div class="crew-name">${escapeHtml(s.full_name)} <span class="role-badge ${isOwner ? 'owner' : ''}">${escapeHtml(roleName)}</span></div>
+          <div class="crew-meta">${escapeHtml(s.email)} · ${escapeHtml(location)}</div>
         </div>
       </div>
       ${showDayRate ? `
@@ -19101,7 +19182,7 @@ async function loadDayOffRequests() {
             <span style="font-size:0.75rem;color:${color};font-weight:600;text-transform:capitalize;">${statusLabel}</span>
           </div>
           <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${t('crew_reason_prefix')}${escapeHtml(r.reason)}</div>
-          ${r.manager_note ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">${t('crew_manager_note_prefix')}${r.manager_note}</div>` : ''}
+          ${r.manager_note ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">${t('crew_manager_note_prefix')}${escapeHtml(r.manager_note)}</div>` : ''}
         </div>`;
       }).join('')
     : `<p style="font-size:0.85rem;color:var(--muted);">${t('crew_no_recent_decisions')}</p>`;
@@ -19179,7 +19260,7 @@ async function loadPendingInvites() {
     <div class="invite-item">
       <div>
         <div class="invite-email">${inv.email}</div>
-        <div class="invite-meta">${crewRoleLabel(inv.role)} · ${inv.locations?.name || t('crew_no_location')} · ${t('crew_invited_prefix')}${new Date(inv.created_at).toLocaleDateString(localeDeLaApp())}</div>
+        <div class="invite-meta">${escapeHtml(crewRoleLabel(inv.role))} · ${escapeHtml(inv.locations?.name || t('crew_no_location'))} · ${t('crew_invited_prefix')}${new Date(inv.created_at).toLocaleDateString(localeDeLaApp())}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="invite-status">${t('crew_status_pending_badge')}</span>
@@ -19389,7 +19470,7 @@ async function loadFleet() {
           ${b.length_ft ? `<span>${b.length_ft} ft</span>` : ''}
           ${b.num_engines > 1 ? `<span>${b.num_engines} ${t('fleet_engines_suffix')}</span>` : ''}
           ${b.engine_hours ? `<span>${b.engine_hours} ${t('fleet_hrs_suffix')}</span>` : ''}
-          ${b.locations ? `<span>${b.locations.name}</span>` : ''}
+          ${b.locations ? `<span>${escapeHtml(b.locations.name)}</span>` : ''}
         </div>
       </div>
       <div class="boat-actions">
@@ -19724,10 +19805,10 @@ function engineLogRowHtml(l) {
 function engineMaintRowHtml(m) {
   return `<div style="font-size:0.8rem;padding:6px 0;border-bottom:1px solid var(--border);">
     <div style="display:flex;align-items:center;gap:10px;">
-      <strong>${m.title}</strong>
+      <strong>${escapeHtml(m.title)}</strong>
       <span style="color:var(--muted);">${new Date(m.performed_date + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric' })}</span>
     </div>
-    <div style="color:var(--muted);margin-top:2px;">${m.description}${m.performed_by ? ' · ' + m.performed_by : ''}</div>
+    <div style="color:var(--muted);margin-top:2px;">${escapeHtml(m.description)}${m.performed_by ? ' · ' + escapeHtml(m.performed_by) : ''}</div>
   </div>`;
 }
 
@@ -20424,7 +20505,7 @@ function renderGearRegistry(items) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div>
           <h2 style="margin-bottom:2px;">${escapeHtml(g.name)}${dueSoon ? ` <span class="role-badge" style="background:rgba(229,62,62,0.12);color:var(--error);margin-left:6px;vertical-align:middle;">${t('gear_service_due')}</span>` : ''}</h2>
-          <p style="font-size:0.8rem;color:var(--muted);">${trGearCategory(g.category)}${g.size ? ' · ' + g.size : ''}${g.serial_number ? ' · SN ' + g.serial_number : ''}${g.locations?.name ? ' · ' + g.locations.name : ''}</p>
+          <p style="font-size:0.8rem;color:var(--muted);">${escapeHtml(trGearCategory(g.category))}${g.size ? ' · ' + escapeHtml(g.size) : ''}${g.serial_number ? ' · SN ' + escapeHtml(g.serial_number) : ''}${g.locations?.name ? ' · ' + escapeHtml(g.locations.name) : ''}</p>
         </div>
         <span class="role-badge" style="background:rgba(0,0,0,0.06);color:${statusColor};">${gearRegistryStatusLabel(g.status)}</span>
       </div>
@@ -21012,7 +21093,7 @@ function renderGearInventory(categories, items, stockMap) {
       return `<div class="gear-item-row">
         <div class="gear-item-header expandable-title" onclick="toggleExpandSection('${itemBodyId}')">
           <span>
-            <span class="gear-item-name">${trGearItemName(item.name)}</span>
+            <span class="gear-item-name">${escapeHtml(trGearItemName(item.name))}</span>
             <span class="gear-item-unit">${trGearUnit(item.unit)}</span>
           </span>
           <span style="display:flex;align-items:center;gap:8px;">
@@ -21025,7 +21106,7 @@ function renderGearInventory(categories, items, stockMap) {
     }).join('');
     return `<div class="inline-form" style="margin-bottom:20px;">
       <div class="card-section-title expandable-title" style="margin-top:16px;margin-bottom:8px;" onclick="toggleExpandSection('${catBodyId}')">
-        <span>${CATEGORY_LABELS[cat.key] || cat.label} <span class="expand-count">(${catItems.length})</span></span>
+        <span>${escapeHtml(CATEGORY_LABELS[cat.key] || cat.label)} <span class="expand-count">(${catItems.length})</span></span>
         <span style="display:flex;align-items:center;gap:10px;">
           <button class="btn-icon" style="font-size:0.72rem;padding:4px 10px;" onclick="event.stopPropagation();addGearItemToCategory('${cat.id}')">${t('gr_add_item_btn')}</button>
           <span id="${catBodyId}-arrow" class="expand-caret">▸</span>
@@ -21228,7 +21309,7 @@ function renderCompressorCard(c, logs) {
   <div class="card" id="compressor-card-${c.id}">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
-        <h2 style="margin:0;">${c.name}</h2>
+        <h2 style="margin:0;">${escapeHtml(c.name)}</h2>
         <p style="margin:0;">${c.locations?.name || t('gear_no_location')}${c.boats?.name ? ' · ' + c.boats.name : ' · ' + t('gear_shop_based')}</p>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -21517,7 +21598,7 @@ function renderInspectionTabs() {
   const tabsEl = document.getElementById('inspection-tabs');
   const sortedCats = Object.keys(groups).sort((a, b) => a.localeCompare(b));
   tabsEl.innerHTML = `<select class="sf-input" style="max-width:280px;" onchange="switchInspectionCategory(this.value)">
-    ${sortedCats.map(catName => `<option value="${catName.replace(/"/g, '&quot;')}" ${catName === activeCat ? 'selected' : ''}>${catName} (${groups[catName].length})</option>`).join('')}
+    ${sortedCats.map(catName => `<option value="${escapeHtml(catName)}" ${catName === activeCat ? 'selected' : ''}>${escapeHtml(catName)} (${groups[catName].length})</option>`).join('')}
   </select>`;
 }
 function switchInspectionCategory(catName) {
@@ -21543,7 +21624,7 @@ function renderInspectionActiveCategory() {
           <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
         </div>
         <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${escapeHtml(item.note || '')}</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${comp.completed_by} · ${new Date(comp.completed_at).toLocaleDateString(localeDeLaApp())}${comp.notes ? ' · ' + comp.notes : ''}</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Completed by ${escapeHtml(comp.completed_by)} · ${new Date(comp.completed_at).toLocaleDateString(localeDeLaApp())}${comp.notes ? ' · ' + escapeHtml(comp.notes) : ''}</div>
         ${deleteBtn ? `<div style="margin-top:8px;">${deleteBtn}</div>` : ''}
       </div>`;
     } else {
@@ -21810,8 +21891,8 @@ async function renderTripTypesList() {
     <div class="trip-type-block">
     <div class="trip-type-row">
       <div>
-        <div class="trip-type-name">${trTypeName(tt.name)}</div>
-        <div class="trip-type-meta">${CATEGORY_LABELS[tt.category] || tt.category}${tt.needs_tank_count ? ' · ' + tt.num_tanks + (tt.num_tanks > 1 ? t('set_tanks_plural') : t('set_tank_singular')) : ''}${tt.can_be_private ? t('set_can_be_private') : ''}${tt.is_multi_day ? t('set_multi_day_suffix') : ''}</div>
+        <div class="trip-type-name">${escapeHtml(trTypeName(tt.name))}</div>
+        <div class="trip-type-meta">${escapeHtml(CATEGORY_LABELS[tt.category] || tt.category)}${tt.needs_tank_count ? ' · ' + tt.num_tanks + (tt.num_tanks > 1 ? t('set_tanks_plural') : t('set_tank_singular')) : ''}${tt.can_be_private ? t('set_can_be_private') : ''}${tt.is_multi_day ? t('set_multi_day_suffix') : ''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <input class="trip-type-price-input" type="number" min="0" step="0.01" value="${tt.default_price ? Number(tt.default_price).toFixed(2) : ''}" placeholder="0.00"

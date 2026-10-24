@@ -290,6 +290,22 @@ const ITEMS=[{id:'0',text:'Check tanks'},{id:'1',text:'Load towels'},
       (html.match(/data-1p-ignore/g)||[]).length>=3,
       'los dos de invitación más la constante');
 
+  // ─── Y los cuatro campos de un waiver (C5, 24/10) ────────────────────────
+  //
+  // El nombre del firmante de un waiver pesa más que un motivo de checklist: un
+  // autocompletado pone al dueño del centro como firmante del documento de un
+  // huésped, y un waiver no se corrige. La firma remota es peor todavía — la
+  // abre el huésped en SU teléfono, con sus propios datos guardados.
+  for (const id of ['sig-printed-name', 'sig-guardian-name',
+                    'rw-printed-name', 'rw-guardian-name']) {
+    const campo = html.slice(html.indexOf('id="' + id + '"') - 300,
+                             html.indexOf('id="' + id + '"') + 300);
+    chk(id + ' está protegido contra autocompletado',
+        /data-1p-ignore/.test(campo) && /data-lpignore/.test(campo) &&
+        /noautofill/.test(campo),
+        'autocomplete="off" solo no alcanza');
+  }
+
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,500)); }
   process.exit(fail);
 })();

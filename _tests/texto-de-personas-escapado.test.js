@@ -137,10 +137,19 @@ try {
   // cambio cerró; los que quedan abiertos están en la nota del vault con sus
   // líneas, y se van sumando acá a medida que se cierran.
   const CERRADOS = [
+    // Primera pasada, 24/10
     's.full_name', 'l.name', 'b.name', 'g.name', 'e.name',
     'tab.guest_name', 't.guest_name', 'a.name', 'a.task_lists.title',
     'it.text', 'r.reason', 'item.label', 'g.serial_number',
-    'template.title', 'template.body_text'
+    'template.title', 'template.body_text',
+    // Segunda pasada (C8), el mismo día: de 70 lugares quedaron 13, y los 13
+    // son nuestros —etiquetas de mapas, números, fragmentos de HTML—.
+    'e.description', 'e.label', 'c.notes', 'c.full_name', 'c.name',
+    'g.contact_name', 'g.notes', 'g.size', 'g.locations.name',
+    'm.title', 'm.description', 'm.performed_by',
+    'p.note', 'comp.notes', 'comp.completed_by',
+    'r.manager_note', 'b.locations.name', 'item.text',
+    'w.signed_by_name', 'tab.guest_country', 'roleName', 'catName'
   ];
   const lineas = html.split('\n');
   const crudos = [];
@@ -163,9 +172,35 @@ try {
   const detector = (campo) => lineas.some((l, i) =>
     /[<]\/?[a-zA-Z]/.test(l) && !l.trim().startsWith('//') &&
     [...l.matchAll(/\$\{([^}]*)\}/g)].some(m => m[1].trim() === campo));
+  // El campo que se usa de control tiene que ser uno que SIGA crudo a
+  // propósito. `tripLabel` ya no sirve: desde la segunda pasada se escapa al
+  // armarse. `depts[key].label` sale de un objeto del código, así que queda
+  // crudo y es correcto que quede.
   chk('el detector funciona: encuentra un campo que sigue crudo',
-      detector('tripLabel'),
+      detector('depts[key].label'),
       'si esto falla, el guardián de arriba pasa por estar roto, no por estar limpio');
+
+  // Y la contracara del guardián: `tripLabel` ya NO aparece crudo, porque se
+  // escapa donde se arma y no en los cinco lugares que lo dibujan.
+  // Afirma la regla y no un reparto: **todas** las definiciones escapan. Mi
+  // primera versión contaba «dos y dos» de memoria y eran cuatro y dos — el
+  // error de siempre, afirmar un número en vez de medirlo.
+  // Cinco de las seis escapan. **La sexta no escapa a propósito**, y lo agarró
+  // una revisión independiente del diff: su destino es `.textContent`, no un
+  // `innerHTML`, y `textContent` no interpreta entidades — escaparla le muestra
+  // «Dive &amp;amp; Snorkel» a un huésped en la pantalla de firma remota.
+  //
+  // La regla que sale de ahí, y es la más importante de toda la pasada:
+  // **escapar es correcto según el DESTINO, no según el origen.**
+  const defs = lineasDeCodigoCon(html, 'const tripLabel =');
+  const sinEscapar = defs.filter(l => !l.includes('escapeHtml'));
+  chk('las cinco que van a innerHTML se escapan',
+      defs.length === 6 && sinEscapar.length === 1,
+      defs.length + ' definiciones, ' + sinEscapar.length + ' sin escapar');
+  chk('y la que NO se escapa es la que va a textContent',
+      /rw-trip-meta'\)\.textContent/.test(html) &&
+      /según el DESTINO, no según el origen/.test(html),
+      'con el porqué escrito al lado, para que nadie la "arregle"');
 
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,500)); }
 

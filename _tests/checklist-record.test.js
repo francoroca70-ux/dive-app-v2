@@ -203,13 +203,21 @@ window.showAlertModal=async()=>{}; window.showConfirmModal=async()=>true;
   // Un solo lugar decide, y lo usan los tres.
   chk('el estado se decide en un solo lugar',
       (html.match(/function estadoDeActa\(/g)||[]).length===1);
-  // Cuatro: al dibujar una ya firmada (2) y al firmarla (2). Este ultimo par
-  // lo encontro el test: los firmados ponian «Completo» apenas firmabas,
-  // antes de volver a dibujar.
-  chk('lo usan los cuatro lugares que pintan estado, mas la lista de actas',
-      (html.match(/pintarEstadoDeActa\('/g)||[]).length===4 &&
+  // Eran cuatro llamadas con el id escrito a mano: al dibujar una ya firmada (2)
+  // y al firmarla (2). Ese último par lo encontró el test — los firmados ponían
+  // «Completo» apenas firmabas, antes de volver a dibujar.
+  //
+  // **Desde el C9 son dos con id literal más una por parámetro**: los dos
+  // caminos de «recién firmada» pasaron a `pintarFirmaDeChecklist()`, que recibe
+  // el id del estado y pinta la burbuja en un solo lugar. El número baja porque
+  // hay MENOS copias, que es la dirección correcta; lo que hay que seguir
+  // afirmando es que nadie pinte el estado por fuera de esa función.
+  const conIdLiteral = (html.match(/pintarEstadoDeActa\('/g)||[]).length;
+  const porParametro = lineasDeCodigoCon(html, 'pintarEstadoDeActa(estadoId').length;
+  chk('lo pintan los lugares que corresponden, mas la lista de actas',
+      conIdLiteral===2 && porParametro===1 &&
       (html.match(/estadoDeActa\(r\)/g)||[]).length===2,
-      (html.match(/pintarEstadoDeActa\('/g)||[]).length+' burbujas + la lista');
+      conIdLiteral+' con id literal + '+porParametro+' por parámetro + la lista');
   chk('ya nadie pone «Completo» a mano sin mirar si está completa',
       !/textContent = t\('cl_complete_check'\)/.test(html), 'patrón viejo ausente');
 
