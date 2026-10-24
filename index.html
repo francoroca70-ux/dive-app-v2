@@ -308,6 +308,25 @@ body { background: var(--navy); color: var(--text); }
   border-color: var(--teal);
   background: rgba(255,255,255,0.09);
 }
+/* Un campo autocompletado por Chrome.
+   Medido el 24/10 en la pantalla de Fran: el campo de contraseña del login
+   venía con `background: rgb(232,240,254)` —el celeste de autocompletado— y el
+   texto forzado a NEGRO, dentro de una tarjeta oscura. Y el ojo de ver la
+   contraseña es blanco, así que **desaparecía ahí**: Fran reportó que en el
+   login «no está», y estaba.
+   El fondo de un campo autocompletado no se puede cambiar; sólo taparlo con una
+   sombra interna enorme, que es este truco. La transición larga es el otro
+   truco conocido: sin ella, Chrome lo vuelve a pintar al enfocar.
+   Es sólo para los campos oscuros de autenticación. En Configuración el celeste
+   cae sobre un campo blanco y se lee bien. */
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--white);
+  caret-color: var(--white);
+  -webkit-box-shadow: 0 0 0 1000px rgb(38,54,83) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
 .form-group input::placeholder { color: rgba(255,255,255,0.25); }
 /* El ojo para ver la contraseña, para los ocho campos.
 
@@ -1039,6 +1058,13 @@ body { background: var(--navy); color: var(--text); }
 .settings-form { margin-top: 16px; }
 .sf-group { margin-bottom: 16px; min-width: 0; }
 .sf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* Departamento y Checklist van juntos, no uno en cada mitad de la pantalla.
+   `.sf-row` reparte 1fr y 1fr, así que con un `max-width` cada selector queda
+   pegado a la izquierda de su mitad: medido el 24/10, 291 px de aire entre los
+   dos en una pantalla de 1086. Acá las columnas se achican al contenido.
+   En teléfono no cambia nada: la regla de `.sf-row` a una columna dentro del
+   media query lleva `!important` y gana. */
+.dept-picker-row { grid-template-columns: max-content max-content; justify-content: start; }
 .sf-label {
   display: block; font-size: 0.78rem; font-weight: 600;
   color: var(--muted); letter-spacing: 0.06em;
@@ -9155,7 +9181,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-24a');
+  console.info('[Seven Seas] build 2026-10-24b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
