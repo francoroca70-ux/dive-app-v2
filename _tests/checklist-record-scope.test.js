@@ -229,8 +229,15 @@ window.queueOfflineAction=(tipo,payload)=>{ encolados.push({tipo,payload}); };
   etiqueta=window.tripLabelDeActa({trip_id:'t1',trip_name:null,trip_time:null,trip_date:null});
   chk('un acta vieja sin snapshot cae en el texto de reserva, sin romper',
       typeof etiqueta==='string' && etiqueta.length>0 && !/null|undefined/.test(etiqueta), etiqueta);
-  chk('y la agrupación por día cae en la fecha de firma',
-      /row\.trip_date \|\| row\.signed_at\.split/.test(html));
+  // Cae en la fecha de firma, y esa fecha es el día del CENTRO — no el UTC.
+  // Hasta el 26/10 era `row.signed_at.split('T')[0]`, o sea el día de
+  // Greenwich: un acta firmada a las 22:00 en Mar del Plata se archivaba bajo
+  // el día siguiente, no aparecía buscando «hoy» y el encabezado la rotulaba
+  // con la fecha equivocada. `trip_date` ya es una columna `date` y no
+  // necesita conversión, así que la mezcla de las dos cosas en una línea es
+  // correcta.
+  chk('y la agrupación por día cae en la fecha de firma, en el día del centro',
+      /row\.trip_date \|\| diaLocalDeInstante\(row\.signed_at\)/.test(html));
 
   // ─── Guardián estructural: una regla, una función ───
   // Los tres payloads se armaban a mano y eran idénticos salvo el rol. Esta

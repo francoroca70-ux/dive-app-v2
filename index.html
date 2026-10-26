@@ -4567,7 +4567,7 @@ const TRANSLATIONS = {
     stt_surf_lesson: 'Surf Lesson', stt_surf_trip: 'Surf Trip', stt_fishing_trip: 'Fishing Trip', stt_freediving_session: 'Freediving Session',
 
     gt_no_tabs_yet: 'No guest tabs yet.', gt_status_settled: 'Settled', gt_status_overdue: 'Overdue', gt_status_open: 'Open',
-    gt_bookings_label: 'booking(s)', gt_settle_by_label: 'Settle by', gt_owed_label: 'Owed:', gt_view_close_tab: 'View / Close Tab',
+    gt_bookings_label: 'bookings', gt_bookings_label_one: 'booking', gt_settle_by_label: 'Settle by', gt_owed_label: 'Owed:', gt_view_close_tab: 'View / Close Tab',
     gt_open_tab_heading: 'Open a Guest Tab', gt_guest_full_name: 'Guest full name', gt_settle_by_date_label: 'Settle by date',
     gt_email_label: 'Email', gt_phone_label: 'Phone', gt_country_label: 'Country of residence', gt_notes_label: 'Notes',
     gt_open_tab_btn: 'Open Tab', gt_fields_required: 'Guest name and settle-by date are required.',
@@ -4632,8 +4632,12 @@ const TRANSLATIONS = {
     tt_del_deleted_ok: 'Empty trip deleted.',
     tt_del_already: 'This trip was already archived.',
     tt_del_failed: "Couldn't remove the trip: {error}",
-    tt_del_n_bookings: '{n} booking(s)', tt_del_n_guests: '{n} guest(s)', tt_del_n_payments: '{n} payment(s)',
-    tt_del_n_waivers: '{n} signed waiver(s)', tt_del_n_records: '{n} signed checklist(s)', tt_del_n_crew: '{n} crew assigned',
+    tt_del_n_bookings: '{n} bookings', tt_del_n_bookings_one: '1 booking',
+    tt_del_n_guests: '{n} guests', tt_del_n_guests_one: '1 guest',
+    tt_del_n_payments: '{n} payments', tt_del_n_payments_one: '1 payment',
+    tt_del_n_waivers: '{n} signed waivers', tt_del_n_waivers_one: '1 signed waiver',
+    tt_del_n_records: '{n} signed checklists', tt_del_n_records_one: '1 signed checklist',
+    tt_del_n_crew: '{n} crew assigned', tt_del_n_crew_one: '1 crew member assigned',
     tt_contact: 'Contact', tt_lead_contact_name: 'Lead contact name', tt_phone: 'Phone', tt_email: 'Email', tt_booked_by: 'Booked by',
     tt_guests_label: 'Guests', tt_add_guest: '+ Add guest', tt_notes: 'Notes', tt_payment: 'Payment', tt_price_per_person: 'Price per person', tt_total: 'Total',
     tt_price_per_day: 'Price per day', tt_trip_price: 'Trip price',
@@ -4659,8 +4663,10 @@ const TRANSLATIONS = {
     tt_save_log_payments: 'Save the trip to log payments.', tt_no_tab: 'No tab — pay per trip', tt_checked_in: 'Checked In', tt_checkin_disabled_title: 'Add guests first',
     tt_confirm_checkin: 'Confirm check-in', tt_verify_against: 'Verify against: ', tt_already_checked_in: '(already checked in)',
     tt_confirm_checkin_btn: 'Confirm Check-In', tt_cancel: 'Cancel', tt_no_crew_yet: 'No crew assigned yet.', tt_select_crew_member: 'Select crew member',
-    tt_no_one_available: 'No one available for this date/time', tt_add: 'Add', tt_crew_hire_cost: 'Crew hire cost: ', tt_for_days: ' for ',
-    tt_day_singular: ' day', tt_day_plural: ' days', tt_added_to_total: ' — added to this booking\'s total.',
+    tt_no_one_available: 'No one available for this date/time', tt_add: 'Add',
+    tt_day_singular: ' day', tt_day_plural: ' days',
+    tt_crew_hire_line: 'Crew hire cost: {amount} for {n} days — added to this booking\'s total.',
+    tt_crew_hire_line_one: 'Crew hire cost: {amount} for 1 day — added to this booking\'s total.',
     tt_boat_capacity: 'Boat capacity: ', tt_not_incl_captain: ' (not including captain)', tt_crew_word: ' crew · ', tt_booked: ' booked · ',
     tt_seat_singular: ' seat remaining', tt_seat_plural: ' seats remaining', tt_too_many_guests: 'Too many guests: ', tt_only_seats_available: ' seats available after ',
     tt_boat_unavailable: 'Boat unavailable: overlaps with ', tt_privately_booked: ' (privately booked)', tt_this_trip_private: ' — this trip is private',
@@ -4851,13 +4857,15 @@ const TRANSLATIONS = {
     pos_hoy_neteado: "A voided sale stays listed and its amount is already subtracted from the total.",
     cl_custom_checklist_generic: 'Custom checklist',
     cl_motivos_titulo: 'Before signing',
-    cl_motivos_intro: '{n} item(s) were not done. Why?',
+    cl_motivos_intro: '{n} items were not done. Why?', cl_motivos_intro_one: '1 item was not done. Why?',
     cl_motivos_ayuda: 'Saying why is optional, but it stays in the signed record.',
     cl_motivos_ph: 'e.g. supplier never delivered them',
     cl_motivos_firmar: 'Sign anyway',
     cl_acta_porque: 'Why: {why}',
-    cl_reset_confirm: 'Start this checklist over? The {n} tick(s) already made will be cleared for everyone.',
-    cl_reset_confirm_firmada: 'Run this checklist again? It starts blank and gets its own signature. The {n} tick(s) will be cleared, and the record already signed is kept — signed records are never edited.',
+    cl_reset_confirm: 'Start this checklist over? The {n} ticks already made will be cleared for everyone.',
+    cl_reset_confirm_one: 'Start this checklist over? The 1 tick already made will be cleared for everyone.',
+    cl_reset_confirm_firmada: 'Run this checklist again? It starts blank and gets its own signature. The {n} ticks will be cleared, and the record already signed is kept — signed records are never edited.',
+    cl_reset_confirm_firmada_one: 'Run this checklist again? It starts blank and gets its own signature. The 1 tick will be cleared, and the record already signed is kept — signed records are never edited.',
     cl_todays_trips: "Today's Trips", cl_select_trip_hint: 'Select a trip to load gear totals from your bookings automatically.',
     cl_gear_required: 'Gear Required — from Booking', cl_instructor_dm: 'Instructor / DM — Gear Prep', cl_pending: 'Pending',
     cl_your_name: 'Your name', cl_sign_off_gear: 'Sign Off — Gear Ready', cl_reset: 'Reset',
@@ -5175,7 +5183,7 @@ const TRANSLATIONS = {
     rd_ready: 'Ready',
     rw_signed_pending: 'Signed — waiting for signal',
     rw_pending_one: '1 signature is waiting for a connection. It will send on its own — don\'t clear this tablet\'s browser data.',
-    rw_pending_many: '{n} signatures are waiting for a connection. They will send on their own — don\'t clear this tablet\'s browser data.',
+    rw_pending: '{n} signatures are waiting for a connection. They will send on their own — don\'t clear this tablet\'s browser data.',
     wv_prov_kiosk_offline: 'Signed on the shop tablet with no connection. Date and time as reported by that device; no IP recorded.',
     cover_btn: 'Cover sheet', cover_title: 'Filing cover sheet', cover_guest: 'Guest',
     cover_form: 'Form', cover_date: 'Signed on', cover_logged_by: 'Logged by',
@@ -5190,8 +5198,8 @@ const TRANSLATIONS = {
     mf_no_guests: 'No guests', mf_no_groups: 'No groups on this trip.',
     mf_popup_blocked: 'Please allow pop-ups to print the manifest.',
     rd_counter: '{n} of {total} ready',
-    rd_blocked_1: '1 blocked',
-    rd_blocked_n: '{n} blocked',
+    rd_blocked_one: '1 blocked',
+    rd_blocked: '{n} blocked',
     rd_legend: 'Readiness: ● ready · ○ paperwork pending · ■ physician sign-off needed',
     wv_all_ready_today: 'Everyone on today\'s trips is ready to dive.',
     wv_med_help: 'Record the outcome of the paper medical declaration. Seven Seas never stores the medical details themselves.',
@@ -5261,12 +5269,16 @@ const TRANSLATIONS = {
 
     // i18n audit pass -- generic feedback/warning/banner strings that were
     // previously hardcoded in English regardless of the selected language.
-    offline_banner_waiting: "You're offline — {n} change{s} waiting to sync. Checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.",
+    offline_banner_waiting: "You're offline — {n} changes waiting to sync. Checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.",
+    offline_banner_waiting_one: "You're offline — 1 change waiting to sync. Checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.",
     offline_banner_no_changes: "You're offline — checklists, tasks, waiver signing, and maintenance logs still work. Bookings, payments, and crew changes need a connection.",
-    offline_syncing_back: 'Back online — syncing {n} change{s}...', offline_syncing: 'Syncing {n} change{s}...', offline_all_synced: 'All changes synced ✓',
-    trial_banner_ending: 'Your free trial ends in {n} day{s}. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
+    offline_syncing_back: 'Back online — syncing {n} changes...', offline_syncing_back_one: 'Back online — syncing 1 change...',
+    offline_syncing: 'Syncing {n} changes...', offline_syncing_one: 'Syncing 1 change...', offline_all_synced: 'All changes synced ✓',
+    trial_banner_ending: 'Your free trial ends in {n} days. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
+    trial_banner_ending_one: 'Your free trial ends tomorrow. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
     trial_banner_expired: 'Your free trial has ended. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
-    trial_banner_ending_native: 'This shop\'s free trial ends in {n} day{s}. Your shop administrator can set up the subscription at sevenseasops.com.',
+    trial_banner_ending_native: 'This shop\'s free trial ends in {n} days. Your shop administrator can set up the subscription at sevenseasops.com.',
+    trial_banner_ending_native_one: 'This shop\'s free trial ends tomorrow. Your shop administrator can set up the subscription at sevenseasops.com.',
     trial_banner_expired_native: 'This shop\'s free trial has ended. Your shop administrator can reactivate it at sevenseasops.com.',
     // Un cambio agendado en Paddle. Deliberadamente sin precio y sin enlace a
     // una compra: se muestra también dentro de la app de iOS y Android, y lo
@@ -5308,7 +5320,7 @@ const TRANSLATIONS = {
     set_choose_plan: 'Choose a plan',
     set_change_plan: 'Change plan',
     set_billing_trial_desc: 'You\'re on the free trial. No card on file yet — pick a plan whenever you\'re ready and nothing changes until you do.',
-    set_billing_trial_left: '{days} days left — trial ends {date}',
+    set_billing_trial_left: '{n} days left — trial ends {date}',
     set_billing_trial_left_one: '1 day left — trial ends {date}',
     set_billing_trial_over: 'Your free trial has ended',
     set_billing_inactive_desc: 'Your subscription isn\'t active. Choose a plan to get your crew back in.',
@@ -5431,7 +5443,7 @@ const TRANSLATIONS = {
     stt_surf_lesson: 'Clase de Surf', stt_surf_trip: 'Salida de Surf', stt_fishing_trip: 'Salida de Pesca', stt_freediving_session: 'Sesión de Apnea',
 
     gt_no_tabs_yet: 'Aún no hay cuentas de huéspedes.', gt_status_settled: 'Liquidada', gt_status_overdue: 'Vencida', gt_status_open: 'Abierta',
-    gt_bookings_label: 'reserva(s)', gt_settle_by_label: 'Vence el', gt_owed_label: 'Adeudado:', gt_view_close_tab: 'Ver / Cerrar Cuenta',
+    gt_bookings_label: 'reservas', gt_bookings_label_one: 'reserva', gt_settle_by_label: 'Vence el', gt_owed_label: 'Adeudado:', gt_view_close_tab: 'Ver / Cerrar Cuenta',
     gt_open_tab_heading: 'Abrir una Cuenta de Huésped', gt_guest_full_name: 'Nombre completo del huésped', gt_settle_by_date_label: 'Fecha de vencimiento',
     gt_email_label: 'Correo electrónico', gt_phone_label: 'Teléfono', gt_country_label: 'País de residencia', gt_notes_label: 'Notas',
     gt_open_tab_btn: 'Abrir Cuenta', gt_fields_required: 'El nombre del huésped y la fecha de vencimiento son obligatorios.',
@@ -5496,8 +5508,12 @@ const TRANSLATIONS = {
     tt_del_deleted_ok: 'Salida vacía eliminada.',
     tt_del_already: 'Esta salida ya estaba archivada.',
     tt_del_failed: 'No se pudo quitar la salida: {error}',
-    tt_del_n_bookings: '{n} reserva(s)', tt_del_n_guests: '{n} huésped(es)', tt_del_n_payments: '{n} pago(s)',
-    tt_del_n_waivers: '{n} formulario(s) firmado(s)', tt_del_n_records: '{n} checklist(s) firmada(s)', tt_del_n_crew: '{n} tripulante(s) asignado(s)',
+    tt_del_n_bookings: '{n} reservas', tt_del_n_bookings_one: '1 reserva',
+    tt_del_n_guests: '{n} huéspedes', tt_del_n_guests_one: '1 huésped',
+    tt_del_n_payments: '{n} pagos', tt_del_n_payments_one: '1 pago',
+    tt_del_n_waivers: '{n} formularios firmados', tt_del_n_waivers_one: '1 formulario firmado',
+    tt_del_n_records: '{n} checklists firmadas', tt_del_n_records_one: '1 checklist firmada',
+    tt_del_n_crew: '{n} tripulantes asignados', tt_del_n_crew_one: '1 tripulante asignado',
     tt_contact: 'Contacto', tt_lead_contact_name: 'Nombre del contacto principal', tt_phone: 'Teléfono', tt_email: 'Correo electrónico', tt_booked_by: 'Reservado por',
     tt_guests_label: 'Huéspedes', tt_add_guest: '+ Agregar huésped', tt_notes: 'Notas', tt_payment: 'Pago', tt_price_per_person: 'Precio por persona', tt_total: 'Total',
     tt_price_per_day: 'Precio por día', tt_trip_price: 'Precio del viaje',
@@ -5523,8 +5539,10 @@ const TRANSLATIONS = {
     tt_save_log_payments: 'Guarda la salida para registrar pagos.', tt_no_tab: 'Sin cuenta — pagar por salida', tt_checked_in: 'Registrado', tt_checkin_disabled_title: 'Agrega huéspedes primero',
     tt_confirm_checkin: 'Confirmar llegada', tt_verify_against: 'Verificar contra: ', tt_already_checked_in: '(ya registrado)',
     tt_confirm_checkin_btn: 'Confirmar Llegada', tt_cancel: 'Cancelar', tt_no_crew_yet: 'Aún no hay tripulación asignada.', tt_select_crew_member: 'Seleccionar miembro de la tripulación',
-    tt_no_one_available: 'Nadie disponible para esta fecha/hora', tt_add: 'Agregar', tt_crew_hire_cost: 'Costo de tripulación contratada: ', tt_for_days: ' por ',
-    tt_day_singular: ' día', tt_day_plural: ' días', tt_added_to_total: ' — agregado al total de esta reserva.',
+    tt_no_one_available: 'Nadie disponible para esta fecha/hora', tt_add: 'Agregar',
+    tt_day_singular: ' día', tt_day_plural: ' días',
+    tt_crew_hire_line: 'Costo de tripulación contratada: {amount} por {n} días — agregado al total de esta reserva.',
+    tt_crew_hire_line_one: 'Costo de tripulación contratada: {amount} por 1 día — agregado al total de esta reserva.',
     tt_boat_capacity: 'Capacidad de la embarcación: ', tt_not_incl_captain: ' (sin incluir al capitán)', tt_crew_word: ' tripulación · ', tt_booked: ' reservados · ',
     tt_seat_singular: ' asiento disponible', tt_seat_plural: ' asientos disponibles', tt_too_many_guests: 'Demasiados huéspedes: ', tt_only_seats_available: ' asientos disponibles después de ',
     tt_boat_unavailable: 'Embarcación no disponible: se superpone con ', tt_privately_booked: ' (reserva privada)', tt_this_trip_private: ' — esta salida es privada',
@@ -5693,13 +5711,15 @@ const TRANSLATIONS = {
     pos_hoy_neteado: "Una venta anulada queda en la lista y su monto ya está restado del total.",
     cl_custom_checklist_generic: 'Checklist propia',
     cl_motivos_titulo: 'Antes de firmar',
-    cl_motivos_intro: 'Quedaron {n} ítem(s) sin hacer. ¿Por qué?',
+    cl_motivos_intro: 'Quedaron {n} ítems sin hacer. ¿Por qué?', cl_motivos_intro_one: 'Quedó 1 ítem sin hacer. ¿Por qué?',
     cl_motivos_ayuda: 'Explicar por qué es opcional, pero queda en el acta firmada.',
     cl_motivos_ph: 'ej. el proveedor no las trajo',
     cl_motivos_firmar: 'Firmar igual',
     cl_acta_porque: 'Por qué: {why}',
-    cl_reset_confirm: '¿Arrancar esta checklist de nuevo? Se borran los {n} tilde(s) que ya hizo la tripulación.',
-    cl_reset_confirm_firmada: '¿Hacer esta checklist otra vez? Arranca en blanco y lleva su propia firma. Se borran los {n} tilde(s), y el acta que ya se firmó queda guardada — las actas no se editan nunca.',
+    cl_reset_confirm: '¿Arrancar esta checklist de nuevo? Se borran los {n} tildes que ya hizo la tripulación.',
+    cl_reset_confirm_one: '¿Arrancar esta checklist de nuevo? Se borra el tilde que ya hizo la tripulación.',
+    cl_reset_confirm_firmada: '¿Hacer esta checklist otra vez? Arranca en blanco y lleva su propia firma. Se borran los {n} tildes, y el acta que ya se firmó queda guardada — las actas no se editan nunca.',
+    cl_reset_confirm_firmada_one: '¿Hacer esta checklist otra vez? Arranca en blanco y lleva su propia firma. Se borra el tilde que había, y el acta que ya se firmó queda guardada — las actas no se editan nunca.',
     cl_todays_trips: 'Salidas de Hoy', cl_select_trip_hint: 'Selecciona una salida para cargar los totales de equipo desde tus reservas automáticamente.',
     cl_gear_required: 'Equipo Requerido — desde la Reserva', cl_instructor_dm: 'Instructor / DM — Preparación de Equipo', cl_pending: 'Pendiente',
     cl_your_name: 'Tu nombre', cl_sign_off_gear: 'Confirmar — Equipo Listo', cl_reset: 'Reiniciar',
@@ -6022,7 +6042,7 @@ const TRANSLATIONS = {
     rd_ready: 'Listo',
     rw_signed_pending: 'Firmado — esperando señal',
     rw_pending_one: 'Hay 1 firma esperando conexión. Se va a enviar sola — no borres los datos del navegador de esta tablet.',
-    rw_pending_many: 'Hay {n} firmas esperando conexión. Se van a enviar solas — no borres los datos del navegador de esta tablet.',
+    rw_pending: 'Hay {n} firmas esperando conexión. Se van a enviar solas — no borres los datos del navegador de esta tablet.',
     wv_prov_kiosk_offline: 'Firmado en la tablet del centro, sin conexión. Fecha y hora informadas por ese dispositivo; sin IP registrada.',
     cover_btn: 'Carátula', cover_title: 'Carátula de archivo', cover_guest: 'Huésped',
     cover_form: 'Formulario', cover_date: 'Firmado el', cover_logged_by: 'Registrado por',
@@ -6037,8 +6057,8 @@ const TRANSLATIONS = {
     mf_no_guests: 'Sin huéspedes', mf_no_groups: 'Este viaje no tiene grupos.',
     mf_popup_blocked: 'Permití las ventanas emergentes para imprimir el manifiesto.',
     rd_counter: '{n} de {total} listos',
-    rd_blocked_1: '1 bloqueado',
-    rd_blocked_n: '{n} bloqueados',
+    rd_blocked_one: '1 bloqueado',
+    rd_blocked: '{n} bloqueados',
     rd_legend: 'Habilitación: ● listo · ○ falta papeleo · ■ falta firma médica',
     wv_all_ready_today: 'Todos los huéspedes de hoy están listos para bucear.',
     wv_med_help: 'Registrá el resultado de la declaración médica en papel. Seven Seas nunca guarda el detalle médico.',
@@ -6108,12 +6128,16 @@ const TRANSLATIONS = {
 
     // i18n audit pass -- generic feedback/warning/banner strings that were
     // previously hardcoded in English regardless of the selected language.
-    offline_banner_waiting: 'Estás sin conexión — {n} cambio{s} esperando para sincronizar. Checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
+    offline_banner_waiting: 'Sin conexión — {n} cambios esperando para sincronizar. Checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
+    offline_banner_waiting_one: 'Sin conexión — 1 cambio esperando para sincronizar. Checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
     offline_banner_no_changes: 'Estás sin conexión — checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
-    offline_syncing_back: 'De vuelta en línea — sincronizando {n} cambio{s}...', offline_syncing: 'Sincronizando {n} cambio{s}...', offline_all_synced: 'Todos los cambios sincronizados ✓',
-    trial_banner_ending: 'Tu prueba gratis termina en {n} día{s}. <a href="#" onclick="openChoosePlanModal();return false;">Elegí un plan</a> para seguir usando Seven Seas.',
+    offline_syncing_back: 'De vuelta en línea — sincronizando {n} cambios...', offline_syncing_back_one: 'De vuelta en línea — sincronizando 1 cambio...',
+    offline_syncing: 'Sincronizando {n} cambios...', offline_syncing_one: 'Sincronizando 1 cambio...', offline_all_synced: 'Todos los cambios sincronizados ✓',
+    trial_banner_ending: 'Tu prueba gratis termina en {n} días. <a href="#" onclick="openChoosePlanModal();return false;">Elegir un plan</a> para seguir usando Seven Seas.',
+    trial_banner_ending_one: 'Tu prueba gratis termina mañana. <a href="#" onclick="openChoosePlanModal();return false;">Elegir un plan</a> para seguir usando Seven Seas.',
     trial_banner_expired: 'Tu prueba gratis terminó. <a href="#" onclick="openChoosePlanModal();return false;">Elegí un plan</a> para seguir usando Seven Seas.',
-    trial_banner_ending_native: 'La prueba gratis de este centro termina en {n} día{s}. El administrador de tu centro puede contratar la suscripción en sevenseasops.com.',
+    trial_banner_ending_native: 'La prueba gratis de este centro termina en {n} días. El administrador de tu centro puede contratar la suscripción en sevenseasops.com.',
+    trial_banner_ending_native_one: 'La prueba gratis de este centro termina mañana. El administrador de tu centro puede contratar la suscripción en sevenseasops.com.',
     trial_banner_expired_native: 'La prueba gratis de este centro terminó. El administrador de tu centro puede reactivarla en sevenseasops.com.',
     sub_sched_cancel: 'Tu suscripción termina el {date}. Mantenés el acceso completo hasta esa fecha.',
     sub_sched_pause: 'Tu suscripción se pausa el {date}. Mantenés el acceso completo hasta esa fecha.',
@@ -6152,7 +6176,7 @@ const TRANSLATIONS = {
     set_choose_plan: 'Elegir un plan',
     set_change_plan: 'Cambiar de plan',
     set_billing_trial_desc: 'Estás en la prueba gratis. Todavía no hay tarjeta cargada — elegí un plan cuando quieras y hasta entonces no cambia nada.',
-    set_billing_trial_left: 'Quedan {days} días — la prueba termina el {date}',
+    set_billing_trial_left: 'Quedan {n} días — la prueba termina el {date}',
     set_billing_trial_left_one: 'Queda 1 día — la prueba termina el {date}',
     set_billing_trial_over: 'Tu prueba gratis terminó',
     set_billing_inactive_desc: 'Tu suscripción no está activa. Elegí un plan para que tu equipo vuelva a entrar.',
@@ -6803,8 +6827,7 @@ function updateTrialBanner() {
     textEl.innerHTML = t('trial_banner_expired' + sufijo);
   } else {
     banner.className = 'ending';
-    textEl.innerHTML = t('trial_banner_ending' + sufijo)
-      .replace('{n}', daysRemaining).replace('{s}', daysRemaining > 1 ? 's' : '');
+    textEl.innerHTML = textoConCantidad('trial_banner_ending' + sufijo, daysRemaining);
   }
 }
 
@@ -7219,8 +7242,9 @@ function updateBillingCard(org) {
       // Singular on the final day -- "1 days left" is the kind of detail that
       // makes software feel unfinished, and it's on the screen that asks for
       // money.
-      trialLine.textContent = t(daysLeft === 1 ? 'set_billing_trial_left_one' : 'set_billing_trial_left')
-        .replace('{days}', daysLeft)
+      // El marcador es {n} y no {days} porque la cantidad la pone
+      // textoConCantidad; lo que queda después es sólo la fecha.
+      trialLine.textContent = textoConCantidad('set_billing_trial_left', daysLeft)
         .replace('{date}', endsAt.toLocaleDateString(localeDeLaApp(),
           { day: 'numeric', month: 'short', year: 'numeric' }));
     }
@@ -7422,12 +7446,12 @@ function updateOfflineBanner() {
     banner.className = 'offline';
     banner.style.display = 'flex';
     banner.querySelector('.offline-banner-text').textContent = count > 0
-      ? t('offline_banner_waiting').replace('{n}', count).replace('{s}', count > 1 ? 's' : '')
+      ? textoConCantidad('offline_banner_waiting', count)
       : t('offline_banner_no_changes');
   } else if (count > 0) {
     banner.className = 'syncing';
     banner.style.display = 'flex';
-    banner.querySelector('.offline-banner-text').textContent = t('offline_syncing_back').replace('{n}', count).replace('{s}', count > 1 ? 's' : '');
+    banner.querySelector('.offline-banner-text').textContent = textoConCantidad('offline_syncing_back', count);
   } else {
     banner.style.display = 'none';
   }
@@ -7507,7 +7531,7 @@ async function flushOfflineQueue() {
   if (banner) {
     banner.className = 'syncing';
     banner.style.display = 'flex';
-    banner.querySelector('.offline-banner-text').textContent = t('offline_syncing').replace('{n}', queue.length).replace('{s}', queue.length > 1 ? 's' : '');
+    banner.querySelector('.offline-banner-text').textContent = textoConCantidad('offline_syncing', queue.length);
   }
   let i = 0;
   for (; i < queue.length; i++) {
@@ -7802,7 +7826,7 @@ function rwUpdatePendingBanner() {
   if (!el) return;
   const n = rwGetQueue().length;
   el.style.display = n ? 'block' : 'none';
-  if (n) el.textContent = t(n === 1 ? 'rw_pending_one' : 'rw_pending_many').replace('{n}', n);
+  if (n) el.textContent = textoConCantidad('rw_pending', n);
 }
 
 // Vacía la cola. Cada envío es idempotente del lado del servidor: si la firma
@@ -9278,7 +9302,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-26b');
+  console.info('[Seven Seas] build 2026-10-26c');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -10568,15 +10592,79 @@ function tripsArchivadas(cols) {
 // locales, justo al lado de dos llamadas a `formatDate`, y la línea siguiente
 // **comparaba los dos**: `formatDate(calDate) < todayLocalStr`. Una fecha UTC
 // contra una fecha local, en la misma expresión. Se parchó el sitio y no la
-// función, que es exactamente cómo se propaga: quedaron 34 copias de
-// `toISOString().split('T')[0]` para que la próxima se copie de la mala.
+// función, que es exactamente cómo se propaga: quedaron **34 líneas** con
+// `toISOString().split('T')[0]` fuera de la función (37 sitios contando los dos
+// del mes y la función misma) para que la próxima se copie de la mala.
 //
 // Las copias anclaban a veces en `T12:00:00` (mediodía local no cruza de día
 // en ningún huso) y por eso varias estaban bien por accidente. Un truco que
 // hay que recordar en cada sitio no es una defensa.
+// Sin argumento es hoy, y eso es parte del contrato. Pero una fecha INVÁLIDA
+// pasada a propósito no se convierte en hoy ni en «NaN-NaN-NaN»: se corta.
+// `formatDate` lanzaba un RangeError acá y eso era mejor que inventar un valor
+// con pinta de fecha — es alcanzable desde los botones de día anterior/siguiente
+// si la persona vacía el campo. Un dato inventado es peor que ninguno porque
+// parece un dato.
 function fechaLocal(d) {
-  const n = d || new Date();
-  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+  if (d === undefined || d === null) d = new Date();
+  // Se pregunta por el COMPORTAMIENTO y no por `instanceof Date`, que falla
+  // entre realms: un `Date` creado en otro contexto —un iframe, el entorno de
+  // los tests— no es instancia del `Date` de acá y la comprobación lo
+  // rechazaría siendo una fecha perfectamente válida. Lo encontró la suite.
+  if (typeof d.getTime !== 'function' || isNaN(d.getTime())) {
+    throw new RangeError('fechaLocal() recibió algo que no es una fecha válida: ' + d);
+  }
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// UN DÍA DEL CENTRO, EXPRESADO COMO VENTANA DE INSTANTES
+//
+// Esto es la otra mitad de `fechaLocal`, y la que faltaba. Lo encontró una
+// revisión independiente del commit 1822e0f y es un defecto que yo mismo
+// introduje al arreglar el anterior.
+//
+// El problema: una columna `timestamptz` comparada contra un string SIN huso.
+//
+//     .gte('signed_at', '2026-10-26T00:00:00')
+//
+// PostgREST manda ese texto crudo y Postgres lo interpreta con el `TimeZone` de
+// la sesión, que en Supabase es **UTC** (medido el 26/10: `show timezone` → UTC).
+// Así que el borde de la ventana es la medianoche de Greenwich, no la del centro.
+// En Mar del Plata (UTC−3) «hoy» iba de **ayer 21:00 a hoy 20:59** locales; en
+// Fiji (UTC+12), de **hoy al mediodía a mañana al mediodía**.
+//
+// Y lo que lo hace una regresión y no un bug viejo: **antes las dos puntas
+// estaban mal y se cancelaban.** El día por defecto también salía del UTC, así
+// que la fecha y el borde de la ventana vivían en el mismo huso. Arreglé una
+// punta y no la otra — exactamente el error que el commit anterior decía venir a
+// corregir (`formatDate(calDate) < todayLocalStr`), reintroducido en otros
+// cuatro lugares.
+//
+// `new Date(a, m-1, d)` es la medianoche LOCAL, y `.toISOString()` la expresa
+// como el instante que de verdad es. El día siguiente se pide con `d+1`, que en
+// JavaScript rueda de mes y de año solo.
+//
+// La ventana es `[desde, hasta)` — cerrada abajo y ABIERTA arriba. Un
+// `<= 'T23:59:59'` pierde lo que pase en el último segundo, y con `timestamptz`
+// esa fracción existe.
+function ventanaDelDia(fecha, dias) {
+  const [a, m, d] = String(fecha).split('-').map(Number);
+  if (!a || !m || !d) throw new RangeError('ventanaDelDia() espera YYYY-MM-DD, recibió: ' + fecha);
+  return {
+    desde: new Date(a, m - 1, d).toISOString(),
+    hasta: new Date(a, m - 1, d + (dias || 1)).toISOString()
+  };
+}
+
+// El día del centro al que pertenece un instante ya guardado. Es el camino de
+// vuelta: `fila.signed_at.split('T')[0]` da el día UTC, así que una firma de las
+// 22:00 en Mar del Plata se archivaba bajo el día siguiente y no aparecía
+// buscando «hoy».
+function diaLocalDeInstante(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : fechaLocal(d);
 }
 function isSameDay(a, b) {
   return a.toDateString() === b.toDateString();
@@ -11232,7 +11320,7 @@ function tripHistoriaResumen(d) {
     [d.tripulacion,   'tt_del_n_crew']
   ];
   return partes.filter(([n]) => n > 0)
-               .map(([n, clave]) => t(clave).replace('{n}', n))
+               .map(([n, clave]) => textoConCantidad(clave, n))
                .join(', ');
 }
 
@@ -12160,7 +12248,7 @@ async function loadGuestTabs() {
         <span class="gear-item-name">${escapeHtml(tab.guest_name)}</span>
         <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${linkedGroups?.length || 0} ${t('gt_bookings_label')} · ${t('gt_settle_by_label')} ${tab.settle_by_date}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${linkedGroups?.length || 0} ${textoConCantidad('gt_bookings_label', linkedGroups?.length || 0)} · ${t('gt_settle_by_label')} ${tab.settle_by_date}</div>
       <div style="font-size:0.85rem;font-weight:600;margin-top:6px;">${t('gt_owed_label')} $${owed.toFixed(2)}</div>
       ${tab.status === 'open' ? `<button class="gear-action-btn" style="margin-top:8px;" onclick="openTabDetail('${tab.id}')">${t('gt_view_close_tab')}</button>` : ''}
     </div>`;
@@ -13121,7 +13209,7 @@ function readinessCounterText(states) {
   const ready = states.filter(x => x === 'ready').length;
   const blocked = states.filter(x => x === 'blocked').length;
   let txt = t('rd_counter').replace('{n}', ready).replace('{total}', total);
-  if (blocked) txt += ' · ' + t(blocked === 1 ? 'rd_blocked_1' : 'rd_blocked_n').replace('{n}', blocked);
+  if (blocked) txt += ' · ' + textoConCantidad('rd_blocked', blocked);
   return txt;
 }
 
@@ -13800,10 +13888,15 @@ async function renderWaiverLog() {
     rangeEnd = date;
   }
 
+  // `signed_at` es `timestamptz` (medido el 26/10), así que la ventana se pide
+  // como instantes y no como texto sin huso. Ver `ventanaDelDia`.
+  // `tripDayCount` ya cuenta días inclusive entre dos fechas y se usa para las
+  // salidas de varios días: es la misma pregunta, así que no se escribe de nuevo.
+  const v = ventanaDelDia(rangeStart, tripDayCount(rangeStart, rangeEnd));
   let query = sb.from('waivers').select('*, participants(full_name)')
     .eq('org_id', currentOrgId)
-    .gte('signed_at', rangeStart + 'T00:00:00')
-    .lte('signed_at', rangeEnd + 'T23:59:59')
+    .gte('signed_at', v.desde)
+    .lt('signed_at', v.hasta)
     .order('signed_at', { ascending: false });
   if (currentLocationId) query = query.eq('location_id', currentLocationId);
   const { data: log } = await query;
@@ -13818,7 +13911,10 @@ async function renderWaiverLog() {
   } else {
     const byDate = {};
     log.forEach(w => {
-      const d = w.signed_at.split('T')[0];
+      // El día del CENTRO, no el UTC: la fila de al lado muestra la fecha con
+      // `toLocaleDateString` (local), así que con el día UTC la misma firma
+      // aparecía bajo dos días distintos en la misma pantalla.
+      const d = diaLocalDeInstante(w.signed_at);
       (byDate[d] = byDate[d] || []).push(w);
     });
     const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
@@ -14343,10 +14439,15 @@ async function exportWaiversForDay(date) {
   feedback.className = 'save-feedback visible';
 
 
+  // El día del centro, como ventana de instantes: exportar «lo de hoy» a las 22
+  // en Mar del Plata dejaba afuera todo lo firmado después de las 21. Para un
+  // export de registros legales el silencio es el peor modo de falla — no da
+  // error, da un documento incompleto.
+  const vExp = ventanaDelDia(date);
   let query = sb.from('waivers').select('*, participants(full_name)')
     .eq('org_id', currentOrgId)
-    .gte('signed_at', date + 'T00:00:00')
-    .lte('signed_at', date + 'T23:59:59')
+    .gte('signed_at', vExp.desde)
+    .lt('signed_at', vExp.hasta)
     .order('signed_at');
   if (currentLocationId) query = query.eq('location_id', currentLocationId);
   const { data, error } = await query;
@@ -14444,11 +14545,12 @@ async function exportChecklistsForDay(date) {
   feedback.className = 'save-feedback visible';
 
 
+  const vActas = ventanaDelDia(date);
   const { data, error } = await sb.from('checklist_completions')
     .select(COLUMNAS_DE_ACTA_LISTADO)
     .eq('org_id', currentOrgId)
-    .gte('signed_at', date + 'T00:00:00')
-    .lte('signed_at', date + 'T23:59:59')
+    .gte('signed_at', vActas.desde)
+    .lt('signed_at', vActas.hasta)
     .order('signed_at');
 
   if (error) {
@@ -14796,7 +14898,7 @@ async function renderTripCrewSection() {
       </select>
       <button class="btn-cancel" onclick="addSelectedTripCrew()">${t('tt_add')}</button>
     </div>
-    ${crewHireTotal > 0 ? `<p style="font-size:0.8rem;color:var(--blue);font-weight:600;margin-top:8px;">${t('tt_crew_hire_cost')}$${crewHireTotal.toFixed(2)}${t('tt_for_days')}${days}${days>1?t('tt_day_plural'):t('tt_day_singular')}${t('tt_added_to_total')}</p>` : ''}
+    ${crewHireTotal > 0 ? `<p style="font-size:0.8rem;color:var(--blue);font-weight:600;margin-top:8px;">${textoConCantidad('tt_crew_hire_line', days).replace('{amount}', '$' + crewHireTotal.toFixed(2))}</p>` : ''}
   `;
 }
 function addSelectedTripCrew() {
@@ -14901,7 +15003,7 @@ async function groupPaymentHTML(g, participants) {
   const breakdownText = noPriceSet
     ? t('gp_no_price_breakdown').replace('{count}', guests).replace('{unit}', guestUnit)
     : isFlatCharterBooking
-      ? `$${perPerson.toFixed(2)}/${qty > 1 ? t('tt_day_plural') : t('tt_day_singular')} × ${qty} = $${(perPerson*qty).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`
+      ? `$${perPerson.toFixed(2)}/${qty === 1 ? t('tt_day_singular') : t('tt_day_plural')} × ${qty} = $${(perPerson*qty).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`
       : `$${perPerson.toFixed(2)}/${t('gp_per_person')} × ${guests} ${guestUnit} = $${(perPerson*guests).toFixed(2)}${rentalTotal>0 ? ' + $'+rentalTotal.toFixed(2)+' '+t('gp_rental_gear') : ''}${crewHireTotal>0 ? ' + $'+crewHireTotal.toFixed(2)+' '+t('gp_crew_hire') : ''} = $${total.toFixed(2)}`;
   return `
     <div style="font-size:0.83rem;font-weight:600;color:${statusColor};margin-bottom:8px;">${statusLabel}</div>
@@ -17594,8 +17696,8 @@ async function reiniciarPasada({ scopeKey, items, checks, hayActa, redibujar }) 
   // el texto dice lo que de verdad va a pasar con el acta, que es la pregunta
   // que alguien se hace antes de apretar.
   const aviso = hayActa
-    ? t('cl_reset_confirm_firmada').replace('{n}', tildados)
-    : t('cl_reset_confirm').replace('{n}', tildados);
+    ? textoConCantidad('cl_reset_confirm_firmada', tildados)
+    : textoConCantidad('cl_reset_confirm', tildados);
   if (tildados > 0 || hayActa) {
     if (!(await showConfirmModal(aviso))) return false;
   }
@@ -19018,7 +19120,14 @@ async function loadLoggedChecklists() {
   // Se lee del snapshot del acta, no de `trips`: desde que el acta no tiene FK
   // a la salida, la API ya no puede incrustarla. Las actas anteriores al
   // 07/10 no tienen trip_date, y para ésas sigue valiendo la fecha de firma.
-  const dayOf = (row) => row.trip_date || row.signed_at.split('T')[0];
+  //
+  // Y la fecha de firma se resuelve al día del CENTRO. Con el día UTC, un acta
+  // firmada a las 22:00 en Mar del Plata se archivaba bajo el día siguiente: no
+  // aparecía buscando «hoy» y el encabezado la rotulaba con la fecha
+  // equivocada. El campo de búsqueda es un `input[type=date]`, o sea la noción
+  // local de la persona, así que las dos puntas tienen que hablar el mismo
+  // idioma. `trip_date` ya es una columna `date` y no necesita conversión.
+  const dayOf = (row) => row.trip_date || diaLocalDeInstante(row.signed_at);
 
   if (searchDate) rows = rows.filter(r => dayOf(r) === searchDate);
 
@@ -20874,11 +20983,13 @@ async function loadGearInventory() {
 // a la de antes. Mismo principio que `CADENCIAS_NUEVAS`: si un centro ya
 // hubiera registrado ventas, apagarlo no las borra.
 //
-// **Lo que falta antes de prenderlo, y es una sola cosa:** una venta
-// confirmada todavía no se puede anular. Descuenta stock y no hay vuelta
-// atrás. Eso es la etapa 2.
+// (Acá decía que lo único que faltaba antes de prenderlo era poder anular una
+// venta. Eso se construyó el 26/10 y está en el punto 3 de abajo. El comentario
+// quedó contradiciéndose con su propio archivo tres líneas más abajo, y lo
+// encontró una revisión independiente del diff: *un comentario a medio corregir
+// miente con más confianza que uno viejo*, y esta es la segunda vez en dos días.)
 //
-// Dos decisiones que son consecuencias medidas, no preferencias:
+// Tres decisiones que son consecuencias medidas, no preferencias:
 //
 //  1 · **El catálogo NO es una tabla nueva.** `gear_items` ya lo es (178 filas
 //      medidas el 16/10). Una marca «a la venta» más precio encima, siguiendo
@@ -21103,17 +21214,6 @@ async function confirmarVenta() {
 // Un dato que no se puede mirar es, para quien usa la app, un dato que no
 // existe.
 
-// El día del centro, no el de Greenwich. `new Date().toISOString()` da la fecha
-// UTC: en Fiji (UTC+12) a las 9 de la mañana eso devuelve AYER, y la lista del
-// mostrador mostraría las ventas del día anterior.
-//
-// OJO, hallazgo aparte y sin tocar: el cierre de caja (`loadCashUpHistory`) usa
-// `toISOString().split('T')[0]`, así que tiene ese bug hoy — un centro en Fiji o
-// Tailandia cierra la caja contra el día equivocado. `cash_ups` tiene **0
-// filas** medidas, así que nadie lo chocó todavía; se arregla en su propio
-// cambio porque toca una pantalla que no está detrás de ningún interruptor.
-
-
 // Quién puede anular. Un marinero puede registrar una venta en el mostrador;
 // deshacerla mueve plata y stock, así que es de dueño o encargado. Mismo
 // criterio y la misma forma que `puedeQuitarSalida()`.
@@ -21156,7 +21256,11 @@ async function cargarVentasDelDia() {
   if (!el) return;
   if (!posEstaPrendido()) { el.innerHTML = ''; return; }
 
-  const hoy = fechaLocal();
+  // `sold_at` es `timestamptz`, así que el día del centro se pide como ventana
+  // de instantes. La primera versión mandaba `hoy + 'T00:00:00'`, que Postgres
+  // lee en UTC: en Fiji, un centro que abría el mostrador a las 9 de la mañana
+  // **no veía ninguna de sus ventas de hoy**.
+  const v = ventanaDelDia(fechaLocal());
   const { data, error } = await sb
     .from('sales')
     // `sale_lines` se incrusta por la FK `sale_lines.sale_id -> sales.id`, que
@@ -21165,7 +21269,13 @@ async function cargarVentasDelDia() {
     // vacía sin decir por qué. Ver «La clave que sostenía un join».
     .select('id, sold_at, sold_by, voids_sale_id, void_reason, note, sale_lines(qty, unit_price, item_name, size_label)')
     .eq('org_id', currentOrgId)
-    .gte('sold_at', hoy + 'T00:00:00')
+    // Por SEDE, no sólo por org. Toda la pantalla de inventario es por sede —el
+    // stock se consulta así y `registrar_venta` guarda `location_id`—, así que
+    // sin esto el mostrador de una sede listaba las ventas de la otra y el total
+    // sumaba las dos.
+    .eq('location_id', currentLocationId)
+    .gte('sold_at', v.desde)
+    .lt('sold_at', v.hasta)
     .order('sold_at', { ascending: false });
 
   // Si no se puede medir, no se afirma nada. Un «no se vendió nada hoy» cuando
@@ -22131,7 +22241,7 @@ async function renderTripTypesList() {
     <div class="trip-type-row">
       <div>
         <div class="trip-type-name">${escapeHtml(trTypeName(tt.name))}</div>
-        <div class="trip-type-meta">${escapeHtml(CATEGORY_LABELS[tt.category] || tt.category)}${tt.needs_tank_count ? ' · ' + tt.num_tanks + (tt.num_tanks > 1 ? t('set_tanks_plural') : t('set_tank_singular')) : ''}${tt.can_be_private ? t('set_can_be_private') : ''}${tt.is_multi_day ? t('set_multi_day_suffix') : ''}</div>
+        <div class="trip-type-meta">${escapeHtml(CATEGORY_LABELS[tt.category] || tt.category)}${tt.needs_tank_count ? ' · ' + tt.num_tanks + (tt.num_tanks === 1 ? t('set_tank_singular') : t('set_tanks_plural')) : ''}${tt.can_be_private ? t('set_can_be_private') : ''}${tt.is_multi_day ? t('set_multi_day_suffix') : ''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <input class="trip-type-price-input" type="number" min="0" step="0.01" value="${tt.default_price ? Number(tt.default_price).toFixed(2) : ''}" placeholder="0.00"
@@ -23140,7 +23250,7 @@ function pedirMotivos(faltantes) {
   return new Promise(resolve => {
     _motivosResolve = resolve;
     document.getElementById('cl-motivos-intro').textContent =
-      t('cl_motivos_intro').replace('{n}', faltantes.length);
+      textoConCantidad('cl_motivos_intro', faltantes.length);
     document.getElementById('cl-motivos-lista').innerHTML = faltantes.map((it, i) => `
       <div style="margin-bottom:12px;">
         <label class="sf-label" style="display:block;margin-bottom:4px;">${escapeHtml(it.text)}</label>

@@ -101,5 +101,75 @@ chk('ningún prep_missing en español vosea',
     !/\b(podés|tenés|creá|seguí|armá|editá|elegí)\b/.test(bloqueEsPrep),
     bloqueEsPrep.match(/\b(podés|tenés|creá|seguí|armá|editá|elegí)\b/)?.[0] || '');
 
+// ─── 6 · LAS CUATRO CONVENCIONES SON UNA (hecho el 26/10) ─────────────────
+//
+// Este archivo decía que la unificación «es un cambio aparte». Es éste.
+// Medidas antes de empezar, las cinco formas que había de resolver lo mismo:
+//
+//   A · textoConCantidad(clave, n) + `_one`   ← la que queda
+//   B · t(n === 1 ? 'x_one' : 'x').replace('{n}', n)   escrita a mano
+//   C · .replace('{s}', n > 1 ? 's' : '')     sólo sirve en inglés
+//   D · «(s)» / «(es)» dentro del texto
+//   E · cinco claves pegadas para armar UNA oración
+//
+// C y E eran los peores y por razones distintas. C es inglés: en castellano el
+// plural no siempre es +s, y el `> 1` da **singular con cero** («0 cambio»). E
+// pegaba `tt_crew_hire_cost` + `$monto` + `tt_for_days` + `días` +
+// `tt_day_plural` + `tt_added_to_total`, con los espacios metidos dentro de las
+// traducciones: el orden de las palabras queda clavado al del inglés y ningún
+// traductor puede moverlo.
+
+chk('ya no queda ningún {s} en una traducción',
+    !/: *["'][^"']*\{s\}/.test(html),
+    'el truco del {s} sólo funciona en inglés');
+chk('ya no queda «(s)» ni «(es)» dentro de un texto',
+    !/: *["'][^"']*\((s|es)\)/.test(html));
+chk('nadie arma el plural con un ternario sobre una clave',
+    !/t\([a-zA-Z_.$\[\]]+ *(===|>) *1 *\? *'/.test(html),
+    'eso es textoConCantidad escrito a mano');
+chk('el > 1 ya no decide un plural (con cero daría singular)',
+    !/> *1 *\? *t\('[a-z_]*plural/.test(html));
+
+// La oración del costo de tripulación es UNA clave con marcadores.
+chk('el costo de tripulación es una oración, no cinco fragmentos',
+    /tt_crew_hire_line: '[^']*\{amount\}[^']*\{n\}/.test(en) &&
+    /tt_crew_hire_line: '[^']*\{amount\}[^']*\{n\}/.test(es));
+chk('y las cinco claves que la pegaban ya no existen',
+    !/tt_crew_hire_cost|tt_for_days|tt_added_to_total/.test(html));
+
+// Los pares nuevos, en los dos diccionarios. Es la lista de lo que este cambio
+// convirtió: si mañana alguien agrega un contador nuevo sin `_one`, no lo
+// agarra esto sino los guardianes de arriba, que afirman la regla.
+const paresNuevos = ['offline_banner_waiting', 'offline_syncing_back', 'offline_syncing',
+                     'trial_banner_ending', 'trial_banner_ending_native',
+                     'tt_del_n_bookings', 'tt_del_n_guests', 'tt_del_n_payments',
+                     'tt_del_n_waivers', 'tt_del_n_records', 'tt_del_n_crew',
+                     'tt_crew_hire_line', 'rw_pending', 'rd_blocked',
+                     'cl_motivos_intro', 'cl_reset_confirm', 'cl_reset_confirm_firmada',
+                     'gt_bookings_label'];
+let faltantes = [];
+for (const k of paresNuevos) {
+  if (!en.includes(k + '_one:') || !es.includes(k + '_one:')) faltantes.push(k);
+}
+chk('los 18 contadores tienen su singular en los dos diccionarios',
+    faltantes.length === 0, faltantes.join(', '));
+
+// Y el singular no lleva «{n}»: dice «1 reserva», no «{n} reserva».
+let conN = [];
+for (const k of paresNuevos) {
+  for (const [nombre, dicc] of [['en', en], ['es', es]]) {
+    const m = dicc.match(new RegExp(k + "_one: '([^']*)'"));
+    if (m && m[1].includes('{n}')) conN.push(k + ' (' + nombre + ')');
+  }
+}
+chk('ningún singular lleva el marcador {n}', conN.length === 0, conN.join(', '));
+
+// `set_billing_trial_left` usaba {days}; pasó a {n} para que la función lo
+// resuelva. Si volviera {days}, el número no se sustituiría y la pantalla
+// mostraría el marcador crudo.
+chk('el aviso de días de prueba usa {n}, no {days}',
+    /set_billing_trial_left: '[^']*\{n\}/.test(en) &&
+    /set_billing_trial_left: '[^']*\{n\}/.test(es));
+
 console.log('\n' + pass + ' pass, ' + fail + ' fail');
 process.exit(fail ? 1 : 0);

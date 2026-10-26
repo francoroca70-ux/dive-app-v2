@@ -93,8 +93,11 @@ chk('quién puede anular se decide en una función',
 // `fechaLocalDeHoy` y a las dos horas se convirtió en la única del archivo:
 // resultó que la misma cuenta estaba copiada 37 veces, y la versión vieja
 // (`formatDate`) daba la fecha UTC. El detalle vive en `fecha-local.test.js`.
-chk('la lista del día usa fechaLocal, no una cuenta propia',
-    /const hoy = fechaLocal\(\);/.test(html) &&
+// Y el día se manda como VENTANA DE INSTANTES, no como texto: `sold_at` es
+// `timestamptz` y un string sin huso lo lee Postgres en UTC. Detalle en
+// `ventana-del-dia.test.js`.
+chk('la lista del día usa fechaLocal y la manda como ventana de instantes',
+    /const v = ventanaDelDia\(fechaLocal\(\)\);/.test(html) &&
     (html.match(/function fechaLocal\(/g) || []).length === 1);
 chk('y no quedó ninguna fecha de calendario sacada del UTC',
     lineasDeCodigoCon(html, "toISOString().split('T')[0]").length === 0);
