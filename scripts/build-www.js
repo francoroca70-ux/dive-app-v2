@@ -8,7 +8,19 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const WWW = path.join(ROOT, 'www');
 
-const FILES = ['index.html', 'sw.js', 'manifest.json'];
+// `landing.html` va al paquete aunque la app instalada nunca la muestre.
+//
+// Medido el 26/10: está en el `APP_SHELL` de `sw.js`, y como acá no se copiaba,
+// en la app instalada el `cache.addAll()` del install fallaba **siempre** — y
+// como `addAll` es atómico, eso dejaba la caché entera vacía, en silencio. El
+// install se arregló para no ser todo-o-nada, pero el archivo tiene que estar
+// igual: una entrada del shell que no existe es un 404 garantizado en cada
+// arranque.
+//
+// La alternativa era sacarla del APP_SHELL. No: en la web la raíz del dominio
+// redirige a la landing, y cachearla es correcto — un prospecto con señal mala
+// merece verla. Lo que estaba mal era que las dos listas no coincidieran.
+const FILES = ['index.html', 'landing.html', 'sw.js', 'manifest.json'];
 const DIRS = ['assets'];
 
 function copyRecursive(src, dest) {

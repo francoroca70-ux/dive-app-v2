@@ -14,7 +14,7 @@
 // 23/09/2026: v2 -> v3. La v2 dejó a Fran dos días con una versión vieja de la
 // app sin forma de enterarse: pedía index.html y el service worker se lo servía
 // desde la caché. Arreglos desplegados que él nunca recibió.
-const CACHE_VERSION = 'seven-seas-v83';
+const CACHE_VERSION = 'seven-seas-v86';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -42,10 +42,45 @@ const APP_SHELL = [
   '/assets/logo-wordmark-navy.png'
 ];
 
+// 26/10/2026: ESTO ERA `cache.addAll(APP_SHELL)` CON UN `catch` VACÍO, y el
+// comentario decía «no dejes que un asset faltante bloquee el install — cacheá
+// lo que se pueda». Hacía exactamente lo contrario.
+//
+// `addAll` es ATÓMICO: si una sola de las 19 URLs falla, la promesa se rechaza y
+// **no se guarda ninguna**. El `catch` vacío se tragaba el rechazo, así que el
+// install terminaba «bien» con la caché VACÍA y sin una línea en la consola.
+// Y el `activate` ya había borrado la caché de la versión anterior.
+//
+// Resultado: un centro que hubiera pescado un solo fetch lento —Render
+// despertando de dormir, un semáforo de wifi en el muelle— se quedaba **sin
+// nada offline** hasta el deploy siguiente, y la app se lo escondía.
+//
+// Peor en la app instalada: `/landing.html` está en APP_SHELL y `build-www.js`
+// no lo copiaba al paquete, así que ahí el install fallaba SIEMPRE.
+//
+// Ahora se cachea una por una. Una URL rota se queda afuera y se registra; las
+// otras 18 entran, que es lo que el comentario viejo prometía.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL)).catch(() => {
-      // Don't let a single missing asset block install — cache what we can.
+    caches.open(CACHE_VERSION).then(async (cache) => {
+      const fallaron = [];
+      await Promise.all(APP_SHELL.map(async (url) => {
+        try {
+          const res = await fetch(url, { cache: 'reload' });
+          // Una respuesta de error es una falla: guardar un 404 en la caché es
+          // peor que no guardar nada, porque offline se sirve el 404 como si
+          // fuera el archivo.
+          if (!res || !res.ok) throw new Error('HTTP ' + (res && res.status));
+          await cache.put(url, res);
+        } catch (e) {
+          fallaron.push(url + ' (' + (e && e.message) + ')');
+        }
+      }));
+      if (fallaron.length) {
+        // Se dice en voz alta. El modo de falla anterior era el silencio.
+        console.warn('[sw] no se pudieron cachear ' + fallaron.length + ' de ' +
+                     APP_SHELL.length + ': ' + fallaron.join(', '));
+      }
     })
   );
   self.skipWaiting();
@@ -111,7 +146,22 @@ self.addEventListener('fetch', (event) => {
 
   // Cache-first sólo para estáticos de verdad (íconos, manifest), que cambian
   // de nombre cuando cambian de contenido.
+  //
+  // Y lo que se trae por red SE GUARDA. Antes era `cached || fetch(req)`, que
+  // devuelve la respuesta y la tira: un ícono que no hubiera entrado en el
+  // install no entraba NUNCA, por mucho que la persona abriera la app con
+  // señal. La caché no tenía forma de recuperarse sola, y por eso un solo
+  // tropiezo en el install se volvía permanente hasta el deploy siguiente.
   event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req))
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        if (res && res.ok) {
+          const copia = res.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(req, copia));
+        }
+        return res;
+      });
+    })
   );
 });

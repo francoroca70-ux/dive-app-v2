@@ -4575,7 +4575,7 @@ const TRANSLATIONS = {
     gt_owed_dollar: 'Owed $', gt_paid_in_full: 'Paid in full', gt_open_trip_log_payment: 'Open trip to log payment',
     gt_pay_tab_full_prefix: 'Pay Tab in Full — ', gt_settle_full_balance: 'Settle Full Balance', gt_total_label: 'Total:',
     gt_confirm_payment: 'Confirm Payment', gt_close_tab: 'Close Tab', gt_select_payment_method: 'Select a payment method.',
-    gt_cannot_close_prefix: 'Cannot close: ', gt_cannot_close_suffix: ' still owed across linked bookings.', gt_guest_singular: 'guest',
+    gt_cannot_close_prefix: 'Cannot close: ', gt_cannot_close_suffix: ' still owed across linked bookings.', 
 
     gp_no_price_set: 'No price set', gp_partial_owed: 'Partial — {amount} owed', gp_nothing_paid_yet: 'Nothing paid yet',
     gp_amount_label: 'Amount', gp_total_amount_btn: 'Total Amount', gp_method_label: 'Method',
@@ -4610,12 +4610,12 @@ const TRANSLATIONS = {
     home_trips_today_title_all: "Today's trips", home_trips_today_title_mine: "Your trips today",
     home_trips_today_empty_all: 'No trips scheduled for today.', home_trips_today_empty_mine: "You're not assigned to any trips today.",
     home_trips_no_boat: 'No boat assigned', home_trips_guests_suffix: 'guests',
-    home_task_banner_title_single: 'You have a task due today', home_task_banner_title_plural: 'You have tasks due today',
+    home_task_banner_title_plural: 'You have tasks due today', home_task_banner_title_plural_one: 'You have a task due today',
     phase2_title: 'Next: gear & equipment setup', phase2_sub: 'Optional, but worth finishing once trips are running:',
     phase2_step_compressor: 'Add at least one compressor in Gear', phase2_step_gear: 'Set stock counts for at least one gear item in Gear',
 
     day_sun: 'Sun', day_mon: 'Mon', day_tue: 'Tue', day_wed: 'Wed', day_thu: 'Thu', day_fri: 'Fri', day_sat: 'Sat',
-    cal_no_trips: 'No trips', cal_no_boat: 'No boat', cal_guests_suffix: 'guests', cal_more: 'more', cal_trip_fallback: 'Trip',
+    cal_no_trips: 'No trips', cal_no_boat: 'No boat', cal_guests_suffix: 'guests', cal_guests_suffix_one: 'guest', cal_more: 'more', cal_trip_fallback: 'Trip',
     cal_no_trips_day: 'No trips scheduled for this day.', cal_add_trip: '+ Add a trip', cal_yesterday: '← Yesterday',
     trip_guests: 'Guests', trip_crew: 'Crew', trip_owed: 'Owed', trip_paid: 'Paid', trip_tanks_needed: 'tanks needed',
     cat_diving: 'Diving', cat_charter_yacht: 'Charter & Yacht', cat_surf: 'Surf', cat_fishing: 'Fishing', cat_freediving: 'Freediving',
@@ -4667,8 +4667,8 @@ const TRANSLATIONS = {
     tt_day_singular: ' day', tt_day_plural: ' days',
     tt_crew_hire_line: 'Crew hire cost: {amount} for {n} days — added to this booking\'s total.',
     tt_crew_hire_line_one: 'Crew hire cost: {amount} for 1 day — added to this booking\'s total.',
-    tt_boat_capacity: 'Boat capacity: ', tt_not_incl_captain: ' (not including captain)', tt_crew_word: ' crew · ', tt_booked: ' booked · ',
-    tt_seat_singular: ' seat remaining', tt_seat_plural: ' seats remaining', tt_too_many_guests: 'Too many guests: ', tt_only_seats_available: ' seats available after ',
+    tt_boat_capacity: 'Boat capacity: ', tt_not_incl_captain: ' (not including captain)', tt_booked: ' booked · ',
+    tt_too_many_guests: 'Too many guests: ', 
     tt_boat_unavailable: 'Boat unavailable: overlaps with ', tt_privately_booked: ' (privately booked)', tt_this_trip_private: ' — this trip is private',
     tt_adjust_times: '. Adjust times or choose a different boat.', tt_unnamed: 'Unnamed', tt_boat_capacity_exceeded: 'Boat capacity exceeded: ',
     tt_already_booked: ' guests already booked in this slot, adding ', tt_would_total: ' would total ', tt_max_capacity: ' (max ', tt_this_boat_private: 'This boat will be exclusively reserved for this time slot.',
@@ -4762,6 +4762,9 @@ const TRANSLATIONS = {
     svc_cert_note: "The fingerprint above was computed once, at the moment of sealing, over exactly the fields shown on this page. From that moment the record cannot be modified or deleted — recomputing the fingerprint over the stored record must give the same value, and any difference is itself the evidence. The next service date is not covered by the seal: it changes by design, which is why it does not appear here.",
     svc_cert_not_sealed: "This service has not been sealed yet. Seal it first — a certificate for a draft would claim something that is not true.",
     svc_cert_not_found: "That service could not be loaded.",
+    svc_cert_checked: "Seal checked against the stored record on {when}: the recomputed fingerprint matches.",
+    svc_cert_broken: "WARNING — the recomputed fingerprint does NOT match the one on this sheet. The stored record has changed since it was sealed.",
+    svc_cert_unchecked: "The seal could not be re-checked when this sheet was produced (no connection). The fingerprint above is the one stored at the time of sealing.",
     svc_sealed_badge: 'Sealed',
     svc_sealed_title: 'Sealed record — closed with a content fingerprint. It cannot be edited or deleted.',
     svc_sealed_meta: 'Sealed {date} · tamper-evident record',
@@ -5010,7 +5013,6 @@ const TRANSLATIONS = {
     currency_PHP: 'PHP — Philippine Peso', currency_EGP: 'EGP — Egyptian Pound', currency_ARS: 'ARS — Argentine Peso',
     set_contact_email: 'Contact email', set_contact_email_hint: 'Guests see this as the reply-to address on booking confirmation emails.',
     set_operation_runs: 'What does your operation run?', set_select_all_apply: '— select all that apply',
-    cat_diving: 'Diving', cat_charter_yacht: 'Charter & Yacht', cat_surf: 'Surf', cat_fishing: 'Fishing', cat_freediving: 'Freediving',
     set_save_org: 'Save organisation',
     set_op_categories: 'Operation Categories',
     set_op_categories_desc: 'Add a category any time your operation grows — adding one creates a starter set of trip types you can edit. Owner only.',
@@ -5197,7 +5199,7 @@ const TRANSLATIONS = {
     mf_crew: 'Crew', mf_no_crew: 'No crew assigned', mf_no_boat: 'No boat',
     mf_no_guests: 'No guests', mf_no_groups: 'No groups on this trip.',
     mf_popup_blocked: 'Please allow pop-ups to print the manifest.',
-    rd_counter: '{n} of {total} ready',
+    rd_counter: '{n} of {total} ready', rd_counter_one: '{n} of 1 ready',
     rd_blocked_one: '1 blocked',
     rd_blocked: '{n} blocked',
     rd_legend: 'Readiness: ● ready · ○ paperwork pending · ■ physician sign-off needed',
@@ -5275,10 +5277,10 @@ const TRANSLATIONS = {
     offline_syncing_back: 'Back online — syncing {n} changes...', offline_syncing_back_one: 'Back online — syncing 1 change...',
     offline_syncing: 'Syncing {n} changes...', offline_syncing_one: 'Syncing 1 change...', offline_all_synced: 'All changes synced ✓',
     trial_banner_ending: 'Your free trial ends in {n} days. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
-    trial_banner_ending_one: 'Your free trial ends tomorrow. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
+    trial_banner_ending_one: 'Your free trial ends within a day. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
     trial_banner_expired: 'Your free trial has ended. <a href="#" onclick="openChoosePlanModal();return false;">Choose a plan</a> to keep using Seven Seas.',
     trial_banner_ending_native: 'This shop\'s free trial ends in {n} days. Your shop administrator can set up the subscription at sevenseasops.com.',
-    trial_banner_ending_native_one: 'This shop\'s free trial ends tomorrow. Your shop administrator can set up the subscription at sevenseasops.com.',
+    trial_banner_ending_native_one: 'This shop\'s free trial ends within a day. Your shop administrator can set up the subscription at sevenseasops.com.',
     trial_banner_expired_native: 'This shop\'s free trial has ended. Your shop administrator can reactivate it at sevenseasops.com.',
     // Un cambio agendado en Paddle. Deliberadamente sin precio y sin enlace a
     // una compra: se muestra también dentro de la app de iOS y Android, y lo
@@ -5344,7 +5346,7 @@ const TRANSLATIONS = {
     tt_end_date_order: 'End date must be on or after the start date', tt_field_contact_name: 'Contact name', tt_field_contact_phone: 'Contact phone',
     tt_date_in_past: 'Date cannot be in the past', tt_time_in_past: 'Departure time cannot be in the past', tt_missing_prefix: 'Missing: ',
     tt_cannot_save_conflict: 'Cannot save: resolve the boat conflict first.', tt_cannot_save_crew_conflict: 'Cannot save: {names} is already crewed on an overlapping trip.',
-    tt_cannot_save_capacity: 'Cannot save: too many guests for this boat once crew is accounted for.', tt_error_saving_trip: 'Error saving trip.', tt_groups_count: 'Groups ({n})',
+    tt_cannot_save_capacity: 'Cannot save: too many guests for this boat once crew is accounted for.', tt_error_saving_trip: 'Error saving trip.', tt_groups_count: 'Groups ({n})', tt_groups_count_one: 'Group',
     checkin_offline: "You're offline — check-in needs a live connection.",
     wv_error_loading: 'Error loading waivers.', wv_allow_popups_export: 'Please allow pop-ups to export.',
     cl_error_loading: 'Error loading checklists.',
@@ -5384,19 +5386,19 @@ const TRANSLATIONS = {
     pw_show: 'Mostrar la contraseña', pw_hide: 'Ocultar la contraseña',
     login_forgot_link: '¿Olvidaste tu contraseña?', login_new_operation: '¿Nueva operación?', login_request_access: 'Solicitar acceso',
 
-    signup_back: '← Volver a iniciar sesión', signup_title: 'Creá la cuenta de tu comercio',
+    signup_back: '← Volver a iniciar sesión', signup_title: 'Crear la cuenta de tu comercio',
     signup_subtitle: 'Empezá tu prueba gratis de 15 días — sin tarjeta. Después vas a configurar los datos de tu comercio.',
     signup_name_label: 'Tu nombre completo', signup_confirm_password_label: 'Confirmar contraseña',
     signup_create_btn: 'Crear cuenta', signup_creating: 'Creando cuenta...',
-    signup_check_email: 'Cuenta creada — revisá tu correo para confirmar, y después iniciá sesión.',
-    signup_err_required: 'Completá todos los campos.', signup_err_password_length: 'La contraseña debe tener al menos 6 caracteres.',
+    signup_check_email: 'Cuenta creada — falta confirmar desde el correo, y después iniciar sesión.',
+    signup_err_required: 'Faltan campos por completar.', signup_err_password_length: 'La contraseña debe tener al menos 6 caracteres.',
     signup_err_password_match: 'Las contraseñas no coinciden.',
-    signup_err_has_pending_invite: 'Este email ya tiene una invitación pendiente para unirse a un local. Revisá tu bandeja de entrada y usá ese link en vez de crear una cuenta nueva acá — si no lo encontrás, pedile a quien te invitó que te lo reenvíe.',
+    signup_err_has_pending_invite: 'Este email ya tiene una invitación pendiente para unirse a un local. El link está en la bandeja de entrada y conviene usar ése en vez de crear una cuenta nueva acá — si no aparece, quien envió la invitación lo puede reenviar.',
 
     forgot_title: 'Restablece tu contraseña', forgot_back: '← Volver a iniciar sesión', forgot_email_label: 'Correo electrónico',
     forgot_send_btn: 'Enviar enlace', forgot_success: 'Enlace enviado — revisa tu correo.',
-    reset_pw_title: 'Elegí una nueva contraseña', reset_pw_subtitle: 'Elegí una nueva contraseña para tu cuenta.', reset_pw_success: 'Contraseña actualizada — entrando...',
-    confirm_reset_title: 'Continuá con el cambio de contraseña', confirm_reset_subtitle: 'Tocá el botón para continuar. Este paso extra evita que el escáner de seguridad de tu proveedor de mail use el link antes que vos.', confirm_reset_btn: 'Continuar',
+    reset_pw_title: 'Elegir una nueva contraseña', reset_pw_subtitle: 'Elegir una nueva contraseña para tu cuenta.', reset_pw_success: 'Contraseña actualizada — entrando...',
+    confirm_reset_title: 'Continuar con el cambio de contraseña', confirm_reset_subtitle: 'El botón de abajo continúa el cambio. Este paso extra evita que el escáner de seguridad del proveedor de mail use el link primero.', confirm_reset_btn: 'Continuar',
 
     accept_invite_name_label: 'Nombre completo', accept_invite_email_label: 'Correo electrónico', accept_invite_password_label: 'Contraseña',
     accept_invite_btn: 'Configurar cuenta',
@@ -5411,7 +5413,7 @@ const TRANSLATIONS = {
     header_tasks_title: 'Tareas', header_tasks_sub: 'Gestión de tareas de la tripulación',
     header_settings_title: 'Configuración', header_settings_sub: 'Detalles de la operación y cuenta',
     header_help_title: 'Ayuda y Preguntas Frecuentes', header_help_sub: 'Cómo funciona cada parte de Seven Seas, y soluciones rápidas a confusiones comunes',
-    help_search_ph: 'Buscar en las preguntas frecuentes...', help_search_empty: 'Sin resultados. Probá con otra palabra.',
+    help_search_ph: 'Buscar en las preguntas frecuentes...', help_search_empty: 'Sin resultados. Conviene probar con otra palabra.',
 
     cal_today: 'Hoy', cal_day: 'Día', cal_week: 'Semana', cal_month: 'Mes', cal_new_trip: '+ Nueva salida',
 
@@ -5424,7 +5426,7 @@ const TRANSLATIONS = {
     greeting_morning: 'Buenos días', greeting_afternoon: 'Buenas tardes', greeting_evening: 'Buenas noches',
     home_banner_ready: 'Tu panel de operaciones. Todo listo.', home_banner_view_calendar: 'Ver Calendario',
     home_current_shop_prefix: 'Viendo actualmente',
-    shop_mismatch_dismiss: 'Entendido', shop_mismatch_text: 'Estás viendo {shop}, que no es uno de tus locales asignados. Verificá que sea donde querés registrar reservas, checklists o waivers hoy.',
+    shop_mismatch_dismiss: 'Entendido', shop_mismatch_text: 'Estás viendo {shop}, que no es uno de tus locales asignados. Conviene verificar que sea donde corresponde registrar reservas, checklists o waivers hoy.',
 
     tk_new_task_list: '+ Nueva Lista de Tareas', tk_my_tasks: 'Mis Tareas', tk_all_tasks: 'Todas las Listas',
     tk_new_task_list_title: 'Nueva Lista de Tareas', tk_title: 'Título', tk_title_ph: 'ej. Preparación matutina del bote',
@@ -5451,7 +5453,7 @@ const TRANSLATIONS = {
     gt_owed_dollar: 'Adeudado $', gt_paid_in_full: 'Pagado en su totalidad', gt_open_trip_log_payment: 'Abrir salida para registrar pago',
     gt_pay_tab_full_prefix: 'Pagar Cuenta Completa — ', gt_settle_full_balance: 'Liquidar Saldo Completo', gt_total_label: 'Total:',
     gt_confirm_payment: 'Confirmar Pago', gt_close_tab: 'Cerrar Cuenta', gt_select_payment_method: 'Selecciona un método de pago.',
-    gt_cannot_close_prefix: 'No se puede cerrar: ', gt_cannot_close_suffix: ' aún se adeuda en las reservas vinculadas.', gt_guest_singular: 'huésped',
+    gt_cannot_close_prefix: 'No se puede cerrar: ', gt_cannot_close_suffix: ' aún se adeuda en las reservas vinculadas.', 
 
     gp_no_price_set: 'Sin precio establecido', gp_partial_owed: 'Parcial — se adeudan {amount}', gp_nothing_paid_yet: 'Aún no se ha pagado nada',
     gp_amount_label: 'Monto', gp_total_amount_btn: 'Monto Total', gp_method_label: 'Método',
@@ -5463,7 +5465,7 @@ const TRANSLATIONS = {
     gr_available_label: 'Disponible:', gr_add_btn: '+ Agregar', gr_repair_btn: 'Reparar', gr_in_repair_label: 'En Reparación:',
     gr_avail_btn: 'Disp.', gr_available_btn: 'Disponible', gr_discard_btn: '✕ Descartar',
     gr_no_categories_active: 'No hay categorías de equipo activas. Actívalas en Configuración.',
-    gr_add_item_btn: '+ Agregar artículo', gr_add_item_prompt: 'Agrega un artículo nuevo a esta categoría — ingresa su nombre y unidad.',
+    gr_add_item_btn: '+ Agregar artículo', gr_add_item_prompt: 'Agregar un artículo nuevo a esta categoría — ingresa su nombre y unidad.',
     gr_add_category_btn: '+ Agregar categoría',
     gr_add_category_prompt: 'Nombra tu nueva categoría de inventario (ej. "Repuestos", "Insumos de limpieza").',
     gr_add_category_placeholder: 'Nombre de la categoría',
@@ -5473,8 +5475,8 @@ const TRANSLATIONS = {
     gr_unit_units: 'unidades', gr_unit_kg: 'kg', gr_unit_lb: 'lb', gr_unit_bars: 'barras', gr_unit_sets: 'juegos',
 
     getting_started_title: 'Primeros pasos',
-    getting_started_sub: 'Completá estos tres pasos para habilitar las reservas diarias y los cierres de caja:',
-    onboard_step_boat: 'Agregá al menos una embarcación en Flota',
+    getting_started_sub: 'Estos tres pasos habilitan las reservas diarias y los cierres de caja:',
+    onboard_step_boat: 'Agregar al menos una embarcación en Flota',
     onboard_step_prices: 'Definí un precio para al menos un tipo de salida en Configuración',
     onboard_step_crew: 'Invitá al menos un miembro de la tripulación',
     onboard_solo_note: '¿Trabajás solo? Saltate el último paso — todo lo demás funciona igual.',
@@ -5486,12 +5488,12 @@ const TRANSLATIONS = {
     home_trips_today_title_all: 'Salidas de hoy', home_trips_today_title_mine: 'Tus salidas de hoy',
     home_trips_today_empty_all: 'No hay salidas programadas para hoy.', home_trips_today_empty_mine: 'No estás asignado a ninguna salida hoy.',
     home_trips_no_boat: 'Sin embarcación asignada', home_trips_guests_suffix: 'huéspedes',
-    home_task_banner_title_single: 'Tenés una tarea con vencimiento hoy', home_task_banner_title_plural: 'Tenés tareas con vencimiento hoy',
+    home_task_banner_title_plural: 'Hay tareas con vencimiento hoy', home_task_banner_title_plural_one: 'Hay una tarea con vencimiento hoy',
     phase2_title: 'Siguiente: equipo y material', phase2_sub: 'Opcional, pero conviene terminarlo una vez que las salidas estén en marcha:',
-    phase2_step_compressor: 'Agregá al menos un compresor en Equipo', phase2_step_gear: 'Cargá el stock de al menos un ítem de equipo en Equipo',
+    phase2_step_compressor: 'Agregar al menos un compresor en Equipo', phase2_step_gear: 'Cargar el stock de al menos un ítem de equipo en Equipo',
 
     day_sun: 'Dom', day_mon: 'Lun', day_tue: 'Mar', day_wed: 'Mié', day_thu: 'Jue', day_fri: 'Vie', day_sat: 'Sáb',
-    cal_no_trips: 'Sin salidas', cal_no_boat: 'Sin embarcación', cal_guests_suffix: 'huéspedes', cal_more: 'más', cal_trip_fallback: 'Salida',
+    cal_no_trips: 'Sin salidas', cal_no_boat: 'Sin embarcación', cal_guests_suffix: 'huéspedes', cal_guests_suffix_one: 'huésped', cal_more: 'más', cal_trip_fallback: 'Salida',
     cal_no_trips_day: 'No hay salidas programadas para este día.', cal_add_trip: '+ Agregar salida', cal_yesterday: '← Ayer',
     trip_guests: 'Huéspedes', trip_crew: 'Tripulación', trip_owed: 'Adeudado', trip_paid: 'Pagado', trip_tanks_needed: 'tanques necesarios',
     cat_diving: 'Buceo', cat_charter_yacht: 'Charter y Yate', cat_surf: 'Surf', cat_fishing: 'Pesca', cat_freediving: 'Apnea',
@@ -5543,8 +5545,8 @@ const TRANSLATIONS = {
     tt_day_singular: ' día', tt_day_plural: ' días',
     tt_crew_hire_line: 'Costo de tripulación contratada: {amount} por {n} días — agregado al total de esta reserva.',
     tt_crew_hire_line_one: 'Costo de tripulación contratada: {amount} por 1 día — agregado al total de esta reserva.',
-    tt_boat_capacity: 'Capacidad de la embarcación: ', tt_not_incl_captain: ' (sin incluir al capitán)', tt_crew_word: ' tripulación · ', tt_booked: ' reservados · ',
-    tt_seat_singular: ' asiento disponible', tt_seat_plural: ' asientos disponibles', tt_too_many_guests: 'Demasiados huéspedes: ', tt_only_seats_available: ' asientos disponibles después de ',
+    tt_boat_capacity: 'Capacidad de la embarcación: ', tt_not_incl_captain: ' (sin incluir al capitán)', tt_booked: ' reservados · ',
+    tt_too_many_guests: 'Demasiados huéspedes: ', 
     tt_boat_unavailable: 'Embarcación no disponible: se superpone con ', tt_privately_booked: ' (reserva privada)', tt_this_trip_private: ' — esta salida es privada',
     tt_adjust_times: '. Ajusta los horarios o elige otra embarcación.', tt_unnamed: 'Sin nombre', tt_boat_capacity_exceeded: 'Capacidad de la embarcación excedida: ',
     tt_already_booked: ' huéspedes ya reservados en este horario, agregar ', tt_would_total: ' totalizaría ', tt_max_capacity: ' (máx ', tt_this_boat_private: 'Esta embarcación quedará reservada exclusivamente para este horario.',
@@ -5628,6 +5630,9 @@ const TRANSLATIONS = {
     svc_cert_note: "La huella de arriba se calculó una sola vez, en el momento del sellado, sobre exactamente los campos que figuran en esta hoja. Desde ese momento el registro no se puede modificar ni borrar — recalcular la huella sobre el registro guardado tiene que dar el mismo valor, y cualquier diferencia es en sí misma la prueba. La próxima fecha de service no está cubierta por el sello: cambia por diseño, y por eso no aparece acá.",
     svc_cert_not_sealed: "Este service todavía no está sellado. Primero hay que sellarlo — una constancia de un borrador afirmaría algo que no es cierto.",
     svc_cert_not_found: "No se pudo cargar ese service.",
+    svc_cert_checked: "Sello comprobado contra el registro guardado el {when}: la huella recalculada coincide.",
+    svc_cert_broken: "ATENCIÓN — la huella recalculada NO coincide con la de esta hoja. El registro guardado cambió desde que se selló.",
+    svc_cert_unchecked: "No se pudo volver a comprobar el sello al emitir esta hoja (sin conexión). La huella de arriba es la que quedó guardada al sellar.",
     svc_sealed_badge: 'Sellado',
     svc_sealed_title: 'Registro sellado — cerrado con una huella de contenido. No se puede modificar ni eliminar.',
     svc_sealed_meta: 'Sellado el {date} · registro inalterable',
@@ -5672,14 +5677,14 @@ const TRANSLATIONS = {
     cl_logged_title: 'Checklists Logueadas', cl_logged_sub: 'Cada confirmación de equipo y de embarcación, organizada por día.',
     cl_logged_search_date: 'Buscar una fecha', cl_logged_clear: 'Limpiar', cl_logged_none: 'Todavía no hay checklists logueadas.',
     cl_tick_failed: 'Ese tilde no se pudo guardar, así que se deshizo. {why}',
-    cl_acta_failed: 'El acta no se pudo guardar: {error}. No se borró nada — probá firmar de nuevo.',
-    del_sin_conexion: 'Sin conexión, así que no se borró nada. Probá de nuevo cuando vuelva la señal.',
+    cl_acta_failed: 'El acta no se pudo guardar: {error}. No se borró nada — se puede firmar de nuevo.',
+    del_sin_conexion: 'Sin conexión, así que no se borró nada. Se puede reintentar cuando vuelva la señal.',
     del_tiene_historia: 'Esto no se puede borrar porque tiene registros asociados — reservas, pagos, logs o documentación firmada. No se borró nada.',
-    del_sin_permiso: 'No tenés permiso para borrar esto.',
+    del_sin_permiso: 'Esta cuenta no tiene permiso para borrar esto.',
     del_otro_motivo: 'No se pudo borrar: {error}',
-    esc_sin_conexion: 'Sin conexión, así que no se guardó nada. Probá de nuevo cuando vuelva la señal.',
-    esc_falta_referencia: 'No se pudo guardar: algo a lo que esto hace referencia ya no existe. Recargá y probá de nuevo.',
-    esc_sin_permiso: 'No tenés permiso para hacer esto.',
+    esc_sin_conexion: 'Sin conexión, así que no se guardó nada. Se puede reintentar cuando vuelva la señal.',
+    esc_falta_referencia: 'No se pudo guardar: algo a lo que esto hace referencia ya no existe. Hay que recargar y reintentar.',
+    esc_sin_permiso: 'Esta cuenta no tiene permiso para hacer esto.',
     esc_otro_motivo: 'No se pudo guardar: {error}',
     cl_signed_partial: 'Firmada {hechos}/{total}',
     cl_acta_pendiente: "Firmada en este dispositivo y todavía sin sincronizar. Se sube sola cuando haya señal — hasta entonces, nadie más la ve.",
@@ -5689,11 +5694,11 @@ const TRANSLATIONS = {
     cl_acta_missed: 'sin hacer', cl_acta_sin_detalle: 'Firmada antes de que se guardara ítem por ítem, así que sólo quedaron los totales.',
     cl_autor_title: 'Tildado desde la cuenta de esta persona',
     cl_participantes: 'La completaron entre {names}.',
-    cl_ya_firmada: 'Esta checklist ya la firmó {name} a las {time}, así que no se agregó nada. Las actas firmadas no se reemplazan — si hay que hacerla de nuevo, usá Reset.',
+    cl_ya_firmada: 'Esta checklist ya la firmó {name} a las {time}, así que no se agregó nada. Las actas firmadas no se reemplazan — para hacerla de nuevo está Reset.',
     pos_mostrador: "Mostrador",
     pos_a_la_venta: "A la venta",
     pos_falta_precio: "Un artículo a la venta necesita precio. Primero el precio, después la marca.",
-    pos_nada_a_la_venta: "Todavía no hay nada marcado a la venta, o lo que hay no tiene stock en esta sede. Abrí un artículo de abajo, tildá «A la venta» y poné el precio.",
+    pos_nada_a_la_venta: "Todavía no hay nada marcado a la venta, o lo que hay no tiene stock en esta sede. Para habilitarlo: abrir un artículo de abajo, marcar «A la venta» y poner el precio.",
     pos_en_stock: "en stock",
     pos_total: "Total",
     pos_cobrar: "Registrar venta",
@@ -5747,12 +5752,12 @@ const TRANSLATIONS = {
     cl_new_checklist_items_label: 'Ítems (uno por línea)', cl_new_checklist_items_ph: 'Un ítem de checklist por línea',
     cl_new_checklist_save: 'Guardar checklist', cl_new_checklist_cancel: 'Cancelar',
     cl_new_checklist_no_role: 'Tu rol no puede crear checklists de departamento.',
-    cl_new_checklist_need_title_items: 'Agregá un título y al menos un ítem.',
+    cl_new_checklist_need_title_items: 'Faltan un título y al menos un ítem.',
     cl_delete_checklist: 'Eliminar', cl_delete_checklist_confirm: '¿Eliminar esta checklist? No se puede deshacer.',
-    cl_complete_check: 'Completo ✓', cl_enter_captain_name: 'Ingresa el nombre del capitán para confirmar.', cl_enter_your_name: 'Elegí quién firma para confirmar.',
+    cl_complete_check: 'Completo ✓', cl_enter_captain_name: 'Falta el nombre del capitán para confirmar.', cl_enter_your_name: 'Falta elegir quién firma para confirmar.',
     cl_items_incomplete: ' elementos incompletos. ¿Confirmar de todos modos?', cl_signed_off_by: 'Confirmado por ', cl_saved_offline_sync: ' (guardado sin conexión — se sincronizará automáticamente)',
     cl_no_trips_today: 'No hay salidas hoy. Aún puedes usar las listas de verificación de forma independiente.', cl_guest_singular: 'huésped', cl_guest_plural: 'huéspedes',
-    cl_pick_signer: 'Elegí quién firma…',
+    cl_pick_signer: 'Elegir quién firma…',
     cl_show_all_depts: 'Ver todos los departamentos',
     cl_logged_no_detail: 'Esta firma se registró antes de que la app guardara el detalle ítem por ítem. Sólo están los totales.',
     cl_tanks_needed: 'tanques necesarios', cl_kg_weights_total: 'kg de plomos en total', cl_no_signoffs_yet: 'Aún no hay confirmaciones para esta salida.', cl_signed_by: 'Confirmado por ',
@@ -5871,7 +5876,6 @@ const TRANSLATIONS = {
     currency_PHP: 'PHP — Peso filipino', currency_EGP: 'EGP — Libra egipcia', currency_ARS: 'ARS — Peso argentino',
     set_contact_email: 'Correo de contacto', set_contact_email_hint: 'Los huéspedes ven esto como la dirección de respuesta en los correos de confirmación de reserva.',
     set_operation_runs: '¿Qué ofrece tu operación?', set_select_all_apply: '— selecciona todo lo que aplique',
-    cat_diving: 'Buceo', cat_charter_yacht: 'Charter y Yate', cat_surf: 'Surf', cat_fishing: 'Pesca', cat_freediving: 'Apnea',
     set_save_org: 'Guardar organización',
     set_op_categories: 'Categorías de la Operación',
     set_op_categories_desc: 'Agrega una categoría cuando tu operación crezca — al agregar una se crea un conjunto inicial de tipos de salida que puedes editar. Solo el propietario.',
@@ -5884,23 +5888,23 @@ const TRANSLATIONS = {
     set_delete_account_confirm: 'Esto eliminará tu acceso a esta operación. Tus checklists, formularios y registros de salidas completados quedan guardados — solo dejarás de poder iniciar sesión en este local. ¿Continuar?',
     set_delete_account_confirm_ok: 'Sí, eliminar mi acceso',
     set_delete_account_success: 'Listo. Fuiste eliminado de esta operación.',
-    set_delete_account_err_last_owner: 'Sos el único propietario acá, así que no podés eliminarte a vos mismo. Agregá otro propietario primero, o contactá a soporte.',
+    set_delete_account_err_last_owner: 'Esta es la única cuenta propietaria del local, así que no se puede eliminar a sí misma. Primero hay que agregar otro propietario, o escribir a soporte.',
     set_delete_account_err_not_staff: 'No encontramos tu registro de personal — es posible que ya hayas sido eliminado.',
-    set_delete_account_err_generic: 'Algo salió mal. Intentá de nuevo o contactá a soporte.',
+    set_delete_account_err_generic: 'Algo salió mal. Se puede reintentar, o escribir a soporte.',
     close_shop_title: 'Cerrar la Cuenta de Este Local',
-    close_shop_desc: '¿Vas a dar de baja el servicio? Esto cierra el local para todo el personal — nadie va a poder volver a iniciar sesión. Tus registros (formularios, checklists, historial de salidas) se guardan, no se borran, por si alguna vez los necesitás para un tema legal o de seguro. Esto no se puede deshacer vos mismo una vez confirmado.',
+    close_shop_desc: '¿Vas a dar de baja el servicio? Esto cierra el local para todo el personal — nadie va a poder volver a iniciar sesión. Tus registros (formularios, checklists, historial de salidas) se guardan, no se borran, por si alguna vez hagan falta para un tema legal o de seguro. Una vez confirmado, esto no se deshace desde la app.',
     close_shop_step1: 'Paso 1 — Descargá todo',
     close_shop_step1_desc: 'Obtené una copia completa de cada formulario, checklist y registro de salida que este local haya registrado, antes de continuar.',
     close_shop_export_btn: 'Descargar todos los registros del local',
-    close_shop_export_done: 'Descargado. Ya podés confirmar abajo.',
+    close_shop_export_done: 'Descargado. Ya se puede confirmar abajo.',
     close_shop_step2: 'Paso 2 — Confirmar',
-    close_shop_step2_desc: 'Escribí "{name}" abajo para confirmar que querés cerrar la cuenta de este local.',
+    close_shop_step2_desc: 'Escribir "{name}" abajo para confirmar el cierre de la cuenta de este local.',
     close_shop_confirm_btn: 'Cerrar la cuenta de este local',
     close_shop_final_confirm: 'Esto va a cerrar "{name}" de forma permanente — todo el personal, incluido vos, va a quedar desconectado y sin poder volver a entrar. Tus registros se guardan. ¿Continuar?',
     close_shop_final_confirm_ok: 'Sí, cerrar este local',
     close_shop_success: 'Listo. La cuenta de este local ya está cerrada.',
     close_shop_err_not_owner: 'Solo el propietario puede cerrar la cuenta de este local.',
-    close_shop_err_generic: 'Algo salió mal. Intentá de nuevo o contactá a soporte.',
+    close_shop_err_generic: 'Algo salió mal. Se puede reintentar, o escribir a soporte.',
     set_waivers: 'Formularios', set_owner_only: 'Solo propietario',
     set_waivers_desc1: 'Esta es solo una herramienta de recolección de firmas digitales. Seven Seas no provee, verifica ni se responsabiliza por el contenido o la validez legal de los formularios.',
     set_waivers_desc2a: 'La validez legal de las firmas digitales varía según el país y la jurisdicción.',
@@ -5913,7 +5917,7 @@ const TRANSLATIONS = {
     set_waiver_templates_desc: 'Escribe el texto real que los huéspedes leerán y firmarán para cada tipo de formulario. Un tipo no puede ser firmado por el personal hasta que tenga una plantilla aquí.',
     wt_liability: 'Responsabilidad', wt_minor: 'Menor / Joven', wt_freediving: 'Apnea', wt_snorkel: 'Esnórquel / Charter', wt_other: 'Otro', wt_medical: 'Médico',
     set_waiver_templates_owner_only_note: 'Solo el propietario de la cuenta puede editar las plantillas de formularios.',
-    set_waiver_templates_disabled_note: 'Primero activá Formularios arriba — las plantillas estarán disponibles una vez que Formularios esté activado para esta operación.',
+    set_waiver_templates_disabled_note: 'Primero hay que activar Formularios arriba — las plantillas quedan disponibles una vez que Formularios esté activado para esta operación.',
     set_trip_types: 'Tipos de Salida', set_trip_types_desc: 'Configura precios y requisitos de equipo predeterminados por tipo de salida. Se completan automáticamente cuando el personal crea una reserva.',
     set_add_trip_type: '+ Agregar tipo de salida personalizado',
     set_locations: 'Ubicaciones', set_locations_desc: 'Cada ubicación tiene su propia flota, tripulación y calendario. Agrega primero tu local principal.',
@@ -5925,7 +5929,7 @@ const TRANSLATIONS = {
     set_adding_category_confirm_singular: 'Agregar <strong>{cat}</strong> creará {n} tipo de salida inicial que podrás editar después. Esta acción es solo para el propietario.',
     set_adding_category_confirm_plural: 'Agregar <strong>{cat}</strong> creará {n} tipos de salida iniciales que podrás editar después. Esta acción es solo para el propietario.',
     set_add_category_btn: 'Agregar categoría', set_category_already_active: 'Esta categoría ya está activa.',
-    set_click_to_deactivate: 'Tocá para desactivar esta categoría', set_deactivate_category_btn: 'Desactivar categoría',
+    set_click_to_deactivate: 'Tocar para desactivar esta categoría', set_deactivate_category_btn: 'Desactivar categoría',
     set_removing_category_confirm: '¿Desactivar <strong>{cat}</strong>? Desaparecerá de esta lista. Sus tipos de salida, equipo y checklists existentes se mantienen tal cual y se siguen pudiendo gestionar individualmente — esto solo afecta si la categoría aparece como activa acá. Solo para el propietario.',
     set_no_trip_types_yet: 'Aún no hay tipos de salida. Selecciona una categoría de operación arriba para empezar.',
     prep_btn: 'Lista de preparación', prep_header: 'Lista de preparación de la salida',
@@ -5939,11 +5943,11 @@ const TRANSLATIONS = {
     rut_items: 'Ítems',
     rut_none_yet_editor: 'Esta rutina todavía usa la lista estándar. Primero hay que hacerla propia, con el botón de arriba, y desde ahí se pueden editar sus ítems.',
     prep_edit: 'Editar', prep_done: 'Listo',
-    prep_view_desc: 'Es lo que la tripulación recorre. Tocá Editar para cambiar el texto, agregar ítems o retirar lo que no aplica.',
+    prep_view_desc: 'Es lo que la tripulación recorre. El botón Editar cambia el texto, agrega ítems o retira lo que no aplica.',
     rut_copy_error: 'Esa rutina no tiene lista estándar para copiar.',
     rut_load_error: 'No se pudo leer cuáles rutinas ya tienen copia, así que no se muestra nada en vez de adivinar.',
     prep_count: '{n} ítems en la lista',
-    prep_none_yet: 'Este tipo de salida todavía no tiene su propia lista, así que la tripulación ve la lista genérica de buceo. Dale la suya.',
+    prep_none_yet: 'Este tipo de salida todavía no tiene su propia lista, así que la tripulación ve la lista genérica de buceo. Conviene armarle la suya.',
     prep_seed_from_standard: 'Arrancar de la lista estándar', prep_start_blank: 'Arrancar de cero',
     prep_first_item: 'Primer ítem — cambia este texto',
     prep_new_ph: 'Agregar un ítem…', prep_add: 'Agregar',
@@ -5960,7 +5964,7 @@ const TRANSLATIONS = {
     set_can_be_private: ' · puede ser privada', set_multi_day_suffix: ' · varios días',
     set_rental_fees_btn: 'Tarifas de alquiler',
     set_multiday_checkbox_label: 'Salida de varios días (agrega una fecha de fin + permite contratar tripulación por día para este tipo de salida)',
-    set_crew_day_rate_hint: 'Las tarifas de tripulación se configuran por persona en Tripulación → tocá un nombre → Tarifa diaria, no acá.',
+    set_crew_day_rate_hint: 'Las tarifas de tripulación se configuran por persona en Tripulación → un nombre → Tarifa diaria, no acá.',
     common_loading: 'Cargando...',
     set_no_gear_fields: 'No hay campos de equipo asociados a este tipo de salida.',
     set_rental_gear_fees_header: 'Tarifas de alquiler de equipo (opcional — se agrega por huésped que seleccione alquiler)',
@@ -6008,14 +6012,14 @@ const TRANSLATIONS = {
     cu_counted_cash: 'Efectivo contado (real)', cu_expected_cash: 'Efectivo esperado', cu_discrepancy: 'Discrepancia:',
     cu_notes: 'Notas', cu_notes_ph: 'Cualquier anomalía o comentario', cu_close_out_day: 'Cerrar el Día',
     cu_last_closed_by: 'Último cierre por', cu_description_required: 'Se requiere una descripción.',
-    cu_enter_valid_amount: 'Ingresa un monto válido.', cu_error_saving: 'Error al guardar.',
+    cu_enter_valid_amount: 'El monto no es válido.', cu_error_saving: 'Error al guardar.',
     cu_remove_expense_confirm: 'Eliminar este gasto?', cu_saving: 'Guardando...',
     cu_select_location_tabs: 'Selecciona una ubicación arriba para ver las cuentas de huéspedes.',
 
     wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Activalos en Configuración para empezar a recolectar firmas digitales.',
     wv_go_to_settings: 'Ir a Configuración',
     wv_med_section: 'Habilitación para bucear',
-    wv_saved_list_stale: 'Guardado — pero la lista en pantalla no se pudo actualizar. Recargá la página para verla al día.',
+    wv_saved_list_stale: 'Guardado — pero la lista en pantalla no se pudo actualizar. Hay que recargar la página para verla al día.',
     wv_prefer_remote: 'Un formulario que el huésped firma en su propio teléfono vale más como prueba que uno firmado acá. Mandá el link si tiene el teléfono a mano.',
     wv_prov_onsite: 'Firmado en un dispositivo del centro, con {staff} presente.',
     wv_prov_remote: 'Firmado desde el link de la reserva — {device}, IP {ip}.',
@@ -6025,7 +6029,7 @@ const TRANSLATIONS = {
     gr_link_label: 'Cuenta para el artículo de inventario (opcional)',
     gr_link_none: 'Sin vincular — sólo en el registro',
     gr_link_hint: 'Si la vinculás, esta pieza pasa a ser una unidad del conteo de ese artículo. Ese artículo deja de contarse a mano: su número sale de las piezas registradas acá.',
-    gr_derived_hint: 'Se cuenta a partir de las piezas individuales del Registro — agregá, repará o retirá ahí y esto se actualiza solo.',
+    gr_derived_hint: 'Se cuenta a partir de las piezas individuales del Registro — al agregar, reparar o retirar ahí, esto se actualiza solo.',
     gr_open_registry: 'Ir al Registro',
     set_gear_warn_title: 'Avisos de stock de equipo',
     set_gear_warn_desc1: 'Cuando un huésped pide un talle que no está disponible, la pantalla del viaje y el manifiesto impreso lo dicen. No se reserva nada ni se bloquea nada — es un aviso, no una traba.',
@@ -6046,7 +6050,7 @@ const TRANSLATIONS = {
     wv_prov_kiosk_offline: 'Firmado en la tablet del centro, sin conexión. Fecha y hora informadas por ese dispositivo; sin IP registrada.',
     cover_btn: 'Carátula', cover_title: 'Carátula de archivo', cover_guest: 'Huésped',
     cover_form: 'Formulario', cover_date: 'Firmado el', cover_logged_by: 'Registrado por',
-    cover_instruction: 'Grapá esta hoja al formulario en papel y archivalo como siempre. Para encontrar el registro digital, buscá este número en Seven Seas Ops.',
+    cover_instruction: 'Grapar esta hoja al formulario en papel y archivarlo como siempre. Para encontrar el registro digital, buscar este número en Seven Seas Ops.',
     cert_doc: 'Documento', cert_seal: 'Sello de contenido (SHA-256)',
     cert_intact: 'verificado íntegro al momento de exportar',
     cert_broken: 'NO COINCIDE — este registro fue alterado desde que se firmó',
@@ -6056,7 +6060,7 @@ const TRANSLATIONS = {
     mf_crew: 'Tripulación', mf_no_crew: 'Sin tripulación asignada', mf_no_boat: 'Sin embarcación',
     mf_no_guests: 'Sin huéspedes', mf_no_groups: 'Este viaje no tiene grupos.',
     mf_popup_blocked: 'Permití las ventanas emergentes para imprimir el manifiesto.',
-    rd_counter: '{n} de {total} listos',
+    rd_counter: '{n} de {total} listos', rd_counter_one: '{n} de 1 listo',
     rd_blocked_one: '1 bloqueado',
     rd_blocked: '{n} bloqueados',
     rd_legend: 'Habilitación: ● listo · ○ falta papeleo · ■ falta firma médica',
@@ -6064,7 +6068,7 @@ const TRANSLATIONS = {
     wv_med_help: 'Registrá el resultado de la declaración médica en papel. Seven Seas nunca guarda el detalle médico.',
     wv_med_cleared: 'Habilitado para bucear',
     wv_med_physician: 'Falta firma médica',
-    wv_med_pick_one: 'Elegí si el huésped queda habilitado para bucear.',
+    wv_med_pick_one: 'Falta elegir si el huésped queda habilitado para bucear.',
     wv_med_needs_connection: 'La habilitación necesita conexión — define quién entra al agua, así que nunca se guarda sin conexión.',
     wv_export_backup: 'Exportar / Respaldo', wv_export_backup_desc: 'Descarga los formularios, checklists o registros de salidas de un día como un archivo que puedes guardar en tu computadora.',
     wv_export_day: 'Exportar formularios del día',
@@ -6077,10 +6081,10 @@ const TRANSLATIONS = {
     wv_search_guest_ph: 'Buscar por nombre de huésped...',
     wv_trip_fallback: 'Salida', wv_sign_waiver: 'Firmar Formulario', wv_no_pending_guests: 'No hay huéspedes pendientes para las salidas de hoy.',
     wv_remote_status_title: 'Firma Remota — Reservas de Hoy',
-    wv_remote_status_desc: 'Todos en un grupo de reserva comparten un mismo link — mirá quién firmó antes de llegar y a quién le falta algo.',
+    wv_remote_status_desc: 'Todos en un grupo de reserva comparten un mismo link — acá se ve quién firmó antes de llegar y a quién le falta algo.',
     wv_copy_link: 'Copiar link', wv_copy_link_manual: 'Copia este link de firma de formulario:',
     wv_group_missing_prefix: 'Falta:', wv_group_all_signed: 'Todos los huéspedes firmaron',
-    wv_remind_btn: 'Recordar', wv_remind_sent: 'Enviado', wv_remind_failed: 'Falló — intentá de nuevo', wv_remind_no_email: 'No hay email de contacto registrado',
+    wv_remind_btn: 'Recordar', wv_remind_sent: 'Enviado', wv_remind_failed: 'Falló — reintentar', wv_remind_no_email: 'No hay email de contacto registrado',
     wv_unknown_guest: 'Huésped desconocido', wv_paper: 'Papel', wv_digital: 'Digital',
     wv_no_waivers_week: 'No hay formularios firmados esta semana.', wv_no_waivers_date: 'No hay formularios firmados en esta fecha.',
     wv_no_records_date: 'No se encontró nada para esa fecha.',
@@ -6096,8 +6100,8 @@ const TRANSLATIONS = {
     wv_no_template_set_up: 'Aún no hay una plantilla de formulario configurada para este tipo.',
     wv_please_draw_signature: 'Por favor dibuja una firma, o cambia a "Registrado en papel".',
     rw_loading: 'Cargando tu reserva...', rw_link_invalid_title: 'Este link no es válido',
-    rw_link_expired: 'Este link para firmar venció. Contactá al centro de buceo para que te envíen uno nuevo.',
-    rw_link_not_found: 'No se reconoce este link. Contactá al centro de buceo para verificar tu reserva.',
+    rw_link_expired: 'Este link para firmar venció. Contactar al centro de buceo para que te envíen uno nuevo.',
+    rw_link_not_found: 'No se reconoce este link. Contactar al centro de buceo para verificar tu reserva.',
     rw_signed: 'Firmado', rw_back: 'Volver',
     rw_all_done: 'Todos los formularios de esta reserva están firmados — ¡nos vemos pronto!',
     wv_open_kiosk: 'Quiosco',
@@ -6107,7 +6111,7 @@ const TRANSLATIONS = {
     rw_finish: 'Terminé — devolver la tablet',
     rw_done_title: 'Listo',
     rw_done_body: 'Gracias — devolvé la tablet al mostrador.',
-    rw_ask_shop_to_set_up: 'Contactá directamente al centro de buceo para resolver esto antes de tu salida.',
+    rw_ask_shop_to_set_up: 'Contactar directamente al centro de buceo para resolver esto antes de tu salida.',
     wv_saved_offline: 'Guardado sin conexión — este formulario se sincronizará automáticamente cuando vuelva la conexión.',
     wv_error_saving: 'Error al guardar el formulario: ', wv_unknown_error: 'error desconocido',
     wv_export_no_permission: 'Solo propietarios, gerentes, recepción y capitanes con permisos elevados pueden exportar formularios.',
@@ -6130,21 +6134,21 @@ const TRANSLATIONS = {
     // previously hardcoded in English regardless of the selected language.
     offline_banner_waiting: 'Sin conexión — {n} cambios esperando para sincronizar. Checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
     offline_banner_waiting_one: 'Sin conexión — 1 cambio esperando para sincronizar. Checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
-    offline_banner_no_changes: 'Estás sin conexión — checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
+    offline_banner_no_changes: 'Sin conexión — checklists, tareas, firma de formularios y registros de mantenimiento siguen funcionando. Reservas, pagos y cambios de tripulación necesitan conexión.',
     offline_syncing_back: 'De vuelta en línea — sincronizando {n} cambios...', offline_syncing_back_one: 'De vuelta en línea — sincronizando 1 cambio...',
     offline_syncing: 'Sincronizando {n} cambios...', offline_syncing_one: 'Sincronizando 1 cambio...', offline_all_synced: 'Todos los cambios sincronizados ✓',
     trial_banner_ending: 'Tu prueba gratis termina en {n} días. <a href="#" onclick="openChoosePlanModal();return false;">Elegir un plan</a> para seguir usando Seven Seas.',
-    trial_banner_ending_one: 'Tu prueba gratis termina mañana. <a href="#" onclick="openChoosePlanModal();return false;">Elegir un plan</a> para seguir usando Seven Seas.',
-    trial_banner_expired: 'Tu prueba gratis terminó. <a href="#" onclick="openChoosePlanModal();return false;">Elegí un plan</a> para seguir usando Seven Seas.',
+    trial_banner_ending_one: 'A tu prueba gratis le queda menos de un día. <a href="#" onclick="openChoosePlanModal();return false;">Elegir un plan</a> para seguir usando Seven Seas.',
+    trial_banner_expired: 'Tu prueba gratis terminó. <a href="#" onclick="openChoosePlanModal();return false;">Elegir un plan</a> para seguir usando Seven Seas.',
     trial_banner_ending_native: 'La prueba gratis de este centro termina en {n} días. El administrador de tu centro puede contratar la suscripción en sevenseasops.com.',
-    trial_banner_ending_native_one: 'La prueba gratis de este centro termina mañana. El administrador de tu centro puede contratar la suscripción en sevenseasops.com.',
+    trial_banner_ending_native_one: 'A la prueba gratis de este centro le queda menos de un día. El administrador de tu centro puede contratar la suscripción en sevenseasops.com.',
     trial_banner_expired_native: 'La prueba gratis de este centro terminó. El administrador de tu centro puede reactivarla en sevenseasops.com.',
     sub_sched_cancel: 'Tu suscripción termina el {date}. Mantenés el acceso completo hasta esa fecha.',
     sub_sched_pause: 'Tu suscripción se pausa el {date}. Mantenés el acceso completo hasta esa fecha.',
     sub_sched_resume: 'Tu suscripción se reanuda el {date}.',
     plan_limit_admin_web: 'El administrador de tu centro puede revisarlo en sevenseasops.com.',
-    bp_modal_title: 'Elegí tu plan',
-    bp_modal_sub: 'Elegí un plan para seguir usando Seven Seas. Cambialo o cancelalo cuando quieras.',
+    bp_modal_title: 'Elegir un plan',
+    bp_modal_sub: 'Elegir un plan para seguir usando Seven Seas. Se cambia o se cancela en cualquier momento.',
     bp_native_locked_title: 'Hace falta una suscripción',
     bp_native_manage_on_web: 'A Seven Seas Ops se suscribe el centro de buceo o la operación de charter, no se hace desde esta app. El administrador de tu centro gestiona la suscripción en sevenseasops.com desde un navegador. Cuando vuelva a estar activa, entrá acá y tu trabajo sigue donde lo dejaste.',
     bp_boats_unlimited_staff: 'botes · personal ilimitado',
@@ -6152,70 +6156,70 @@ const TRANSLATIONS = {
     bp_per_year: '/año',
     bp_cycle_monthly: 'Mensual',
     bp_cycle_annual: 'Anual · 2 meses gratis',
-    bp_cycle_unavailable: 'El pago anual todavía no está habilitado — elegí mensual, o escribinos a contact@sevenseasops.com.',
+    bp_cycle_unavailable: 'El pago anual todavía no está habilitado — queda mensual, o escribir a contact@sevenseasops.com.',
     bp_enterprise_price: 'Hablemos',
     bp_enterprise_cta: 'Contactanos',
     bp_select_plan: 'Elegir',
     bp_redirecting: 'Abriendo pago seguro…',
-    bp_checkout_error: 'No se pudo abrir el pago. Probá de nuevo o escribinos a contact@sevenseasops.com.',
+    bp_checkout_error: 'No se pudo abrir el pago. Se puede reintentar, o escribir a contact@sevenseasops.com.',
     bp_back_to_plans: 'Volver a los planes',
-    bp_locked_trial_expired: 'Tu prueba gratis terminó. Elegí un plan para seguir usando Seven Seas.',
-    bp_locked_canceled: 'Tu suscripción ya no está activa. Elegí un plan para seguir usando Seven Seas.',
+    bp_locked_trial_expired: 'Tu prueba gratis terminó. Hace falta elegir un plan para seguir usando Seven Seas.',
+    bp_locked_canceled: 'Tu suscripción ya no está activa. Hace falta elegir un plan para seguir usando Seven Seas.',
     bp_locked_trial_expired_native: 'La prueba gratis de este centro terminó.',
     bp_locked_canceled_native: 'La suscripción de este centro ya no está activa.',
     bp_status_trial: 'Prueba gratis',
     bp_status_trialing: 'Prueba gratis',
     bp_status_active: 'Activo',
-    bp_status_past_due: 'Problema con el pago — actualizá tu tarjeta',
+    bp_status_past_due: 'Problema con el pago — hay que actualizar la tarjeta',
     bp_status_paused: 'Pausado',
     bp_status_canceled: 'Cancelado',
-    bp_portal_error: 'No se pudo abrir el portal de pagos. Probá de nuevo o escribinos a contact@sevenseasops.com.',
+    bp_portal_error: 'No se pudo abrir el portal de pagos. Se puede reintentar, o escribir a contact@sevenseasops.com.',
     set_billing: 'Facturación',
     set_manage_billing: 'Gestionar facturación',
     set_billing_current_plan: 'Plan: {plan} · Estado: {status}',
     set_choose_plan: 'Elegir un plan',
     set_change_plan: 'Cambiar de plan',
-    set_billing_trial_desc: 'Estás en la prueba gratis. Todavía no hay tarjeta cargada — elegí un plan cuando quieras y hasta entonces no cambia nada.',
+    set_billing_trial_desc: 'Prueba gratis en curso. Todavía no hay tarjeta cargada — se puede elegir un plan en cualquier momento, y hasta entonces no cambia nada.',
     set_billing_trial_left: 'Quedan {n} días — la prueba termina el {date}',
     set_billing_trial_left_one: 'Queda 1 día — la prueba termina el {date}',
     set_billing_trial_over: 'Tu prueba gratis terminó',
-    set_billing_inactive_desc: 'Tu suscripción no está activa. Elegí un plan para que tu equipo vuelva a entrar.',
+    set_billing_inactive_desc: 'Tu suscripción no está activa. Hace falta elegir un plan para que el equipo vuelva a entrar.',
     set_billing_comped_desc: 'Este centro tiene acceso completo sin facturación. No hay nada que pagar ni que renovar.',
     set_billing_no_plan: 'Esta cuenta todavía no tiene un plan.',
     auth_invite_desc: 'Fuiste invitado a unirte a {org} como {role}. Configurá una contraseña para terminar de crear tu cuenta.', auth_this_operation: 'esta operación',
-    auth_enter_name: 'Ingresá tu nombre.', auth_password_min: 'La contraseña debe tener al menos 6 caracteres.', auth_setting_up: 'Configurando...',
-    auth_account_exists: "Este email ya tiene una cuenta de Seven Seas. Ingresá esa contraseña arriba, o usá el link de abajo si no te acordás.",
-    accept_invite_forgot_pw: "Enviarme un link para restablecer la contraseña", accept_invite_forgot_pw_sent: "Link enviado — revisá tu bandeja de entrada, poné una contraseña nueva ahí, y después volvé acá para ingresarla arriba.",
-    auth_set_up_account: 'Configurar cuenta', auth_could_not_verify: 'No pudimos verificar tu cuenta. Si acabás de registrarte, confirmá tu email primero y volvé a intentar este enlace.',
+    auth_enter_name: 'Falta tu nombre.', auth_password_min: 'La contraseña debe tener al menos 6 caracteres.', auth_setting_up: 'Configurando...',
+    auth_account_exists: "Este email ya tiene una cuenta de Seven Seas. Va esa contraseña arriba, o el link de abajo para restablecerla.",
+    accept_invite_forgot_pw: "Enviarme un link para restablecer la contraseña", accept_invite_forgot_pw_sent: "Link enviado — la contraseña nueva se pone desde la bandeja de entrada, y después se ingresa acá arriba.",
+    auth_set_up_account: 'Configurar cuenta', auth_could_not_verify: 'No pudimos verificar tu cuenta. Si recién se creó, primero hay que confirmar el email y después volver a este enlace.',
     auth_link_error_prefix: 'Sesión iniciada, pero no se pudo terminar de vincular tu cuenta a esta operación. Enviale esto a Fran: ', auth_unknown_error: 'error desconocido',
-    auth_enter_email_password: 'Ingresá tu email y contraseña.', auth_signing_in: 'Iniciando sesión...', auth_invalid_credentials: 'El email o la contraseña son incorrectos.', auth_sign_in: 'Iniciar sesión',
+    auth_enter_email_password: 'Faltan el email y la contraseña.', auth_signing_in: 'Iniciando sesión...', auth_invalid_credentials: 'El email o la contraseña son incorrectos.', auth_sign_in: 'Iniciar sesión',
     org_closed_message: 'La cuenta de este local fue cerrada por su propietario. Si creés que es un error, contactalo directamente.',
-    auth_enter_email: 'Ingresá tu dirección de email.', auth_sending: 'Enviando...', auth_send_reset_link: 'Enviar enlace de restablecimiento', auth_sent: 'Enviado',
+    auth_enter_email: 'Falta tu dirección de email.', auth_sending: 'Enviando...', auth_send_reset_link: 'Enviar enlace de restablecimiento', auth_sent: 'Enviado',
     auth_passwords_dont_match: 'Las contraseñas no coinciden.', auth_password_updated: 'Contraseña actualizada.',
-    common_saving: 'Guardando...', common_error_saving: 'Error al guardar.', common_error_saving_retry: 'Error al guardar. Intentá de nuevo.', common_name_required: 'El nombre es obligatorio.',
+    common_saving: 'Guardando...', common_error_saving: 'Error al guardar.', common_error_saving_retry: 'Error al guardar. Se puede reintentar.', common_name_required: 'El nombre es obligatorio.',
     org_name_required: 'El nombre de la operación es obligatorio.', org_email_required: 'El email de contacto es obligatorio — los huéspedes lo ven en las confirmaciones de reserva.',
-    loc_name_required: 'El nombre del local es obligatorio.', loc_save_org_first: 'Guardá los datos de tu organización primero.',
-    tt_trip_details: 'Detalles de la salida', tt_offline_booking: 'Estás sin conexión — las reservas necesitan conexión para que nada se reserve dos veces. Intentá de nuevo cuando vuelvas a estar en línea.',
+    loc_name_required: 'El nombre del local es obligatorio.', loc_save_org_first: 'Primero hay que guardar los datos de tu organización.',
+    tt_trip_details: 'Detalles de la salida', tt_offline_booking: 'Sin conexión — las reservas necesitan conexión para que nada se reserve dos veces. Se puede reintentar cuando vuelva.',
     tt_field_date: 'Fecha', tt_field_departure_time: 'Hora de salida', tt_field_arrival_time: 'Hora de regreso', tt_field_end_date: 'Fecha de fin',
     tt_end_date_order: 'La fecha de fin debe ser igual o posterior a la fecha de inicio', tt_field_contact_name: 'Nombre de contacto', tt_field_contact_phone: 'Teléfono de contacto',
     tt_date_in_past: 'La fecha no puede ser en el pasado', tt_time_in_past: 'La hora de salida no puede ser en el pasado', tt_missing_prefix: 'Falta: ',
     tt_cannot_save_conflict: 'No se puede guardar: resolvé primero el conflicto de embarcación.', tt_cannot_save_crew_conflict: 'No se puede guardar: {names} ya está asignado a otra salida que se superpone.',
-    tt_cannot_save_capacity: 'No se puede guardar: demasiados huéspedes para esta embarcación una vez contada la tripulación.', tt_error_saving_trip: 'Error al guardar la salida.', tt_groups_count: 'Grupos ({n})',
+    tt_cannot_save_capacity: 'No se puede guardar: demasiados huéspedes para esta embarcación una vez contada la tripulación.', tt_error_saving_trip: 'Error al guardar la salida.', tt_groups_count: 'Grupos ({n})', tt_groups_count_one: 'Grupo',
     checkin_offline: 'Estás sin conexión — el registro de llegada necesita conexión.',
     wv_error_loading: 'Error al cargar los formularios.', wv_allow_popups_export: 'Permití las ventanas emergentes para exportar.',
     cl_error_loading: 'Error al cargar los checklists.',
-    bp_use_web_for_billing: 'Abrí sevenseasops.com desde un navegador (Safari, Chrome) para elegir un plan o gestionar la facturación.',
+    bp_use_web_for_billing: 'La facturación se gestiona en sevenseasops.com desde un navegador (Safari, Chrome).',
     plan_limit_boats: 'Tu plan cubre hasta {max} botes, y ya los estás usando todos.',
     plan_limit_locations: 'Tu plan cubre un solo local.',
-    plan_limit_upgrade_to: '{plan} cubre lo que necesitás.',
-    plan_limit_contact: 'Para flotas más grandes, escribinos a contact@sevenseasops.com.',
+    plan_limit_upgrade_to: '{plan} cubre lo que hace falta.',
+    plan_limit_contact: 'Para flotas más grandes, escribir a contact@sevenseasops.com.',
     plan_limit_see_plans: 'Ver planes',
-    plan_overage_boats: 'Tenés {used} botes activos entre todos tus locales y tu plan cubre {max}.',
+    plan_overage_boats: 'Hay {used} botes activos entre todos tus locales y tu plan cubre {max}.',
     plan_overage_where: 'Dónde están — {list}.',
     plan_overage_no_location: 'Sin local',
-    pay_offline: 'Estás sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Intentá de nuevo cuando vuelvas a estar en línea.',
-    pay_exceeds_owed_note: 'Esto excede lo adeudado — por favor agregá una nota explicando por qué.',
-    guest_offline: 'Estás sin conexión — los cambios de huéspedes necesitan conexión. Intentá de nuevo cuando vuelvas a estar en línea.',
+    pay_offline: 'Sin conexión — los pagos necesitan conexión para que nada se registre dos veces o se pierda. Se puede reintentar cuando vuelva.',
+    pay_exceeds_owed_note: 'Esto excede lo adeudado — hace falta una nota explicando por qué.',
+    guest_offline: 'Sin conexión — los cambios de huéspedes necesitan conexión. Se puede reintentar cuando vuelva.',
     guest_cert_required: 'Por favor indicá si este huésped es buzo certificado.',
     maint_fields_required: 'Título, fecha y descripción son obligatorios.', maint_saved_offline: 'Guardado sin conexión — se sincronizará automáticamente cuando vuelvas a estar en línea.',
     comp_fields_required: 'Local, nombre y vida útil del filtro son obligatorios.',
@@ -6291,10 +6295,10 @@ function t(key) {
 // se había probado) el defecto es invisible — probar en otra cuenta es lo que
 // lo destapó.
 //
-// Por qué una función y no «(s)» en el texto: la app ya tenía CUATRO formas de
+// Por qué una función y no «(s)» en el texto: la app tenía CINCO formas de
 // resolver lo mismo (`_singular`/`_plural`, `{s}`, «(s)» escrito a mano, y los
 // contadores que no lo resuelven en absoluto). Ésta es la convención que ya
-// existía y no miente —`rw_pending_one` / `rw_pending_many`— y vive acá para que
+// existía y no miente —`rw_pending` / `rw_pending_one`— y vive acá para que
 // el próximo contador no invente una quinta.
 //
 // Degrada a lo de antes: sin la clave `_one`, devuelve el mismo texto que hoy.
@@ -8674,7 +8678,7 @@ async function buildTaskBannerHtml(myId) {
   const shown = titles.slice(0, 2).join(', ');
   const moreCount = titles.length - 2;
   const sub = moreCount > 0 ? `${shown} +${moreCount}` : shown;
-  const title = dueTasks.length === 1 ? t('home_task_banner_title_single') : t('home_task_banner_title_plural');
+  const title = textoConCantidad('home_task_banner_title_plural', dueTasks.length);
 
   return `<div class="card home-task-banner" onclick="showPage('tasks')">
     <div class="home-task-banner-icon">!</div>
@@ -9302,7 +9306,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-26c');
+  console.info('[Seven Seas] build 2026-10-26f');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -10577,7 +10581,17 @@ function tripsArchivadas(cols) {
   return consultaDeSalidas(cols).not('archived_at', 'is', null);
 }
 
-// La fecha de CALENDARIO de un instante, en la zona del centro.
+// La fecha de CALENDARIO de un instante, en el huso del DISPOSITIVO.
+//
+// Dice «del dispositivo» y no «del centro» a propósito, y es una corrección de
+// una revisión del 26/10: los comentarios de esta zona decían «el día del
+// centro», que afirma más de lo que el código hace. Y la diferencia es real —
+// **la app guarda un huso por sede**: el selector está en la pantalla de
+// locales y se escribe en `locations.timezone`, y **nadie lo lee**. Un dueño
+// que mira desde otro país ve bordes de día distintos a los del mostrador.
+//
+// Leerlo es un cambio aparte y no chico (toca todas las pantallas con fecha).
+// Lo que corresponde ya es que el comentario no tape la pregunta.
 //
 // Antes esto era `formatDate`, que devolvía el trozo de fecha de
 // `d.toISOString()` — o sea la fecha **UTC**. (Esa frase decía el código viejo
@@ -10592,9 +10606,10 @@ function tripsArchivadas(cols) {
 // locales, justo al lado de dos llamadas a `formatDate`, y la línea siguiente
 // **comparaba los dos**: `formatDate(calDate) < todayLocalStr`. Una fecha UTC
 // contra una fecha local, en la misma expresión. Se parchó el sitio y no la
-// función, que es exactamente cómo se propaga: quedaron **34 líneas** con
-// `toISOString().split('T')[0]` fuera de la función (37 sitios contando los dos
-// del mes y la función misma) para que la próxima se copie de la mala.
+// función, que es exactamente cómo se propaga: **quedaban** 34 líneas con esa
+// expresión fuera de la función (37 sitios contando los dos del mes y la
+// función misma) para que la próxima se copiara de la mala. Hoy quedan **cero**
+// y hay un test que lo afirma.
 //
 // Las copias anclaban a veces en `T12:00:00` (mediodía local no cruza de día
 // en ningún huso) y por eso varias estaban bien por accidente. Un truco que
@@ -10618,7 +10633,7 @@ function fechaLocal(d) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// UN DÍA DEL CENTRO, EXPRESADO COMO VENTANA DE INSTANTES
+// UN DÍA LOCAL, EXPRESADO COMO VENTANA DE INSTANTES
 //
 // Esto es la otra mitad de `fechaLocal`, y la que faltaba. Lo encontró una
 // revisión independiente del commit 1822e0f y es un defecto que yo mismo
@@ -10630,7 +10645,7 @@ function fechaLocal(d) {
 //
 // PostgREST manda ese texto crudo y Postgres lo interpreta con el `TimeZone` de
 // la sesión, que en Supabase es **UTC** (medido el 26/10: `show timezone` → UTC).
-// Así que el borde de la ventana es la medianoche de Greenwich, no la del centro.
+// Así que el borde de la ventana es la medianoche de Greenwich, no la local.
 // En Mar del Plata (UTC−3) «hoy» iba de **ayer 21:00 a hoy 20:59** locales; en
 // Fiji (UTC+12), de **hoy al mediodía a mañana al mediodía**.
 //
@@ -10653,11 +10668,32 @@ function ventanaDelDia(fecha, dias) {
   if (!a || !m || !d) throw new RangeError('ventanaDelDia() espera YYYY-MM-DD, recibió: ' + fecha);
   return {
     desde: new Date(a, m - 1, d).toISOString(),
-    hasta: new Date(a, m - 1, d + (dias || 1)).toISOString()
+    hasta: new Date(a, m - 1, d + (dias === undefined ? 1 : dias)).toISOString()
   };
 }
 
-// El día del centro al que pertenece un instante ya guardado. Es el camino de
+// El día que hay cargado en un `input[type=date]`, y hoy si está vacío.
+//
+// Existe por un defecto que introduje el 26/10 y que agarró una revisión del
+// diff: desde que `fechaLocal` **corta** con una fecha inválida en vez de
+// devolver «NaN-NaN-NaN», los cuatro botones de día anterior/siguiente —cierre
+// de caja y log de formularios— lanzaban con el campo vacío, y la excepción se
+// comía el `loadCashUp()` / `renderWaiverLog()` de abajo: el click no hacía
+// nada y no había forma de salir sin recargar.
+//
+// Lo que se perdió al endurecer la función era un **autoarreglo accidental**:
+// «NaN-NaN-NaN» no es una fecha válida para el input, el input la rechazaba, el
+// campo quedaba vacío, y el `if (!el.value) el.value = fechaLocal()` de la
+// función que carga lo devolvía a hoy. Funcionaba por rebote.
+//
+// Ahora el día válido se resuelve ANTES de moverlo, que es donde corresponde.
+function diaDelCampo(id) {
+  const el = document.getElementById(id);
+  const v = el && el.value;
+  return /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : fechaLocal();
+}
+
+// El día local al que pertenece un instante ya guardado. Es el camino de
 // vuelta: `fila.signed_at.split('T')[0]` da el día UTC, así que una firma de las
 // 22:00 en Mar del Plata se archivaba bajo el día siguiente y no aparecía
 // buscando «hoy».
@@ -11403,7 +11439,7 @@ async function setBookingMode(mode) {
 // ─── GROUPS PANEL ───
 async function renderGroupsPanel() {
   const list = document.getElementById('groups-list');
-  document.getElementById('groups-title').textContent = tripGroups_cache.length > 1 ? t('tt_groups_count').replace('{n}', tripGroups_cache.length) : t('tt_group');
+  document.getElementById('groups-title').textContent = textoConCantidad('tt_groups_count', tripGroups_cache.length);
   document.getElementById('btn-add-group').style.display = (window.currentBookingMode === 'shared' && currentTripId) ? 'inline-block' : 'none';
   const cardsHtml = await Promise.all(tripGroups_cache.map((g, i) => groupCardHTML(g, i)));
   list.innerHTML = cardsHtml.join('');
@@ -12013,13 +12049,13 @@ async function loadCashUp() {
 }
 document.getElementById('cashup-date').addEventListener('change', loadCashUp);
 document.getElementById('cashup-prev').addEventListener('click', () => {
-  const d = new Date(document.getElementById('cashup-date').value + 'T12:00:00');
+  const d = new Date(diaDelCampo('cashup-date') + 'T12:00:00');
   d.setDate(d.getDate() - 1);
   document.getElementById('cashup-date').value = fechaLocal(d);
   loadCashUp();
 });
 document.getElementById('cashup-next').addEventListener('click', () => {
-  const d = new Date(document.getElementById('cashup-date').value + 'T12:00:00');
+  const d = new Date(diaDelCampo('cashup-date') + 'T12:00:00');
   d.setDate(d.getDate() + 1);
   document.getElementById('cashup-date').value = fechaLocal(d);
   loadCashUp();
@@ -12381,7 +12417,7 @@ async function openTabDetail(tabId) {
       <div class="inline-form" id="form-pay-tab-full" style="display:none;margin-bottom:16px;">
         <div class="card-section-title">${t('gt_settle_full_balance')}</div>
         ${unpaidGroups.map(g => `
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:4px;">${g.trip_type} — ${g.trip_date} · ${g.guestCount} ${g.guestCount > 1 ? t('cal_guests_suffix') : t('gt_guest_singular')} · $${g.owed.toFixed(2)}</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:4px;">${g.trip_type} — ${g.trip_date} · ${g.guestCount} ${textoConCantidad('cal_guests_suffix', g.guestCount)} · $${g.owed.toFixed(2)}</div>
         `).join('')}
         <div style="font-weight:700;font-size:1rem;margin:10px 0;">${t('gt_total_label')} $${grandTotal.toFixed(2)}</div>
         <div class="sf-group">
@@ -13208,7 +13244,10 @@ function readinessCounterText(states) {
   const total = states.length;
   const ready = states.filter(x => x === 'ready').length;
   const blocked = states.filter(x => x === 'blocked').length;
-  let txt = t('rd_counter').replace('{n}', ready).replace('{total}', total);
+  // El plural acá cuelga del TOTAL, no de los listos: «1 de 1 listo», «0 de 3
+  // listos». Por eso el segundo argumento es `total` y el {n} se reemplaza
+  // después, al revés que en el resto de los contadores.
+  let txt = textoConCantidad('rd_counter', total).replace('{n}', ready);
   if (blocked) txt += ' · ' + textoConCantidad('rd_blocked', blocked);
   return txt;
 }
@@ -13911,7 +13950,7 @@ async function renderWaiverLog() {
   } else {
     const byDate = {};
     log.forEach(w => {
-      // El día del CENTRO, no el UTC: la fila de al lado muestra la fecha con
+      // El día LOCAL, no el UTC: la fila de al lado muestra la fecha con
       // `toLocaleDateString` (local), así que con el día UTC la misma firma
       // aparecía bajo dos días distintos en la misma pantalla.
       const d = diaLocalDeInstante(w.signed_at);
@@ -13928,14 +13967,14 @@ async function renderWaiverLog() {
 document.getElementById('waiver-log-date').addEventListener('change', renderWaiverLog);
 document.getElementById('waiver-log-prev').addEventListener('click', () => {
   const el = document.getElementById('waiver-log-date');
-  const d = new Date(el.value + 'T12:00:00');
+  const d = new Date(diaDelCampo('waiver-log-date') + 'T12:00:00');
   d.setDate(d.getDate() - (window.waiverLogView === 'weekly' ? 7 : 1));
   el.value = fechaLocal(d);
   renderWaiverLog();
 });
 document.getElementById('waiver-log-next').addEventListener('click', () => {
   const el = document.getElementById('waiver-log-date');
-  const d = new Date(el.value + 'T12:00:00');
+  const d = new Date(diaDelCampo('waiver-log-date') + 'T12:00:00');
   d.setDate(d.getDate() + (window.waiverLogView === 'weekly' ? 7 : 1));
   el.value = fechaLocal(d);
   renderWaiverLog();
@@ -14439,7 +14478,7 @@ async function exportWaiversForDay(date) {
   feedback.className = 'save-feedback visible';
 
 
-  // El día del centro, como ventana de instantes: exportar «lo de hoy» a las 22
+  // El día local, como ventana de instantes: exportar «lo de hoy» a las 22
   // en Mar del Plata dejaba afuera todo lo firmado después de las 21. Para un
   // export de registros legales el silencio es el peor modo de falla — no da
   // error, da un documento incompleto.
@@ -14997,7 +15036,7 @@ async function groupPaymentHTML(g, participants) {
     </div>
   `).join('');
   const noPriceSet = !g.price_per_person && participants.length > 0;
-  const guestUnit = guests !== 1 ? t('cal_guests_suffix') : t('gt_guest_singular');
+  const guestUnit = textoConCantidad('cal_guests_suffix', guests);
   const statusLabel = noPriceSet ? t('gp_no_price_set') : balance <= 0 && total > 0 ? t('gt_paid_in_full') : paid > 0 ? t('gp_partial_owed').replace('{amount}', '$' + balance.toFixed(2)) : t('gp_nothing_paid_yet');
   const statusColor = noPriceSet ? 'var(--warning, #b7791f)' : balance <= 0 && total > 0 ? 'var(--success)' : paid > 0 ? '#c0392b' : 'var(--muted)';
   const breakdownText = noPriceSet
@@ -19121,7 +19160,7 @@ async function loadLoggedChecklists() {
   // a la salida, la API ya no puede incrustarla. Las actas anteriores al
   // 07/10 no tienen trip_date, y para ésas sigue valiendo la fecha de firma.
   //
-  // Y la fecha de firma se resuelve al día del CENTRO. Con el día UTC, un acta
+  // Y la fecha de firma se resuelve al día local. Con el día UTC, un acta
   // firmada a las 22:00 en Mar del Plata se archivaba bajo el día siguiente: no
   // aparecía buscando «hoy» y el encabezado la rotulaba con la fecha
   // equivocada. El campo de búsqueda es un `input[type=date]`, o sea la noción
@@ -20371,7 +20410,23 @@ function filaDeService(l, { conBarco = false } = {}) {
 // propósito, porque cambia por diseño— así que tampoco aparece acá: ponerlo al
 // lado del hash invitaría a creer que está sellado. Lo que no está protegido
 // no se imprime en una hoja que dice «constancia».
-function constanciaDeService(l, { contexto = '', selladoPor = '' } = {}) {
+// `verificado` viene de `verify_maintenance_logs()` y puede ser **undefined**
+// si no se pudo preguntar. Undefined y false NO son lo mismo: uno es «no se
+// preguntó» y el otro «se preguntó y no coincide». Se dicen distinto, igual que
+// en el certificado de un waiver — y es la distinción que hace que la hoja no
+// mienta en ninguno de los dos casos.
+function lineaDeComprobacion(verificado) {
+  if (verificado === true) {
+    return `<p class="chk ok">✓ ${escapeHtml(t('svc_cert_checked')
+      .replace('{when}', new Date().toLocaleString(localeDeLaApp())))}</p>`;
+  }
+  if (verificado === false) {
+    return `<p class="chk mal">✗ ${escapeHtml(t('svc_cert_broken'))}</p>`;
+  }
+  return `<p class="chk gris">${escapeHtml(t('svc_cert_unchecked'))}</p>`;
+}
+
+function constanciaDeService(l, { contexto = '', selladoPor = '', verificado } = {}) {
   const fecha = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
   const momento = l.sealed_at ? new Date(l.sealed_at).toLocaleString(localeDeLaApp()) : '—';
   const fila = (etiqueta, valor) => `<tr><th>${escapeHtml(etiqueta)}</th><td>${escapeHtml(valor || '—')}</td></tr>`;
@@ -20390,6 +20445,10 @@ function constanciaDeService(l, { contexto = '', selladoPor = '' } = {}) {
   .sello h2 { font-size:13px; margin:0 0 8px; text-transform:uppercase; letter-spacing:0.06em; color:#555; }
   .hash { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; word-break:break-all; color:#1a2b3c; }
   .nota { font-size:11.5px; color:#666; line-height:1.6; border-top:1px solid #e6e6e6; padding-top:12px; }
+  .chk { font-size:11.5px; line-height:1.5; margin:10px 0 0; padding:8px 10px; border-radius:4px; }
+  .chk.ok { color:#15724f; background:#eaf7f1; border:1px solid #bfe3d2; font-weight:600; }
+  .chk.mal { color:#8e2318; background:#fdecea; border:1px solid #f0bdb6; font-weight:700; }
+  .chk.gris { color:#666; background:#f6f6f3; border:1px solid #e3e3df; }
   @media print { body { padding:16px; } }
 </style></head><body>
   <h1>${escapeHtml(t('svc_cert_title'))}</h1>
@@ -20413,6 +20472,7 @@ function constanciaDeService(l, { contexto = '', selladoPor = '' } = {}) {
     </table>
     <p style="margin:10px 0 3px;font-size:12px;font-weight:600;">SHA-256</p>
     <p class="hash">${escapeHtml(l.content_hash || '')}</p>
+    ${lineaDeComprobacion(verificado)}
   </div>
 
   <p class="nota">${escapeHtml(t('svc_cert_note'))}</p>
@@ -20431,10 +20491,36 @@ async function imprimirConstanciaDeService(id) {
   // afirmaría algo que no es cierto.
   if (!l.sealed_at) { await showAlertModal(t('svc_cert_not_sealed')); return; }
 
+  // Se comprueba al EMITIR y no al sellar, igual que los waivers: la hoja que
+  // se entrega afirma que **a esta fecha y hora** el sello seguía coincidiendo.
+  // Comprobarlo al sellar no probaría nada — en ese momento acaba de
+  // calcularse.
+  //
+  // Hasta hoy la hoja decía, textual, que «recalcular la huella sobre el
+  // registro guardado tiene que dar el mismo valor, y cualquier diferencia es
+  // en sí misma la prueba», y **nadie la recalculaba**: existían
+  // `verify_waivers` y `verify_waiver` y el equivalente del service no. Un
+  // documento que describe una verificación que el sistema no hace es la misma
+  // forma que el cartel que mandaba a permitir ventanas emergentes — con la
+  // diferencia de que esta hoja es la que mira un seguro.
+  //
+  // Si falla por red, la hoja sale igual y lo dice. Un certificado que no se
+  // emite porque no hubo señal no le sirve a nadie, y uno que calla la duda
+  // afirma de más.
+  let verificado;
+  try {
+    const { data: chk } = await sb.rpc('verify_maintenance_logs', { p_ids: [id] });
+    if (chk && chk.length) verificado = chk[0].intact;
+  } catch (e) {
+    console.error('No se pudo verificar el sello al emitir la constancia:', e);
+  }
+
   const contexto = [l.boats && l.boats.name, l.engines && l.engines.name, l.gear && l.gear.name]
     .filter(Boolean).join(' · ');
   await loadSignerStaff();
-  const html = constanciaDeService(l, { contexto, selladoPor: nombreDeTripulante(l.sealed_by) });
+  const html = constanciaDeService(l, {
+    contexto, selladoPor: nombreDeTripulante(l.sealed_by), verificado
+  });
   const noSePudo = abrirParaImprimir(html);
   if (noSePudo) await showAlertModal(motivoDeNoPoderImprimir(noSePudo));
 }
@@ -21256,7 +21342,7 @@ async function cargarVentasDelDia() {
   if (!el) return;
   if (!posEstaPrendido()) { el.innerHTML = ''; return; }
 
-  // `sold_at` es `timestamptz`, así que el día del centro se pide como ventana
+  // `sold_at` es `timestamptz`, así que el día local se pide como ventana
   // de instantes. La primera versión mandaba `hoy + 'T00:00:00'`, que Postgres
   // lee en UTC: en Fiji, un centro que abría el mostrador a las 9 de la mañana
   // **no veía ninguna de sus ventas de hoy**.

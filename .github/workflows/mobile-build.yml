@@ -34,8 +34,17 @@ on:
       # construido nada y habría parecido que no pasó nada.
       - 'capacitor.config.json'
       - 'assets/**'
-      - 'capacitor.config.json'
       - 'package.json'
+      # 26/10: faltaban los dos, por la misma razón que faltaba la config de
+      # Capacitor. `build-www.js` decide QUÉ archivos entran al binario —si
+      # cambia y no se construye, el paquete queda con la lista vieja— y
+      # `landing.html` ahora viaja adentro porque está en el APP_SHELL del
+      # service worker.
+      #
+      # Es la tercera vez que esta lista se queda corta. Una enumeración son N
+      # lugares donde puede faltar una entrada, y el defecto aparece donde falta.
+      - 'scripts/build-www.js'
+      - 'landing.html'
 
 jobs:
   build-android:

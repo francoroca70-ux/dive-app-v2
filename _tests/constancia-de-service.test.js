@@ -150,6 +150,60 @@ chk('el aviso de «todavía no sellado» existe en inglés',
     /not been sealed yet/.test(T.t('svc_cert_not_sealed')));
 T.setIdioma('es');
 
+// ─── LA COMPROBACIÓN DEL SELLO, agregada el 26/10 ──────────────────────────
+//
+// Hasta hoy la hoja decía textual que «recalcular la huella sobre el registro
+// guardado tiene que dar el mismo valor, y cualquier diferencia es en sí misma
+// la prueba» — y **nadie la recalculaba**. Existían `verify_waivers` y
+// `verify_waiver` para los formularios y el equivalente del service no.
+//
+// Un documento que describe una verificación que el sistema no hace es la misma
+// forma que el cartel que mandaba a permitir ventanas emergentes en la app
+// instalada. La diferencia es que esta hoja es la que mira un seguro.
+//
+// Los tres estados son TRES, no dos, y esa es la parte que importa:
+// `undefined` es «no se preguntó» y `false` es «se preguntó y no coincide».
+const conOk    = T.cert(sellado, { verificado: true });
+const conMal   = T.cert(sellado, { verificado: false });
+const sinPregun = T.cert(sellado, {});
+
+chk('verificado: la hoja lo dice, con fecha y hora',
+    /chk ok/.test(conOk) && /comprobado contra el registro guardado/.test(conOk),
+    'la hoja afirma que A ESTA FECHA el sello coincidía');
+chk('no coincide: la hoja lo grita, no lo esconde',
+    /chk mal/.test(conMal) && /ATENCIÓN/.test(conMal) && /cambió desde que se selló/.test(conMal));
+chk('no se pudo preguntar: la hoja lo dice y no afirma de más',
+    /chk gris/.test(sinPregun) && /No se pudo volver a comprobar/.test(sinPregun),
+    'callarlo sería afirmar una verificación que no se hizo');
+
+// Y las tres son distintas entre sí: si dos coincidieran, uno de los estados
+// no se estaría mostrando.
+chk('los tres estados producen tres hojas distintas',
+    conOk !== conMal && conMal !== sinPregun && conOk !== sinPregun);
+chk('y «no coincide» no se puede confundir con «verificado»',
+    !/chk ok/.test(conMal) && !/chk ok/.test(sinPregun));
+
+// La hoja se emite igual sin señal. Un certificado que no sale porque no hubo
+// conexión no le sirve a nadie.
+chk('la constancia se emite aunque la comprobación falle',
+    sinPregun.includes(sellado.content_hash) && /SHA-256/.test(sinPregun));
+
+// Se pregunta al EMITIR, no al sellar: en el momento del sellado la huella
+// acaba de calcularse y comprobarla no probaría nada.
+chk('se consulta al emitir la constancia, una sola vez',
+    (html.match(/sb\.rpc\('verify_maintenance_logs'/g) || []).length === 1);
+chk('y la respuesta viaja a la hoja',
+    /constanciaDeService\(l, \{[\s\S]{0,120}verificado[\s\S]{0,20}\}\)/.test(html));
+// Lo que NO se puede probar acá: que la función de Postgres detecte una
+// alteración. Eso se midió contra la base real el 26/10 en una transacción
+// revertida — cambiarle el costo al único service sellado hizo que `intact`
+// pasara de true a false. jsdom no sabe nada de SHA-256 ni de triggers.
+chk('los tres textos están en los dos idiomas',
+    /svc_cert_checked/.test(html) && /svc_cert_broken/.test(html) && /svc_cert_unchecked/.test(html) &&
+    (html.match(/svc_cert_checked:/g) || []).length === 2 &&
+    (html.match(/svc_cert_broken:/g) || []).length === 2 &&
+    (html.match(/svc_cert_unchecked:/g) || []).length === 2);
+
 chk('el cuerpo del test corrió hasta el final', true);
 } catch (e) {
   chk('el cuerpo del test corrió hasta el final', false, String(e && e.stack || e).slice(0, 400));

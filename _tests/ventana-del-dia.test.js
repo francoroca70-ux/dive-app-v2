@@ -1,4 +1,4 @@
-// Un día del centro, comparado contra una columna de INSTANTE.
+// Un día local, comparado contra una columna de INSTANTE.
 //
 //   node _tests/run-all.js      (preferido)
 //
@@ -38,14 +38,42 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
 // ─── 1 · EL GUARDIÁN: nadie vuelve a pegar un string sin huso ───────────────
 //
-// Afirma la regla, no un número: cualquier `.gte('col', algo + 'T…')` nuevo
-// falla acá. Es la forma exacta del bug, y es fácil de escribir sin pensarlo.
+// Afirma la regla, no un número: cualquier `.gte('col', <algo con una T de
+// hora>)` nuevo falla acá.
+//
+// LA PRIMERA VERSIÓN ERA MÁS DÉBIL QUE SU PROPIA PROMESA, y lo encontró una
+// revisión del test: sólo atrapaba `x + 'T…'` con comilla simple. Se le
+// escapaban las tres formas más probables —el template literal, que es la forma
+// dominante en este archivo; la comilla doble; y el literal completo, que es
+// justamente el ejemplo que el comentario de arriba usa para ilustrar el bug—.
+//
+// Un guardián que atrapa una ortografía en vez de una forma **da la sensación
+// de cubrir** sin cubrir, que es peor que no tenerlo: nadie vuelve a mirar.
+const RX_PEGADO = /\.(gte|lte|gt|lt|eq)\(\s*['"`][a-z_]+['"`]\s*,\s*(?![^)]*(?:desde|hasta|toISOString))[^)]*T\d{2}:\d{2}/;
 const pegados = html.split('\n').filter(l =>
-  /\.(gte|lte|gt|lt|eq)\(\s*'[a-z_]+'\s*,\s*[A-Za-z_$][\w$.]*\s*\+\s*'T/.test(l) &&
-  !l.trim().startsWith('//')
+  RX_PEGADO.test(l) && !l.trim().startsWith('//') && !l.trim().startsWith('*')
 );
 chk('ninguna consulta compara una columna contra un texto de fecha sin huso',
-    pegados.length === 0, pegados.slice(0, 3).join(' · '));
+    pegados.length === 0, pegados.slice(0, 3).map(l => l.trim().slice(0, 90)).join('  ·  '));
+
+// Y el detector tiene que detectar: se le pasan las cuatro grafías del bug y
+// las cuatro tienen que caer. Sin esto, la regex de arriba puede estar rota y
+// el guardián pasa por estar vacío, no por estar limpio.
+const GRAFIAS = [
+  ".gte('signed_at', fecha + 'T00:00:00')",
+  '.gte("signed_at", fecha + "T00:00:00")',
+  ".gte('signed_at', `${fecha}T00:00:00`)",
+  ".gte('signed_at', '2026-10-26T00:00:00')",
+  ".lte('sold_at', rangeEnd + 'T23:59:59')"
+];
+const noCazadas = GRAFIAS.filter(g => !RX_PEGADO.test(g));
+chk('el guardián caza las cinco grafías del bug, no sólo una',
+    noCazadas.length === 0, noCazadas.join('  ·  '));
+// Y no caza lo correcto, que es pasar un instante ya calculado.
+chk('y no se queja de la forma correcta',
+    !RX_PEGADO.test(".gte('signed_at', v.desde).lt('signed_at', v.hasta)") &&
+    !RX_PEGADO.test(".gte('sold_at', new Date(a,m,d).toISOString())"),
+    'un guardián que falla sobre código sano entrena a desactivarlo');
 
 chk('la ventana se calcula en un solo lugar',
     (html.match(/function ventanaDelDia\(/g) || []).length === 1);
@@ -142,7 +170,7 @@ try { T.ventana('no es una fecha'); } catch (e) { err = e; }
 chk('una fecha inválida corta en vez de devolver una ventana inventada', !!err);
 
 // ─── 3 · El camino de vuelta ────────────────────────────────────────────────
-chk('un instante se resuelve al día del centro',
+chk('un instante se resuelve al día local',
     T.dia('2026-10-25T21:00:00Z') === '2026-10-26', T.dia('2026-10-25T21:00:00Z'));
 chk('y la versión vieja habría dicho el 25',
     '2026-10-25T21:00:00Z'.split('T')[0] === '2026-10-25',

@@ -436,6 +436,25 @@ dólares por mes para proteger a cero personas. Ver
 Detalle y la lección —leí mi propia nota en vez de medir el código, cuatro
 veces— en `Seven Seas Ops/Plantillas y actas.md`.
 
+**9 · Lo que depende de un tercero y tiene plazo se cierra con una captura.**
+Pedido por Fran el 26/10, después de descubrir que el envío a Apple que las
+notas daban por hecho desde el 13/10 **nunca se había mandado**: trece días de
+cola perdidos, y yo lo había repetido como un hecho en cuatro notas sin haberlo
+visto.
+
+Cuando se le pasan a Fran los pasos de algo **con plazo y en manos de un
+tercero** —Apple, Google Play, Paddle, DNS, Search Console, un banco, un
+organismo—, en el mismo mensaje se le pide la **captura del estado final**.
+Hasta verla, en el vault y acá figura como *«según Fran, sin confirmar»*.
+
+Lo que se puede medir solo se mide solo y no se le pide nada: la ficha pública
+de Play, el DNS, la URL desplegada, la base. La captura es para lo que vive
+detrás de un login que Claude no abre — que es exactamente el mismo límite de la
+regla 1.
+
+**La mitad del error fue mía**, y es la parte que la regla corrige: *«Fran lo
+hizo» no es una medición hasta que alguien lo ve.*
+
 **Y para esta etapa jsdom no alcanzó:** se midió contra la base real que la FK
 `checklist_template_items → checklist_templates` existe (sin ella el `select`
 incrustado daría PGRST200), que las 5 columnas del select están, y que RLS
@@ -1299,12 +1318,23 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
 > `capacitor.config.json`.** El «orden obligado» que yo había escrito —Apple →
 > Capacitor a `/index.html` → landing a la raíz— **no hace falta**, salía del
 > diagnóstico equivocado.
-- **iOS: tercer envío en revisión desde el 13/10**, binario **162001**, con la
+- **iOS: tercer envío en revisión desde el 26/10**, binario **162001**, con la
   respuesta de 2.1(b) contestada en el hilo. Los dos anteriores volvieron
   rechazados: 23/09 por metadatos (guía 2.3.3, las capturas de 13" sólo mostraban
   el login) y 30/09 por el modelo de negocio. El procedimiento de capturas está
   en `Operativa/Capturas para el App Store.md` del vault — se repite en cada
   versión, y el 13/10 **no hizo falta** porque seguían cargadas.
+
+  > [!warning] Decía «desde el 13/10» y era falso: no se había enviado
+  > Fran lo descubrió el 26/10 — había preparado el envío el 13 y nunca apretó
+  > el botón. Trece días de cola perdidos, y **yo lo repetí como un hecho en
+  > varias notas sin haberlo visto nunca**. De ahí la regla 9.
+  >
+  > **Y el 162001 es anterior al arreglo del 14/10**, así que si Apple lo
+  > aprueba sale a la tienda un iOS que no abre sin señal. Retirarlo cuesta el
+  > lugar en la cola, que ahora es de hoy y no de hace dos semanas. **La
+  > decisión es de Fran**; lo medido está en
+  > `Errores y aprendizajes/El install que cacheaba todo o nada.md`.
 > [!warning] Los dos `google*.html` de la raíz del repo NO se borran
 > `google6c351a16b170880f.html` sostiene la verificación de Search Console
 > (propiedad `https://www.sevenseasops.com/`, verificada el 14/10) y
