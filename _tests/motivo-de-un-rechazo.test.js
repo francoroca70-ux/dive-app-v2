@@ -40,7 +40,17 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 // Dos de los once lugares lo tenían así, encontrados el 20/10 buscando por qué
 // el del tilde mentía. Se cuenta la regla, no «las que yo conozco»: cualquier
 // llamada nueva que se escriba sin await rompe este test.
-const llamadas = [...html.matchAll(/(.{0,10})motivoDeFalloAlEscribir\s*\(/g)]
+//
+// 26/10: y se midió sobre TEXTO, no sobre código. Al escribir la gemela del
+// lado de leer puse en un comentario «la gemela de `motivoDeFalloAlEscribir()`»
+// y este test la contó como una llamada sin await. Séptima vez en el proyecto
+// que contar menciones falla, y la primera en que el que la provoca soy yo
+// mismo documentando. Un comentario que nombra una función no es un llamado:
+// las líneas de comentario se sacan antes de medir.
+const codigo = html.split('\n')
+  .filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l))
+  .join('\n');
+const llamadas = [...codigo.matchAll(/(.{0,10})motivoDeFalloAlEscribir\s*\(/g)]
   .filter(m => !/(async )?function $/.test(m[1]));
 const sinAwait = llamadas.filter(m => !/await\s+$/.test(m[1]));
 chk('todas las llamadas a motivoDeFalloAlEscribir van con await',

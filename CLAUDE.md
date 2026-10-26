@@ -460,7 +460,48 @@ hizo» no es una medición hasta que alguien lo ve.*
 incrustado daría PGRST200), que las 5 columnas del select están, y que RLS
 haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 
+> [!warning] Medido el 26/10: la app ABRE sin señal, y adentro no hay nada
+> Fran probó desde el binario (TestFlight **203001**): logueado, app cerrada del
+> todo, wifi y datos apagados, abrir. **Abre** — eso cierra la mitad del 14/10.
+> Lo que mostró fue el calendario sin salidas, la tripulación diciendo *«Aún no
+> hay tripulación»* y su propio usuario como un **«?»**.
+>
+> Una sola causa: `supabase-js` **no lanza**, devuelve `data: null` con el error
+> al lado, y **141 lecturas destructuran sólo `data`** (41 miran el error). Así
+> que una consulta que no salió y una tabla vacía son **el mismo valor**, y la
+> pantalla elige la peor de las dos lecturas. Es el mismo hallazgo del 08/10 del
+> lado de los borrados —32 y sólo 4 miraban el error, de ahí `borrarOAvisar()`—
+> pero del lado de leer, donde nunca se había hecho la pasada.
+>
+> **Hecho el 26/10:** `motivoDeFalloAlLeer()` y `textoDeListaVacia()`, aplicadas
+> en los estados vacíos que viven bajo una lectura, con
+> `_tests/una-lista-vacia-no-miente.test.js` afirmando la regla (no un número) y
+> una lista de excepciones donde cada una lleva su motivo escrito. Son
+> **síncronas** a propósito: un `await` en un camino de dibujo sería otro viaje a
+> la red en el arranque, que es la enfermedad y no la cura. Por eso sólo se
+> afirma «sin conexión» cuando `navigator.onLine === false` lo permite; en la
+> duda se dice «no se pudo cargar», que es verdad siempre.
+>
+> `fetchTripsForRange()` devuelve ahora `{ salidas, error }` y no un arreglo
+> pelado. **No** se colgó el error como propiedad del arreglo, que no tocaba a
+> nadie: `renderWeekView()` hace `.filter(...)` y la marca se habría perdido en
+> silencio — la misma clase de bug.
+>
+> **La pantalla de fallo de arranque tenía una trampa**, y se sacó: su único
+> botón era *«Cerrar sesión y reintentar»*, y sin señal eso borra la sesión
+> cuando volver a entrar **necesita red**. Ahora la acción principal recarga, y
+> cerrar sesión **no se ofrece** cuando se puede afirmar que no hay red.
+>
+> **Lo que sigue abierto es que haya algo que mostrar (el «C», 8/10):** guardar
+> localmente las salidas del día y la tripulación. Hoy, sin señal, la app abre y
+> dice la verdad sobre estar vacía — pero la ficha de Play promete *«Works
+> offline»*, así que la promesa sigue sin ser cierta. **No reenviar a Apple hasta
+> que lo sea.**
+
 > [!warning] Todo el offline vale **una vez que la app está abierta**
+> Y «abierta» resultó significar **«abierta y con los datos ya cargados en esa
+> misma sesión»** — ver el bloque de arriba. Lo que sigue es correcto para la
+> carga del HTML, que es de lo que habla.
 > Fran probó el 14/10 abrirla con el modo avión puesto y vio una pantalla azul.
 > Dos causas distintas, y conviene no mezclarlas.
 >

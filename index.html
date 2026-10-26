@@ -2334,20 +2334,27 @@ body { background: var(--navy); color: var(--text); }
   <div class="loading-logo-badge"><img src="assets/logo-icon.png" alt="Seven Seas"></div>
 </div>
 
-<!-- Pantalla de fallo de arranque. No se traduce a propósito: si el arranque
-     murió, el diccionario de idiomas puede ser justamente lo que no cargó. -->
+<!-- Pantalla de fallo de arranque.
+     26/10/2026: tenía UN botón, «Cerrar sesión y reintentar», y sin señal eso
+     no reintenta nada: borra la sesión, y volver a entrar NECESITA red. Un
+     instructor en un barco que lo apretara se quedaba afuera de la app hasta
+     volver a puerto, con los tildes de la mañana del otro lado. Le estábamos
+     dando una trampa con forma de salida.
+     Ahora la acción principal es recargar, que no destruye nada, y cerrar
+     sesión queda abajo y chico — y DESAPARECE cuando se mide que no hay red.
+     Los textos se arman en `pintarBootError()`, no acá, porque dependen de si
+     hay conexión. -->
 <div id="boot-error" style="display:none;position:fixed;inset:0;z-index:9999;background:#0a1628;color:#fff;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif;">
   <div style="max-width:420px;text-align:center;">
-    <h2 style="font-size:1.2rem;font-weight:600;margin-bottom:10px;">Seven Seas couldn't start</h2>
-    <p style="font-size:0.9rem;opacity:0.75;margin-bottom:16px;line-height:1.5;">
-      No se pudo iniciar la app. Suele resolverse cerrando sesión y volviendo a entrar.
-    </p>
+    <h2 id="boot-error-title" style="font-size:1.2rem;font-weight:600;margin-bottom:10px;"></h2>
+    <p id="boot-error-help" style="font-size:0.9rem;opacity:0.75;margin-bottom:16px;line-height:1.5;"></p>
     <p id="boot-error-detail" style="font-size:0.75rem;opacity:0.55;margin-bottom:20px;word-break:break-word;font-family:monospace;"></p>
-    <button onclick="bootErrorSignOut()" style="background:#4fc3f7;color:#0a1628;border:0;border-radius:8px;padding:11px 20px;font-size:0.9rem;font-weight:600;cursor:pointer;min-height:44px;">
-      Cerrar sesión y reintentar
-    </button>
-    <p style="font-size:0.75rem;opacity:0.5;margin-top:14px;">
-      Si vuelve a pasar: contact@sevenseasops.com
+    <button id="boot-error-retry" onclick="location.reload()" style="background:#4fc3f7;color:#0a1628;border:0;border-radius:8px;padding:11px 20px;font-size:0.9rem;font-weight:600;cursor:pointer;min-height:44px;"></button>
+    <div style="margin-top:14px;">
+      <button id="boot-error-signout" onclick="bootErrorSignOut()" style="background:none;color:#fff;opacity:0.55;border:0;padding:8px 12px;font-size:0.8rem;text-decoration:underline;cursor:pointer;min-height:44px;"></button>
+    </div>
+    <p style="font-size:0.75rem;opacity:0.5;margin-top:6px;">
+      contact@sevenseasops.com
     </p>
   </div>
 </div>
@@ -4777,6 +4784,10 @@ const TRANSLATIONS = {
     svc_cert_not_sealed: "This service has not been sealed yet. Seal it first — a certificate for a draft would claim something that is not true.",
     svc_cert_not_found: "That service could not be loaded.",
     set_build_label: 'App version',
+    boot_err_title: 'Seven Seas couldn\'t start', boot_err_title_offline: 'No connection',
+    boot_err_help: 'The app couldn\'t start. Reloading usually does it.',
+    boot_err_help_offline: 'The app needs a connection to start. Open it again once there is signal.',
+    boot_err_retry: 'Reload', boot_err_signout: 'Sign out',
     svc_cert_checked: "Seal checked against the stored record on {when}: the recomputed fingerprint matches.",
     svc_cert_broken: "WARNING — the recomputed fingerprint does NOT match the one on this sheet. The stored record has changed since it was sealed.",
     svc_cert_unchecked: "The seal could not be re-checked when this sheet was produced (no connection). The fingerprint above is the one stored at the time of sealing.",
@@ -4832,6 +4843,8 @@ const TRANSLATIONS = {
     // Los mismos cuatro motivos, pero para una ESCRITURA. 23503 no significa lo
     // mismo en los dos casos: al borrar es «algo cuelga de esto», al guardar es
     // «lo que esto referencia ya no existe».
+    lec_no_se_pudo: "Couldn't load this", lec_sin_conexion: 'no connection',
+    lec_sin_permiso: 'this account has no access to it', lec_otro_motivo: 'try again in a moment',
     esc_sin_conexion: "No connection, so nothing was saved. Try again once you're back online.",
     esc_falta_referencia: "Couldn't save that: something it refers to no longer exists. Reload and try again.",
     esc_sin_permiso: "You don't have permission to do this.",
@@ -5646,6 +5659,10 @@ const TRANSLATIONS = {
     svc_cert_not_sealed: "Este service todavía no está sellado. Primero hay que sellarlo — una constancia de un borrador afirmaría algo que no es cierto.",
     svc_cert_not_found: "No se pudo cargar ese service.",
     set_build_label: 'Versión de la app',
+    boot_err_title: 'Seven Seas no pudo iniciar', boot_err_title_offline: 'Sin conexión',
+    boot_err_help: 'No se pudo iniciar la app. Recargar suele alcanzar.',
+    boot_err_help_offline: 'La app necesita conexión para arrancar. Al recuperar señal, volver a abrirla.',
+    boot_err_retry: 'Reintentar', boot_err_signout: 'Cerrar sesión',
     svc_cert_checked: "Sello comprobado contra el registro guardado el {when}: la huella recalculada coincide.",
     svc_cert_broken: "ATENCIÓN — la huella recalculada NO coincide con la de esta hoja. El registro guardado cambió desde que se selló.",
     svc_cert_unchecked: "No se pudo volver a comprobar el sello al emitir esta hoja (sin conexión). La huella de arriba es la que quedó guardada al sellar.",
@@ -5698,6 +5715,8 @@ const TRANSLATIONS = {
     del_tiene_historia: 'Esto no se puede borrar porque tiene registros asociados — reservas, pagos, logs o documentación firmada. No se borró nada.',
     del_sin_permiso: 'Esta cuenta no tiene permiso para borrar esto.',
     del_otro_motivo: 'No se pudo borrar: {error}',
+    lec_no_se_pudo: 'No se pudo cargar', lec_sin_conexion: 'sin conexión',
+    lec_sin_permiso: 'esta cuenta no tiene acceso', lec_otro_motivo: 'reintentar en un momento',
     esc_sin_conexion: 'Sin conexión, así que no se guardó nada. Se puede reintentar cuando vuelva la señal.',
     esc_falta_referencia: 'No se pudo guardar: algo a lo que esto hace referencia ya no existe. Hay que recargar y reintentar.',
     esc_sin_permiso: 'Esta cuenta no tiene permiso para hacer esto.',
@@ -9112,9 +9131,9 @@ async function renderTasksMine() {
   const myStaffId = staffRow?.id;
   if (!myStaffId) { container.innerHTML = ''; return; }
 
-  const { data: myAssignments } = await sb.from('task_list_assignees').select('*, task_lists(*)').eq('staff_id', myStaffId);
+  const { data: myAssignments, error: errAsg } = await sb.from('task_list_assignees').select('*, task_lists(*)').eq('staff_id', myStaffId);
   if (!myAssignments || !myAssignments.length) {
-    container.innerHTML = `<p style="color:var(--muted);">${t('tk_no_tasks_assigned')}</p>`;
+    container.innerHTML = `<p style="color:var(--muted);">${escapeHtml(textoDeListaVacia(errAsg, 'tk_no_tasks_assigned'))}</p>`;
     return;
   }
   const listIds = myAssignments.map(a => a.task_list_id);
@@ -9137,9 +9156,9 @@ async function renderTasksMine() {
 async function renderTasksAll() {
   const container = document.getElementById('tasks-all-view');
   if (!currentOrgId || !currentLocationId) { container.innerHTML = ''; return; }
-  const { data: lists } = await sb.from('task_lists').select('*').eq('org_id', currentOrgId).eq('location_id', currentLocationId).order('created_at', { ascending: false });
+  const { data: lists, error: errLists } = await sb.from('task_lists').select('*').eq('org_id', currentOrgId).eq('location_id', currentLocationId).order('created_at', { ascending: false });
   if (!lists || !lists.length) {
-    container.innerHTML = `<p style="color:var(--muted);">${t('tk_no_task_lists_yet')}</p>`;
+    container.innerHTML = `<p style="color:var(--muted);">${escapeHtml(textoDeListaVacia(errLists, 'tk_no_task_lists_yet'))}</p>`;
     return;
   }
   const listIds = lists.map(l => l.id);
@@ -9332,7 +9351,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-26h';
+const BUILD_WEB = '2026-10-26i';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9364,12 +9383,50 @@ async function initAuth() {
   }
 }
 
+// Los textos de la pantalla de arranque fallido se traducen, y eso es seguro:
+// los dos diccionarios son literales de ESTE archivo, así que si esta función
+// puede correr, `t()` también. (El comentario viejo decía lo contrario «por si
+// el diccionario no cargó» — si no hubiera cargado, no habría nadie para
+// mostrar la pantalla.) Igual cada texto lleva su respaldo en español, porque
+// un fallo de arranque no es el momento de estrenar un supuesto.
+function textoDeArranque(clave, respaldo) {
+  try { const s = t(clave); return (s && s !== clave) ? s : respaldo; }
+  catch (e) { return respaldo; }
+}
+
+// Sólo se confía en `navigator.onLine === false`. Un `true` en un barco es
+// mentira de rutina, y es la misma regla que ya usa `hayRedDeVerdad()`: la
+// ausencia de red se puede afirmar, la presencia no.
+function sinRedSeguro() {
+  try { return navigator.onLine === false; } catch (e) { return false; }
+}
+
 function showBootError(err) {
   hideLoadingScreen();
   const box = document.getElementById('boot-error');
   if (!box) { alert('Seven Seas: ' + (err?.message || err)); return; }
+  const offline = sinRedSeguro();
+
+  document.getElementById('boot-error-title').textContent =
+    textoDeArranque(offline ? 'boot_err_title_offline' : 'boot_err_title',
+                    offline ? 'Sin conexión' : 'Seven Seas no pudo iniciar');
+
+  document.getElementById('boot-error-help').textContent =
+    textoDeArranque(offline ? 'boot_err_help_offline' : 'boot_err_help',
+      offline
+        ? 'La app necesita conexión para arrancar. Al recuperar señal, volver a abrirla.'
+        : 'No se pudo iniciar la app. Recargar suele alcanzar.');
+
   document.getElementById('boot-error-detail').textContent = String(err?.message || err);
-  box.style.display = 'flex';
+  document.getElementById('boot-error-retry').textContent =
+    textoDeArranque('boot_err_retry', 'Reintentar');
+
+  // Sin red, cerrar sesión es una puerta de salida que da a un pozo: borra la
+  // sesión y volver a entrar necesita internet. Cuando se puede AFIRMAR que no
+  // hay red, el botón no se ofrece.
+  const salir = document.getElementById('boot-error-signout');
+  salir.style.display = offline ? 'none' : 'inline-block';
+  salir.textContent = textoDeArranque('boot_err_signout', 'Cerrar sesión');
 }
 
 // Borra la sesión y recarga. Una sesión corrupta es la causa más común de que
@@ -10199,7 +10256,7 @@ async function loadSettings(user) {
 
 async function loadLocations() {
   if (!currentOrgId) return;
-  const { data: locs } = await sb
+  const { data: locs, error: errLocs } = await sb
     .from('locations')
     .select('*')
     .eq('org_id', currentOrgId)
@@ -10207,7 +10264,7 @@ async function loadLocations() {
 
   const list = document.getElementById('locations-list');
   if (!locs || locs.length === 0) {
-    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('set_no_locations_yet')}</p>`;
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${escapeHtml(textoDeListaVacia(errLocs, 'set_no_locations_yet'))}</p>`;
     return;
   }
   list.innerHTML = locs.map(l => `
@@ -10793,7 +10850,7 @@ async function checkDoubleBookings() {
   const windowStart = fechaLocal(addDays(new Date(), -14));
   const windowEnd = fechaLocal(addDays(new Date(), 90));
 
-  const { data: trips } = await tripsVigentes(
+  const { data: trips, error: errTrips } = await tripsVigentes(
       'id, contact_name, trip_date, end_date, trip_time, arrival_time, boat_id, boats(name), trip_crew(staff_id, staff(full_name))')
     .eq('org_id', currentOrgId)
     .not('boat_id', 'is', null)
@@ -10861,8 +10918,20 @@ function tripDateRangeLabel(trip) {
   return `${startLabel} – ${endLabel}`;
 }
 
+// Devuelve `{ salidas, error }` y NO sólo el arreglo, que es lo que devolvía
+// hasta el 26/10. El error se perdía acá adentro (`const { data } = await
+// query`), así que las tres vistas del calendario no tenían forma de
+// distinguir «no hay salidas» de «no se pudieron pedir» — y dibujaban la
+// primera. Fran lo vio abriendo la app sin señal: el día vacío, con el botón
+// de agregar una salida, como si el martes estuviera libre.
+//
+// Se descartó la variante de devolver el arreglo con el error colgado como
+// propiedad, que no tocaba a nadie: `renderWeekView()` hace `.filter(...)`
+// sobre el resultado y el filtro devuelve un arreglo nuevo, así que la marca
+// se habría perdido en silencio — exactamente la clase de bug que esto viene
+// a sacar. Un contrato explícito no se puede perder por el camino.
 async function fetchTripsForRange(start, end) {
-  if (!currentOrgId) return [];
+  if (!currentOrgId) return { salidas: [], error: null };
   const startStr = fechaLocal(start), endStr = fechaLocal(end);
   let query = tripsVigentes(
       '*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(trip_type_id, price_per_person, crew_hire_total, participants(id, rental_surcharge))')
@@ -10871,7 +10940,7 @@ async function fetchTripsForRange(start, end) {
     .or(`end_date.gte.${startStr},and(end_date.is.null,trip_date.gte.${startStr})`)
     .order('trip_time');
   if (currentLocationId) query = query.eq('location_id', currentLocationId);
-  const { data } = await query;
+  const { data, error } = await query;
   // Resolve category/is_multi_day per trip type so tripCard() can apply the
   // same flat-charter-vs-per-guest pricing rule as the trip modal (see
   // currentTripIsFlatCharterPricing) -- attached per-trip so tripCard doesn't
@@ -10882,13 +10951,20 @@ async function fetchTripsForRange(start, end) {
     (types || []).forEach(tt => { typeById[tt.id] = tt; });
     data.forEach(tr => { tr._typeById = typeById; });
   }
-  return data || [];
+  return { salidas: data || [], error: error || null };
 }
 
 async function renderDayView() {
   const body = document.getElementById('cal-body');
-  const dayTrips = await fetchTripsForRange(calDate, calDate);
+  const { salidas: dayTrips, error: errSalidas } = await fetchTripsForRange(calDate, calDate);
 
+  // Si la consulta no salió, el día NO está vacío: no sabemos qué hay. Y los
+  // botones de abajo no se ofrecen, porque «agregar una salida» sobre un día
+  // que no pudimos leer invita a duplicar la que ya existía.
+  if (errSalidas) {
+    body.innerHTML = `<div class="day-empty">${escapeHtml(textoDeListaVacia(errSalidas, 'cal_no_trips_day'))}</div>`;
+    return;
+  }
   if (dayTrips.length === 0) {
     body.innerHTML = `<div class="day-empty">${t('cal_no_trips_day')}<br><br><button class="btn-save" onclick="openNewTrip()" style="margin-right:8px;">${t('cal_add_trip')}</button><button class="btn-cancel" onclick="calDate=new Date();calDate.setDate(calDate.getDate()-1);renderCalendar()">${t('cal_yesterday')}</button></div>`;
     return;
@@ -10964,7 +11040,11 @@ function durationH(start, end) {
 async function renderWeekView() {
   const body = document.getElementById('cal-body');
   const start = getWeekStart(calDate);
-  const weekTrips = await fetchTripsForRange(start, addDays(start, 6));
+  const { salidas: weekTrips, error: errSalidas } = await fetchTripsForRange(start, addDays(start, 6));
+  if (errSalidas) {
+    body.innerHTML = `<div class="day-empty">${escapeHtml(textoDeListaVacia(errSalidas, 'cal_no_trips_day'))}</div>`;
+    return;
+  }
   const today = new Date();
   const days = Array.from({length:7}, (_,i) => addDays(start, i));
   const dayNames = [t('day_sun'),t('day_mon'),t('day_tue'),t('day_wed'),t('day_thu'),t('day_fri'),t('day_sat')];
@@ -10998,7 +11078,11 @@ async function renderMonthView() {
   const month = calDate.getMonth();
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month+1, 0);
-  const monthTrips = await fetchTripsForRange(firstDay, lastDay);
+  const { salidas: monthTrips, error: errSalidas } = await fetchTripsForRange(firstDay, lastDay);
+  if (errSalidas) {
+    body.innerHTML = `<div class="day-empty">${escapeHtml(textoDeListaVacia(errSalidas, 'cal_no_trips_day'))}</div>`;
+    return;
+  }
   const today = new Date();
 
   const dayNames = [t('day_sun'),t('day_mon'),t('day_tue'),t('day_wed'),t('day_thu'),t('day_fri'),t('day_sat')];
@@ -12288,13 +12372,13 @@ async function loadGuestTabs() {
     container.innerHTML = `<p style="color:var(--muted);">${t('cu_select_location_tabs')}</p>`;
     return;
   }
-  const { data: tabs } = await sb.from('guest_tabs')
+  const { data: tabs, error: errTabs } = await sb.from('guest_tabs')
     .select('*')
     .eq('org_id', currentOrgId)
     .eq('location_id', currentLocationId)
     .order('created_at', { ascending: false });
   if (!tabs || !tabs.length) {
-    container.innerHTML = `<p style="color:var(--muted);">${t('gt_no_tabs_yet')}</p>`;
+    container.innerHTML = `<p style="color:var(--muted);">${escapeHtml(textoDeListaVacia(errTabs, 'gt_no_tabs_yet'))}</p>`;
     return;
   }
   const today = fechaLocal();
@@ -12399,7 +12483,7 @@ async function openTabDetail(tabId) {
   const container = document.getElementById('guest-tabs-list');
   const { data: tab } = await sb.from('guest_tabs').select('*').eq('id', tabId).single();
   if (!tab) return;
-  const { data: linkedGroups } = await sb.from('trip_groups')
+  const { data: linkedGroups, error: errLink } = await sb.from('trip_groups')
     .select('id, trip_id, trip_type_id, contact_name, price_per_person, crew_hire_total, participants(id, rental_surcharge), trips(trip_type, trip_type_id, trip_date, end_date, booking_mode)')
     .eq('tab_id', tabId)
     .order('created_at');
@@ -12417,7 +12501,7 @@ async function openTabDetail(tabId) {
 
   let unpaidGroups = [];
   if (!linkedGroups || !linkedGroups.length) {
-    html += `<p style="color:var(--muted);">${t('gt_no_bookings_linked')}</p>`;
+    html += `<p style="color:var(--muted);">${escapeHtml(textoDeListaVacia(errLink, 'gt_no_bookings_linked'))}</p>`;
   } else {
     const groupIds = linkedGroups.map(g => g.id);
     const { data: allPayments } = await sb.from('payments').select('group_id, amount').in('group_id', groupIds);
@@ -16398,8 +16482,8 @@ async function loadTodaysTripList() {
     .order('trip_time');
 
   const list = document.getElementById('cl-trip-list');
-  if (!trips || trips.length === 0) {
-    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('cl_no_trips_today')}</p>`;
+  if (errTrips || !trips || trips.length === 0) {
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${escapeHtml(textoDeListaVacia(errTrips, 'cl_no_trips_today'))}</p>`;
     return;
   }
 
@@ -16520,14 +16604,14 @@ function selectChecklistTrip(payload) {
 }
 
 async function loadCrewStatus(tripId) {
-  const { data: signoffs } = await sb
+  const { data: signoffs, error: errSign } = await sb
     .from('checklist_completions')
     .select('role, signed_by, signed_at, completed_items, total_items')
     .eq('trip_id', tripId);
 
   const container = document.getElementById('cl-crew-status-list');
   if (!signoffs || signoffs.length === 0) {
-    container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('cl_no_signoffs_yet')}</p>`;
+    container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${escapeHtml(textoDeListaVacia(errSign, 'cl_no_signoffs_yet'))}</p>`;
     return;
   }
   container.innerHTML = signoffs.map(s => `
@@ -17526,6 +17610,55 @@ async function motivoDeFalloAlEscribir(error, operacion, { yaHabiaRed = false } 
   if (error.code === '23503') return t(borrando ? 'del_tiene_historia' : 'esc_falta_referencia');
   if (error.code === '42501') return t(borrando ? 'del_sin_permiso' : 'esc_sin_permiso');
   return t(borrando ? 'del_otro_motivo' : 'esc_otro_motivo').replace('{error}', error.message || '');
+}
+
+// ─── El lado de LEER ───
+//
+// La gemela de `motivoDeFalloAlEscribir()`, y existe por el mismo hallazgo
+// repetido del otro lado. El 08/10 se midió que de 32 borrados sólo 4 miraban
+// el error; el 26/10 se midió lo mismo leyendo: **141 lecturas destructuran
+// sólo `data` y 41 miran el error.**
+//
+// `supabase-js` NO lanza. Cuando el fetch falla devuelve `data: null` con el
+// error al lado, así que esto:
+//
+//     const { data: staff } = await sb.from('staff').select(...)
+//     if (!staff || staff.length === 0) → «Aún no hay tripulación»
+//
+// hace **indistinguible** una consulta que no salió de una tabla vacía, y la
+// pantalla elige la peor de las dos lecturas. Fran lo vio el 26/10 abriendo la
+// app sin señal: el calendario sin salidas, la tripulación diciendo «nadie
+// disponible» y su propio usuario como un «?». Tres síntomas, una causa, 141
+// veces.
+//
+// **Esto es SÍNCRONO a propósito, y ahí se separa de la gemela.** El lado de
+// escribir manda un HEAD para medir la red, porque un cartel equivocado frena
+// un guardado. Acá sólo se elige qué dice una caja vacía: meter un `await` en
+// un camino de dibujo sería agregar otro viaje a la red en el arranque, que es
+// exactamente la enfermedad que esto viene a curar.
+//
+// Consecuencia aceptada: no se puede afirmar «sin conexión» salvo cuando
+// `navigator.onLine === false` lo permite. En la duda se dice «no se pudo
+// cargar», que es verdad siempre. Decir de menos es barato; decir «no hay
+// tripulación» cuando hay doce es lo que costó caro.
+function motivoDeFalloAlLeer(error) {
+  if (!error) return null;
+  if (sinRedSeguro() || pareceFalloDeRed(error)) return t('lec_sin_conexion');
+  if (error.code === '42501') return t('lec_sin_permiso');
+  return t('lec_otro_motivo');
+}
+
+// Qué dice una lista que quedó vacía. `claveVacia` es el texto de «todavía no
+// hay nada», que ahora sólo se usa cuando se SABE que no hay nada.
+//
+// Devuelve texto plano. No se le pega el `error.message` adentro: casi todos
+// los que llaman lo meten en una plantilla de `innerHTML`, y un mensaje de
+// error es texto de afuera. El detalle crudo va a la consola, que es donde
+// sirve. (El escapado se decide por el destino — ver el postmortem del 26/10.)
+function textoDeListaVacia(error, claveVacia) {
+  if (!error) return t(claveVacia);
+  console.error('[LEER] falló, la lista se dibuja vacía:', error);
+  return t('lec_no_se_pudo') + ' · ' + motivoDeFalloAlLeer(error);
 }
 
 // Devuelve true si se borró. Si no, avisa y devuelve false para que quien
@@ -19183,7 +19316,7 @@ async function loadLoggedChecklists() {
 
   const searchDate = document.getElementById('cl-logged-date-search').value;
 
-  const { data: completions } = await sb.from('checklist_completions')
+  const { data: completions, error: errComp } = await sb.from('checklist_completions')
     .select(COLUMNAS_DE_ACTA_LISTADO + ', items_snapshot')
     .eq('org_id', currentOrgId)
     .order('signed_at', { ascending: false })
@@ -19208,7 +19341,7 @@ async function loadLoggedChecklists() {
   if (searchDate) rows = rows.filter(r => dayOf(r) === searchDate);
 
   if (!rows.length) {
-    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('cl_logged_none')}</p>`;
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${escapeHtml(textoDeListaVacia(errComp, 'cl_logged_none'))}</p>`;
     return;
   }
 
@@ -19290,13 +19423,13 @@ async function loadCrew() {
   await checkCrewNotifications();
 
   // Load staff
-  const { data: staff } = await sb
+  const { data: staff, error: errStaff } = await sb
     .from('staff')
     .select('*, staff_locations(location_id, locations(name))')
     .eq('org_id', currentOrgId)
     .order('created_at');
   if (!staff || staff.length === 0) {
-    list.innerHTML = `<div class="fleet-empty">${t('crew_no_crew_yet')}</div>`;
+    list.innerHTML = `<div class="fleet-empty">${escapeHtml(textoDeListaVacia(errStaff, 'crew_no_crew_yet'))}</div>`;
     document.getElementById('stat-crew').textContent = '0';
     return;
   }
@@ -20003,10 +20136,10 @@ document.getElementById('btn-save-boat-hours').addEventListener('click', async (
 });
 
 async function loadBoatDetailEngines(boatId) {
-  const { data: engines } = await sb.from('engines').select('*').eq('boat_id', boatId).order('created_at');
+  const { data: engines, error: errEng } = await sb.from('engines').select('*').eq('boat_id', boatId).order('created_at');
   const list = document.getElementById('boat-detail-engines-list');
   if (!engines || !engines.length) {
-    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('fleet_no_engines_yet')}</p>`;
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${escapeHtml(textoDeListaVacia(errEng, 'fleet_no_engines_yet'))}</p>`;
     return;
   }
   list.innerHTML = '';
@@ -20963,7 +21096,7 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
 });
 
 async function loadGearDetailMaintenance(gearId) {
-  const { data: logs } = await sb.from('maintenance_logs').select('*').eq('gear_id', gearId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
+  const { data: logs, error: errLogs } = await sb.from('maintenance_logs').select('*').eq('gear_id', gearId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
   await loadSignerStaff();
   renderGearDetailMaintenance(logs || []);
 }
@@ -20971,7 +21104,7 @@ async function loadGearDetailMaintenance(gearId) {
 function renderGearDetailMaintenance(logs) {
   const list = document.getElementById('gear-detail-maintenance-list');
   if (!logs.length) {
-    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${escapeHtml(t('gear_no_maint_item'))}</p>`;
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${escapeHtml(textoDeListaVacia(errLogs, 'gear_no_maint_item'))}</p>`;
     return;
   }
   list.innerHTML = logs.map(l => filaDeService(l)).join('');
@@ -21046,12 +21179,12 @@ async function loadGearInventory() {
   const missingKeys = activeOpCats.filter(k => !existingKeys.includes(k) && CATEGORY_STARTER_GEAR[k]);
   if (missingKeys.length) {
     for (const key of missingKeys) await seedGearForCategory(key);
-    const { data: refreshed } = await sb.from('gear_categories').select('*').eq('org_id', currentOrgId).eq('active', true).order('label');
+    const { data: refreshed, error: errCats } = await sb.from('gear_categories').select('*').eq('org_id', currentOrgId).eq('active', true).order('label');
     categories = refreshed || categories;
   }
 
   if (!categories.length) {
-    catEl.innerHTML = `<p style="color:var(--muted);">${t('gr_no_categories_active')}</p>`;
+    catEl.innerHTML = `<p style="color:var(--muted);">${escapeHtml(textoDeListaVacia(errCats, 'gr_no_categories_active'))}</p>`;
     return;
   }
   const catIds = categories.map(c => c.id);
@@ -22341,7 +22474,7 @@ async function syncCategoryCheckboxes() {
 // ─── TRIP TYPES LIST (Settings) ───
 async function renderTripTypesList() {
   if (!currentOrgId) return;
-  const { data: types } = await sb
+  const { data: types, error: errTT } = await sb
     .from('trip_types')
     .select('*')
     .eq('org_id', currentOrgId)
@@ -22351,7 +22484,7 @@ async function renderTripTypesList() {
 
   const list = document.getElementById('trip-types-list');
   if (!types || types.length === 0) {
-    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('set_no_trip_types_yet')}</p>`;
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${escapeHtml(textoDeListaVacia(errTT, 'set_no_trip_types_yet'))}</p>`;
     const aviso = document.getElementById('trip-types-missing-prep');
     if (aviso) { aviso.innerHTML = ''; aviso.style.display = 'none'; }
     return;
@@ -23226,11 +23359,11 @@ async function toggleRentalFees(tripTypeId) {
   const panel = abrirSoloEstePanel('rental-fees-' + tripTypeId);
   if (!panel) return;
   panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);">${t('common_loading')}</p>`;
-  const { data: ttgf } = await sb.from('trip_type_gear_fields')
+  const { data: ttgf, error: errTtgf } = await sb.from('trip_type_gear_fields')
     .select('id, rental_fee, gear_field_definitions(field_key, label)')
     .eq('trip_type_id', tripTypeId);
   if (!ttgf || !ttgf.length) {
-    panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);padding:4px 0 12px;">${t('set_no_gear_fields')}</p>`;
+    panel.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);padding:4px 0 12px;">${escapeHtml(textoDeListaVacia(errTtgf, 'set_no_gear_fields'))}</p>`;
     return;
   }
   panel.innerHTML = `
