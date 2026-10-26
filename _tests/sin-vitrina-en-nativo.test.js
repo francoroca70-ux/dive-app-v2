@@ -349,15 +349,15 @@ function hayPrecioEnElDOM() {
   // Que haya que editar estas dos líneas en cada cambio es a propósito: la
   // regla 5 de CLAUDE.md dice que los dos números suben juntos, y esto es lo
   // que lo convierte en un paso que falla si se saltea.
-  const ESPERADO={ build:'2026-10-26g', sw:'seven-seas-v87' };
+  const ESPERADO={ build:'2026-10-26h', sw:'seven-seas-v88' };
   // Desde el 26/10 el build vive en UNA constante y de ahí salen la consola y
   // la pantalla de Configuración, así que se busca la constante y no el texto
   // del console.info — que ahora se arma por concatenación.
   chk('el build subió a '+ESPERADO.build,
       html.includes("BUILD_WEB = '"+ESPERADO.build+"'"));
   chk('y la app lo MUESTRA, no sólo lo registra en la consola',
-      /id="app-build-line"/.test(html) && html.includes('function pintarBuild('),
-      'versionName en Android está clavado en 1.0: sin esto nadie puede decir qué versión tiene');
+      (html.match(/data-app-build/g)||[]).length >= 3 && html.includes('function pintarBuild('),
+      'y en las DOS pantallas de login, que son las que se ven cuando algo no anda y las únicas alcanzables sin iniciar sesión');
   const sw=fs.readFileSync(require('path').join(__dirname,'..','sw.js'),'utf8');
   chk('y el service worker a '+ESPERADO.sw, sw.includes(ESPERADO.sw));
 

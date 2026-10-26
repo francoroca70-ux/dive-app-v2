@@ -2385,6 +2385,7 @@ body { background: var(--navy); color: var(--text); }
         <span data-i18n="login_new_operation">New operation?</span> <a href="#" id="link-signup" data-i18n="login_request_access">Request access</a>
       </div>
     </div>
+    <p class="app-build-line" data-app-build></p>
     <div class="legal-footer" data-legal-footer></div>
   </div>
 </div>
@@ -2422,6 +2423,7 @@ body { background: var(--navy); color: var(--text); }
       <div class="login-error" id="signup-error"></div>
       <div class="success-msg" id="signup-success" data-i18n="signup_check_email">Account created — check your email to confirm, then sign in.</div>
     </div>
+    <p class="app-build-line" data-app-build></p>
     <div class="legal-footer" data-legal-footer></div>
   </div>
 </div>
@@ -4440,7 +4442,7 @@ body { background: var(--navy); color: var(--text); }
              forma de saber qué código tenía en el teléfono.
              Para un producto que se reporta por WhatsApp desde un barco, eso
              es la primera pregunta de cualquier diagnóstico. -->
-        <p class="app-build-line" id="app-build-line"></p>
+        <p class="app-build-line" data-app-build></p>
 
         <div class="legal-footer" data-legal-footer style="margin-bottom:30px;"></div>
 
@@ -9330,13 +9332,13 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-26g';
+const BUILD_WEB = '2026-10-26h';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
 function pintarBuild() {
-  const el = document.getElementById('app-build-line');
-  if (el) el.textContent = t('set_build_label') + ' ' + BUILD_WEB;
+  const texto = t('set_build_label') + ' ' + BUILD_WEB;
+  document.querySelectorAll('[data-app-build]').forEach(el => { el.textContent = texto; });
 }
 
 async function initAuth() {
