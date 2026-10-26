@@ -166,10 +166,10 @@ chk('la clave del carrito coincide con la de stockMap',
 chk('los textos del POS están en castellano', T.t('pos_cobrar') === 'Registrar venta', T.t('pos_cobrar'));
 T.setIdioma('en');
 chk('y en inglés', T.t('pos_cobrar') === 'Record sale', T.t('pos_cobrar'));
-// El aviso de que no se puede anular tiene que estar: es la limitación que
-// mantiene el interruptor apagado, y callarla sería prometer de más.
-chk('se avisa que una venta no se puede anular todavía',
-    /cannot be undone/.test(T.t('pos_sin_anular')), T.t('pos_sin_anular'));
+// El aviso de «todavía no se puede anular» se fue el 26/10, porque ya se puede.
+// Si volviera a aparecer sería un texto que contradice a la pantalla.
+chk('ya no se avisa que una venta no se puede anular',
+    !/pos_sin_anular/.test(html), 'la anulación existe desde el 26/10');
 T.setIdioma('es');
 
 chk('el cuerpo del test corrió hasta el final', true);

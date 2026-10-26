@@ -18,6 +18,7 @@
 //  · `currentTripId` se pone en null cuando la operación termina bien, así que
 //    cada caso tiene que volver a abrir una salida o cae en el return temprano.
 const fs=require('fs'); const {JSDOM}=require('./jsdom');
+const {lineasDeCodigoCon}=require('./contar');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://www.sevenseasops.com/'});
@@ -153,10 +154,18 @@ async function clic({previo, ejecucion, confirmar=true, trip='trip-1', grupos=[{
   window.__t.setRol('instructor');chk('un instructor NO lo ve',   botonVisible()===false);
   window.__t.setRol(undefined);  chk('un rol desconocido NO lo ve (falla cerrado)', botonVisible()===false);
   window.__t.setRol('owner');
+  // Contar MENCIONES falló el 26/10: un comentario de `puedeAnularVenta()` que
+  // dice «la misma forma que puedeQuitarSalida()» hizo tres, y el guardián
+  // reportó una copia que no existía. Cuarta vez con esta forma exacta —antes
+  // con CHECKLIST_CADENCIAS, POS_VENTAS y lineaDeFuenteDeLista—, y la respuesta
+  // ya estaba escrita: `lineasDeCodigoCon` existe justo para esto.
+  //
+  // Un comentario que nombra una función no es un llamador.
+  const usosDelPermiso = lineasDeCodigoCon(html, 'puedeQuitarSalida()');
   chk('el permiso de quitar una salida se decide en un solo lugar',
       (html.match(/function puedeQuitarSalida\(\)/g)||[]).length===1 &&
-      (html.match(/puedeQuitarSalida\(\)/g)||[]).length===2,   // la declaración + un uso
-      (html.match(/puedeQuitarSalida\(\)/g)||[]).length+' menciones');
+      usosDelPermiso.length===2,   // la declaración + un uso
+      usosDelPermiso.length+' líneas de código: '+JSON.stringify(usosDelPermiso));
   chk('y los dos lugares que muestran el botón pasan por la misma función',
       (html.match(/mostrarBotonQuitarSalida\(\);/g)||[]).length===2,
       (html.match(/mostrarBotonQuitarSalida\(\);/g)||[]).length+' llamadas');

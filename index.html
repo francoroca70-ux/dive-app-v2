@@ -196,6 +196,20 @@
 .pos-linea-cant strong { min-width:18px; text-align:center; }
 .pos-total { display:flex; align-items:center; justify-content:space-between;
   gap:12px; flex-wrap:wrap; margin-top:12px; font-size:0.95rem; }
+/* Una venta del día. La anulada NO se esconde: se tacha el monto y se sella.
+   Esconderla dejaría un total que no cierra con lo que se ve, porque el total
+   es la suma de todas las líneas e incluye las negativas de la anulación. */
+.pos-venta { padding:8px 0; border-bottom:1px solid var(--border); font-size:0.86rem; }
+.pos-venta-cab { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.pos-venta-hora { font-size:0.75rem; color:var(--muted); }
+.pos-venta-items { margin-top:2px; }
+.pos-venta-pie { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+.pos-venta.anulada .pos-venta-cab strong,
+.pos-venta.anulada .pos-venta-items { text-decoration:line-through; opacity:0.7; }
+.pos-venta-sello { font-size:0.7rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.04em; color:var(--warning); border:1px solid var(--warning);
+  border-radius:6px; padding:1px 6px; }
+.pos-venta-anular { font-size:0.75rem; padding:3px 9px; margin-left:auto; }
 .gear-size-box { background: var(--foam); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 90px; }
 .gear-size-label { font-size: 0.7rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
 .gear-stock-value { font-weight: 700; color: var(--success); }
@@ -3533,6 +3547,9 @@ body { background: var(--navy); color: var(--text); }
                `renderMostrador()`. Con el interruptor apagado este div queda
                vacío y la pantalla es exactamente la de antes. -->
           <div id="pos-mostrador"></div>
+          <!-- Lo vendido hoy. Mismo interruptor que el mostrador: apagado, este
+               div queda vacío y no se consulta nada. -->
+          <div id="pos-ventas-del-dia"></div>
           <div id="inventory-categories"></div>
         </div>
 
@@ -4822,7 +4839,16 @@ const TRANSLATIONS = {
     pos_cobrar: "Record sale",
     pos_vaciar: "Clear",
     pos_confirmar: "Record this sale and take the items out of stock?",
-    pos_sin_anular: "A recorded sale cannot be undone yet — it takes the items out of stock for good.",
+    pos_hoy_titulo: "Sold today",
+    pos_hoy_vacio: "Nothing sold yet today.",
+    pos_hoy_total: "Net total today",
+    pos_hoy_por: "from the account of",
+    pos_anulada: "Voided",
+    pos_anular_btn: "Void",
+    pos_anular_motivo: "Why is this sale being voided? (optional)",
+    pos_anular_confirmar: "Void this sale? The items go back into stock and the sale stays on the record with its reversal.",
+    pos_anulacion_suelta: "Reversal of an earlier sale",
+    pos_hoy_neteado: "A voided sale stays listed and its amount is already subtracted from the total.",
     cl_custom_checklist_generic: 'Custom checklist',
     cl_motivos_titulo: 'Before signing',
     cl_motivos_intro: '{n} item(s) were not done. Why?',
@@ -5655,7 +5681,16 @@ const TRANSLATIONS = {
     pos_cobrar: "Registrar venta",
     pos_vaciar: "Vaciar",
     pos_confirmar: "¿Registrar esta venta y descontar los artículos del stock?",
-    pos_sin_anular: "Una venta registrada todavía no se puede anular — descuenta el stock de forma definitiva.",
+    pos_hoy_titulo: "Vendido hoy",
+    pos_hoy_vacio: "Todavía no se vendió nada hoy.",
+    pos_hoy_total: "Total neto de hoy",
+    pos_hoy_por: "desde la cuenta de",
+    pos_anulada: "Anulada",
+    pos_anular_btn: "Anular",
+    pos_anular_motivo: "¿Por qué se anula esta venta? (opcional)",
+    pos_anular_confirmar: "¿Anular esta venta? Los artículos vuelven al stock y la venta queda en el registro con su anulación.",
+    pos_anulacion_suelta: "Anulación de una venta anterior",
+    pos_hoy_neteado: "Una venta anulada queda en la lista y su monto ya está restado del total.",
     cl_custom_checklist_generic: 'Checklist propia',
     cl_motivos_titulo: 'Antes de firmar',
     cl_motivos_intro: 'Quedaron {n} ítem(s) sin hacer. ¿Por qué?',
@@ -7936,9 +7971,9 @@ function rwOpenSignForm(participantId, fullName, isMinor, waiverType) {
   document.getElementById('rw-sign-guest-name').textContent = fullName;
   document.getElementById('rw-sign-type-label').textContent = waiverTypeLabels[waiverType] || waiverType;
   document.getElementById('rw-printed-name').value = fullName || '';
-  document.getElementById('rw-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('rw-date').value = fechaLocal();
   document.getElementById('rw-guardian-name').value = '';
-  document.getElementById('rw-guardian-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('rw-guardian-date').value = fechaLocal();
   document.getElementById('rw-guardian-section').style.display = isMinor ? 'block' : 'none';
   const feedback = document.getElementById('rw-save-feedback');
   feedback.textContent = '';
@@ -8377,7 +8412,7 @@ async function updateAppContext(orgName) {
 
 async function refreshHomeStats() {
   if (!currentOrgId) return;
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   // Match trips whose date range covers today, not just ones that start today — otherwise
   // a multi-day trip already underway drops out of "today's" guest/trip count the moment
   // it's no longer day 1, same issue as the calendar's day view had.
@@ -8508,8 +8543,8 @@ async function renderHomeGettingStartedOrFinance() {
 // several stacked cards. Per Fran: financial info is owner-only, so this
 // is only ever called from the owner branch above.
 async function buildFinanceCardHtml() {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const yestStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const todayStr = fechaLocal();
+  const yestStr = fechaLocal(new Date(Date.now() - 86400000));
   let cuQuery = sb.from('cash_ups').select('cash_up_date,total_cash,total_card,total_transfer')
     .eq('org_id', currentOrgId).in('cash_up_date', [todayStr, yestStr]);
   if (currentLocationId) cuQuery = cuQuery.eq('location_id', currentLocationId);
@@ -8542,7 +8577,7 @@ async function buildFinanceCardHtml() {
 // member is assigned to via trip_crew (captain/crew). Sorted chronologically,
 // morning first, per Fran's explicit ask.
 async function buildTripsTodayHtml(scope, myId) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   const tripCols = 'id, org_id, location_id, trip_date, end_date, trip_time, arrival_time, trip_type, trip_name, boat_id, boats(name)';
   let trips = [];
 
@@ -8603,7 +8638,7 @@ async function buildTripsTodayHtml(scope, myId) {
 // front and center, before the trip list.
 async function buildTaskBannerHtml(myId) {
   if (!myId) return '';
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   const { data } = await sb.from('task_list_assignees')
     .select('*, task_lists(*)')
     .eq('staff_id', myId)
@@ -8868,8 +8903,8 @@ async function renderRosterGrid() {
     document.getElementById('roster-title').textContent = rosterDate.toLocaleDateString(rosterLocale,{month:'long',year:'numeric'});
   }
   const allDays = weekBlocks.flatMap(b => b.days);
-  const rangeStart = formatDate(allDays[0]);
-  const rangeEnd = formatDate(allDays[allDays.length-1]);
+  const rangeStart = fechaLocal(allDays[0]);
+  const rangeEnd = fechaLocal(allDays[allDays.length-1]);
   const staffIds = selectedStaff.map(s => s.id);
 
   const { data: availability } = await sb.from('staff_availability').select('*').in('staff_id', staffIds).lte('start_date', rangeEnd).gte('end_date', rangeStart);
@@ -8895,7 +8930,7 @@ async function renderRosterGrid() {
     html += `</tr></thead><tbody>`;
     html += selectedStaff.map(s => {
       const cells = days.map(d => {
-        const dateStr = formatDate(d);
+        const dateStr = fechaLocal(d);
         const info = getCellInfo(s.id, dateStr);
         if (info.type === 'status') {
           const bg = statusColors[info.status] || 'var(--muted)';
@@ -8977,7 +9012,7 @@ function showTaskView(view, el) {
 document.getElementById('btn-new-task-list').addEventListener('click', () => {
   taskListAssigneeIds = [];
   document.getElementById('tasklist-title').value = '';
-  document.getElementById('tasklist-date').value = formatDate(new Date());
+  document.getElementById('tasklist-date').value = fechaLocal();
   document.getElementById('tasklist-items').value = '';
   renderTaskListAssigneeTags();
   document.getElementById('form-new-task-list').style.display = 'block';
@@ -9210,7 +9245,7 @@ async function checkChecklistNotifications() {
   if (!badge) return;
   const { data: { user } } = await sb.auth.getUser();
   if (!user || !currentOrgId) { badge.style.display = 'none'; return; }
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   const { data: assigned } = await sb.from('trip_crew')
     .select('trip_id, trips!inner(trip_date, end_date, org_id, location_id)')
     .eq('staff_id', user.id);
@@ -9243,7 +9278,7 @@ async function checkCrewNotifications() {
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-24e');
+  console.info('[Seven Seas] build 2026-10-26b');
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -10518,8 +10553,30 @@ function tripsArchivadas(cols) {
   return consultaDeSalidas(cols).not('archived_at', 'is', null);
 }
 
-function formatDate(d) {
-  return d.toISOString().split('T')[0];
+// La fecha de CALENDARIO de un instante, en la zona del centro.
+//
+// Antes esto era `formatDate`, que devolvía el trozo de fecha de
+// `d.toISOString()` — o sea la fecha **UTC**. (Esa frase decía el código viejo
+// textual hasta que el reemplazo masivo de esta pasada lo "arregló" también
+// acá: un comentario a medio corregir miente con más confianza que uno viejo.)
+// Para un centro al este de Greenwich eso devuelve AYER toda
+// la mañana (Fiji es UTC+12, Tailandia UTC+7) y para uno al oeste devuelve
+// MAÑANA toda la noche (Mar del Plata es UTC−3, así que desde las 21).
+//
+// Que estaba mal no es una deducción: alguien ya lo había chocado. En
+// `openNewTripModal` había un `todayLocalStr` escrito a mano con los getters
+// locales, justo al lado de dos llamadas a `formatDate`, y la línea siguiente
+// **comparaba los dos**: `formatDate(calDate) < todayLocalStr`. Una fecha UTC
+// contra una fecha local, en la misma expresión. Se parchó el sitio y no la
+// función, que es exactamente cómo se propaga: quedaron 34 copias de
+// `toISOString().split('T')[0]` para que la próxima se copie de la mala.
+//
+// Las copias anclaban a veces en `T12:00:00` (mediodía local no cruza de día
+// en ningún huso) y por eso varias estaban bien por accidente. Un truco que
+// hay que recordar en cada sitio no es una defensa.
+function fechaLocal(d) {
+  const n = d || new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
 }
 function isSameDay(a, b) {
   return a.toDateString() === b.toDateString();
@@ -10572,8 +10629,8 @@ async function checkDoubleBookings() {
   if (!banner) return;
   if (!currentOrgId) { banner.style.display = 'none'; return; }
 
-  const windowStart = formatDate(addDays(new Date(), -14));
-  const windowEnd = formatDate(addDays(new Date(), 90));
+  const windowStart = fechaLocal(addDays(new Date(), -14));
+  const windowEnd = fechaLocal(addDays(new Date(), 90));
 
   const { data: trips } = await tripsVigentes(
       'id, contact_name, trip_date, end_date, trip_time, arrival_time, boat_id, boats(name), trip_crew(staff_id, staff(full_name))')
@@ -10645,7 +10702,7 @@ function tripDateRangeLabel(trip) {
 
 async function fetchTripsForRange(start, end) {
   if (!currentOrgId) return [];
-  const startStr = formatDate(start), endStr = formatDate(end);
+  const startStr = fechaLocal(start), endStr = fechaLocal(end);
   let query = tripsVigentes(
       '*, boats(name, capacity), participants(id), trip_crew(staff(full_name)), trip_groups(trip_type_id, price_per_person, crew_hire_total, participants(id, rental_surcharge))')
     .eq('org_id', currentOrgId)
@@ -10753,7 +10810,7 @@ async function renderWeekView() {
 
   const dayCols = days.map((d, i) => {
     const isToday = isSameDay(d, today);
-    const dayT = weekTrips.filter(t => tripOccursOnDate(t, formatDate(d))).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
+    const dayT = weekTrips.filter(t => tripOccursOnDate(t, fechaLocal(d))).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
 
     const chips = dayT.map(tr => `
       <div class="week-chip" onclick="event.stopPropagation();openTrip('${tr.id}')">
@@ -10763,7 +10820,7 @@ async function renderWeekView() {
       </div>
     `).join('');
 
-    return `<div class="week-day-col-v3" onclick="calDate=new Date('${formatDate(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
+    return `<div class="week-day-col-v3" onclick="calDate=new Date('${fechaLocal(d)}T12:00:00');calView='day';document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='day'));renderCalendar()">
       <div class="week-day-col-header-v3 ${isToday?'today':''}">${dayNames[i]} ${d.getDate()}</div>
       <div class="week-day-col-body-v3">
         ${chips || `<div class="week-day-empty-v3">${t('cal_no_trips')}</div>`}
@@ -10795,7 +10852,7 @@ async function renderMonthView() {
 
   for (let d = 1; d <= lastDay.getDate(); d++) {
     const date = new Date(year, month, d);
-    const dateStr = formatDate(date);
+    const dateStr = fechaLocal(date);
     const isToday = isSameDay(date, today);
     const dayTrips = monthTrips.filter(tr => tripOccursOnDate(tr, dateStr)).sort((a,b) => (a.trip_time||'').localeCompare(b.trip_time||''));
     const shown = dayTrips.slice(0, 3);
@@ -11067,9 +11124,12 @@ async function openNewTrip() {
   document.getElementById('btn-save-trip').textContent = t('tt_save_trip');
   document.getElementById('btn-delete-trip').style.display = 'none';
   document.getElementById('btn-print-manifest').style.display = 'none';
-  const todayLocalStr = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
+  // Era un IIFE con los getters locales escrito a mano acá, justo porque
+  // `formatDate` daba la fecha UTC — y la línea de abajo comparaba las dos.
+  // Ahora las dos puntas salen de la misma función.
+  const todayLocalStr = fechaLocal();
   document.getElementById('trip-date').min = todayLocalStr;
-  document.getElementById('trip-date').value = formatDate(calDate) < todayLocalStr ? todayLocalStr : formatDate(calDate);
+  document.getElementById('trip-date').value = fechaLocal(calDate) < todayLocalStr ? todayLocalStr : fechaLocal(calDate);
   document.getElementById('trip-time').value = '08:00';
   // Arrival used to default to '00:00' so mobile time pickers didn't show a
   // blank "--:--" -- but that silently satisfied the "Arrival time" required
@@ -11835,7 +11895,7 @@ async function loadCashUp() {
   const noLocEl = document.getElementById('cashup-no-location');
   const contentEl = document.getElementById('cashup-content');
   const dateInput = document.getElementById('cashup-date');
-  if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  if (!dateInput.value) dateInput.value = fechaLocal();
   if (!currentOrgId || !currentLocationId) {
     noLocEl.style.display = 'block';
     contentEl.innerHTML = '';
@@ -11867,13 +11927,13 @@ document.getElementById('cashup-date').addEventListener('change', loadCashUp);
 document.getElementById('cashup-prev').addEventListener('click', () => {
   const d = new Date(document.getElementById('cashup-date').value + 'T12:00:00');
   d.setDate(d.getDate() - 1);
-  document.getElementById('cashup-date').value = d.toISOString().split('T')[0];
+  document.getElementById('cashup-date').value = fechaLocal(d);
   loadCashUp();
 });
 document.getElementById('cashup-next').addEventListener('click', () => {
   const d = new Date(document.getElementById('cashup-date').value + 'T12:00:00');
   d.setDate(d.getDate() + 1);
-  document.getElementById('cashup-date').value = d.toISOString().split('T')[0];
+  document.getElementById('cashup-date').value = fechaLocal(d);
   loadCashUp();
 });
 
@@ -12076,7 +12136,7 @@ async function loadGuestTabs() {
     container.innerHTML = `<p style="color:var(--muted);">${t('gt_no_tabs_yet')}</p>`;
     return;
   }
-  const today = formatDate(new Date());
+  const today = fechaLocal();
   const typeById = await fetchTripTypesById();
   const rowsHtml = await Promise.all(tabs.map(async tab => {
     const { data: linkedGroups } = await sb.from('trip_groups').select('id, trip_type_id, price_per_person, crew_hire_total, participants(id, rental_surcharge), trips(trip_type_id, trip_date, end_date, booking_mode)').eq('tab_id', tab.id);
@@ -12284,7 +12344,7 @@ async function confirmPayTabFull(tabId, unpaidGroups) {
   }
   if (btn) btn.disabled = true;
   const { data: { user } } = await sb.auth.getUser();
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   for (const g of unpaidGroups) {
     await sb.from('payments').insert({
       org_id: currentOrgId, location_id: currentLocationId, trip_id: g.trip_id, group_id: g.id,
@@ -12323,7 +12383,7 @@ function reportsDefaultRange(days) {
   const end = new Date();
   const start = new Date();
   start.setDate(end.getDate() - (days - 1));
-  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+  return { start: fechaLocal(start), end: fechaLocal(end) };
 }
 
 function setReportsPresetRange(days) {
@@ -12365,7 +12425,7 @@ function reportsDateBuckets(startDate, endDate) {
   let d = new Date(startDate + 'T12:00:00');
   const end = new Date(endDate + 'T12:00:00');
   while (d <= end) {
-    buckets.push(d.toISOString().split('T')[0]);
+    buckets.push(fechaLocal(d));
     d.setDate(d.getDate() + 1);
   }
   return buckets;
@@ -12381,7 +12441,7 @@ function reportsWeekBucketLabel(dateStr) {
   const diffToMonday = (day === 0 ? -6 : 1 - day);
   const monday = new Date(d);
   monday.setDate(d.getDate() + diffToMonday);
-  return monday.toISOString().split('T')[0];
+  return fechaLocal(monday);
 }
 function reportsMonthBucketLabel(dateStr) {
   const d = new Date(dateStr + 'T12:00:00');
@@ -12776,7 +12836,7 @@ function renderMissedCashUps(payments, cashUps) {
   payments.forEach(p => {
     paymentDates[p.payment_date] = (paymentDates[p.payment_date] || 0) + (parseFloat(p.amount) || 0);
   });
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   const missed = Object.keys(paymentDates).filter(d => d < today && !closedDates.has(d)).sort();
   const listEl = document.getElementById('rep-missed-list');
   if (!missed.length) {
@@ -12890,7 +12950,10 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
   // existing trip that has since passed (adding payments, notes, etc.) still works.
   if (!currentTripId && date) {
     const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    // La fecha local del centro, no la UTC. Era esta misma cuenta escrita a
+    // mano acá; pasó a `fechaLocal()` el 26/10 para que haya un solo lugar
+    // que sepa qué día es hoy para un centro.
+    const todayStr = fechaLocal(now);
     const nowTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     if (date < todayStr) errors.push(t('tt_date_in_past'));
     else if (date === todayStr && time && time < nowTimeStr) errors.push(t('tt_time_in_past'));
@@ -13326,7 +13389,7 @@ async function loadWaivers() {
   // checklists and trip records are exportable even for an org that doesn't
   // use waivers at all.
   const exportDateEl = document.getElementById('waiver-export-date');
-  if (exportDateEl && !exportDateEl.value) exportDateEl.value = new Date().toISOString().split('T')[0];
+  if (exportDateEl && !exportDateEl.value) exportDateEl.value = fechaLocal();
 
   // Dos razones distintas para no poder exportar, y conviene no mezclarlas: el
   // ROL (no sos dueño) y la PLATAFORMA (la app instalada no puede abrir una
@@ -13361,7 +13424,7 @@ async function loadWaivers() {
   mainEl.style.display = 'block';
 
   if (!currentOrgId) return;
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
 
   let tripsQuery = tripsVigentes('id, trip_time, trip_type, trip_type_id, contact_name').eq('org_id', currentOrgId).eq('trip_date', today);
   if (currentLocationId) tripsQuery = tripsQuery.eq('location_id', currentLocationId);
@@ -13719,7 +13782,7 @@ function setWaiverLogView(view) {
 async function renderWaiverLog() {
   if (!currentOrgId) return;
   const dateEl = document.getElementById('waiver-log-date');
-  if (!dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+  if (!dateEl.value) dateEl.value = fechaLocal();
   const date = dateEl.value;
   const logListEl = document.getElementById('waiver-log-list');
 
@@ -13730,8 +13793,8 @@ async function renderWaiverLog() {
     monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-    rangeStart = monday.toISOString().split('T')[0];
-    rangeEnd = sunday.toISOString().split('T')[0];
+    rangeStart = fechaLocal(monday);
+    rangeEnd = fechaLocal(sunday);
   } else {
     rangeStart = date;
     rangeEnd = date;
@@ -13771,14 +13834,14 @@ document.getElementById('waiver-log-prev').addEventListener('click', () => {
   const el = document.getElementById('waiver-log-date');
   const d = new Date(el.value + 'T12:00:00');
   d.setDate(d.getDate() - (window.waiverLogView === 'weekly' ? 7 : 1));
-  el.value = d.toISOString().split('T')[0];
+  el.value = fechaLocal(d);
   renderWaiverLog();
 });
 document.getElementById('waiver-log-next').addEventListener('click', () => {
   const el = document.getElementById('waiver-log-date');
   const d = new Date(el.value + 'T12:00:00');
   d.setDate(d.getDate() + (window.waiverLogView === 'weekly' ? 7 : 1));
-  el.value = d.toISOString().split('T')[0];
+  el.value = fechaLocal(d);
   renderWaiverLog();
 });
 
@@ -13825,9 +13888,9 @@ function openSignWaiverModal(participantId, tripId, groupId, guestName, waiverTy
   document.getElementById('signature-guest-name').textContent = guestName;
   document.getElementById('signature-waiver-type-label').textContent = waiverTypeLabels[waiverType] || waiverType;
   document.getElementById('sig-printed-name').value = guestName || '';
-  document.getElementById('sig-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('sig-date').value = fechaLocal();
   document.getElementById('sig-guardian-name').value = '';
-  document.getElementById('sig-guardian-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('sig-guardian-date').value = fechaLocal();
   document.getElementById('sig-guardian-section').style.display = isMinor ? 'block' : 'none';
   document.getElementById('sig-notes').value = '';
   const feedback = document.getElementById('signature-save-feedback');
@@ -14155,7 +14218,7 @@ document.getElementById('btn-export-waivers').addEventListener('click', () => {
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const date = document.getElementById('waiver-export-date').value || new Date().toISOString().split('T')[0];
+  const date = document.getElementById('waiver-export-date').value || fechaLocal();
   exportWaiversForDay(date);
 });
 
@@ -14166,7 +14229,7 @@ document.getElementById('btn-export-checklists').addEventListener('click', () =>
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const date = document.getElementById('cl-logged-date-search').value || new Date().toISOString().split('T')[0];
+  const date = document.getElementById('cl-logged-date-search').value || fechaLocal();
   exportChecklistsForDay(date);
 });
 
@@ -14177,7 +14240,7 @@ document.getElementById('btn-export-trips').addEventListener('click', () => {
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const date = document.getElementById('waiver-export-date').value || new Date().toISOString().split('T')[0];
+  const date = document.getElementById('waiver-export-date').value || fechaLocal();
   exportTripRecordsForDay(date);
 });
 
@@ -14938,7 +15001,7 @@ async function confirmLogPayment(groupId, total, paid) {
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('payments').insert({
     org_id: currentOrgId, location_id: currentLocationId, trip_id: currentTripId, group_id: groupId,
-    amount, method, payment_date: new Date().toISOString().split('T')[0],
+    amount, method, payment_date: fechaLocal(),
     logged_by: user.email, note: note || null
   });
   await refreshGroupPaymentSection(groupId);
@@ -16141,7 +16204,7 @@ const DIVING_CREW_ROLES = ['instructor', 'divemaster', 'dive_guide'];
 
 async function loadTodaysTripList() {
   if (!currentOrgId) return;
-  const today = formatDate(new Date());
+  const today = fechaLocal();
 
   // A group can carry its own activity type (a snorkel group riding along on
   // a dive trip, say), so tank math can't assume one type for everyone
@@ -19433,7 +19496,7 @@ async function loadFleet() {
 
   const boatIds = boats.map(b => b.id);
   const safeIds = boatIds.length ? boatIds : ['00000000-0000-0000-0000-000000000000'];
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   const { data: engines } = await sb.from('engines').select('boat_id, current_hours, service_interval_hours, warn_hours').in('boat_id', safeIds);
   const { data: dueMaint } = await sb.from('maintenance_logs').select('boat_id, next_due_date').in('boat_id', safeIds).not('next_due_date', 'is', null).lte('next_due_date', today);
 
@@ -19998,7 +20061,7 @@ async function showBoatMaintenanceForm(preselectEngineId) {
   document.getElementById('form-add-boat-hours').style.display = 'none';
   document.getElementById('form-add-boat-maintenance').style.display = 'block';
   if (!document.getElementById('bdm-date').value) {
-    document.getElementById('bdm-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('bdm-date').value = fechaLocal();
   }
   await populateBoatDetailMaintenanceGearSelect();
   await populateBoatDetailMaintenanceEngineSelect();
@@ -20140,7 +20203,7 @@ async function loadBoatDetailMaintenance(boatId) {
 // La piel es un parámetro (`conBarco` agrega motor y equipo, que sólo tienen
 // sentido en la pantalla del barco) y qué se muestra se decide acá.
 function filaDeService(l, { conBarco = false } = {}) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   const dueSoon = l.next_due_date && l.next_due_date <= today;
   const fecha = (d) => new Date(d + 'T12:00:00').toLocaleDateString(localeDeLaApp(), { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -20496,7 +20559,7 @@ function renderGearRegistry(items) {
     list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${t('gear_no_registered_yet')}</p>`;
     return;
   }
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
   list.innerHTML = items.map(g => {
     const dueSoon = g.next_service_date && g.next_service_date <= today;
     const statusColor = g.status === 'retired' ? 'var(--muted)' : g.status === 'in_repair' ? 'var(--warning)' : 'var(--success)';
@@ -20589,7 +20652,7 @@ document.getElementById('btn-show-add-gear-maintenance').addEventListener('click
   document.getElementById('form-add-gear-maintenance').style.display = 'block';
   document.getElementById('btn-show-add-gear-maintenance').style.display = 'none';
   if (!document.getElementById('gdm-date').value) {
-    document.getElementById('gdm-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('gdm-date').value = fechaLocal();
   }
 });
 document.getElementById('btn-cancel-gear-maintenance').addEventListener('click', () => {
@@ -20825,6 +20888,16 @@ async function loadGearInventory() {
 //  2 · **Una venta no cuelga de `payments`.** Medido: `payments.trip_id` es
 //      NOT NULL con FK a `trips`, y una venta de mostrador no tiene salida.
 //      Conectar venta con cobro es la etapa 2.
+//  3 · **La anulación existe desde el 26/10**, con la lista de lo vendido hoy.
+//      El lado del servidor es `_sql/anular-una-venta.sql`, **aplicado el
+//      26/10** y verificado contra la base real en transacciones revertidas:
+//      13 comprobaciones de esquema y 8 de RLS haciéndose pasar por Fran. Una
+//      venta es inmutable en dos capas —RLS sin UPDATE ni DELETE, más un
+//      trigger—, igual que el acta de una checklist.
+//
+//      **Lo que falta para que prenderlo SIRVA no es código: son datos.**
+//      Medido el 26/10: 0 de 178 artículos están marcados a la venta, así que
+//      prendido, el mostrador diría «todavía no hay nada a la venta».
 const POS_VENTAS = false;
 
 // El único lector del interruptor. Todo lo demás pregunta por acá, y un test
@@ -20968,7 +21041,6 @@ function renderMostrador(items, stockMap) {
         <button class="btn-cancel" onclick="vaciarCarrito()">${escapeHtml(t('pos_vaciar'))}</button>
       </span>
     </div>
-    <p class="card-desc" style="margin:10px 0 0;">${escapeHtml(t('pos_sin_anular'))}</p>
   </div>`;
 }
 
@@ -21014,8 +21086,175 @@ async function confirmarVenta() {
   await loadGearInventory();
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
+// LO VENDIDO HOY
+//
+// Medido el 26/10, y es el hueco que la etapa 1 dejó abierto sin que ninguna
+// nota lo dijera: **nada en la app leía `sales` ni `sale_lines`.** Ni una
+// consulta. Un centro podía registrar una venta y después no tenía forma de
+// verla.
+//
+// Y eso le pega exactamente al agujero que el Roadmap POS nombra como el
+// importante: *«hoy la app no puede contestar ¿qué vendimos hoy?, sólo cuánto
+// entró. Ésa es la diferencia entre una caja y un POS»*. La etapa 1 construyó
+// la mitad que ESCRIBE y la mitad que LEE quedó sin construir, así que el
+// agujero seguía abierto con la tabla llena.
+//
+// Un dato que no se puede mirar es, para quien usa la app, un dato que no
+// existe.
+
+// El día del centro, no el de Greenwich. `new Date().toISOString()` da la fecha
+// UTC: en Fiji (UTC+12) a las 9 de la mañana eso devuelve AYER, y la lista del
+// mostrador mostraría las ventas del día anterior.
+//
+// OJO, hallazgo aparte y sin tocar: el cierre de caja (`loadCashUpHistory`) usa
+// `toISOString().split('T')[0]`, así que tiene ese bug hoy — un centro en Fiji o
+// Tailandia cierra la caja contra el día equivocado. `cash_ups` tiene **0
+// filas** medidas, así que nadie lo chocó todavía; se arregla en su propio
+// cambio porque toca una pantalla que no está detrás de ningún interruptor.
+
+
+// Quién puede anular. Un marinero puede registrar una venta en el mostrador;
+// deshacerla mueve plata y stock, así que es de dueño o encargado. Mismo
+// criterio y la misma forma que `puedeQuitarSalida()`.
+function puedeAnularVenta() {
+  return ['owner', 'manager'].includes(currentUserRole);
+}
+
+// Una venta anulada y su anulación se emparejan ACÁ, en memoria, con las filas
+// que ya vinieron. La alternativa era una segunda consulta o un embed
+// auto-referenciado de PostgREST, y ninguna de las dos hace falta: la anulación
+// de una venta de hoy está en el mismo resultado.
+//
+// Si la anulación es de una venta de OTRO día, su original no está en la lista.
+// Esa fila se muestra sola, diciendo qué es. Preferible a esconderla: el total
+// del día la incluye, así que esconderla dejaría un total que no cierra con lo
+// que se ve — el modo de falla que este módulo entero viene a evitar.
+function emparejarAnulaciones(filas) {
+  const anulacionPorVenta = {};
+  filas.forEach(f => { if (f.voids_sale_id) anulacionPorVenta[f.voids_sale_id] = f; });
+  const propias = {};
+  filas.forEach(f => { propias[f.id] = true; });
+  return filas
+    .filter(f => !f.voids_sale_id || !propias[f.voids_sale_id])
+    .map(f => ({ venta: f, anulacion: anulacionPorVenta[f.id] || null }));
+}
+
+// El total es la suma de TODAS las líneas, incluidas las negativas de una
+// anulación. No hay ningún `where anulada = false` en ninguna parte, y es a
+// propósito: con la bandera, cada suma de plata de acá en adelante —el cierre
+// de caja, el reporte por producto, el descuadre contra stock— necesitaría
+// acordarse de filtrar, y el defecto aparece donde la copia falta. Con las
+// líneas en negativo la aritmética lleva el significado.
+function totalNetoDeVentas(filas) {
+  return filas.reduce((suma, f) =>
+    suma + (f.sale_lines || []).reduce((s, l) => s + Number(l.qty) * Number(l.unit_price), 0), 0);
+}
+
+async function cargarVentasDelDia() {
+  const el = document.getElementById('pos-ventas-del-dia');
+  if (!el) return;
+  if (!posEstaPrendido()) { el.innerHTML = ''; return; }
+
+  const hoy = fechaLocal();
+  const { data, error } = await sb
+    .from('sales')
+    // `sale_lines` se incrusta por la FK `sale_lines.sale_id -> sales.id`, que
+    // existe (medida el 26/10). PostgREST deduce los embeds de las foreign
+    // keys: sin esa FK esto devolvería 400 (PGRST200) y la lista quedaría
+    // vacía sin decir por qué. Ver «La clave que sostenía un join».
+    .select('id, sold_at, sold_by, voids_sale_id, void_reason, note, sale_lines(qty, unit_price, item_name, size_label)')
+    .eq('org_id', currentOrgId)
+    .gte('sold_at', hoy + 'T00:00:00')
+    .order('sold_at', { ascending: false });
+
+  // Si no se puede medir, no se afirma nada. Un «no se vendió nada hoy» cuando
+  // la consulta falló es una respuesta falsa con cara de respuesta: el mismo
+  // criterio que el aviso de listas faltantes del A5.
+  if (error) { el.innerHTML = ''; return; }
+
+  renderVentasDelDia(data || []);
+}
+
+function renderVentasDelDia(filas) {
+  const el = document.getElementById('pos-ventas-del-dia');
+  if (!el || !posEstaPrendido()) return;
+
+  if (!filas.length) {
+    el.innerHTML = `<div class="inline-form" style="margin-bottom:18px;">
+      <div class="card-section-title" style="margin-top:0;">${escapeHtml(t('pos_hoy_titulo'))}</div>
+      <p class="card-desc" style="margin:0;">${escapeHtml(t('pos_hoy_vacio'))}</p>
+    </div>`;
+    return;
+  }
+
+  const huboAnulacion = filas.some(f => f.voids_sale_id);
+  const cuerpo = emparejarAnulaciones(filas).map(({ venta, anulacion }) => {
+    const suelta = !!venta.voids_sale_id;
+    const anulada = !!anulacion || suelta;
+    const monto = (venta.sale_lines || [])
+      .reduce((s, l) => s + Number(l.qty) * Number(l.unit_price), 0);
+    const cuando = new Date(venta.sold_at).toLocaleTimeString(localeDeLaApp(),
+      { hour: '2-digit', minute: '2-digit' });
+
+    const items = (venta.sale_lines || []).map(l =>
+      `${Math.abs(Number(l.qty))}× ${escapeHtml(trGearItemName(l.item_name))}` +
+      (l.size_label && l.size_label !== 'total' ? ' · ' + escapeHtml(trGearSizeLabel(l.size_label)) : '')
+    ).join(' · ');
+
+    const motivo = (anulacion && anulacion.void_reason) || venta.void_reason || '';
+    return `<div class="pos-venta${anulada ? ' anulada' : ''}">
+      <div class="pos-venta-cab">
+        <strong>${escapeHtml(precioEnPantalla(monto))}</strong>
+        <span class="pos-venta-hora">${escapeHtml(cuando)}</span>
+        ${anulada ? `<span class="pos-venta-sello">${escapeHtml(t('pos_anulada'))}</span>` : ''}
+        ${(!anulada && puedeAnularVenta())
+          ? `<button class="btn-cancel pos-venta-anular" onclick="anularVenta('${escapeJsEnAtributo(venta.id)}')">${escapeHtml(t('pos_anular_btn'))}</button>`
+          : ''}
+      </div>
+      <div class="pos-venta-items">${suelta ? escapeHtml(t('pos_anulacion_suelta')) + ' · ' : ''}${items}</div>
+      <div class="pos-venta-pie">${escapeHtml(t('pos_hoy_por'))} <strong>${escapeHtml(venta.sold_by || '')}</strong>${
+        motivo ? ' · ' + escapeHtml(motivo) : ''}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="inline-form" style="margin-bottom:18px;">
+    <div class="card-section-title" style="margin-top:0;">${escapeHtml(t('pos_hoy_titulo'))}</div>
+    ${cuerpo}
+    <div class="pos-total">
+      <span>${escapeHtml(t('pos_hoy_total'))} <strong>${escapeHtml(precioEnPantalla(totalNetoDeVentas(filas)))}</strong></span>
+    </div>
+    ${huboAnulacion ? `<p class="card-desc" style="margin:10px 0 0;">${escapeHtml(t('pos_hoy_neteado'))}</p>` : ''}
+  </div>`;
+}
+
+// Anular es UNA llamada: `anular_venta()` escribe la venta de anulación, sus
+// líneas en negativo, el stock devuelto y un movimiento por línea dentro de una
+// transacción. Igual que `registrar_venta`, y por la misma razón.
+async function anularVenta(saleId) {
+  if (!puedeAnularVenta()) return;
+  if (!(await showConfirmModal(t('pos_anular_confirmar')))) return;
+  // El motivo es opcional a propósito, igual que el «por qué faltó» de una
+  // checklist: obligarlo hace que alguien escriba «x», y un dato inventado es
+  // peor que ninguno porque parece un dato.
+  const motivo = await showPromptModal(t('pos_anular_motivo'));
+  if (motivo === null) return;
+
+  const { error } = await sb.rpc('anular_venta', {
+    p_sale: saleId,
+    p_by: await nombreDeQuienVende(),
+    p_reason: motivo || null
+  });
+  if (error) {
+    await showAlertModal(error.message || await motivoDeFalloAlEscribir(error, 'guardar'));
+    return;
+  }
+  await loadGearInventory();
+}
+
 function renderGearInventory(categories, items, stockMap) {
   renderMostrador(items, stockMap);
+  cargarVentasDelDia();
   const el = document.getElementById('inventory-categories');
   // Preserve which categories/items are currently expanded across re-renders.
   // Every add/repair/return/discard action calls loadGearInventory() to
@@ -21569,7 +21808,7 @@ async function loadInspectionChecklist() {
     return;
   }
   noLocEl.style.display = 'none';
-  const month = new Date().toISOString().slice(0, 7);
+  const month = fechaLocal().slice(0, 7);
   const { data: items } = await sb.from('gear_inspection_checklist_items').select('*').eq('org_id', currentOrgId).eq('active', true).order('sort_order');
   if (!items || !items.length) {
     catEl.innerHTML = '<p style="color:var(--muted);">No inspection checklist items yet. Enable a category in Settings.</p>';
@@ -21678,7 +21917,7 @@ async function tickInspectionItem(itemId, status) {
     notes = await showPromptModal(status === 'attention' ? 'What needs attention?' : 'What failed and why?', 'Describe the issue');
     if (!notes) return;
   }
-  const month = new Date().toISOString().slice(0, 7);
+  const month = fechaLocal().slice(0, 7);
   await sb.from('gear_inspection_completions').upsert({
     org_id: currentOrgId, location_id: currentLocationId, checklist_item_id: itemId,
     month, status, notes, completed_by: user.email, completed_at: new Date().toISOString()

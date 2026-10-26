@@ -77,6 +77,8 @@ const MINIMOS = {
   'onboarding.test.js':             12,
   'plan-limits.test.js':            14,
   'pos-etapa-1.test.js':           24,
+  'anular-una-venta.test.js':      46,
+  'fecha-local.test.js':           14,
   'plantillas-tres-capas.test.js':  30,
   'refresco-no-pisa-el-acta.test.js': 23,
   'reset-segunda-pasada.test.js':   40,
