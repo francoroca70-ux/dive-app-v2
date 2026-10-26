@@ -1318,23 +1318,38 @@ cinco fallos que un cliente habría encontrado por nosotros. Los cinco están en
 > `capacitor.config.json`.** El «orden obligado» que yo había escrito —Apple →
 > Capacitor a `/index.html` → landing a la raíz— **no hace falta**, salía del
 > diagnóstico equivocado.
-- **iOS: tercer envío en revisión desde el 26/10**, binario **162001**, con la
-  respuesta de 2.1(b) contestada en el hilo. Los dos anteriores volvieron
+- **iOS: NO hay nada en revisión** (al 26/10, con captura). El tercer envío del
+  binario **162001** se mandó ese día y **Fran lo retiró el mismo día**: la
+  versión 1.0 figura como *Eliminado*. Los dos envíos anteriores habían vuelto
   rechazados: 23/09 por metadatos (guía 2.3.3, las capturas de 13" sólo mostraban
-  el login) y 30/09 por el modelo de negocio. El procedimiento de capturas está
-  en `Operativa/Capturas para el App Store.md` del vault — se repite en cada
-  versión, y el 13/10 **no hizo falta** porque seguían cargadas.
+  el login) y 8/10 por el modelo de negocio (2.1(b)). El procedimiento de
+  capturas está en `Operativa/Capturas para el App Store.md` del vault.
 
-  > [!warning] Decía «desde el 13/10» y era falso: no se había enviado
-  > Fran lo descubrió el 26/10 — había preparado el envío el 13 y nunca apretó
-  > el botón. Trece días de cola perdidos, y **yo lo repetí como un hecho en
-  > varias notas sin haberlo visto nunca**. De ahí la regla 9.
+  > [!warning] Dos cosas del 26/10 que conviene no reaprender
+  > **Una:** acá decía «en revisión desde el 13/10» y era falso — el envío se
+  > había preparado el 13 y nunca se mandó. Trece días de cola perdidos, y **yo
+  > lo repetí como un hecho en cuatro notas sin haberlo visto nunca**. De ahí la
+  > regla 9.
   >
-  > **Y el 162001 es anterior al arreglo del 14/10**, así que si Apple lo
-  > aprueba sale a la tienda un iOS que no abre sin señal. Retirarlo cuesta el
-  > lugar en la cola, que ahora es de hoy y no de hace dos semanas. **La
-  > decisión es de Fran**; lo medido está en
-  > `Errores y aprendizajes/El install que cacheaba todo o nada.md`.
+  > **Dos:** el 162001 es **anterior al arreglo del 14/10**, así que si Apple lo
+  > aprobaba salía a la tienda un iOS que no abre sin señal. Por eso se retiró.
+  >
+  > **El orden para reenviar, y el orden importa:** primero el push, después
+  > esperar el build nuevo en TestFlight, después **probarlo en modo avión en un
+  > iPhone de verdad**, y recién ahí adjuntarlo y enviar. Retirar antes de tener
+  > el reemplazo probado es lo que quema la cola dos veces.
+  >
+  > **Medido el 26/10, y no hay nada nuevo de Apple.** La ficha del envío
+  > retirado muestra «2.1.0 Performance: App Completeness», que **no es un
+  > rechazo nuevo**: `2.1(b) Information Needed` es un sub-ítem de la guía
+  > **2.1, que se llama App Completeness**, así que App Store Connect está
+  > arrastrando la categoría del rechazo del 8/10. De los tres mensajes, dos son
+  > de Apple (23/09 y 8/10) y **el tercero es de Fran**.
+  >
+  > Y ese tercero fecha lo del 13/10 con prueba documental: la respuesta de Fran
+  > a Apple es del **13/10 8:45** y la fecha de envío de la ficha es del
+  > **26/10 17:58**. Escribió la respuesta ese día y el envío nunca salió — no
+  > es una reconstrucción, está en la pantalla.
 > [!warning] Los dos `google*.html` de la raíz del repo NO se borran
 > `google6c351a16b170880f.html` sostiene la verificación de Search Console
 > (propiedad `https://www.sevenseasops.com/`, verificada el 14/10) y

@@ -93,7 +93,7 @@ const MINIMOS = {
   'service-worker.test.js':        29,
   'sello-de-service.test.js':       36,
   'signer.test.js':                 31,
-  'sin-vitrina-en-nativo.test.js':  59,
+  'sin-vitrina-en-nativo.test.js':  60,
   'trip-archive.test.js':           43,
 };
 

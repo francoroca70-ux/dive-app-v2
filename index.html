@@ -199,6 +199,8 @@
 /* Una venta del día. La anulada NO se esconde: se tacha el monto y se sella.
    Esconderla dejaría un total que no cierra con lo que se ve, porque el total
    es la suma de todas las líneas e incluye las negativas de la anulación. */
+.app-build-line { font-size:0.75rem; color:var(--muted); margin:18px 0 0;
+  font-family:ui-monospace,Menlo,Consolas,monospace; }
 .pos-venta { padding:8px 0; border-bottom:1px solid var(--border); font-size:0.86rem; }
 .pos-venta-cab { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .pos-venta-hora { font-size:0.75rem; color:var(--muted); }
@@ -4430,6 +4432,16 @@ body { background: var(--navy); color: var(--text); }
           <span class="save-feedback" id="close-shop-feedback" style="color:var(--error);display:block;margin-top:10px;"></span>
         </div>
 
+        <!-- La versión que está corriendo, visible para quien la usa.
+             Hasta el 26/10 el build vivía SÓLO en un `console.info`, y
+             `versionName` en Android está clavado en "1.0" para todas las
+             builds desde siempre. O sea que «¿qué versión tenés?» no tenía
+             respuesta: Juanma reportó que la app no abría sin red y no había
+             forma de saber qué código tenía en el teléfono.
+             Para un producto que se reporta por WhatsApp desde un barco, eso
+             es la primera pregunta de cualquier diagnóstico. -->
+        <p class="app-build-line" id="app-build-line"></p>
+
         <div class="legal-footer" data-legal-footer style="margin-bottom:30px;"></div>
 
       </div>
@@ -4762,6 +4774,7 @@ const TRANSLATIONS = {
     svc_cert_note: "The fingerprint above was computed once, at the moment of sealing, over exactly the fields shown on this page. From that moment the record cannot be modified or deleted — recomputing the fingerprint over the stored record must give the same value, and any difference is itself the evidence. The next service date is not covered by the seal: it changes by design, which is why it does not appear here.",
     svc_cert_not_sealed: "This service has not been sealed yet. Seal it first — a certificate for a draft would claim something that is not true.",
     svc_cert_not_found: "That service could not be loaded.",
+    set_build_label: 'App version',
     svc_cert_checked: "Seal checked against the stored record on {when}: the recomputed fingerprint matches.",
     svc_cert_broken: "WARNING — the recomputed fingerprint does NOT match the one on this sheet. The stored record has changed since it was sealed.",
     svc_cert_unchecked: "The seal could not be re-checked when this sheet was produced (no connection). The fingerprint above is the one stored at the time of sealing.",
@@ -5630,6 +5643,7 @@ const TRANSLATIONS = {
     svc_cert_note: "La huella de arriba se calculó una sola vez, en el momento del sellado, sobre exactamente los campos que figuran en esta hoja. Desde ese momento el registro no se puede modificar ni borrar — recalcular la huella sobre el registro guardado tiene que dar el mismo valor, y cualquier diferencia es en sí misma la prueba. La próxima fecha de service no está cubierta por el sello: cambia por diseño, y por eso no aparece acá.",
     svc_cert_not_sealed: "Este service todavía no está sellado. Primero hay que sellarlo — una constancia de un borrador afirmaría algo que no es cierto.",
     svc_cert_not_found: "No se pudo cargar ese service.",
+    set_build_label: 'Versión de la app',
     svc_cert_checked: "Sello comprobado contra el registro guardado el {when}: la huella recalculada coincide.",
     svc_cert_broken: "ATENCIÓN — la huella recalculada NO coincide con la de esta hoja. El registro guardado cambió desde que se selló.",
     svc_cert_unchecked: "No se pudo volver a comprobar el sello al emitir esta hoja (sin conexión). La huella de arriba es la que quedó guardada al sellar.",
@@ -6419,6 +6433,9 @@ function refreshDynamicTranslations() {
     }
     if (document.getElementById('page-help') && document.getElementById('page-help').classList.contains('active') && typeof renderHelpPage === 'function') renderHelpPage();
   }
+  // La línea del build lleva una etiqueta traducida, así que se repinta acá y
+  // no con `data-i18n`: el número no se traduce y la etiqueta sí.
+  if (typeof pintarBuild === 'function') pintarBuild();
 }
 
 function setLanguage(lang) {
@@ -9305,8 +9322,26 @@ async function checkCrewNotifications() {
 // le habría pasado a un centro de buceo a las 7 de la mañana.
 //
 // Ahora un fallo se muestra, con el error a la vista y una salida.
+// El build vive en UNA sola constante, y de ahí salen la consola y la pantalla.
+// Antes era un literal dentro del `console.info` y nada más; poner un segundo
+// literal para mostrarlo en Configuración habría sido la copia número dos, que
+// es exactamente cómo empiezan los defectos de este proyecto.
+//
+// La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
+// `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
+// queda atrás.
+const BUILD_WEB = '2026-10-26g';
+
+// Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
+// cada cambio de idioma, porque la etiqueta se traduce y el número no.
+function pintarBuild() {
+  const el = document.getElementById('app-build-line');
+  if (el) el.textContent = t('set_build_label') + ' ' + BUILD_WEB;
+}
+
 async function initAuth() {
-  console.info('[Seven Seas] build 2026-10-26f');
+  console.info('[Seven Seas] build ' + BUILD_WEB);
+  pintarBuild();
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
