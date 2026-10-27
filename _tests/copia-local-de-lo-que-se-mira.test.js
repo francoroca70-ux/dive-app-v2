@@ -82,10 +82,16 @@ chk('arranca sin excepción', !boot, boot ? String(boot).slice(0, 300) : '');
 window.__t.setOrg('org-1');
 window.__t.idioma('es');
 
-// ─── 1 · El default en producción es el camino viejo ────────────────────────
+// ─── 1 · El interruptor, ahora PRENDIDO ─────────────────────────────────────
 //
-// Regla 8: prenderlo es decisión de Fran, no efecto colateral de un commit.
-chk('el interruptor arranca APAGADO', window.__t.verCopia() === 'apagado', window.__t.verCopia());
+// Esto afirmaba que arrancaba en `'apagado'`, y era correcto mientras el camino
+// estaba construido y desconectado. Fran lo prendió el 27/10 —decisión suya,
+// como pide la regla 8— así que ahora afirma lo contrario, y lo que cuida es
+// que **apagarlo siga funcionando**: la vuelta atrás es esa sola línea y tiene
+// que seguir siendo verdad. Es el mismo movimiento que hizo
+// `plantillas-tres-capas.test.js` cuando la 3b prendió `FUENTE_PLANTILLAS`.
+chk('el interruptor está PRENDIDO (lo prendió Fran el 27/10)',
+  window.__t.verCopia() === 'encendido', window.__t.verCopia());
 
 // ─── 2 · Una lectura que sale bien guarda la copia, siempre ─────────────────
 const FILAS = [{ id: 't-1', trip_name: 'Island Hopping' }, { id: 't-2', trip_name: 'Sunset Cruise' }];
