@@ -89,8 +89,31 @@
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- La tipografía NO bloquea el arranque.
+     27/10/2026: era un <link rel="stylesheet"> normal, y un stylesheet bloquea
+     el render hasta que resuelve. Sin señal eso es la pantalla en blanco
+     durante todo el timeout, justo en el caso que nos importa: el instructor
+     que abre la app arriba del barco.
+     El truco de `media="print"` hace que el navegador lo baje sin bloquear y
+     lo aplique al terminar. Si no llega, se ven las fuentes del sistema, que
+     es exactamente lo que ya dice el `font-family` de abajo. -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet" media="print" onload="this.media='all'">
+
+<!-- supabase-js VIVE EN EL REPO, no en un CDN.
+     27/10/2026, y es el hallazgo que destapó por qué «arranca del binario» era
+     sólo medio cierto. Esto decía:
+         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+     o sea: la app empaquetada salía a internet a buscar **la librería sin la
+     cual no existe**. Y nadie la guardaba — `build-www.js` copia los archivos
+     locales, y el service worker ignora a propósito todo lo que no sea del
+     mismo origen. Offline sólo podía salir de la caché HTTP del webview, que
+     se vacía sola y que en una instalación nueva está vacía.
+     El HTML estaba en el binario y su dependencia crítica no.
+     Y `@2` quiere decir «la última v2 que haya»: la librería de AUTENTICACIÓN
+     podía cambiar debajo nuestro sin que desplegáramos nada. Ahora la versión
+     está clavada y se actualiza a propósito, con `npm run vendor:supabase`. -->
+<script src="assets/vendor/supabase-js-2.118.0.js"></script>
 <!-- Paddle billing.
      Los tokens de cliente son públicos por diseño (a diferencia de la API
      key), así que van en el HTML: es el patrón que recomienda Paddle.
@@ -151,6 +174,17 @@
       `[Paddle] No hay token para el entorno '${PADDLE_ENV}'. El checkout no va a abrir. ` +
       `Cargar PADDLE_TOKENS.${PADDLE_ENV} con el token de Developer tools → Authentication → Client-side tokens.`
     );
+  } else if (typeof Paddle === 'undefined') {
+    // Paddle SÍ se sigue cargando del CDN, y es correcto: su script es parte de
+    // su checkout, no se puede empaquetar, y en la app nativa el checkout corta
+    // antes de abrir nada por la guía 3.1.1 de Apple. O sea que offline no
+    // hace falta.
+    //
+    // Lo que no era correcto era llamarlo sin preguntar: sin señal esta línea
+    // tiraba un ReferenceError en el arranque. No volteaba la app —es otro
+    // bloque de script— pero ensuciaba la consola justo cuando alguien está
+    // tratando de entender por qué la app no anda, y eso cuesta tiempo.
+    console.warn('[Paddle] el script no cargó (sin conexión, probablemente). El checkout no va a abrir; el resto de la app sí.');
   } else {
     Paddle.Environment.set(PADDLE_ENV);
     Paddle.Initialize({ token: PADDLE_TOKEN });
@@ -4478,6 +4512,13 @@ body { background: var(--navy); color: var(--text); }
 // ─── SUPABASE INIT ───
 const SUPABASE_URL = 'https://ggtbxjwstkuhnabwpgdz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tiYQ81YqYtscWmvb3-8o-w_lBPGtbUw';
+// Si esto falta, la app no existe. Desde el 27/10 la librería está en el repo,
+// así que sólo puede faltar si alguien borró el archivo o le erró a la ruta —
+// y en ese caso conviene un mensaje que lo diga, no un ReferenceError pelado
+// que manda a buscar el problema a cualquier otro lado.
+if (typeof supabase === 'undefined' || !supabase.createClient) {
+  throw new Error('No cargó supabase-js (assets/vendor/). La app no puede arrancar sin eso.');
+}
 const { createClient } = supabase;
 
 // "Remember me" support: the login checkbox sets a plain 'ss_remember_me' flag
@@ -9353,7 +9394,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-26j';
+const BUILD_WEB = '2026-10-27a';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.

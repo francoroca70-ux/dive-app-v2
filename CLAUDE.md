@@ -525,6 +525,72 @@ haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 > *«Works offline»*, así que la promesa no es cierta hasta que se prenda: **no
 > reenviar a Apple antes.**
 
+> [!warning] 27/10: la app pedía por internet la librería sin la cual no existe
+> `supabase-js` venía de `cdn.jsdelivr.net` **sin versión fija**, y
+> `build-www.js` copia archivos locales mientras el service worker ignora a
+> propósito todo lo que no sea del mismo origen. Así que **«arranca del binario»
+> era verdad para el HTML y falso para su dependencia crítica**: sin señal sólo
+> podía salir de la caché HTTP del webview, que se vacía sola. El arreglo del
+> 14/10 estaba a medias y el webview venía tapando el agujero.
+>
+> Y `@2` quiere decir «la última v2 que haya»: la librería de **autenticación**
+> podía cambiar debajo nuestro sin desplegar nada.
+>
+> **Hecho:** `assets/vendor/supabase-js-2.118.0.js` en el repo y en el
+> `APP_SHELL`, con `npm run vendor:supabase` para actualizarla a propósito. **La
+> versión va en el nombre del archivo** porque la rama de estáticos del service
+> worker es cache-first: un nombre fijo con contenido nuevo es el bug de la
+> copia vieja que nadie puede sacarse de encima. **Se commitea**, no se genera al
+> desplegar — Render sirve el repo tal cual, sin build step.
+>
+> Al actualizar hay que tocar TRES lugares (`package.json`, el `<script src>` y
+> el `APP_SHELL`) y `_tests/arranque-sin-cdn.test.js` falla si no coinciden. Ese
+> test afirma además la regla general: **ningún script que el arranque necesite
+> puede venir de otro origen**, con una lista de excepciones donde cada una lleva
+> su motivo escrito.
+>
+> **Paddle se queda en el CDN y es correcto** (su script es parte de su checkout
+> y en nativo el checkout corta por la 3.1.1 de Apple), pero ahora se pregunta si
+> cargó antes de llamarlo. Y el stylesheet de las fuentes **dejó de bloquear el
+> render**: sin señal, un `<link rel=stylesheet>` es la pantalla en blanco
+> durante todo el timeout.
+
+> [!important] La sesión no se borra: no se DEVUELVE. Y es el bloqueo de fondo
+> Medido el 27/10 **leyendo la librería vendorizada**, no la documentación.
+>
+> Anoche afirmé que sin red el refresco falla y la librería **borra** la sesión.
+> **Falso**, y lo había deducido de una frase de la doc. `_callRefreshToken()`
+> hace `if (!isAuthRetryableFetchError(error))` antes de tocar nada: un fallo de
+> **red** es retryable, entra por ese `if` y **la sesión queda en
+> `localStorage`**.
+>
+> Lo que sí pasa está en `__loadSession()`: tras un refresco fallido devuelve la
+> sesión guardada **sólo si el access token sigue dentro de su expiración real**.
+> Vencido —entraste ayer, abrís hoy— devuelve `{ session: null }`. La app lee
+> «no hay sesión», manda al login, y el login sin red tampoco puede.
+>
+> **La sesión está y no se devuelve.** No hay que recuperar nada borrado: hay que
+> dejar de tratar «no se pudo verificar» como «no hay sesión».
+>
+> Dos datos de la doc de Supabase que acotan el problema: **los refresh tokens
+> nunca vencen** (son de un solo uso) y el access token dura **1 hora** por
+> defecto, configurable en el proyecto — *«más de 1 hora se desaconseja por
+> seguridad, pero puede tener sentido en ciertas situaciones»*.
+>
+> **D2a, y va primero porque es un ajuste y no código:** subir la expiración del
+> JWT en el panel de Supabase. Decisión de Fran, con su costo de seguridad. Puede
+> resolver la mayor parte del caso real sin tocar una línea, y **medir eso antes
+> de construir es lo que evita construir de más.**
+>
+> **D2b, sin construir:** modo sin conexión con sesión no verificada. Es un
+> **10** por el ancla de la regla 7 (autenticación). El argumento de seguridad
+> que lo haría aceptable: offline la app sólo muestra datos que ese dispositivo
+> ya tenía, y toda escritura se encola y la juzga RLS al reconectar — nada
+> privilegiado pasa sin que el servidor lo valide. El riesgo que queda es mostrar
+> datos cacheados a alguien a quien se dio de baja, hasta que el aparato vuelva a
+> tener señal; se acota con una ventana máxima. **No se construyó: la decisión es
+> de Fran y conviene medir D2a primero.**
+
 > [!warning] Todo el offline vale **una vez que la app está abierta**
 > Y «abierta» resultó significar **«abierta y con los datos ya cargados en esa
 > misma sesión»** — ver el bloque de arriba. Lo que sigue es correcto para la

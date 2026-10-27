@@ -14,7 +14,7 @@
 // 23/09/2026: v2 -> v3. La v2 dejó a Fran dos días con una versión vieja de la
 // app sin forma de enterarse: pedía index.html y el service worker se lo servía
 // desde la caché. Arreglos desplegados que él nunca recibió.
-const CACHE_VERSION = 'seven-seas-v90';
+const CACHE_VERSION = 'seven-seas-v91';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -25,6 +25,12 @@ const APP_SHELL = [
   // poco, y un prospecto con señal mala merece verla.
   '/landing.html',
   '/manifest.json',
+  // 27/10/2026: la librería de Supabase. Antes venía de un CDN, y el `fetch`
+  // de abajo ignora a propósito todo lo que no sea del mismo origen — así que
+  // la dependencia más crítica de la app era la única que el service worker
+  // no podía guardar. Ahora es un archivo nuestro y entra al shell como
+  // cualquier otro.
+  '/assets/vendor/supabase-js-2.118.0.js',
   '/assets/icons/icon-72.png',
   '/assets/icons/icon-96.png',
   '/assets/icons/icon-128.png',

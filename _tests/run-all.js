@@ -50,6 +50,7 @@ const TIEMPO_MAXIMO_MS = 90000;
 const MINIMOS = {
   'abrir-sin-internet.test.js':     57,
   'arrancar-del-binario.test.js':   24,
+  'arranque-sin-cdn.test.js':      17,
   'acta-pendiente-sin-senal.test.js': 20,
   'autoria-de-tildes.test.js':      41,
   'borrados-avisan.test.js':        17,
