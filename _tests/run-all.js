@@ -93,6 +93,7 @@ const MINIMOS = {
   'ver-la-contrasena.test.js':      33,
   'service-worker.test.js':        29,
   'sello-de-service.test.js':       36,
+  'sesion-sin-verificar.test.js':  30,
   'signer.test.js':                 31,
   'sin-vitrina-en-nativo.test.js':  60,
   'trip-archive.test.js':           43,

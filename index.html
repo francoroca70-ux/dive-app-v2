@@ -4885,6 +4885,10 @@ const TRANSLATIONS = {
     // mismo en los dos casos: al borrar es «algo cuelga de esto», al guardar es
     // «lo que esto referencia ya no existe».
     copia_local_aviso: 'Saved copy · no connection',
+    sesion_sin_verificar: 'No connection — showing your saved copy. Sign-in will be confirmed when signal returns.',
+    sesion_dias: '{n} days without signal', sesion_dias_one: '{n} day without signal',
+    sesion_revalidando: 'Signal is back — confirming your sign-in…',
+    sesion_revalidada: 'Sign-in confirmed. Reloading…',
     lec_no_se_pudo: "Couldn't load this", lec_sin_conexion: 'no connection',
     lec_sin_permiso: 'this account has no access to it', lec_otro_motivo: 'try again in a moment',
     esc_sin_conexion: "No connection, so nothing was saved. Try again once you're back online.",
@@ -5758,6 +5762,10 @@ const TRANSLATIONS = {
     del_sin_permiso: 'Esta cuenta no tiene permiso para borrar esto.',
     del_otro_motivo: 'No se pudo borrar: {error}',
     copia_local_aviso: 'Copia guardada · sin conexión',
+    sesion_sin_verificar: 'Sin conexión — se muestra la copia guardada. Al volver la señal se confirma el acceso.',
+    sesion_dias: '{n} días sin señal', sesion_dias_one: '{n} día sin señal',
+    sesion_revalidando: 'Volvió la señal — confirmando el acceso…',
+    sesion_revalidada: 'Acceso confirmado. Recargando…',
     lec_no_se_pudo: 'No se pudo cargar', lec_sin_conexion: 'sin conexión',
     lec_sin_permiso: 'esta cuenta no tiene acceso', lec_otro_motivo: 'reintentar en un momento',
     esc_sin_conexion: 'Sin conexión, así que no se guardó nada. Se puede reintentar cuando vuelva la señal.',
@@ -7641,6 +7649,23 @@ window.addEventListener('offline', () => { isOffline = true; updateOfflineBanner
 window.addEventListener('online', async () => {
   isOffline = false;
   updateOfflineBanner();
+
+  // SI ARRANCAMOS SIN VERIFICAR, NO SE LEE NADA HASTA REVALIDAR. Y éste es el
+  // agujero peor de todo este cambio, el que no se ve:
+  //
+  // con el access token vencido, el cliente de Supabase manda las consultas
+  // **como anónimo**. RLS no devuelve un error: devuelve **cero filas**. O sea
+  // que una lectura que llega al servidor sin identidad se ve exactamente igual
+  // que un centro sin datos — y `textoDeListaVacia()` no puede salvar eso,
+  // porque no hay error que mirar. Es la mentira del 26/10 otra vez, por otra
+  // puerta y con mejor disfraz.
+  //
+  // Por eso al volver la señal lo PRIMERO es canjear el refresh token (que no
+  // vence nunca) y recién después dejar correr la cola y los redibujos.
+  if (modoSinVerificar) {
+    if (!(await revalidarSesion())) return;
+  }
+
   await flushOfflineQueue();
   // Los tildes propios ya salieron con la cola, pero la pantalla seguía
   // mostrando la copia en memoria de ANTES de perder la señal — así que no se
@@ -9394,7 +9419,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-27a';
+const BUILD_WEB = '2026-10-27b';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9504,16 +9529,123 @@ async function initAuthInner() {
     await checkCrewNotifications();
     await checkTasksNotifications();
     await checkChecklistNotifications();
+    // Quién soy y dónde trabajo, para que un arranque sin señal tenga qué
+    // dibujar. Va acá, al final de un arranque que SÍ se pudo verificar: antes
+    // de esta línea el rol todavía no está resuelto.
+    guardarIdentidadLocal();
     updateOfflineBanner();
     flushOfflineQueue();
     showScreen('app');
   } else {
+    // Antes de dar a alguien por deslogueado: ¿será que la sesión está y sólo
+    // no se pudo VERIFICAR? Ver el bloque de `SESION_SIN_VERIFICAR`.
+    const rescate = sesionSinVerificarUsable();
+    if (rescate) {
+      console.info('[boot] 3 sin red: se arranca con la sesión guardada, sin verificar');
+      arrancarSinVerificar(rescate);
+      hideLoadingScreen();
+      return;
+    }
     console.info('[boot] 3 mostrando login');
     showScreen('login');
   }
 
   hideLoadingScreen();
   console.info('[boot] 4 listo');
+}
+
+// ─── Modo sin conexión con sesión sin verificar ───
+//
+// Esta bandera la mira todo lo que no puede correr acá. Es global a propósito:
+// un modo de la app, no un parámetro que haya que ir pasando por seis lugares.
+let modoSinVerificar = false;
+
+function arrancarSinVerificar({ sesion, vencidaHace }) {
+  const id = leerIdentidadLocal(sesion.user.id);
+  if (!id || !id.orgId) {
+    // Sin identidad guardada no hay nada que dibujar: ni centro, ni rol, ni qué
+    // pestañas mostrar. Pasa si el aparato nunca completó un arranque con
+    // señal. Mandar al login es correcto acá — no hay nada que rescatar.
+    console.warn('[SESION] hay sesión guardada pero no identidad local, se pide iniciar sesión');
+    showScreen('login');
+    return;
+  }
+
+  modoSinVerificar = true;
+  currentUserId = sesion.user.id;
+  currentOrgId = id.orgId;
+  currentLocationId = id.locationId || null;
+  currentUserRole = id.role || 'instructor';
+  currentStaffAssignedLocationIds = id.locationIds || [];
+  window.currentCaptainElevated = !!id.captainElevated;
+
+  // **El portón de suscripción NO corre en este modo**, y es una decisión, no
+  // un olvido. El portón es una regla comercial, no un límite de seguridad —
+  // el límite de seguridad es RLS, del lado del servidor, y sigue entero.
+  // Bloquear a un instructor arriba del barco porque no pudimos confirmar una
+  // suscripción es estrictamente peor que dejarlo terminar la checklist, y el
+  // dato de un centro que paga está protegido igual.
+  //
+  // Tampoco se dibuja Reportes ni nada que necesite datos frescos para no
+  // mentir: lo que se muestra sale de las copias locales y lleva su etiqueta.
+  pintarAvisoSinVerificar(vencidaHace);
+  showScreen('app');
+  initDeptChecklists();
+  loadTodaysTripList();
+  updateOfflineBanner();
+  console.info('[boot] 4 listo (sin verificar)');
+}
+
+// Canjea el refresh token y, si sale, recarga. Devuelve false si no se pudo —
+// y entonces se sigue en modo sin verificar, que es lo correcto: perder la
+// pantalla por un `online` que duró dos segundos sería peor que esperar.
+//
+// Se RECARGA en vez de seguir: media app quedó dibujada desde copias locales y
+// con `modoSinVerificar` puesto, y arrastrar ese estado a una sesión ya válida
+// es pedir que algo quede mirando el dato viejo. Una recarga con sesión buena
+// es el camino que ya existe y está probado hace meses.
+async function revalidarSesion() {
+  const g = sesionGuardadaEnDisco();
+  if (!g || !g.sesion.refresh_token) return false;
+
+  const el = document.getElementById('aviso-sin-verificar');
+  if (el) el.textContent = t('sesion_revalidando');
+
+  try {
+    const { data, error } = await sb.auth.refreshSession({ refresh_token: g.sesion.refresh_token });
+    if (error || !data || !data.session) {
+      console.warn('[SESION] no se pudo revalidar, se sigue sin verificar', error);
+      if (el) pintarAvisoSinVerificar(Date.now() - Number(g.sesion.expires_at || 0) * 1000);
+      return false;
+    }
+  } catch (e) {
+    console.warn('[SESION] la revalidación lanzó, se sigue sin verificar', e);
+    if (el) pintarAvisoSinVerificar(Date.now() - Number(g.sesion.expires_at || 0) * 1000);
+    return false;
+  }
+
+  if (el) el.textContent = t('sesion_revalidada');
+  modoSinVerificar = false;
+  location.reload();
+  return true;
+}
+
+// El cartel es permanente y dice las dos cosas que importan: que no hay
+// conexión y que lo que se ve puede no estar al día. Una app que se ve normal
+// mientras muestra datos que no pudo confirmar es peor que una que no abre.
+function pintarAvisoSinVerificar(vencidaHace) {
+  const dias = Math.floor(vencidaHace / (24 * 60 * 60 * 1000));
+  let el = document.getElementById('aviso-sin-verificar');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'aviso-sin-verificar';
+    el.style.cssText = 'position:sticky;top:0;z-index:900;background:#8a5a1a;color:#fff;' +
+      'padding:8px 14px;font-size:0.8rem;text-align:center;line-height:1.35;';
+    document.body.insertBefore(el, document.body.firstChild);
+  }
+  // `textoConCantidad(clave, n)` — la convención única de plurales del 26/10.
+  el.textContent = t('sesion_sin_verificar') +
+    (dias >= 1 ? ' · ' + textoConCantidad('sesion_dias', dias) : '');
 }
 
 // ─── LOGIN ───
@@ -15958,6 +16090,133 @@ function cacheLocalBorrar(nombre) {
     console.warn('[CACHE] no se pudo borrar', nombre, e);
     return false;
   }
+}
+
+// ─── La sesión que no se pudo verificar ───
+//
+// INTERRUPTOR (regla 8). Apagado en producción. Esto toca autenticación, que
+// es el ancla 10 de la regla 7, así que el default es el camino viejo y
+// prenderlo es decisión de Fran.
+//
+//   'apagado'   → sin sesión verificada se va al login. Comportamiento de
+//                 siempre, y el que dejó a Fran afuera el 27/10.
+//   'encendido' → si hay una sesión guardada que sólo no se pudo VERIFICAR, y
+//                 se puede afirmar que no hay red, la app entra en modo sin
+//                 conexión en vez de mandar al login.
+//
+// EL HALLAZGO, medido el 27/10 leyendo la librería vendorizada y no la doc:
+// `_callRefreshToken()` hace `if (!isAuthRetryableFetchError(error))` antes de
+// tocar nada. Un fallo de RED es retryable, así que entra por ese `if` y **la
+// sesión no se borra**. Sigue en `localStorage`.
+//
+// Lo que sí pasa está en `__loadSession()`: tras un refresco fallido devuelve
+// la sesión guardada **sólo si el access token sigue dentro de su expiración
+// real**. Vencido —entraste ayer, abrís hoy— devuelve `{ session: null }`.
+//
+// **La sesión está y no se devuelve.** La app leía «no hay sesión» y mandaba al
+// login; y el login sin red tampoco puede. Un instructor arriba del barco se
+// quedaba afuera de su propia herramienta.
+//
+// POR QUÉ ES ACEPTABLE, que es la pregunta de seguridad y hay que contestarla:
+//
+//  1 · Offline la app sólo muestra **datos que ese aparato ya tenía** en su
+//      copia local. No se le entrega nada nuevo a nadie.
+//  2 · Toda escritura se ENCOLA y la juzga **RLS al reconectar**, con un token
+//      válido de verdad. Nada privilegiado pasa sin que el servidor lo valide.
+//  3 · Para llegar acá hay que tener el teléfono desbloqueado, y en ese caso ya
+//      se tenía la app abierta igual.
+//
+// EL RIESGO QUE QUEDA, y no se tapa: alguien a quien el centro dio de baja
+// sigue viendo lo cacheado hasta que el aparato vuelva a tener señal. Por eso
+// hay una VENTANA máxima: pasada, se va al login aunque no haya red. Siete días
+// es el número, y es una decisión, no una medición — cubre una semana de
+// liveaboard sin antena y no mucho más.
+const SESION_SIN_VERIFICAR = 'apagado';   // 'apagado' | 'encendido'
+const VENTANA_SIN_VERIFICAR_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Dónde guarda supabase-js la sesión. Se busca por sufijo de clave para que
+// siga andando si cambia el ref del proyecto, y se miran los DOS storages
+// porque `rememberMeStorage` elige uno u otro según «Recordarme».
+//
+// Ojo: hay un tercer lugar que busca `-auth-token`, el redirect del `<head>`,
+// y **se queda aparte a propósito**: corre antes de que exista este script,
+// que es justamente lo que le permite evitar el parpadeo de la landing. Unificar
+// eso sería moverlo después y romper lo que hace.
+function sesionGuardadaEnDisco() {
+  for (const almacen of [localStorage, sessionStorage]) {
+    try {
+      for (let i = 0; i < almacen.length; i++) {
+        const k = almacen.key(i);
+        if (!k || k.indexOf('-auth-token') === -1) continue;
+        const crudo = almacen.getItem(k);
+        if (!crudo) continue;
+        const s = JSON.parse(crudo);
+        if (s && s.access_token && s.user && s.user.id) return { clave: k, almacen, sesion: s };
+      }
+    } catch (e) { /* storage bloqueado o copia ilegible: se sigue de largo */ }
+  }
+  return null;
+}
+
+// Devuelve la sesión guardada SÓLO si corresponde arrancar sin verificarla.
+// Cuatro condiciones, y las cuatro tienen que darse:
+//
+//  · el interruptor está encendido
+//  · se puede AFIRMAR que no hay red (`navigator.onLine === false`). Con red,
+//    que el refresco falle significa otra cosa —servidor caído, token
+//    revocado— y ahí el login es la respuesta correcta.
+//  · hay una sesión guardada con usuario
+//  · venció hace menos que la ventana
+function sesionSinVerificarUsable() {
+  if (SESION_SIN_VERIFICAR !== 'encendido') return null;
+  if (!sinRedSeguro()) return null;
+  const g = sesionGuardadaEnDisco();
+  if (!g) return null;
+  const venceEn = Number(g.sesion.expires_at || 0) * 1000;
+  if (!venceEn) return null;
+  const vencidaHace = Date.now() - venceEn;
+  if (vencidaHace > VENTANA_SIN_VERIFICAR_MS) {
+    console.warn('[SESION] la copia guardada venció hace más que la ventana, se pide iniciar sesión');
+    return null;
+  }
+  return { sesion: g.sesion, vencidaHace };
+}
+
+// Quién soy y dónde trabajo, guardado en cada arranque que SÍ se pudo
+// verificar. Sin esto, un arranque sin conexión no tendría ni el centro ni el
+// rol, y la app no sabría qué dibujar.
+//
+// Es lo mínimo y nada más: nada de datos del centro, que ya los guarda
+// `leerConCopiaLocal()` con su propia etiqueta de copia.
+//
+// **La clave va por USUARIO, no por centro**, y no es un detalle: las claves de
+// `cacheLocalClave()` llevan `currentOrgId`, y en un arranque sin conexión el
+// centro es justamente lo que todavía no sabemos — leerla con esa clave sería
+// pedir el dato que estamos yendo a buscar. El id del usuario sí lo tenemos:
+// viene en la sesión guardada.
+function claveDeIdentidad(userId) {
+  return `ss_identidad_v${CACHE_LOCAL_VERSION}_${userId}`;
+}
+
+function guardarIdentidadLocal() {
+  if (!currentUserId) return;
+  try {
+    localStorage.setItem(claveDeIdentidad(currentUserId), JSON.stringify({
+      userId: currentUserId,
+      orgId: currentOrgId,
+      locationId: currentLocationId,
+      role: currentUserRole,
+      locationIds: currentStaffAssignedLocationIds || [],
+      captainElevated: !!window.currentCaptainElevated
+    }));
+  } catch (e) { console.warn('[SESION] no se pudo guardar la identidad local', e); }
+}
+
+function leerIdentidadLocal(userId) {
+  try {
+    const crudo = localStorage.getItem(claveDeIdentidad(userId));
+    return crudo ? JSON.parse(crudo) : null;
+  } catch (e) { return null; }
 }
 
 // ─── La copia local de lo que se mira ───

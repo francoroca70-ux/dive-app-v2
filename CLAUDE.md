@@ -582,14 +582,47 @@ haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 > resolver la mayor parte del caso real sin tocar una línea, y **medir eso antes
 > de construir es lo que evita construir de más.**
 >
-> **D2b, sin construir:** modo sin conexión con sesión no verificada. Es un
-> **10** por el ancla de la regla 7 (autenticación). El argumento de seguridad
-> que lo haría aceptable: offline la app sólo muestra datos que ese dispositivo
-> ya tenía, y toda escritura se encola y la juzga RLS al reconectar — nada
-> privilegiado pasa sin que el servidor lo valide. El riesgo que queda es mostrar
-> datos cacheados a alguien a quien se dio de baja, hasta que el aparato vuelva a
-> tener señal; se acota con una ventana máxima. **No se construyó: la decisión es
-> de Fran y conviene medir D2a primero.**
+> **Ojo con dónde:** la doc de Supabase manda a *JWT Keys → Legacy JWT Secret*,
+> y en este proyecto **ya migró a JWT Signing Keys**, así que ahí no está. El
+> ajuste vive en **Authentication → Sessions**
+> (`/dashboard/project/ggtbxjwstkuhnabwpgdz/auth/sessions`), junto a *Time-box
+> user sessions* e *Inactivity timeout* — esas dos no se tocan.
+>
+> **D2b, construido el 27/10 y APAGADO.** `SESION_SIN_VERIFICAR`
+> (`'apagado' | 'encendido'`): si hay una sesión guardada que sólo no se pudo
+> **verificar**, y se puede **afirmar** que no hay red, la app entra en modo sin
+> conexión en vez de mandar al login. Es un **10** por el ancla de autenticación.
+>
+> Cuatro condiciones y tienen que darse las cuatro: interruptor prendido,
+> `navigator.onLine === false` (**con red NO se rescata** — ahí un refresco que
+> falla significa otra cosa y el login es correcto), sesión guardada con usuario,
+> y vencida hace menos que la **ventana** de 7 días. Más una quinta en el
+> arranque: sin **identidad local** (`ss_identidad_v1_<userId>`, guardada al
+> final de cada arranque verificado) no hay centro ni rol, así que no hay qué
+> dibujar y se va al login. La clave va por **usuario y no por centro**, porque
+> el centro es justamente lo que todavía no sabemos.
+>
+> **Por qué es aceptable:** offline la app sólo muestra datos que ese aparato ya
+> tenía; toda escritura se encola y la juzga **RLS al reconectar** con un token
+> válido. **El riesgo que queda:** alguien dado de baja sigue viendo lo cacheado
+> hasta que el aparato vuelva a tener señal — de ahí la ventana, que es una
+> decisión y no una medición.
+>
+> **El portón de suscripción NO corre en este modo**, y es decisión: el portón es
+> comercial, el límite de seguridad es RLS y sigue entero.
+>
+> **EL AGUJERO PEOR, que no se ve:** con el token vencido el cliente consulta
+> **como anónimo**, y RLS **no da error: devuelve cero filas**. Una lectura sin
+> identidad se ve exactamente igual que un centro sin datos, y
+> `textoDeListaVacia()` no puede salvar eso porque no hay error que mirar — la
+> mentira del 26/10 por otra puerta. Por eso al volver la señal lo **primero** es
+> canjear el refresh token, y recién después la cola y los redibujos; si no se
+> pudo, se sigue en modo sin verificar. Y al revalidar bien **se recarga**, para
+> no arrastrar media pantalla dibujada desde copias.
+>
+> Detalle en `Seven Seas Ops/La sesión que no se pudo verificar.md`. **El orden
+> es D2a primero**: subir la expiración, medir si el caso sigue apareciendo, y
+> recién ahí prender el interruptor.
 
 > [!warning] Todo el offline vale **una vez que la app está abierta**
 > Y «abierta» resultó significar **«abierta y con los datos ya cargados en esa
