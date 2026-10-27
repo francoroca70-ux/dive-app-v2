@@ -9421,7 +9421,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-27d';
+const BUILD_WEB = '2026-10-27e';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -10306,11 +10306,50 @@ async function loadSettings(user) {
   document.getElementById('settings-email').textContent = user.email;
 
   // Try to load existing org for this user
-  const { data: staffRow } = await sb
+  const { data: staffRow, error: errStaffRow } = await sb
     .from('staff')
     .select('org_id, role, full_name')
     .eq('id', user.id)
     .single();
+
+  // SIN SEÑAL, EL CENTRO SALE DE LA ÚLTIMA COPIA BUENA.
+  //
+  // Encontrado por Fran el 27/10 probando la web offline: recargó, entró a
+  // Tripulación, y vio la pantalla **vacía y muda** — ni las dos tarjetas ni el
+  // «no se pudo cargar». Yo no lo había visto porque mis pruebas corrían sobre
+  // una app YA cargada; él recargó, que es el caso real.
+  //
+  // La causa, medida: esta consulta falla, `currentOrgId` queda en null, y
+  // **41 funciones de la app empiezan con `if (!currentOrgId) return;`**. Se
+  // rinden en silencio, cada pantalla queda con su estructura y sin contenido,
+  // y el silencio se lee como «acá no hay nada». La misma forma que todo lo
+  // demás de esta semana, pero una capa más abajo: sin centro no hay NINGUNA
+  // pantalla, no una.
+  //
+  // Va bajo `COPIA_LOCAL` y no bajo un interruptor nuevo porque es exactamente
+  // la misma decisión —cuando una lectura falla, usar la última copia buena—
+  // aplicada a la lectura de la que dependen todas las demás.
+  //
+  // Ojo: esto NO es el modo sin verificar. Acá la sesión **está verificada**;
+  // lo único que no se pudo leer es la configuración. Por eso no lleva el
+  // cartel de sesión sin confirmar: lleva el de copia, como cualquier otra
+  // lectura que no salió.
+  if (!staffRow && errStaffRow && copiaLocalEncendida()) {
+    const id = leerIdentidadLocal(user.id);
+    if (id && id.orgId) {
+      console.warn('[SESION] no se pudo leer la configuración, se usa la identidad local', errStaffRow);
+      currentOrgId = id.orgId;
+      currentUserRole = id.role || currentUserRole;
+      currentLocationId = id.locationId || null;
+      currentStaffAssignedLocationIds = id.locationIds || [];
+      window.currentCaptainElevated = !!id.captainElevated;
+      // El portón de suscripción no corre: su dato viene del servidor y no lo
+      // tenemos. Mismo criterio que el modo sin verificar — el portón es
+      // comercial, el límite de seguridad es RLS y sigue entero.
+      hideLoadingScreen();
+      return true;
+    }
+  }
 
   if (staffRow) {
     currentOrgId = staffRow.org_id;
@@ -16289,6 +16328,16 @@ function leerIdentidadLocal(userId) {
 // de medir.
 let COPIA_LOCAL = 'encendido';   // 'apagado' | 'encendido'
 
+// Quien quiera saber si está prendido pregunta ACÁ, no mira la constante.
+//
+// El 27/10 agregué una segunda comparación directa en `loadSettings()` y el
+// guardián se puso en rojo: afirma que `COPIA_LOCAL` aparece **exactamente dos
+// veces**, porque una tercera significa que la decisión dejó de vivir en un
+// lugar. Tenía razón. Aflojar el número habría sido desarmar el guardián para
+// que dejara pasar lo que vino a frenar; la salida correcta es que haya un solo
+// lugar que decide y N que preguntan.
+function copiaLocalEncendida() { return COPIA_LOCAL === 'encendido'; }
+
 // La regla entera, en un solo lugar:
 //
 //  1 · Si la lectura salió bien, la copia se ACTUALIZA. Siempre, incluso con
@@ -16313,7 +16362,7 @@ async function leerConCopiaLocal({ nombre, leer }) {
   }
 
   const vacio = { filas: [], error: error || null, deCopia: false, guardado: null };
-  if (COPIA_LOCAL !== 'encendido' || !nombre) return vacio;
+  if (!copiaLocalEncendida() || !nombre) return vacio;
 
   const copia = cacheLocalLeerConFecha(nombre);
   if (!copia || !copia.dato) return vacio;

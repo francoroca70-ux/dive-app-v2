@@ -217,6 +217,36 @@ chk('el selector de firmantes sigue saliendo de tripulacionConocida()',
 chk('la clave de las salidas incluye la fecha',
   /nombre: 'salidas_' \+ today/.test(html));
 
+
+// ─── 14 · Sin señal, el CENTRO sale de la copia local ──────────────────────
+//
+// Lo encontró Fran el 27/10 probando la web offline: recargó, entró a
+// Tripulación, y vio la pantalla **vacía y muda**. Mis pruebas no lo veían
+// porque corrían sobre una app YA cargada; él recargó, que es el caso real.
+//
+// Medido: si la consulta de `staff` falla, `currentOrgId` queda en null — y
+// **41 funciones de la app empiezan con `if (!currentOrgId) return;`**. Se
+// rinden en silencio. Sin centro no se cae una pantalla: se caen todas.
+{
+  const cuantas = (html.match(/if \(!currentOrgId\) return/g) || []).length;
+  chk('siguen existiendo muchas funciones que se rinden sin centro',
+    cuantas >= 30, 'encontradas: ' + cuantas + ' — por eso la identidad local importa tanto');
+}
+chk('loadSettings mira el error de la consulta de staff',
+  /const \{ data: staffRow, error: errStaffRow \} = await sb/.test(html));
+chk('y cae a la identidad local cuando falla',
+  /if \(!staffRow && errStaffRow && copiaLocalEncendida\(\)\) \{/.test(html));
+chk('la caída sale de leerIdentidadLocal, no de una lectura nueva',
+  /if \(!staffRow && errStaffRow[\s\S]{0,200}leerIdentidadLocal\(user\.id\)/.test(html));
+chk('y setea el centro, que es lo que destraba las 41',
+  /if \(!staffRow && errStaffRow[\s\S]{0,400}currentOrgId = id\.orgId;/.test(html));
+
+// La decisión vive en UN lugar y N preguntan. El guardián de arriba exige dos
+// apariciones de la constante; esto exige que los consumidores usen la función.
+chk('hay una función que decide, y más de un lugar la consulta',
+  (codigo.match(/copiaLocalEncendida\(\)/g) || []).length >= 3,
+  'la declaración más al menos dos consumidores');
+
 console.log('\n' + pass + ' pasaron, ' + fail + ' fallaron');
 process.exit(fail ? 1 : 0);
 
