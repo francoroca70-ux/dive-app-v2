@@ -226,6 +226,33 @@ for (const pos of ['apagado', 'encendido']) {
     !!aviso && /[Ss]in conexión|[Nn]o connection/.test(aviso.textContent), aviso && aviso.textContent);
 }
 
+
+// ─── El diagnóstico de almacenamiento, que es lo que destrabó el 27/10 ─────
+//
+// Fran se logueó, cerró la app y la abrió sin señal: deslogueado, CON EL TOKEN
+// RECIÉN EMITIDO. Con una sesión vigente `getSession()` la devuelve sin tocar
+// la red, así que eso no es la expiración: la sesión no está en el disco. Y en
+// un iPhone no hay consola que abrir.
+{
+  const { window } = arrancar({ interruptor: 'apagado', hayRed: false, sesionGuardada: SESION_AYER, identidad: IDENTIDAD });
+  const d = window.eval('diagnosticoDeAlmacenamiento()');
+  chk('el diagnóstico dice en qué almacenamiento estaba', /localStorage|sessionStorage/.test(d), d);
+  chk('y cuánto le queda al token', /vence en|venció hace/.test(d), d);
+  chk('y si Recordarme estaba puesto', /recordarme=/.test(d), d);
+  chk('NO muestra el token', !/jwt-vencido|rt-vivo/.test(d), d);
+}
+{
+  const { window } = arrancar({ interruptor: 'apagado', hayRed: false, sesionGuardada: null, identidad: null });
+  const d = window.eval('diagnosticoDeAlmacenamiento()');
+  chk('sin sesión guardada lo dice con todas las letras', /sin sesión guardada/.test(d), d);
+}
+chk('el diagnóstico se pinta en las DOS pantallas de login',
+  (html.match(/data-diag-storage/g) || []).length === 3,
+  'dos marcadores más la función que los recorre');
+chk('se mide ANTES de pedir la sesión',
+  html.indexOf('pintarDiagnostico();') < html.indexOf('const { data: { session } } = await sb.auth.getSession();'),
+  'medirlo después sería mirar el resultado del arranque, no la causa');
+
 console.log('\n' + pass + ' pasaron, ' + fail + ' fallaron');
 process.exit(fail ? 1 : 0);
 

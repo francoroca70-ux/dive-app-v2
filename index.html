@@ -2427,6 +2427,7 @@ body { background: var(--navy); color: var(--text); }
       </div>
     </div>
     <p class="app-build-line" data-app-build></p>
+    <p class="app-build-line" data-diag-storage style="opacity:0.5;"></p>
     <div class="legal-footer" data-legal-footer></div>
   </div>
 </div>
@@ -2465,6 +2466,7 @@ body { background: var(--navy); color: var(--text); }
       <div class="success-msg" id="signup-success" data-i18n="signup_check_email">Account created — check your email to confirm, then sign in.</div>
     </div>
     <p class="app-build-line" data-app-build></p>
+    <p class="app-build-line" data-diag-storage style="opacity:0.5;"></p>
     <div class="legal-footer" data-legal-footer></div>
   </div>
 </div>
@@ -9419,7 +9421,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-27b';
+const BUILD_WEB = '2026-10-27c';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9431,6 +9433,10 @@ function pintarBuild() {
 async function initAuth() {
   console.info('[Seven Seas] build ' + BUILD_WEB);
   pintarBuild();
+  // ANTES de pedir la sesión: qué había en el disco al abrir. Si se midiera
+  // después, el propio arranque podría haberlo cambiado y estaríamos mirando
+  // el resultado en vez de la causa.
+  pintarDiagnostico();
   // Red de seguridad: si el arranque no termina en 15 segundos, se asume
   // colgado y se muestra la pantalla de error. Sin esto, una petición que
   // nunca vuelve deja la app en el fondo navy para siempre, sin un solo
@@ -16143,7 +16149,7 @@ const VENTANA_SIN_VERIFICAR_MS = 7 * 24 * 60 * 60 * 1000;
 // que es justamente lo que le permite evitar el parpadeo de la landing. Unificar
 // eso sería moverlo después y romper lo que hace.
 function sesionGuardadaEnDisco() {
-  for (const almacen of [localStorage, sessionStorage]) {
+  for (const [donde, almacen] of [['localStorage', localStorage], ['sessionStorage', sessionStorage]]) {
     try {
       for (let i = 0; i < almacen.length; i++) {
         const k = almacen.key(i);
@@ -16151,11 +16157,50 @@ function sesionGuardadaEnDisco() {
         const crudo = almacen.getItem(k);
         if (!crudo) continue;
         const s = JSON.parse(crudo);
-        if (s && s.access_token && s.user && s.user.id) return { clave: k, almacen, sesion: s };
+        if (s && s.access_token && s.user && s.user.id) return { clave: k, almacen, donde, sesion: s };
       }
     } catch (e) { /* storage bloqueado o copia ilegible: se sigue de largo */ }
   }
   return null;
+}
+
+// ─── Lo que el arranque encontró, dicho en la pantalla de login ───
+//
+// 27/10/2026. Fran probó así: se logueó, cerró la app, apagó wifi y datos, la
+// abrió — y estaba deslogueado, **con el token recién emitido**. Eso NO es el
+// problema de la expiración: con una sesión vigente `getSession()` la devuelve
+// sin tocar la red. Si igual manda al login, la sesión **no está en el disco**
+// cuando la app vuelve a abrir, y eso es otra cosa.
+//
+// Tres candidatos y ninguna forma de elegir entre ellos adivinando: que
+// «Recordarme» la haya mandado a `sessionStorage` (que se vacía al cerrar la
+// app), que iOS esté purgando el almacenamiento del webview, o que la
+// actualización se haya llevado los datos.
+//
+// Y en un iPhone no hay consola que abrir. Misma lección que la línea de
+// versión: **si la primera pregunta de un diagnóstico no se puede contestar,
+// el producto tiene que contestarla él.** Esto es una línea gris al pie del
+// login que dice qué encontró el arranque.
+//
+// No muestra ningún token ni nada de la sesión: sólo DÓNDE estaba, si estaba, y
+// cuánto le queda. Un token en pantalla es un token en una captura de WhatsApp.
+function diagnosticoDeAlmacenamiento() {
+  let recordar = '?';
+  try { recordar = localStorage.getItem('ss_remember_me') || '(sin marcar)'; }
+  catch (e) { return 'storage bloqueado'; }
+
+  const g = sesionGuardadaEnDisco();
+  if (!g) return `sin sesión guardada · recordarme=${recordar}`;
+
+  const quedan = Math.round((Number(g.sesion.expires_at || 0) * 1000 - Date.now()) / 60000);
+  return `sesión en ${g.donde} · ${quedan >= 0 ? 'vence en ' + quedan + ' min' : 'venció hace ' + (-quedan) + ' min'}` +
+         ` · recordarme=${recordar}`;
+}
+
+function pintarDiagnostico() {
+  const texto = diagnosticoDeAlmacenamiento();
+  console.info('[Seven Seas] almacenamiento: ' + texto);
+  document.querySelectorAll('[data-diag-storage]').forEach(el => { el.textContent = texto; });
 }
 
 // Devuelve la sesión guardada SÓLO si corresponde arrancar sin verificarla.
