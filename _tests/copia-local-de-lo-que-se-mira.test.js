@@ -247,6 +247,31 @@ chk('hay una función que decide, y más de un lugar la consulta',
   (codigo.match(/copiaLocalEncendida\(\)/g) || []).length >= 3,
   'la declaración más al menos dos consumidores');
 
+
+// ─── 15 · La identidad se guarda en LOS DOS caminos que entran a la app ────
+//
+// Medido el 27/10 en el navegador de Fran: `ss_identidad_v1_<uid>` **no
+// existía**, aunque la función estaba en el build desplegado. Estaba sólo en
+// `initAuthInner()` —arrancar con sesión ya guardada— y el LOGIN es otro
+// camino que no la llamaba. Él se había logueado recién, así que nunca se
+// escribió, y el arreglo que depende de ella habría caído en el vacío sin que
+// nada se quejara.
+//
+// Tercera vez con esta forma acá: un arreglo aplicado a uno de los dos caminos
+// que hacen lo mismo (08/10 con firmar, 15/10 con `crewRoleLabel`). Por eso
+// esto cuenta los llamados y no se conforma con que la función exista.
+{
+  const codigoSolo = html.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+  const llamados = (codigoSolo.match(/guardarIdentidadLocal\(\);/g) || []).length;
+  chk('guardarIdentidadLocal() se llama desde los DOS caminos',
+    llamados >= 2, 'llamados: ' + llamados + ' — uno solo significa que un camino no la guarda');
+}
+chk('el camino de arrancar con sesión la guarda',
+  /guardarIdentidadLocal\(\);\n\s*updateOfflineBanner\(\);/.test(html));
+chk('y el camino del login también',
+  /guardarIdentidadLocal\(\);\n\s*showScreen\('app'\);/.test(html),
+  'si esto falla, quien se loguea no deja identidad y el arreglo offline no tiene de dónde leer');
+
 console.log('\n' + pass + ' pasaron, ' + fail + ' fallaron');
 process.exit(fail ? 1 : 0);
 

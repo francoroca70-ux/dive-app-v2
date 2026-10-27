@@ -9421,7 +9421,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-27e';
+const BUILD_WEB = '2026-10-27f';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9704,6 +9704,21 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     loadFleet();
     loadCrew();
     renderCalendar();
+    // La identidad local TAMBIÉN se guarda acá, y la falta costó caro.
+    //
+    // Medido el 27/10 en el navegador de Fran: `ss_identidad_v1_<uid>` **no
+    // existía**, aunque la función estaba en el build desplegado. La había
+    // puesto sólo en `initAuthInner()` —el camino de arrancar con sesión ya
+    // guardada— y el login es OTRO camino que no la llamaba. Como él se había
+    // logueado recién, nunca se escribió, y el arreglo que depende de ella
+    // habría caído en el vacío sin que nada se quejara.
+    //
+    // Es la tercera vez con la misma forma en este proyecto: un arreglo
+    // aplicado a uno de los dos caminos que hacen lo mismo (el del 08/10 con
+    // firmar, el del 15/10 con `crewRoleLabel`). *Al arreglar algo compartido,
+    // la pregunta siguiente es quién más lo hace.* Hay un test que ahora exige
+    // los dos.
+    guardarIdentidadLocal();
     showScreen('app');
     console.info('[boot] app visible');
   } catch (err) {
