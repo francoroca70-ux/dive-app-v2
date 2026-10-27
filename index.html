@@ -4843,6 +4843,7 @@ const TRANSLATIONS = {
     // Los mismos cuatro motivos, pero para una ESCRITURA. 23503 no significa lo
     // mismo en los dos casos: al borrar es «algo cuelga de esto», al guardar es
     // «lo que esto referencia ya no existe».
+    copia_local_aviso: 'Saved copy · no connection',
     lec_no_se_pudo: "Couldn't load this", lec_sin_conexion: 'no connection',
     lec_sin_permiso: 'this account has no access to it', lec_otro_motivo: 'try again in a moment',
     esc_sin_conexion: "No connection, so nothing was saved. Try again once you're back online.",
@@ -5715,6 +5716,7 @@ const TRANSLATIONS = {
     del_tiene_historia: 'Esto no se puede borrar porque tiene registros asociados — reservas, pagos, logs o documentación firmada. No se borró nada.',
     del_sin_permiso: 'Esta cuenta no tiene permiso para borrar esto.',
     del_otro_motivo: 'No se pudo borrar: {error}',
+    copia_local_aviso: 'Copia guardada · sin conexión',
     lec_no_se_pudo: 'No se pudo cargar', lec_sin_conexion: 'sin conexión',
     lec_sin_permiso: 'esta cuenta no tiene acceso', lec_otro_motivo: 'reintentar en un momento',
     esc_sin_conexion: 'Sin conexión, así que no se guardó nada. Se puede reintentar cuando vuelva la señal.',
@@ -9351,7 +9353,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-26i';
+const BUILD_WEB = '2026-10-26j';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -10857,6 +10859,9 @@ async function checkDoubleBookings() {
     .gte('trip_date', windowStart)
     .lte('trip_date', windowEnd);
 
+  // Sin la lectura no se puede afirmar que NO hay choques de barco, y el banner
+  // callado se lee como «está todo bien». Se esconde en vez de mentir.
+  if (errTrips) { banner.style.display = 'none'; return; }
   const list = trips || [];
   const rangesOverlap = (a, b) => {
     const aEnd = a.end_date || a.trip_date;
@@ -15875,16 +15880,28 @@ function cacheLocalGuardar(nombre, dato) {
   }
 }
 
-function cacheLocalLeer(nombre) {
+// Devuelve `{ dato, guardado }` o null. La fecha ya se guardaba desde siempre y
+// se tiraba al leer; se necesita para poder DECIR de cuándo es la copia, que es
+// lo que separa «mostrar algo útil» de «mentir con datos viejos».
+function cacheLocalLeerConFecha(nombre) {
   try {
     const crudo = localStorage.getItem(cacheLocalClave(nombre));
     if (!crudo) return null;
     const obj = JSON.parse(crudo);
-    return obj && 'dato' in obj ? obj.dato : null;
+    if (!obj || !('dato' in obj)) return null;
+    return { dato: obj.dato, guardado: obj.guardado || null };
   } catch (e) {
     console.warn('[CACHE] copia ilegible, se ignora', nombre, e);
     return null;
   }
+}
+
+// La forma de siempre, para los que no necesitan la fecha. Se escribe EN
+// TÉRMINOS de la de arriba y no al lado: la clave y el parseo viven en un solo
+// lugar, que es la regla que este proyecto paga cada vez que la rompe.
+function cacheLocalLeer(nombre) {
+  const c = cacheLocalLeerConFecha(nombre);
+  return c ? c.dato : null;
 }
 
 // Tirar una copia guardada. La necesita quien ESCRIBE: sin esto, un centro
@@ -15900,6 +15917,82 @@ function cacheLocalBorrar(nombre) {
     console.warn('[CACHE] no se pudo borrar', nombre, e);
     return false;
   }
+}
+
+// ─── La copia local de lo que se mira ───
+//
+// INTERRUPTOR (regla 8). Apagado en producción hasta que Fran lo pruebe en un
+// teléfono de verdad. Prenderlo es una línea, y apagarlo también.
+//
+//   'apagado'   → una lectura que falla deja la lista vacía y
+//                 `textoDeListaVacia()` dice por qué. Es el comportamiento del
+//                 26/10 y no se toca.
+//   'encendido' → una lectura que falla muestra la última copia buena, SIEMPRE
+//                 etiquetada con la fecha en que se guardó.
+//
+// Por qué existe: el 26/10 Fran abrió la app sin señal desde el binario. Abrió
+// —los archivos están en el paquete— y adentro no había nada: calendario vacío,
+// «no hay tripulación», su usuario como un «?». El arreglo de ese día hizo que
+// la app dijera la verdad («no se pudo cargar») en vez de mentir («no hay
+// nada»), que era lo urgente. Esto es la otra mitad: que haya algo que mostrar.
+//
+// **El patrón NO es nuevo y eso es lo que baja el costo.** `loadSignerStaff()`
+// lo hace desde el 21/10, encontrado por Fran probando modo avión: lee, guarda
+// las filas crudas, y si la lectura falla usa la copia. Acá se generaliza esa
+// regla —que hoy vive escrita a mano en una función— a las otras dos lecturas
+// que un barco necesita. Por eso esto es un 6 y no el 8 que había dicho antes
+// de medir.
+let COPIA_LOCAL = 'apagado';   // 'apagado' | 'encendido'
+
+// La regla entera, en un solo lugar:
+//
+//  1 · Si la lectura salió bien, la copia se ACTUALIZA. Siempre, incluso con
+//      cero filas: un centro que dio de baja a todos tiene cero tripulantes y
+//      eso es un dato, no un fallo.
+//  2 · Si la lectura falló, se usa la copia —y se devuelve de CUÁNDO es, para
+//      que quien dibuja lo pueda decir.
+//  3 · **El vacío de un fallo no se guarda nunca.** Es el error que
+//      `loadSignerStaff()` tenía escondido debajo hasta el 21/10: cachear el
+//      `[]` de un error lo volvía permanente, y un corte de un segundo dejaba
+//      la app sin poder firmar hasta recargarla.
+//
+// Devuelve `{ filas, error, deCopia, guardado }`. `error` se devuelve aunque la
+// copia haya salvado el día: quien dibuja necesita saber que la red falló para
+// no ofrecer acciones que requieren servidor.
+async function leerConCopiaLocal({ nombre, leer }) {
+  const { data, error } = await leer();
+
+  if (!error && data) {
+    if (nombre) cacheLocalGuardar(nombre, data);
+    return { filas: data, error: null, deCopia: false, guardado: null };
+  }
+
+  const vacio = { filas: [], error: error || null, deCopia: false, guardado: null };
+  if (COPIA_LOCAL !== 'encendido' || !nombre) return vacio;
+
+  const copia = cacheLocalLeerConFecha(nombre);
+  if (!copia || !copia.dato) return vacio;
+
+  console.warn('[COPIA] la lectura falló, se muestra la copia local de', nombre, error);
+  return { filas: copia.dato, error: error || null, deCopia: true, guardado: copia.guardado };
+}
+
+// Cómo se dice que lo que se ve es una copia. UN solo lugar, porque la
+// etiqueta es lo único que separa «mostrar algo útil» de «mostrar datos viejos
+// como si fueran los de hoy» — y el segundo es peor que una pantalla vacía.
+//
+// La fecha va completa, no «hace 3 horas»: en un barco la pregunta no es cuánto
+// pasó, es si esto es de antes o después de que salieran.
+function lineaDeCopiaLocal(guardado) {
+  let cuando = null;
+  if (guardado) {
+    const d = new Date(guardado);
+    // `localeDeLaApp()` y no un locale a mano: las tres redacciones divergidas
+    // de esta misma regla ya costaron una pasada entera el 17/10.
+    if (!isNaN(d.getTime())) cuando = d.toLocaleString(localeDeLaApp(),
+      { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+  return t('copia_local_aviso') + (cuando ? ' · ' + cuando : '');
 }
 
 // ─── Refresco mientras la checklist está abierta ───
@@ -16475,19 +16568,32 @@ async function loadTodaysTripList() {
   const typeById = {};
   (allTypes || []).forEach(tt => { typeById[tt.id] = tt; });
 
-  const { data: trips } = await tripsVigentes(
-      'id, trip_name, trip_time, trip_type, trip_type_id, trip_types(name, num_tanks, needs_tank_count), participants(id, gear, group_id), trip_crew(staff(role)), trip_groups(id, trip_type_id)')
-    .eq('org_id', currentOrgId)
-    .eq('trip_date', today)
-    .order('trip_time');
+  // ESTA es la pantalla del barco: el instructor sube, abre la app y mira qué
+  // salidas tiene hoy. Si acá no hay nada, no hay checklist que preparar.
+  //
+  // La clave lleva el día, así que una copia de ayer no se encuentra y no se
+  // puede mostrar como la de hoy — que sería exactamente la mentira que este
+  // cambio viene a evitar, con la cara de un dato correcto.
+  const { filas: trips, error: errTripsHoy, deCopia, guardado } = await leerConCopiaLocal({
+    nombre: 'salidas_' + today,
+    leer: () => tripsVigentes(
+        'id, trip_name, trip_time, trip_type, trip_type_id, trip_types(name, num_tanks, needs_tank_count), participants(id, gear, group_id), trip_crew(staff(role)), trip_groups(id, trip_type_id)')
+      .eq('org_id', currentOrgId)
+      .eq('trip_date', today)
+      .order('trip_time')
+  });
 
   const list = document.getElementById('cl-trip-list');
-  if (errTrips || !trips || trips.length === 0) {
-    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${escapeHtml(textoDeListaVacia(errTrips, 'cl_no_trips_today'))}</p>`;
+  if (!trips || trips.length === 0) {
+    list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${escapeHtml(textoDeListaVacia(errTripsHoy, 'cl_no_trips_today'))}</p>`;
     return;
   }
 
-  list.innerHTML = trips.map(tr => {
+  const avisoDeCopia = deCopia
+    ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;">${escapeHtml(lineaDeCopiaLocal(guardado))}</p>`
+    : '';
+
+  list.innerHTML = avisoDeCopia + trips.map(tr => {
     const name = tr.trip_name || trTypeName(tr.trip_types?.name) || trTypeName(tr.trip_type) || t('cal_trip_fallback');
     // El acta guarda el nombre de la salida, no sólo el id, porque la salida
     // se puede borrar. Se registra ACÁ, donde el nombre ya se resolvió con su
@@ -19423,24 +19529,39 @@ async function loadCrew() {
   await checkCrewNotifications();
 
   // Load staff
-  const { data: staff, error: errStaff } = await sb
-    .from('staff')
-    .select('*, staff_locations(location_id, locations(name))')
-    .eq('org_id', currentOrgId)
-    .order('created_at');
+  //
+  // La copia local es para MIRAR, nunca para firmar. El selector de firmante
+  // sale de `tripulacionConocida()`, que tiene su propia copia desde el 21/10 y
+  // filtra por `active`; ésta trae la planilla entera, archivados incluidos, y
+  // si alimentara aquel selector se podría firmar como alguien que ya no
+  // trabaja ahí — justo el agujero que el 09/10 vino a cerrar. Son dos copias
+  // con dos nombres distintos a propósito.
+  const { filas: staff, error: errStaff, deCopia, guardado } = await leerConCopiaLocal({
+    nombre: 'tripulacion_planilla',
+    leer: () => sb.from('staff')
+      .select('*, staff_locations(location_id, locations(name))')
+      .eq('org_id', currentOrgId)
+      .order('created_at')
+  });
   if (!staff || staff.length === 0) {
     list.innerHTML = `<div class="fleet-empty">${escapeHtml(textoDeListaVacia(errStaff, 'crew_no_crew_yet'))}</div>`;
     document.getElementById('stat-crew').textContent = '0';
     return;
   }
 
+  // El número de arriba también sale de la copia, y por eso tiene que estar
+  // etiquetado: «12 tripulantes» sin aclarar de cuándo es se lee como el dato
+  // de hoy. Una copia sin etiqueta es peor que no tener copia.
   document.getElementById('stat-crew').textContent = staff.length;
+  const avisoDeCopia = deCopia
+    ? `<div class="fleet-empty" style="margin-bottom:10px;">${escapeHtml(lineaDeCopiaLocal(guardado))}</div>`
+    : '';
 
   const canEditBanked = currentUserRole === 'owner' || currentUserRole === 'manager' || (currentUserRole === 'captain' && window.currentCaptainElevated);
   const canEditDayRate = ['owner', 'manager'].includes(currentUserRole);
   const activeCategories = await loadActiveCategories();
   const showDayRate = activeCategories.includes('charter_yacht');
-  list.innerHTML = staff.map(s => {
+  list.innerHTML = avisoDeCopia + staff.map(s => {
     const initials = s.full_name ? s.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : '?';
     const roleName = s.custom_role_name || crewRoleLabel(s.role);
     const location = s.staff_locations?.[0]?.locations?.name || '—';
@@ -21098,10 +21219,13 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
 async function loadGearDetailMaintenance(gearId) {
   const { data: logs, error: errLogs } = await sb.from('maintenance_logs').select('*').eq('gear_id', gearId).order('performed_date', { ascending: false }).order('created_at', { ascending: false });
   await loadSignerStaff();
-  renderGearDetailMaintenance(logs || []);
+  // El error viaja con los datos. Quien lee es quien sabe si la lectura salió;
+  // quien dibuja, no — y sin pasárselo quedaba usando una variable de otra
+  // función, que es el bug que el guardián encontró el 26/10.
+  renderGearDetailMaintenance(logs || [], errLogs);
 }
 
-function renderGearDetailMaintenance(logs) {
+function renderGearDetailMaintenance(logs, errLogs) {
   const list = document.getElementById('gear-detail-maintenance-list');
   if (!logs.length) {
     list.innerHTML = `<p style="font-size:0.83rem;color:var(--muted)">${escapeHtml(textoDeListaVacia(errLogs, 'gear_no_maint_item'))}</p>`;

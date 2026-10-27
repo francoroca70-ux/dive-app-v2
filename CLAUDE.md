@@ -492,11 +492,38 @@ haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 > cuando volver a entrar **necesita red**. Ahora la acción principal recarga, y
 > cerrar sesión **no se ofrece** cuando se puede afirmar que no hay red.
 >
-> **Lo que sigue abierto es que haya algo que mostrar (el «C», 8/10):** guardar
-> localmente las salidas del día y la tripulación. Hoy, sin señal, la app abre y
-> dice la verdad sobre estar vacía — pero la ficha de Play promete *«Works
-> offline»*, así que la promesa sigue sin ser cierta. **No reenviar a Apple hasta
-> que lo sea.**
+> **Y el C, que haya algo que mostrar: construido el 26/10 y APAGADO.**
+> `COPIA_LOCAL` (`'apagado' | 'encendido'`): una lectura que falla muestra la
+> última copia buena en vez de una lista vacía. Se cachean **la planilla de
+> tripulación** y **las salidas de hoy** (la clave lleva el día, así que una copia
+> de ayer no se puede mostrar como la de hoy). La semana y el mes del calendario
+> quedan afuera a propósito: el caso del barco es hoy.
+>
+> **Lo dije en 8 y lo corregí midiendo: es 6.** El patrón NO es nuevo —
+> `loadSignerStaff()` lo hace desde el 21/10, encontrado por Fran probando modo
+> avión—; lo que se hizo fue sacar esa regla de adentro de una función
+> (`leerConCopiaLocal()`) y aplicarla a las otras dos lecturas. Sin migración: es
+> `localStorage` y nada más. No toca ninguna llave: las filas de la copia llevan
+> los uuid reales del servidor, así que prenderlo o apagarlo a media mañana **no
+> le mueve los tildes a nadie**.
+>
+> **Tres reglas que son consecuencias medidas:** la copia se guarda **aunque el
+> interruptor esté apagado** (si no, el día que se prenda no habría ninguna copia
+> todavía); **un cero verdadero sí se guarda** pero **el vacío de un fallo nunca**
+> —el error que `loadSignerStaff()` tenía debajo hasta el 21/10—; y **la copia se
+> dice siempre, con la fecha**, porque una copia sin etiqueta se lee como el dato
+> de hoy y eso es peor que una pantalla vacía.
+>
+> **La copia es para MIRAR, nunca para firmar.** El selector de firmantes sale de
+> `tripulacionConocida()`, que tiene su propia copia filtrada por `active`; la
+> planilla trae todo, archivados incluidos, y se guarda con **otro nombre** a
+> propósito. Si alimentara al selector se podría firmar como alguien que ya no
+> trabaja ahí — el agujero que el 09/10 vino a cerrar. Hay un test que lo afirma.
+>
+> Detalle en `Seven Seas Ops/La copia local de lo que se mira.md`. **Falta
+> probarlo en un teléfono**, y hasta eso queda apagado. La ficha de Play promete
+> *«Works offline»*, así que la promesa no es cierta hasta que se prenda: **no
+> reenviar a Apple antes.**
 
 > [!warning] Todo el offline vale **una vez que la app está abierta**
 > Y «abierta» resultó significar **«abierta y con los datos ya cargados en esa

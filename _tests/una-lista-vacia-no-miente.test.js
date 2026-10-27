@@ -153,6 +153,43 @@ L.forEach((linea, i) => {
 
 chk('hay estados vacíos bajo una lectura para revisar (si no, el test se quedó ciego)',
   revisados >= 15, 'revisados: ' + revisados);
+
+// ─── 6b · Y la variable del error tiene que EXISTIR en esa función ──────────
+//
+// Esto lo agregó un bug mío, el mismo día. Aplicando la pasada con un script,
+// el reemplazo de la lectura cayó en `checkDoubleBookings()` y el del estado
+// vacío en `loadTodaysTripList()` — dos funciones distintas. Cada cadena era
+// única, así que la comprobación de unicidad pasó; lo que nunca se comprobó fue
+// que pertenecieran a la MISMA función. Quedó un `errTrips` declarado en una y
+// usado en la otra: un ReferenceError en la pantalla del barco, con la suite
+// entera en verde.
+//
+// El guardián de arriba tampoco lo vio, porque miraba la FORMA de la llamada y
+// no si podía correr. Una llamada bien escrita a una variable que no existe se
+// ve igual de bien.
+const sinDeclarar = [];
+L.forEach((linea, i) => {
+  const m = linea.match(/textoDeListaVacia\(\s*([A-Za-z_$][\w$]*)\s*,/);
+  // La propia declaración no cuenta: ahí `error` es el parámetro.
+  if (!m || m[1] === 'null' || /function textoDeListaVacia/.test(linea)) return;
+  const v = m[1];
+  let declarada = false;
+  for (let j = i; j >= 0; j--) {
+    if (new RegExp('(const|let|var)\\s*\\{[^}]*\\b' + v + '\\b|(const|let|var)\\s+' + v + '\\b').test(L[j])) {
+      declarada = true; break;
+    }
+    // El techo de la función. Pero la línea del techo también declara: los
+    // PARÁMETROS son declaraciones, y pasarle el error a quien dibuja es
+    // justamente la forma correcta de arreglar el cruce de funciones.
+    if (/^(async )?function /.test(L[j])) {
+      if (new RegExp('function\\s+\\w+\\s*\\([^)]*\\b' + v + '\\b').test(L[j])) declarada = true;
+      break;
+    }
+  }
+  if (!declarada) sinDeclarar.push((i + 1) + ': ' + v + ' no está declarada en esa función');
+});
+chk('cada variable de error usada existe en la función que la usa',
+  sinDeclarar.length === 0, '\n      ' + sinDeclarar.join('\n      '));
 chk('ningún estado vacío bajo una lectura se dibuja sin consultar el error',
   sinCubrir.length === 0, '\n      ' + sinCubrir.join('\n      '));
 

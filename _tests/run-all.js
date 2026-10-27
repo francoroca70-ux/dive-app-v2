@@ -95,7 +95,8 @@ const MINIMOS = {
   'signer.test.js':                 31,
   'sin-vitrina-en-nativo.test.js':  60,
   'trip-archive.test.js':           43,
-  'una-lista-vacia-no-miente.test.js': 50,
+  'una-lista-vacia-no-miente.test.js': 51,
+  'copia-local-de-lo-que-se-mira.test.js': 26,
 };
 
 const archivos = fs.readdirSync(DIR).filter(f => f.endsWith('.test.js')).sort();
