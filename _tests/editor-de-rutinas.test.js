@@ -257,22 +257,26 @@ try {
   // ─── 10 · El cambio de idioma repinta la tarjeta de rutinas ────────────
   //
   // Lo encontró Fran el 28/10: Tipos de Salida se traducía y Rutinas por
-  // Departamento se quedaba en el idioma anterior hasta recargar la página.
+  // Departamento se quedaba en el idioma anterior hasta recargar.
   //
-  // `refreshDynamicTranslations()` es una lista escrita a mano de ~23
-  // redibujos, y su modo de falla es que falte una entrada. Ya pasó dos veces
-  // antes (el detalle de un barco y el cartel de sin conexión), así que lo que
-  // se afirma es la entrada concreta — un guardián de la lista entera es el
-  // arreglo de fondo y es otro cambio.
+  // La primera versión de este guardián afirmaba que la llamada estaba DENTRO
+  // de `refreshDynamicTranslations`, que era una lista escrita a mano. Al
+  // convertir esa lista en un registro (C11) se puso en rojo con el código sano
+  // — y tenía razón en ponerse en rojo: lo que afirmaba dejó de existir.
+  //
+  // *Un guardián que describe la implementación se rompe cuando la
+  // implementación mejora; uno que describe la regla, no.* Ahora afirma la
+  // regla: la tarjeta está REGISTRADA, y quien repinta RECORRE el registro.
   {
     const cuerpo = html.slice(html.indexOf('function refreshDynamicTranslations'),
                               html.indexOf('function setLanguage'));
-    chk('refreshDynamicTranslations repinta la tarjeta de rutinas',
-        /dibujarRutinasDeDepartamento\(\)/.test(cuerpo),
+    chk('la tarjeta de rutinas está registrada para repintarse al cambiar de idioma',
+        html.includes("repintarAlCambiarIdioma('rutinas por departamento'"),
         'sin esto la tarjeta se queda en el idioma anterior hasta recargar');
-    chk('y lo hace al lado de la de tipos de salida, que es su par',
-        cuerpo.indexOf('renderTripTypesList()') < cuerpo.indexOf('dibujarRutinasDeDepartamento()'),
-        'las dos tarjetas de Configuración se repintan juntas');
+    chk('y quien repinta recorre el registro, no una lista propia',
+        cuerpo.includes('for (const entrada of repintadosDeIdioma)') &&
+        !cuerpo.includes('dibujarRutinasDeDepartamento()'),
+        'si vuelve a haber una lista acá, vuelve el defecto de que falte una entrada');
   }
 
   // ─── 11 · La línea de offline se DERIVA del interruptor ────────────────

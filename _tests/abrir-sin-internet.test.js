@@ -334,6 +334,49 @@ chk('ya no queda el mapa enumerado de 17 entradas',
       'era un segundo viaje por un dato que ya estaba en la mano');
 }
 
+
+// ─── C11 · El registro de repintados, y por qué no es una lista ─────────────
+//
+// Tres episodios con la misma causa antes de esto: el cartel de sin conexión,
+// el detalle de un barco, y la tarjeta de rutinas — los tres se quedaban en el
+// idioma anterior porque `refreshDynamicTranslations()` era una lista escrita a
+// mano y nadie se acordó de ampliarla. El defecto nacía en silencio: ni error,
+// ni consola, ni test en rojo. Un texto en el idioma de antes que alguien tenía
+// que notar de casualidad.
+//
+// Lo que estas comprobaciones afirman es la REGLA, no el inventario.
+{
+  const cuerpo = sinComentarios.slice(sinComentarios.indexOf('function refreshDynamicTranslations'),
+                                      sinComentarios.indexOf('function setLanguage'));
+  chk('quien repinta no tiene una lista propia: recorre el registro',
+      cuerpo.includes('for (const entrada of repintadosDeIdioma)'),
+      'una lista acá es N lugares donde puede faltar una entrada');
+  chk('y el cuerpo quedó corto — no es una lista disfrazada',
+      cuerpo.split('\n').length < 25, cuerpo.split('\n').length + ' líneas');
+
+  const entradas = (sinComentarios.match(/repintarAlCambiarIdioma\('/g) || []).length;
+  chk('hay al menos las 29 entradas que tenía la lista', entradas >= 29, entradas + ' entradas');
+
+  // Cada entrada lleva NOMBRE, y los nombres no se repiten: un registro
+  // duplicado repinta dos veces, y eso en una pantalla que lee de la base son
+  // dos viajes por lo mismo.
+  const nombres = [...sinComentarios.matchAll(/repintarAlCambiarIdioma\('([^']+)'/g)].map(m => m[1]);
+  const repetidos = nombres.filter((n, i) => nombres.indexOf(n) !== i);
+  chk('ningún nombre de entrada está repetido', repetidos.length === 0, repetidos.join(', '));
+
+  // Un redibujo que falla no puede dejar la app en dos idiomas a la vez.
+  chk('cada entrada corre en su propio try',
+      cuerpo.includes('try {') && cuerpo.includes('catch'),
+      'sin esto, una excepción a mitad del registro parte la app en dos idiomas');
+
+  // Las condiciones viven en funciones reutilizables, no copiadas en cada
+  // entrada — una condición repetida es N lugares donde puede estar mal.
+  for (const f of ['pantallaActiva', 'hayCentro', 'visible']) {
+    chk('la condición ' + f + ' se declara una vez',
+        (sinComentarios.match(new RegExp('function ' + f + '\\(')) || []).length === 1);
+  }
+}
+
 }catch(e){ chk('el cuerpo del test corrió hasta el final',false,String(e).slice(0,300)); }
 
 console.log(`\n${fail?'HAY FALLOS':'todo en verde'} — abrir-sin-internet`);

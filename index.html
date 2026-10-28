@@ -6436,103 +6436,143 @@ function applyTranslations() {
 
 // Handles UI pieces that mix translated text with live data (org name, today's date,
 // time-of-day greeting), so a simple data-i18n tag on its own can't cover them.
+// ─── C11 · Qué se repinta al cambiar de idioma, en un REGISTRO ──────────────
+//
+// Lo encontró Fran el 28/10: cambió a inglés y la tarjeta de Rutinas por
+// Departamento se quedó en español. La causa no era esa tarjeta: era que
+// `refreshDynamicTranslations()` era **una lista escrita a mano de ~23
+// redibujos**, y su modo de falla es que falte una entrada. Ya habían pasado
+// tres episodios — el cartel de sin conexión, el detalle de un barco, y esta
+// tarjeta— los tres arreglados agregando una línea a la lista.
+//
+// Agregar la línea 24 arregla el síntoma y deja el generador de defectos en pie.
+// Esto lo saca: **cada camino de dibujo se registra**, y el que repinta recorre
+// el registro. Una pantalla nueva que no se registre no es un olvido silencioso:
+// es una pantalla que nunca se repinta y que el guardián cuenta.
+//
+// Cada entrada declara CUÁNDO corre, porque las condiciones de hoy no son
+// uniformes y copiarlas mal sería repintar pantallas que nadie mira —o peor,
+// salir a la red por ellas—. Se conservan tal cual estaban: esto es un cambio
+// estructural, no de comportamiento. Lo que cuesta cambiar de idioma hoy está
+// medido y es otra conversación (ver la nota del vault).
+const repintadosDeIdioma = [];
+
+// `nombre` no es decoración: es lo que el guardián cuenta y lo que hace que un
+// registro duplicado o faltante se vea en una lista, no en un diff.
+function repintarAlCambiarIdioma(nombre, fn, cuando) {
+  repintadosDeIdioma.push({ nombre, fn, cuando: cuando || null });
+}
+
+// Condiciones reutilizables. Viven acá y no copiadas en cada entrada por lo
+// mismo de siempre: una condición repetida es N lugares donde puede estar mal.
+function pantallaActiva(id) {
+  return () => { const p = document.getElementById('page-' + id); return !!p && p.classList.contains('active'); };
+}
+function hayCentro() { return typeof currentOrgId !== 'undefined' && !!currentOrgId; }
+function visible(id) {
+  return () => { const e = document.getElementById(id); return !!e && e.style.display !== 'none'; };
+}
+
+// Las entradas. Cada una con la condición que ya tenía — ni una más, ni una
+// menos: lo que cambia es dónde vive, no cuándo corre.
+//
+// Las primeras cuatro corren SIEMPRE porque no son de una pantalla: son el
+// cartel de conexión, el saludo, la fecha y la línea del build.
+repintarAlCambiarIdioma('cartel de conexión', () => updateOfflineBanner());
+repintarAlCambiarIdioma('saludo de Inicio', () => {
+  const el = document.getElementById('home-greeting');
+  if (!el) return;
+  const hora = new Date().getHours();
+  el.textContent = hora < 12 ? t('greeting_morning') : hora < 17 ? t('greeting_afternoon') : t('greeting_evening');
+});
+repintarAlCambiarIdioma('fecha de Inicio', () => {
+  const el = document.getElementById('home-date');
+  // 'Loading...' quiere decir que el arranque todavía no la escribió. Pisarla
+  // acá dejaría una fecha donde la app todavía no sabe de qué día habla.
+  if (!el || el.textContent === 'Loading...') return;
+  el.textContent = new Date().toLocaleDateString(localeDeLaApp(), {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+});
+repintarAlCambiarIdioma('línea del build', () => pintarBuild());
+
+// Los dos mapas de etiquetas: no dibujan nada, pero lo que dibuja después lee
+// de ellos, así que tienen que reconstruirse ANTES. El registro conserva el
+// orden de inserción a propósito.
+repintarAlCambiarIdioma('etiquetas de categoría', () => { CATEGORY_LABELS = buildCategoryLabels(); });
+repintarAlCambiarIdioma('etiquetas de tipo de formulario', () => { waiverTypeLabels = buildWaiverTypeLabels(); });
+
+// La página pública de firma de un formulario no tiene centro: el invitado no
+// está logueado. Por eso va afuera de la condición de `hayCentro`.
+repintarAlCambiarIdioma('lista de la firma remota', () => rwRenderList(),
+  () => window.rwToken && window.rwData && visible('rw-list-view')());
+
+repintarAlCambiarIdioma('calendario', () => renderCalendar(), hayCentro);
+// Los dos avisos del modal de una salida escriben su texto una vez, cuando
+// cambian sus campos. Si el modal está abierto al cambiar de idioma, hay que
+// volver a correrlos o el aviso visible queda en el idioma anterior.
+repintarAlCambiarIdioma('avisos del modal de salida', () => { checkBoatConflict(); checkGuestCapacity(); },
+  () => hayCentro() && visible('modal-trip')());
+repintarAlCambiarIdioma('flota', () => loadFleet(), hayCentro);
+// El detalle de un barco es otro camino de dibujo, y los cambios de idioma lo
+// salteaban por completo: se quedaba en el idioma en que se abrió.
+repintarAlCambiarIdioma('detalle del barco abierto', () => {
+  loadBoatDetailEngines(window.currentBoatDetailId);
+  loadBoatDetailMaintenance(window.currentBoatDetailId);
+}, () => hayCentro() && window.currentBoatDetailId && visible('fleet-boat-detail-section')());
+repintarAlCambiarIdioma('botón de ver todas las embarcaciones', () => {
+  const b = document.getElementById('btn-fleet-select-all');
+  if (b) b.textContent = window.fleetShowAllBoats ? t('fleet_show_selected_only') : t('fleet_select_all');
+}, hayCentro);
+repintarAlCambiarIdioma('tripulación', () => loadCrew(), hayCentro);
+repintarAlCambiarIdioma('tipos de salida', () => renderTripTypesList(), hayCentro);
+repintarAlCambiarIdioma('rutinas por departamento', () => dibujarRutinasDeDepartamento(), hayCentro);
+repintarAlCambiarIdioma('categorías de operación', () => syncCategoryCheckboxes(), hayCentro);
+repintarAlCambiarIdioma('locales', () => loadLocations(), hayCentro);
+repintarAlCambiarIdioma('informes', () => { populateReportsScopeSelect(); loadReports(); },
+  () => hayCentro() && pantallaActiva('reports')());
+repintarAlCambiarIdioma('arqueo de caja', () => loadCashUp(),
+  () => hayCentro() && pantallaActiva('cashup')());
+repintarAlCambiarIdioma('cuentas de huéspedes', () => loadGuestTabs(),
+  () => hayCentro() && pantallaActiva('cashup')() && visible('guest-tabs-view')());
+repintarAlCambiarIdioma('formularios', () => loadWaivers(),
+  () => hayCentro() && pantallaActiva('waivers')());
+repintarAlCambiarIdioma('insignia de formularios', () => updateWaiversStatusBadge(),
+  () => hayCentro() && pantallaActiva('settings')());
+repintarAlCambiarIdioma('checklists', () => { initInstructorChecklist(); initDeptChecklists(); },
+  () => hayCentro() && pantallaActiva('checklists')());
+repintarAlCambiarIdioma('catálogo de equipo', () => loadGearRegistry(),
+  () => hayCentro() && !!document.getElementById('gear-registry-list'));
+repintarAlCambiarIdioma('compresores', () => loadCompressors(), hayCentro);
+repintarAlCambiarIdioma('inventario de equipo', () => loadGearInventory(),
+  () => hayCentro() && !!document.getElementById('inventory-categories') &&
+        !!document.getElementById('inventory-categories').innerHTML.trim());
+repintarAlCambiarIdioma('tareas', () => { renderTasksMine(); renderTasksAll(); },
+  () => hayCentro() && pantallaActiva('tasks')());
+repintarAlCambiarIdioma('ayuda', () => renderHelpPage(),
+  () => hayCentro() && pantallaActiva('help')());
+
+// El panel de Inicio va al final: `updateHomeBanner()` encadena los números y
+// el bloque de «para empezar», y los dos leen las etiquetas reconstruidas
+// arriba.
+repintarAlCambiarIdioma('panel de Inicio', () => updateHomeBanner(), hayCentro);
+
+// Y el que recorre el registro. Esto es TODO lo que hace: ya no hay una lista
+// acá que alguien tenga que acordarse de ampliar.
+//
+// Cada entrada va en su propio try: un redibujo que falla no puede dejar la
+// mitad de la app en el idioma anterior. Es la misma razón del `allSettled` del
+// arranque, y acá importa más — una excepción a mitad de lista dejaría la app
+// en dos idiomas a la vez.
 function refreshDynamicTranslations() {
-  // The offline/sync banner sets its text once, from JS, whenever connection
-  // state changes -- if it's already showing when the language is switched,
-  // it stays in the old language until the next state change unless we
-  // explicitly re-run it here.
-  if (typeof updateOfflineBanner === 'function') updateOfflineBanner();
-  const greetingEl = document.getElementById('home-greeting');
-  if (greetingEl) {
-    const hour = new Date().getHours();
-    greetingEl.textContent = hour < 12 ? t('greeting_morning') : hour < 17 ? t('greeting_afternoon') : t('greeting_evening');
-  }
-  const dateEl = document.getElementById('home-date');
-  if (dateEl && dateEl.textContent !== 'Loading...') {
-    dateEl.textContent = new Date().toLocaleDateString(localeDeLaApp(), {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
-  }
-  if (typeof currentOrgId !== 'undefined' && currentOrgId && typeof updateHomeBanner === 'function') {
-    updateHomeBanner();
-  }
-  if (typeof buildCategoryLabels === 'function') {
-    CATEGORY_LABELS = buildCategoryLabels();
-  }
-  if (typeof buildWaiverTypeLabels === 'function') {
-    waiverTypeLabels = buildWaiverTypeLabels();
-  }
-  // Public waiver signing page has no org context (guest isn't logged in), so
-  // its own re-render needs to run outside the currentOrgId-gated block below.
-  if (window.rwToken && window.rwData && document.getElementById('rw-list-view').style.display !== 'none') {
-    rwRenderList();
-  }
-  if (typeof currentOrgId !== 'undefined' && currentOrgId) {
-    if (typeof renderCalendar === 'function') renderCalendar();
-    // The trip modal's boat-conflict and guest-capacity warnings set their
-    // text once, from JS, whenever their inputs change -- if the modal is
-    // open when the language is switched, re-run both so an already-visible
-    // warning doesn't stay stuck in the old language.
-    const tripModal = document.getElementById('modal-trip');
-    if (tripModal && tripModal.style.display !== 'none') {
-      if (typeof checkBoatConflict === 'function') checkBoatConflict();
-      if (typeof checkGuestCapacity === 'function') checkGuestCapacity();
+  for (const entrada of repintadosDeIdioma) {
+    try {
+      if (entrada.cuando && !entrada.cuando()) continue;
+      entrada.fn();
+    } catch (e) {
+      console.warn('[i18n] no se pudo repintar «' + entrada.nombre + '»', e);
     }
-    if (typeof loadFleet === 'function') loadFleet();
-    // loadFleet() only rebuilds the top boat-card list — the expanded boat
-    // detail section (engine cards, per-engine logs/maintenance) is a
-    // separate render path that language switches were missing entirely,
-    // which is why it stayed stuck in whichever language it was first opened in.
-    if (window.currentBoatDetailId && document.getElementById('fleet-boat-detail-section') && document.getElementById('fleet-boat-detail-section').style.display !== 'none') {
-      if (typeof loadBoatDetailEngines === 'function') loadBoatDetailEngines(window.currentBoatDetailId);
-      if (typeof loadBoatDetailMaintenance === 'function') loadBoatDetailMaintenance(window.currentBoatDetailId);
-    }
-    const fleetSelectAllBtn = document.getElementById('btn-fleet-select-all');
-    if (fleetSelectAllBtn) fleetSelectAllBtn.textContent = window.fleetShowAllBoats ? t('fleet_show_selected_only') : t('fleet_select_all');
-    if (typeof loadCrew === 'function') loadCrew();
-    if (typeof renderTripTypesList === 'function') renderTripTypesList();
-    // 28/10: FALTABA, y lo encontró Fran cambiando de idioma mientras probaba
-    // el editor de rutinas: la tarjeta de Tipos de Salida se traducía y la de
-    // Rutinas por Departamento se quedaba en el idioma anterior hasta recargar.
-    //
-    // No es un olvido aislado: esta función es una LISTA ESCRITA A MANO de ~23
-    // redibujos, y su modo de falla es que falte una entrada. Ya pasó con el
-    // detalle de un barco y con el cartel de sin conexión —los dos comentados
-    // más arriba— así que ésta es la tercera vez. Agregar una línea arregla el
-    // síntoma y deja el generador de defectos en pie; el arreglo de fondo (que
-    // cada camino de dibujo se registre, en vez de que alguien se acuerde de
-    // agregarlo acá) es un cambio aparte y está anotado como tal.
-    if (typeof dibujarRutinasDeDepartamento === 'function') dibujarRutinasDeDepartamento();
-    if (typeof syncCategoryCheckboxes === 'function') syncCategoryCheckboxes();
-    if (typeof loadLocations === 'function') loadLocations();
-    if (document.getElementById('page-reports') && document.getElementById('page-reports').classList.contains('active')) {
-      if (typeof populateReportsScopeSelect === 'function') populateReportsScopeSelect();
-      if (typeof loadReports === 'function') loadReports();
-    }
-    if (document.getElementById('page-cashup') && document.getElementById('page-cashup').classList.contains('active')) {
-      if (typeof loadCashUp === 'function') loadCashUp();
-      if (typeof loadGuestTabs === 'function' && document.getElementById('guest-tabs-view') && document.getElementById('guest-tabs-view').style.display !== 'none') loadGuestTabs();
-    }
-    if (document.getElementById('page-waivers') && document.getElementById('page-waivers').classList.contains('active')) {
-      if (typeof loadWaivers === 'function') loadWaivers();
-    }
-    if (document.getElementById('page-settings') && document.getElementById('page-settings').classList.contains('active') && typeof updateWaiversStatusBadge === 'function') updateWaiversStatusBadge();
-    if (document.getElementById('page-checklists') && document.getElementById('page-checklists').classList.contains('active')) {
-      if (typeof initInstructorChecklist === 'function') initInstructorChecklist();
-      if (typeof initDeptChecklists === 'function') initDeptChecklists();
-    }
-    if (typeof loadGearRegistry === 'function' && document.getElementById('gear-registry-list')) loadGearRegistry();
-    if (typeof loadCompressors === 'function') loadCompressors();
-    if (typeof loadGearInventory === 'function' && document.getElementById('inventory-categories') && document.getElementById('inventory-categories').innerHTML.trim()) loadGearInventory();
-    if (document.getElementById('page-tasks') && document.getElementById('page-tasks').classList.contains('active')) {
-      if (typeof renderTasksMine === 'function') renderTasksMine();
-      if (typeof renderTasksAll === 'function') renderTasksAll();
-    }
-    if (document.getElementById('page-help') && document.getElementById('page-help').classList.contains('active') && typeof renderHelpPage === 'function') renderHelpPage();
   }
-  // La línea del build lleva una etiqueta traducida, así que se repinta acá y
-  // no con `data-i18n`: el número no se traduce y la etiqueta sí.
-  if (typeof pintarBuild === 'function') pintarBuild();
 }
 
 function setLanguage(lang) {
@@ -9446,7 +9486,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28l';
+const BUILD_WEB = '2026-10-28m';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
