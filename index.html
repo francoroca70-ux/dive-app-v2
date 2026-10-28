@@ -8952,14 +8952,6 @@ function refreshCurrentView() {
 
 // ─── AUTH ───
 let currentStaffAssignedLocationIds = [];
-async function loadCurrentUserRole() {
-  const user = await usuarioActual();
-  if (!user) return;
-  const { data: s } = await sb.from('staff').select('role').eq('id', user.id).single();
-  currentUserRole = s?.role || null;   // null = no se sabe, NUNCA un rol inventado
-  const { data: locRows } = await sb.from('staff_locations').select('location_id').eq('staff_id', user.id);
-  currentStaffAssignedLocationIds = (locRows || []).map(r => r.location_id);
-}
 let rosterView = 'week';
 let rosterDate = new Date();
 let rosterStaffAll = [];
@@ -9444,7 +9436,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28j';
+const BUILD_WEB = '2026-10-28k';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9553,7 +9545,22 @@ async function initAuthInner() {
     loadFleet();
     loadCrew();
     await renderCalendar();
-    await loadCurrentUserRole();
+    // 28/10: ACÁ HABÍA UN `await loadCurrentUserRole()` Y SE BORRÓ.
+  //
+  // Leía `staff` y `staff_locations` por el id del usuario para dejar puestos
+  // `currentUserRole` y `currentStaffAssignedLocationIds` — las dos cosas que
+  // `loadSettings()` acaba de dejar puestas, de las mismas dos tablas y con el
+  // mismo id. Dos viajes a São Paulo para recalcular lo que ya estaba.
+  //
+  // Y era peor que redundante: en el arranque SIN SEÑAL, `loadSettings()` saca el
+  // rol de la identidad local y devuelve true — y esta función, al fallar la
+  // lectura, lo **pisaba con null**. O sea que el rol que la copia local acababa
+  // de recuperar se perdía dos líneas después. Es la segunda causa del
+  // departamento único que vio Fran en el celular, y la que el default
+  // `'instructor'` tapaba.
+  //
+  // Si alguna vez hace falta releer el rol sin rehacer todo `loadSettings`, va
+  // con su motivo escrito y mirando el error antes de pisar nada.
     document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
     await checkCrewNotifications();
     await checkTasksNotifications();
@@ -10278,7 +10285,22 @@ async function switchToAccount(userId) {
   loadFleet();
   loadCrew();
   await renderCalendar();
-  await loadCurrentUserRole();
+  // 28/10: ACÁ HABÍA UN `await loadCurrentUserRole()` Y SE BORRÓ.
+  //
+  // Leía `staff` y `staff_locations` por el id del usuario para dejar puestos
+  // `currentUserRole` y `currentStaffAssignedLocationIds` — las dos cosas que
+  // `loadSettings()` acaba de dejar puestas, de las mismas dos tablas y con el
+  // mismo id. Dos viajes a São Paulo para recalcular lo que ya estaba.
+  //
+  // Y era peor que redundante: en el arranque SIN SEÑAL, `loadSettings()` saca el
+  // rol de la identidad local y devuelve true — y esta función, al fallar la
+  // lectura, lo **pisaba con null**. O sea que el rol que la copia local acababa
+  // de recuperar se perdía dos líneas después. Es la segunda causa del
+  // departamento único que vio Fran en el celular, y la que el default
+  // `'instructor'` tapaba.
+  //
+  // Si alguna vez hace falta releer el rol sin rehacer todo `loadSettings`, va
+  // con su motivo escrito y mirando el error antes de pisar nada.
   document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
   await checkCrewNotifications();
   await checkTasksNotifications();
@@ -10744,7 +10766,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
     });
 
     // The owner just created this org in the current session -- currentUserRole
-    // was never set (it only gets populated by loadSettings/loadCurrentUserRole
+    // was never set (it only gets populated by loadSettings
     // reading the staff row, and there was no staff row until the insert just
     // above), so without this it stays at its 'instructor' default and every
     // owner-only check -- like enabling Waivers -- would wrongly reject the
@@ -17043,12 +17065,17 @@ async function initChecklists() {
   // Mientras la checklist esté abierta, los tildes del resto de la tripulación
   // aparecen solos. Ver arrancarRefrescoDeProgreso().
   arrancarRefrescoDeProgreso();
-  // Get current user role
-  if (currentOrgId) {
-    const yo = await usuarioActual();
-    const { data: s } = yo ? await sb.from('staff').select('role').eq('id', yo.id).single() : { data: null };
-    currentUserRole = s?.role || null;   // null = no se sabe, NUNCA un rol inventado
-  }
+  // 28/10: ACÁ SE RELEÍA EL ROL DE LA BASE, Y SE SACÓ.
+  //
+  // Mismo defecto que el `loadCurrentUserRole()` del arranque, y este es el que
+  // más dolía: corre al abrir Checklists, **justo antes de dibujar la lista de
+  // departamentos**. Sin señal la lectura falla, el rol quedaba en null y un
+  // dueño veía un solo departamento — el síntoma exacto que Fran reportó en el
+  // celular.
+  //
+  // `currentUserRole` lo deja puesto `loadSettings()` al arrancar, de la misma
+  // tabla y por el mismo id, y esta pantalla sólo se alcanza después de eso. Un
+  // viaje de red menos, y una forma menos de perder el rol.
 
   // Show/hide logged-checklists tab based on role
   const isLeader = ['owner','manager','captain'].includes(currentUserRole);

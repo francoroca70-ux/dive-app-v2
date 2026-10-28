@@ -106,6 +106,32 @@ chk('NO se le muestra al gerente', !muestra('manager'));
 chk('NO se le muestra al capitán (ya ve los cuatro)', !muestra('captain'));
 chk('NO se le muestra a un rol fuera del mapa', !muestra('front_desk'));
 
+// ── Y el rol no se PISA después de recuperarlo ──
+//
+// 28/10, medido leyendo el arranque: después de `loadSettings()` había un
+// `loadCurrentUserRole()` que releía `staff` y `staff_locations` por el mismo id
+// para dejar puestas las mismas dos variables. Dos viajes de red para recalcular
+// lo que ya estaba — y en el arranque sin señal, al fallar la lectura, **pisaba
+// con null el rol que la identidad local acababa de recuperar**.
+//
+// Era la segunda causa del departamento único que vio Fran en el celular. El
+// default `'instructor'` la tapaba: con el rol en null el síntoma cambiaba de
+// cara, no desaparecía.
+{
+  const sinComentarios2 = html.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');
+  chk('nadie relee el rol después de loadSettings',
+      !/loadCurrentUserRole/.test(sinComentarios2),
+      'si vuelve, va con su motivo y mirando el error antes de pisar nada');
+  // Lo que se afirma es la REGLA, no un conteo: **nadie vuelve a pedirle el rol
+  // a la base**. Era lo que hacían `loadCurrentUserRole()` y, peor, el arranque
+  // de la pantalla de Checklists. Las asignaciones que quedan salen de
+  // `loadSettings`, de la identidad local y del alta de una organización — todas
+  // de un dato que ya está en la mano, ninguna de un viaje de red.
+  chk('nadie le pide el rol a la base para saber quién mira',
+      !/from\('staff'\)\.select\('role'\)/.test(sinComentarios2),
+      'eran dos lugares, y el de Checklists corría justo antes de dibujar los departamentos');
+}
+
 // ── El rol no se inventa ──
 //
 // Las tres primeras miran el CÓDIGO, porque el valor inicial se evalúa al
