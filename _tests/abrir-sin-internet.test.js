@@ -266,6 +266,74 @@ chk('y nadie arma un segundo mapa de cadencias',mapasSueltos===1,String(mapasSue
 chk('ya no queda el mapa enumerado de 17 entradas',
     !/stewards_yearly:\s*`/.test(sinComentarios));
 
+
+// ─── El arranque no precarga pantallas que nadie está mirando ───
+//
+// Medido en el navegador el 28/10: 39 pedidos a Supabase en **26 olas
+// secuenciales**, 5,65 s de reloj — y 22 de esos 39 eran de pantallas que al
+// arrancar no están en la pantalla.
+//
+// Lo que volvió esto una deleción y no un mecanismo: **`showPage()` ya recarga
+// cada pantalla al abrirla**. El arranque pedía datos que se vuelven a pedir
+// igual. Iba a construir un registro de «cargar al abrir» y al medir apareció
+// que existía.
+//
+// Lo que se afirma es la regla: **si `showPage()` la carga al abrir, el arranque
+// no la precarga.** Las de Configuración se quedan a propósito, porque
+// `showPage('settings')` NO las recarga — ahí el arranque es la única carga que
+// hay, y diferirlas dejaría la pantalla vacía.
+{
+  const cuerpoDe = (nombre) => {
+    const i = sinComentarios.indexOf('async function ' + nombre + '(');
+    if (i < 0) return '';
+    let prof = 0, fin = i;
+    for (let j = i; j < sinComentarios.length; j++) {
+      if (sinComentarios[j] === '{') prof++;
+      if (sinComentarios[j] === '}') { prof--; if (prof === 0) { fin = j; break; } }
+    }
+    return sinComentarios.slice(i, fin + 1);
+  };
+  const arranque = cuerpoDe('initAuthInner') || cuerpoDe('initAuth');
+  chk('se encontró el cuerpo del arranque', arranque.length > 200, arranque.length + ' caracteres');
+
+  for (const f of ['loadFleet', 'loadCrew', 'renderCalendar']) {
+    chk('el arranque no precarga ' + f,
+        !new RegExp('(^|[^.\\w])' + f + '\\(\\)').test(arranque),
+        'showPage() ya la llama al abrir esa pantalla');
+    chk('y showPage() sí la llama al abrir', new RegExp(f + '\\(\\)').test(sinComentarios),
+        'si se borra de las dos puntas, la pantalla queda vacía');
+  }
+
+  // Las cuatro de Configuración, en UNA ola. La dependencia está medida: las
+  // cuatro filtran sólo por currentOrgId y ninguna escribe currentLocationId.
+  chk('las cuatro lecturas de Configuración van en una sola ola',
+      /Promise\.allSettled\(\[\s*loadLocations\(\),\s*syncCategoryCheckboxes\(\),\s*renderTripTypesList\(\),\s*dibujarRutinasDeDepartamento\(\)\s*\]\)/.test(sinComentarios),
+      'eran cuatro esperas en fila');
+
+  // Los tres avisos, en una sola ola.
+  chk('los tres avisos del arranque van en una sola ola',
+      /Promise\.allSettled\(\[\s*checkCrewNotifications\(\),\s*checkTasksNotifications\(\),\s*checkChecklistNotifications\(\)\s*\]\)/.test(sinComentarios));
+
+  // allSettled y no all: una lectura que falla no se lleva a las otras.
+  chk('y usa allSettled, no all',
+      !/Promise\.all\(\[\s*loadLocations/.test(sinComentarios) &&
+      !/Promise\.all\(\[\s*checkCrewNotifications/.test(sinComentarios),
+      'con all un solo rechazo deja las otras tres sin dibujar');
+
+  // La lectura de locales del staff arranca ANTES de esperar la de staff.
+  chk('las dos lecturas de identidad arrancan juntas',
+      sinComentarios.indexOf('const pLocsDelStaff =') < sinComentarios.indexOf(".from('staff')\n    .select('org_id"),
+      'las dos van por user.id; esperarlas de a una eran dos olas');
+  chk('y la de locales se espera donde se usa',
+      /const \{ data: locRows \} = await pLocsDelStaff;/.test(sinComentarios));
+
+  // El nombre del centro no se vuelve a pedir: viene del select('*').
+  chk('updateHomeBanner acepta el centro ya leído',
+      /async function updateHomeBanner\(orgYaLeido\)/.test(sinComentarios) &&
+      /await updateHomeBanner\(org\);/.test(sinComentarios),
+      'era un segundo viaje por un dato que ya estaba en la mano');
+}
+
 }catch(e){ chk('el cuerpo del test corrió hasta el final',false,String(e).slice(0,300)); }
 
 console.log(`\n${fail?'HAY FALLOS':'todo en verde'} — abrir-sin-internet`);

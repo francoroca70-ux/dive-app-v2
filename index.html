@@ -8501,9 +8501,19 @@ function initHome(user) {
   document.getElementById('stat-crew').textContent = '1';
 }
 
-async function updateHomeBanner() {
+// 28/10: recibe el centro YA LEÍDO si quien llama lo tiene.
+//
+// `loadSettings()` lee `organizations` con `select('*')` dos líneas después de
+// llamar acá, así que el nombre ya estaba en la mano y esto era un segundo viaje
+// a São Paulo por el mismo dato. Medido el 28/10: era una de las 26 olas del
+// arranque, y las olas son lo que se paga.
+//
+// Sigue andando sin argumento porque hay tres lugares más que la llaman sin
+// tener el centro leído —el repintado al cambiar de idioma entre ellos—. El
+// parámetro es una oportunidad de ahorrar un viaje, no un requisito.
+async function updateHomeBanner(orgYaLeido) {
   if (!currentOrgId) return;
-  const { data: org } = await sb.from('organizations').select('name').eq('id', currentOrgId).single();
+  const org = orgYaLeido || (await sb.from('organizations').select('name').eq('id', currentOrgId).single()).data;
   const banner = document.getElementById('setup-banner');
   const identityCard = document.getElementById('stat-card-identity');
   if (org && org.name) {
@@ -9436,7 +9446,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28k';
+const BUILD_WEB = '2026-10-28l';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9542,9 +9552,27 @@ async function initAuthInner() {
     initHome(session.user);
     const settingsOk = await loadSettings(session.user);
     if (settingsOk === false) { hideLoadingScreen(); return; }
-    loadFleet();
-    loadCrew();
-    await renderCalendar();
+    // 28/10: ACÁ HABÍA TRES PRECARGAS Y SE BORRARON.
+    //
+    // `loadFleet()`, `loadCrew()` y `renderCalendar()` traían Flota,
+    // Tripulación y el Calendario en el arranque — **tres pantallas que al
+    // arrancar nadie está mirando**: la que se muestra es Inicio.
+    //
+    // Y la parte que vuelve esto una deleción y no un mecanismo:
+    // **`showPage()` ya vuelve a cargar cada pantalla al abrirla** (`fleet` →
+    // `loadFleet()`, `crew` → `loadCrew()`, `calendar` → `renderCalendar()`).
+    // Así que el arranque pedía datos que se vuelven a pedir igual en cuanto
+    // alguien entra. Iba a construir un registro de «cargar al abrir» y al
+    // medirlo apareció que ya existía.
+    //
+    // Los números de Inicio NO salían de acá: los calcula `refreshHomeStats()`
+    // con sus propias consultas, dentro de `updateHomeBanner()`. Medido antes
+    // de borrar.
+    //
+    // Las cuatro lecturas de Configuración sí se quedan: `showPage('settings')`
+    // **no** las recarga, así que diferirlas dejaría la pantalla vacía hasta
+    // recargar la app. Esa es la diferencia entre precargar y ser la única
+    // carga que hay.
     // 28/10: ACÁ HABÍA UN `await loadCurrentUserRole()` Y SE BORRÓ.
   //
   // Leía `staff` y `staff_locations` por el id del usuario para dejar puestos
@@ -9562,9 +9590,21 @@ async function initAuthInner() {
   // Si alguna vez hace falta releer el rol sin rehacer todo `loadSettings`, va
   // con su motivo escrito y mirando el error antes de pisar nada.
     document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
-    await checkCrewNotifications();
-    await checkTasksNotifications();
-    await checkChecklistNotifications();
+    // 28/10: los tres en PARALELO, no uno atrás del otro.
+    //
+    // Medido: leen tablas distintas y ninguno usa lo que deja el anterior
+    // —`day_off_requests`, `task_list_assignees`, y `trip_crew` +
+    // `checklist_completions`—, así que las tres esperas en serie eran tres
+    // olas donde alcanzaba una. Son los avisos de las pestañas: nadie los está
+    // mirando todavía, y aun así el arranque los esperaba de a uno.
+    //
+    // `allSettled` y no `all`: si uno falla, los otros dos avisos tienen que
+    // aparecer igual. Con `all` un solo rechazo se lleva los tres.
+    await Promise.allSettled([
+      checkCrewNotifications(),
+      checkTasksNotifications(),
+      checkChecklistNotifications()
+    ]);
     // Quién soy y dónde trabajo, para que un arranque sin señal tenga qué
     // dibujar. Va acá, al final de un arranque que SÍ se pudo verificar: antes
     // de esta línea el rol todavía no está resuelto.
@@ -10282,9 +10322,7 @@ async function switchToAccount(userId) {
   initHome(data.user);
   const settingsOk = await loadSettings(data.user);
   if (settingsOk === false) return;
-  loadFleet();
-  loadCrew();
-  await renderCalendar();
+  // Las tres precargas se borraron — ver el porqué en initAuthInner().
   // 28/10: ACÁ HABÍA UN `await loadCurrentUserRole()` Y SE BORRÓ.
   //
   // Leía `staff` y `staff_locations` por el id del usuario para dejar puestos
@@ -10302,9 +10340,12 @@ async function switchToAccount(userId) {
   // Si alguna vez hace falta releer el rol sin rehacer todo `loadSettings`, va
   // con su motivo escrito y mirando el error antes de pisar nada.
   document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
-  await checkCrewNotifications();
-  await checkTasksNotifications();
-  await checkChecklistNotifications();
+  // Los tres en paralelo — ver el porqué en initAuthInner().
+  await Promise.allSettled([
+    checkCrewNotifications(),
+    checkTasksNotifications(),
+    checkChecklistNotifications()
+  ]);
   updateOfflineBanner();
   flushOfflineQueue();
   showScreen('app');
@@ -10365,6 +10406,19 @@ let currentLocationName = '';
 async function loadSettings(user) {
   document.getElementById('settings-email').textContent = user.email;
 
+  // 28/10: LAS DOS LECTURAS DE IDENTIDAD ARRANCAN JUNTAS.
+  //
+  // Las dos van por `user.id` —una trae el centro y el rol, la otra los locales
+  // asignados— así que ninguna necesita a la otra. Esperarlas de a una eran dos
+  // olas, y una ola es un viaje a São Paulo: ~200 ms que se pagan antes de que
+  // la app pueda dibujar nada.
+  //
+  // La de locales se LANZA acá y se espera más abajo, donde se usa. No se mete
+  // en un `Promise.all` con la de `staff` a propósito: la de staff tiene cuatro
+  // salidas tempranas debajo —cuenta cerrada, identidad local, sin fila de
+  // staff— y envolverlas cambiaría ese control de flujo, que es justo donde vive
+  // el arranque sin señal.
+  const pLocsDelStaff = sb.from('staff_locations').select('location_id').eq('staff_id', user.id);
   // Try to load existing org for this user
   const { data: staffRow, error: errStaffRow } = await sb
     .from('staff')
@@ -10414,13 +10468,13 @@ async function loadSettings(user) {
   if (staffRow) {
     currentOrgId = staffRow.org_id;
     currentUserRole = staffRow.role || currentUserRole;
-    const { data: locRows } = await sb.from('staff_locations').select('location_id').eq('staff_id', user.id);
+    // 28/10: esta lectura ya venía EN VUELO desde arriba — ver `pLocsDelStaff`.
+    // Va por `user.id`, igual que la de `staff`, así que no tenía por qué
+    // esperarla: eran dos olas donde alcanzaba una.
+    const { data: locRows } = await pLocsDelStaff;
     currentStaffAssignedLocationIds = (locRows || []).map(r => r.location_id);
     document.getElementById('settings-role').textContent =
       staffRow.role.charAt(0).toUpperCase() + staffRow.role.slice(1);
-    // Update home banner with operation name
-    await updateHomeBanner();
-
     // Load org details
     const { data: org } = await sb
       .from('organizations')
@@ -10443,6 +10497,13 @@ async function loadSettings(user) {
       }
       return false;
     }
+
+    // El panel de Inicio, con el centro que ya tenemos. Va DESPUÉS del chequeo
+    // de cuenta cerrada a propósito: antes se pintaba el nombre del centro y
+    // recién después se descubría que la cuenta estaba cerrada y se cerraba
+    // sesión. Pintar algo que se va a tirar un instante después es peor que
+    // tardar un instante más.
+    await updateHomeBanner(org);
 
     if (org) {
       document.getElementById('org-name').value = org.name || '';
@@ -10491,19 +10552,29 @@ async function loadSettings(user) {
       }
     }
 
-    // Load locations
-    await loadLocations();
-
-    // Load categories and trip types -- pre-check whichever categories are
-    // already active so "What does your operation run?" doubles as both the
-    // initial picker and the ongoing add/remove control (check a new box and
-    // hit Save to add it, uncheck one and Save to deactivate it).
-    await syncCategoryCheckboxes();
-    await renderTripTypesList();
-    // Las rutinas por departamento se dibujan acá, con el resto de Configuración:
-    // son 16 filas fijas y UNA consulta, así que no hay nada que diferir. Y si la
-    // consulta falla, la tarjeta lo dice en vez de quedar vacía.
-    await dibujarRutinasDeDepartamento();
+    // 28/10: LAS CUATRO EN UNA SOLA OLA, no cuatro esperas en fila.
+    //
+    // Medido antes de tocarlas, que es la mitad del cambio: las cuatro filtran
+    // **sólo por `currentOrgId`**, ninguna usa lo que deja otra, y cada una
+    // escribe en su propio contenedor del DOM. La única global que estaba en
+    // duda era `currentLocationId`, y se midió: la escribe
+    // `updateAppContext()` —dentro de `updateHomeBanner()`, que ya corrió— y
+    // **`loadLocations()` no la toca**. Sin esa medición esto habría sido un
+    // cambio a ciegas con la suite en verde.
+    //
+    // (Las de categorías y tipos de salida mantienen su orden relativo porque
+    // la segunda dibuja el aviso de listas que faltan y la primera marca las
+    // categorías activas; son dos contenedores distintos, pero leerlas juntas
+    // no las ordena, y el orden de pintado no cuesta un viaje.)
+    //
+    // `allSettled` y no `all`: si una falla, las otras tres tienen que
+    // dibujarse igual — cada una ya sabe decir que no pudo leer.
+    await Promise.allSettled([
+      loadLocations(),
+      syncCategoryCheckboxes(),
+      renderTripTypesList(),
+      dibujarRutinasDeDepartamento()
+    ]);
 
     // Keep the account switcher's saved copy of this session in sync,
     // including a friendly org/role label for its dropdown -- this is the one
