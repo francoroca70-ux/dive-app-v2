@@ -9421,7 +9421,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28a';
+const BUILD_WEB = '2026-10-28b';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -23631,7 +23631,20 @@ async function arrancarRutinaPropia(deptKey, cadence) {
 // editar, prender el otro, y comprobar en el barco. Prender sólo éste deja un
 // editor que escribe algo que nadie lee — el mismo error que dejar «Hacerla
 // propia» sin editor, un nivel más arriba.
-let EDITOR_RUTINAS = false;   // false | true
+// PRENDIDO el 28/10 por decisión de Fran, después de contestar midiendo las dos
+// preguntas que la regla 8 obliga a contestar antes de tocar un interruptor
+// (están en `Seven Seas Ops/El centro edita sus rutinas de departamento.md`):
+//
+//   1 · que esto estuviera en `false` con 11 plantillas en la base NO era una
+//       fuga: esas filas las escribe «Hacerla propia», que no pasa por acá.
+//       Medido: las 11 son copias intactas, 0 ítems retirados o editados — o
+//       sea nadie alcanzó este editor nunca.
+//   2 · prenderlo NO mueve ninguna llave. Este interruptor sólo OFRECE editar;
+//       de dónde lee el barco lo decide `FUENTE_RUTINAS_DEPTO`, que sigue en
+//       `'cableado'`. Editar una rutina hoy no cambia lo que se ve a bordo, y
+//       eso es a propósito: es el orden para probar las dos cosas sin que un
+//       fallo tape al otro.
+let EDITOR_RUTINAS = true;   // false | true
 
 async function toggleEditorDeRutina(deptKey, cadKey) {
   const destino = destinoDeRutina(deptKey, cadKey);

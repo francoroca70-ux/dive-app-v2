@@ -154,9 +154,18 @@ try {
   const lectores = lineasDeCodigoCon(html, 'EDITOR_RUTINAS').length;
   chk('EDITOR_RUTINAS aparece exactamente tres veces en código', lectores===3,
       lectores+' líneas (la declaración y los dos lugares de la tarjeta)');
-  chk('y arranca APAGADO en producción',
-      /let EDITOR_RUTINAS = false/.test(html),
-      'prenderlo es decisión de Fran, no efecto de un commit');
+  // PRENDIDO el 28/10, decisión de Fran. Lo que el guardián afirma no cambió de
+  // naturaleza: sigue afirmando que la posición es **explícita y declarada acá**,
+  // porque el riesgo nunca fue el valor sino que el valor se moviera sin que
+  // nadie lo decidiera. Prenderlo fue un acto de Fran y por eso el número de
+  // este test se da vuelta a mano, igual que con `COPIA_LOCAL` el 26/10.
+  //
+  // Y lo que sigue apagado es el otro, que es el que mueve la llave de los
+  // tildes: su guardián vive en `rutinas-de-departamento.test.js` y afirma
+  // `'cableado'`. Son dos interruptores con dos guardianes a propósito.
+  chk('la posición está declarada en un solo lugar, y hoy es PRENDIDO',
+      /let EDITOR_RUTINAS = true;/.test(html),
+      'moverla es decisión de Fran, no efecto de un commit');
 
   // ─── 6 · Una rutina sin copia no ofrece arrancar desde el editor ────────
   //
