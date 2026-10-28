@@ -9437,7 +9437,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28f';
+const BUILD_WEB = '2026-10-28g';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -17319,7 +17319,25 @@ function itemsDeLaSalida(tripId) {
 // la instancia de hoy conserva su lista aunque el dueño edite la plantilla al
 // mediodía, y la de mañana arranca con la nueva. **Para algo en curso,
 // estabilidad le gana a frescura.**
-let FUENTE_RUTINAS_DEPTO = 'cableado';   // 'cableado' | 'base'
+// PRENDIDO el 28/10, decisión de Fran, con el chequeo previo corrido el mismo
+// día y en cero filas.
+//
+// El chequeo no es ceremonia: este interruptor **mueve la llave de los tildes**
+// de posicional (`'0'`, `'1'`…) a los uuid de la plantilla, y los tildes ya
+// guardados están con la llave vieja. La defensa en memoria
+// —`rutinaItemsPorInstancia`, una resolución por instancia— **no cruza un
+// despliegue**: al prender, cada navegador recarga y resuelve de cero.
+//
+// Así que lo que había que medir era la intersección: ¿hay alguna instancia
+// ABIERTA, con tildes posicionales, de un departamento y cadencia que ya tenga
+// plantilla? Medido: **vacía**. De las 7 instancias con tildes posicionales, las
+// 2 con período abierto (anual 2026, mensual de octubre) no tienen plantilla, y
+// las 2 que la tienen son días cerrados.
+//
+// La consulta queda en `Seven Seas Ops/El centro edita sus rutinas de
+// departamento.md` y **se corre de nuevo antes de cualquier cambio de posición**,
+// porque es un estado de los datos y cambia solo.
+let FUENTE_RUTINAS_DEPTO = 'base';   // 'cableado' | 'base'
 
 // Un lugar decide, N preguntan — el patrón de `copiaLocalEncendida()`. Hizo
 // falta el 28/10: la tarjeta de rutinas tiene que decirle al centro qué pasa

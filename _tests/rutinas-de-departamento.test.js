@@ -41,8 +41,17 @@ function chk(n, ok, x) {
 const lineasRut = lineasDeCodigoCon(html, 'FUENTE_RUTINAS_DEPTO');
 chk('FUENTE_RUTINAS_DEPTO se lee en un solo lugar', lineasRut.length === 2,
     `${lineasRut.length} líneas: ${lineasRut.join(' | ').slice(0, 160)}`);
-chk('y arranca apagado en producción',
-    /let FUENTE_RUTINAS_DEPTO = 'cableado';/.test(html));
+// PRENDIDO el 28/10, decisión de Fran, con el chequeo previo en cero filas. Lo
+// que el guardián afirma no cambió de naturaleza: la posición es **explícita y
+// declarada en un solo lugar**, porque el riesgo nunca fue el valor sino que el
+// valor se moviera sin que nadie lo decidiera. Se da vuelta a mano, igual que
+// con `COPIA_LOCAL` el 26/10 y `EDITOR_RUTINAS` esta mañana.
+//
+// Y lo que vale recordar al volver atrás: pasar a `'cableado'` **también** mueve
+// la llave, así que el chequeo SQL se corre en las dos direcciones.
+chk('la posición está declarada en un solo lugar, y hoy es BASE',
+    /let FUENTE_RUTINAS_DEPTO = 'base';/.test(html),
+    'moverla es decisión de Fran, y antes va el chequeo de instancias abiertas');
 const lineasPl = lineasDeCodigoCon(html, 'FUENTE_PLANTILLAS');
 chk('y el de las salidas sigue en uno', lineasPl.length === 2,
     `${lineasPl.length} líneas`);
