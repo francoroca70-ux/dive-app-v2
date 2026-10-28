@@ -5150,8 +5150,8 @@ const TRANSLATIONS = {
     prep_read_only: 'Only the owner or a manager can edit this list.',
     rut_card_title: 'Department Routines',
     rut_card_desc: "The captain, deck, instructor and steward routines ship as a standard list. Make a copy to turn one into this shop's own.",
-    rut_offline_cableado: 'The standard list travels inside the app, so it always works with no connection. For now, editing a routine here does not change what the crew sees on the boat.',
-    rut_offline_base: "This shop's list downloads the first time someone opens that checklist with a signal, and stays on that phone. A phone that never opened it online shows the standard list on the boat.",
+    rut_offline_cableado: 'Routines still come from the standard list for the whole crew, so editing one here does not change what gets seen on the boat yet. The standard list travels inside the app, so it always works with no connection.',
+    rut_offline_base: "Each routine uses the standard list until this shop makes its own copy. From then on, the copy is what the crew sees on the boat: it downloads the first time someone opens that checklist with a signal and stays saved on that phone. A phone that never opened it online shows the standard list, and the record states which list it was signed against.",
     rut_standard: 'standard list · {n} items',
     rut_own_copy: "this shop's list · {n} items",
     rut_make_own: 'Make it ours',
@@ -6027,8 +6027,8 @@ const TRANSLATIONS = {
     prep_read_only: 'Sólo el dueño o un encargado puede editar esta lista.',
     rut_card_title: 'Rutinas por Departamento',
     rut_card_desc: 'Las rutinas de capitán, cubierta, instructores y stewards vienen con una lista estándar. Hacer una copia las convierte en la lista de este centro.',
-    rut_offline_cableado: 'La lista estándar viaja dentro de la app, así que funciona sin conexión siempre. Por ahora, editar una rutina acá no cambia lo que ve la tripulación en el barco.',
-    rut_offline_base: 'La lista de este centro se descarga la primera vez que alguien abre esa checklist con señal, y queda en ese teléfono. Un teléfono que nunca la abrió con conexión muestra la lista estándar en el barco.',
+    rut_offline_cableado: 'Las rutinas todavía salen de la lista estándar para toda la tripulación, así que editar una acá no cambia aún lo que se ve en el barco. La lista estándar viaja dentro de la app, así que funciona sin conexión siempre.',
+    rut_offline_base: 'Cada rutina usa la lista estándar hasta que este centro hace su copia. Desde ahí, la copia es la que ve la tripulación en el barco: se descarga la primera vez que alguien abre esa checklist con señal y queda guardada en ese teléfono. Un teléfono que nunca la abrió con conexión muestra la lista estándar, y el acta deja registrado con cuál se firmó.',
     rut_standard: 'lista estándar · {n} ítems',
     rut_own_copy: 'lista de este centro · {n} ítems',
     rut_make_own: 'Hacerla propia',
@@ -9437,7 +9437,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28d';
+const BUILD_WEB = '2026-10-28f';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -16923,8 +16923,15 @@ const CHECKLIST_CADENCIAS = {
 // Las cuatro rutinas de departamento NO se tocan: traen sus ítems cableados por
 // cadencia, así que agregarles noche y semanal serían ocho listas de ítems
 // inventadas. Lo que Fran pidió es que el CENTRO se arme su checklist de noche.
-// Prendido por Fran el 15/10 para probarlo en uso. Lo que falta medir y jsdom no
-// puede: que una checklist semanal NO se reinicie al día siguiente.
+// Prendido por Fran el 15/10 para probarlo en uso.
+//
+// 28/10: acá decía «lo que falta medir y jsdom no puede: que una checklist
+// semanal NO se reinicie al día siguiente», y eso estuvo trece días esperando a
+// que pasara una semana en el calendario. **No hacía falta esperar: hacía falta
+// forzar la fecha.** Barridos cuatro años de días en
+// `cadencias-noche-y-semanal.test.js`: los 7 días de cada semana comparten la
+// clave de período, 209 semanas sin colapsos, y los bordes de ISO-8601 donde una
+// semana cae en el año vecino. *«jsdom no puede» era «no se me ocurrió cómo».*
 const CADENCIAS_NUEVAS = true;
 function cadenciasQueSeOfrecen() {
   const base = ['morning', 'eod', 'monthly', 'yearly'];
@@ -17321,7 +17328,20 @@ let FUENTE_RUTINAS_DEPTO = 'cableado';   // 'cableado' | 'base'
 // razón al ponerse en rojo.
 function fuenteDeRutinas() { return FUENTE_RUTINAS_DEPTO; }
 
-// Qué pasa en el barco, en una línea, y SIEMPRE derivada del interruptor.
+// Qué pasa en el barco, y SIEMPRE derivado del interruptor.
+//
+// 28/10, pedido de Fran: que el texto sea el DEFINITIVO, el que explique cómo
+// funciona esto cuando esté todo cerrado. Eso es `rut_offline_base`, y está
+// escrito así — explica la regla entera: estándar hasta que el centro haga su
+// copia, la copia es lo que ve el barco, cómo llega al teléfono, el caso del
+// teléfono que nunca la abrió con señal, y que el acta registra con cuál se
+// firmó.
+//
+// Lo que NO se hizo, y es la parte que importa: **poner ese texto como el de
+// hoy.** Con el interruptor apagado le prometería al centro que la tripulación
+// ve su lista, y no la ve. Un cartel que afirma de más cuesta más que uno que
+// falta — así que la frase de hoy es corta y dice «todavía», y el día que se
+// prenda el interruptor la reemplaza la definitiva sin que nadie toque un texto.
 //
 // Lo pidió Fran el 28/10 con la pregunta correcta al revés: creía que una
 // rutina sin copia del centro no iba a cargar sin señal. Es lo contrario —la

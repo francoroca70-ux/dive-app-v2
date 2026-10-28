@@ -244,6 +244,54 @@ chk('y se puebla desde cadenciasQueSeOfrecen',
     /cadenciasQueSeOfrecen\(\)\s*\n?\s*\.map/.test(sinComentarios) ||
     /poblarCadenciasDelFormulario/.test(sinComentarios));
 
+// ─── 7 · Una semanal NO se reinicia al día siguiente ───
+//
+// Esto era «lo que falta medir y jsdom no puede», y estaba esperando a que
+// pasara una semana en el calendario. **No hacía falta esperar: hacía falta
+// forzar la fecha.** Un mes mirando de reojo una checklist semanal es una
+// medición peor que barrer cuatro años de fechas en un segundo.
+//
+// Lo que se afirma es la REGLA: todos los días de una misma semana tienen que
+// dar la misma clave de período, porque la clave es lo que decide si el progreso
+// de ayer sigue siendo el de hoy. Si el lunes y el martes dieran claves
+// distintas, la checklist semanal se reiniciaría cada mañana **sin que nada
+// falle y sin que nadie se entere** — que es exactamente el modo de falla que
+// esta rama vino a evitar.
+{
+  let noCoinciden = 0, semanas = new Set(), dias = 0;
+  for (let t = Date.UTC(2024,0,1); t < Date.UTC(2028,0,1); t += 86400000) {
+    const u = new Date(t);
+    const dia = new Date(u.getUTCFullYear(), u.getUTCMonth(), u.getUTCDate());
+    dias++;
+    const claveDelDia = T.semana(dia);
+    const claveDeSuLunes = T.semana(T.lunes(dia));
+    if (claveDelDia !== claveDeSuLunes) noCoinciden++;
+    semanas.add(claveDeSuLunes);
+  }
+  chk('los 7 días de una semana comparten la clave de período, en 4 años',
+      noCoinciden === 0, noCoinciden + ' de ' + dias + ' días no coinciden con su lunes');
+  chk('y las semanas no se colapsan ni se duplican', semanas.size === 209,
+      semanas.size + ' semanas distintas en 1461 días');
+
+  // Los bordes de ISO-8601, que es donde un cálculo de semana casero se rompe:
+  // una semana puede pertenecer al año anterior o al siguiente.
+  const bordes = [['2026-01-01','2026-W01'], ['2026-12-31','2026-W53'],
+                  ['2027-01-01','2026-W53'], ['2024-12-30','2025-W01'],
+                  ['2025-01-01','2025-W01'], ['2026-10-16','2026-W42']];
+  for (const [iso, esperada] of bordes) {
+    const [y,m,d] = iso.split('-').map(Number);
+    const got = T.semana(new Date(y, m-1, d));
+    chk('ISO ' + iso + ' cae en ' + esperada, got === esperada, 'dio ' + got);
+  }
+
+  // Y la otra mitad: que `weekly` llegue al grano de semana. Si cayera en el
+  // `default` de «por día» —que es el bug original de esta rama— todo lo de
+  // arriba seguiría en verde y la checklist se reiniciaría igual.
+  chk('weekly usa el grano de SEMANA y night el de día',
+      T.grano('weekly') === 'semana' && T.grano('night') === 'dia',
+      'weekly=' + T.grano('weekly') + ' night=' + T.grano('night'));
+}
+
 }catch(e){ chk('el cuerpo del test corrió hasta el final',false,String(e).slice(0,300)); }
 
 

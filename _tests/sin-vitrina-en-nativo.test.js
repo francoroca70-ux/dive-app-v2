@@ -349,7 +349,7 @@ function hayPrecioEnElDOM() {
   // Que haya que editar estas dos líneas en cada cambio es a propósito: la
   // regla 5 de CLAUDE.md dice que los dos números suben juntos, y esto es lo
   // que lo convierte en un paso que falla si se saltea.
-  const ESPERADO={ build:'2026-10-28d', sw:'seven-seas-v101' };
+  const ESPERADO={ build:'2026-10-28f', sw:'seven-seas-v103' };
   // Desde el 26/10 el build vive en UNA constante y de ahí salen la consola y
   // la pantalla de Configuración, así que se busca la constante y no el texto
   // del console.info — que ahora se arma por concatenación.
