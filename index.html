@@ -9437,7 +9437,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28g';
+const BUILD_WEB = '2026-10-28h';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -16732,7 +16732,7 @@ const DEPARTMENT_ROUTINES_I18N = {
   captain: {
     label: { en: 'Captain', es: 'Capitán' },
     cadences: {
-      morning: { role: 'captain', label: { en: 'Morning', es: 'Mañana' }, items: [
+      morning: { role: 'captain', items: [
         { en:'Engine started and warmed up — no unusual sounds or smoke', es:'Motor encendido y calentado — sin ruidos o humo inusual' },
         { en:'Engine oil level checked', es:'Nivel de aceite del motor revisado' },
         { en:'Fuel confirmed — sufficient for trip + 50% reserve', es:'Combustible confirmado — suficiente para la salida + 50% de reserva' },
@@ -16750,7 +16750,7 @@ const DEPARTMENT_ROUTINES_I18N = {
         { en:'Dive flag / alpha flag aboard (if applicable)', es:'Bandera de buceo / bandera alfa a bordo (si aplica)' },
         { en:'Daily log book started', es:'Bitácora diaria iniciada' },
       ]},
-      eod: { role: 'captain_eod', label: { en: 'End of Day', es: 'Fin del Día' }, items: [
+      eod: { role: 'captain_eod', items: [
         { en:'Engine shut down properly — hours logged', es:'Motor apagado correctamente — horas registradas' },
         { en:'Fuel topped up / level logged for tomorrow', es:'Combustible recargado / nivel registrado para mañana' },
         { en:'Bilge checked and pumped dry before leaving', es:'Sentina revisada y bombeada seca antes de irse' },
@@ -16760,7 +16760,7 @@ const DEPARTMENT_ROUTINES_I18N = {
         { en:'Mooring lines and fenders set for overnight', es:'Cabos de amarre y defensas listos para pasar la noche' },
         { en:'Daily log completed and signed — defects noted for maintenance', es:'Bitácora completada y firmada — defectos anotados para mantenimiento' },
       ]},
-      monthly: { role: 'captain_monthly', label: { en: 'Monthly', es: 'Mensual' }, items: [
+      monthly: { role: 'captain_monthly', items: [
         { en:'Fire extinguisher pressure gauge and service tag checked', es:'Manómetro del extintor y etiqueta de servicio revisados' },
         { en:'Flares checked for expiry date', es:'Bengalas revisadas por fecha de vencimiento' },
         { en:'Life raft service date confirmed still in date', es:'Fecha de servicio de la balsa salvavidas confirmada vigente' },
@@ -16770,7 +16770,7 @@ const DEPARTMENT_ROUTINES_I18N = {
         { en:'Hull below waterline inspected, if accessible', es:'Casco bajo la línea de flotación inspeccionado, si es accesible' },
         { en:'First aid kit restocked and expiry dates checked', es:'Botiquín reabastecido y fechas de vencimiento revisadas' },
       ]},
-      yearly: { role: 'captain_yearly', label: { en: 'Yearly', es: 'Anual' }, items: [
+      yearly: { role: 'captain_yearly', items: [
         { en:'Vessel survey / haul-out completed (if due)', es:'Inspección de casco / varado completado (si corresponde)' },
         { en:'Engine major service completed per manufacturer schedule', es:'Service mayor del motor completado según el fabricante' },
         { en:'Safety equipment certifications renewed (flares, life raft, extinguishers)', es:'Certificaciones de equipo de seguridad renovadas (bengalas, balsa, extintores)' },
@@ -16783,20 +16783,20 @@ const DEPARTMENT_ROUTINES_I18N = {
   instructor: {
     label: { en: 'Instructor / DM / Dive Guide', es: 'Instructor / DM / Guía de Buceo' },
     cadences: {
-      morning: { role: 'instructor_morning', label: { en: 'Morning', es: 'Mañana' }, items: [
+      morning: { role: 'instructor_morning', items: [
         { en:'Student waivers and certs checked', es:'Formularios y certificaciones de estudiantes revisados' },
         { en:'Gear manifest printed / confirmed', es:'Manifiesto de equipo impreso / confirmado' },
         { en:'Theory briefing materials ready', es:'Materiales de briefing teórico listos' },
         { en:'Emergency procedures briefed to students', es:'Procedimientos de emergencia explicados a los estudiantes' },
       ]},
-      eod: { role: 'instructor_eod', label: { en: 'End of Day', es: 'Fin del Día' }, items: [
+      eod: { role: 'instructor_eod', items: [
         { en:'Student progress logged', es:'Progreso de estudiantes registrado' },
         { en:'Gear returns confirmed — nothing left on boat', es:'Devolución de equipo confirmada — nada quedó en la embarcación' },
         { en:'Lost and found checked', es:'Objetos perdidos revisados' },
         { en:'Next day student list reviewed', es:'Lista de estudiantes del día siguiente revisada' },
         { en:'Equipment defects reported', es:'Defectos de equipo reportados' },
       ]},
-      monthly: { role: 'instructor_monthly', label: { en: 'Monthly', es: 'Mensual' }, items: [
+      monthly: { role: 'instructor_monthly', items: [
         { en:'Rental gear inventory counted and reconciled against the system', es:'Inventario de equipo de alquiler contado y conciliado contra el sistema' },
         { en:'Dive computers checked — firmware and battery health', es:'Computadoras de buceo revisadas — firmware y estado de batería' },
         { en:'First aid / oxygen provider certifications checked for expiry', es:'Certificaciones de primeros auxilios / oxígeno revisadas por vencimiento' },
@@ -16804,7 +16804,7 @@ const DEPARTMENT_ROUTINES_I18N = {
         { en:'Damaged or retired gear logged and removed from rotation', es:'Equipo dañado o retirado registrado y sacado de circulación' },
         { en:'Incident / near-miss log reviewed with team', es:'Registro de incidentes / cuasi-accidentes revisado con el equipo' },
       ]},
-      yearly: { role: 'instructor_yearly', label: { en: 'Yearly', es: 'Anual' }, items: [
+      yearly: { role: 'instructor_yearly', items: [
         { en:'Instructor certifications and insurance renewed', es:'Certificaciones de instructor y seguro renovados' },
         { en:'Emergency action plan reviewed and updated', es:'Plan de acción de emergencia revisado y actualizado' },
         { en:'Oxygen provider / first aid course renewed', es:'Curso de proveedor de oxígeno / primeros auxilios renovado' },
@@ -16816,7 +16816,7 @@ const DEPARTMENT_ROUTINES_I18N = {
   deck: {
     label: { en: 'Deck', es: 'Cubierta' },
     cadences: {
-      morning: { role: 'deck_morning', label: { en: 'Morning', es: 'Mañana' }, items: [
+      morning: { role: 'deck_morning', items: [
         { en:'Deck cleared of loose items and trip hazards', es:'Cubierta despejada de objetos sueltos y riesgos de tropiezo' },
         { en:'Cleaning supplies and rinse buckets stocked', es:'Insumos de limpieza y baldes de enjuague abastecidos' },
         { en:'Deck safety equipment in place (throw ropes, boat hooks)', es:'Equipo de seguridad de cubierta en su lugar (cabos de rescate, bicheros)' },
@@ -16824,7 +16824,7 @@ const DEPARTMENT_ROUTINES_I18N = {
         { en:'Ice/coolers prepped, if used for guest drinks or catering', es:'Hielo/conservadoras preparados, si se usan para bebidas o catering' },
         { en:'Boarding ladder / step checked and secure', es:'Escalera / escalón de embarque revisado y asegurado' },
       ]},
-      eod: { role: 'deck_eod', label: { en: 'End of Day', es: 'Fin del Día' }, items: [
+      eod: { role: 'deck_eod', items: [
         { en:'All tanks rinsed with fresh water and stored', es:'Todos los tanques enjuagados con agua dulce y guardados' },
         { en:'BCDs rinsed and hung to dry', es:'BCD enjuagados y colgados para secar' },
         { en:'Wetsuits rinsed and hung', es:'Trajes de neopreno enjuagados y colgados' },
@@ -16834,14 +16834,14 @@ const DEPARTMENT_ROUTINES_I18N = {
         { en:'Lines secured and fenders in place', es:'Cabos asegurados y defensas en su lugar' },
         { en:'Log book completed and signed', es:'Bitácora completada y firmada' },
       ]},
-      monthly: { role: 'deck_monthly', label: { en: 'Monthly', es: 'Mensual' }, items: [
+      monthly: { role: 'deck_monthly', items: [
         { en:'Non-slip deck surfaces checked for wear', es:'Superficies antideslizantes revisadas por desgaste' },
         { en:'Storage lockers cleaned and organized', es:'Compartimentos de guardado limpiados y organizados' },
         { en:'Canvas / bimini / shade covers inspected for damage', es:'Lonas / bimini / toldos revisados por daños' },
         { en:'Deck hardware checked for corrosion or looseness (cleats, rails)', es:'Herrajes de cubierta revisados por corrosión o aflojamiento (cornamusas, barandas)' },
         { en:'Trash / recycling systems checked and serviced', es:'Sistemas de basura / reciclaje revisados y mantenidos' },
       ]},
-      yearly: { role: 'deck_yearly', label: { en: 'Yearly', es: 'Anual' }, items: [
+      yearly: { role: 'deck_yearly', items: [
         { en:'Deck non-slip coating reapplied if needed', es:'Recubrimiento antideslizante de cubierta reaplicado si es necesario' },
         { en:'Canvas / upholstery deep cleaned or replaced', es:'Lonas / tapizados limpiados a fondo o reemplazados' },
         { en:'Deck hardware re-bedded / serviced as needed', es:'Herrajes de cubierta reasentados / mantenidos según necesidad' },
@@ -16852,7 +16852,7 @@ const DEPARTMENT_ROUTINES_I18N = {
   stewards: {
     label: { en: 'Stewards / Head Stewards', es: 'Stewards / Jefes de Stewards' },
     cadences: {
-      morning: { role: 'stewards_morning', label: { en: 'Morning', es: 'Mañana' }, items: [
+      morning: { role: 'stewards_morning', items: [
         { en:'Guest cabins and common areas tidied and inspected', es:'Camarotes y áreas comunes de huéspedes ordenados e inspeccionados' },
         { en:'Fresh towels and linens stocked', es:'Toallas y ropa de cama limpias abastecidas' },
         { en:'Galley prepped and breakfast/refreshment service ready', es:'Cocina preparada y servicio de desayuno/refrigerio listo' },
@@ -16860,7 +16860,7 @@ const DEPARTMENT_ROUTINES_I18N = {
         { en:'Guest comfort amenities checked (sunscreen, seasickness tablets, spare towels)', es:'Amenities de confort para huéspedes revisados (protector solar, pastillas para el mareo, toallas de repuesto)' },
         { en:'Trash bins emptied before departure', es:'Cestos de basura vaciados antes de zarpar' },
       ]},
-      eod: { role: 'stewards_eod', label: { en: 'End of Day', es: 'Fin del Día' }, items: [
+      eod: { role: 'stewards_eod', items: [
         { en:'Galley cleaned and equipment stowed', es:'Cocina limpiada y equipo guardado' },
         { en:'Dishes and glassware washed and put away', es:'Platos y vasos lavados y guardados' },
         { en:'Used linens and towels collected for laundry', es:'Ropa de cama y toallas usadas recolectadas para lavado' },
@@ -16868,14 +16868,14 @@ const DEPARTMENT_ROUTINES_I18N = {
         { en:'Perishable food stock checked and rotated', es:'Stock de alimentos perecederos revisado y rotado' },
         { en:'Trash and recycling taken ashore', es:'Basura y reciclaje llevados a tierra' },
       ]},
-      monthly: { role: 'stewards_monthly', label: { en: 'Monthly', es: 'Mensual' }, items: [
+      monthly: { role: 'stewards_monthly', items: [
         { en:'Full galley deep clean (fridge, oven, all surfaces)', es:'Limpieza profunda de cocina (heladera, horno, todas las superficies)' },
         { en:'Linen inventory counted and reconciled', es:'Inventario de ropa de cama contado y conciliado' },
         { en:'Guest amenity stock reordered (sunscreen, seasickness meds, first aid comfort items)', es:'Stock de amenities reordenado (protector solar, medicación para el mareo, artículos de confort)' },
         { en:'Cabin and upholstery inspected for wear, damage, or mildew', es:'Camarotes y tapizados inspeccionados por desgaste, daño u hongos' },
         { en:'Food safety and expiry dates checked across all stock', es:'Fechas de vencimiento y seguridad alimentaria revisadas en todo el stock' },
       ]},
-      yearly: { role: 'stewards_yearly', label: { en: 'Yearly', es: 'Anual' }, items: [
+      yearly: { role: 'stewards_yearly', items: [
         { en:'Galley equipment serviced (fridge, stove, water heater)', es:'Equipo de cocina revisado (heladera, cocina, calentador de agua)' },
         { en:'Linen and soft furnishing replacement assessed', es:'Reemplazo de ropa de cama y tapizados evaluado' },
         { en:'Food safety / hygiene certification renewed', es:'Certificación de seguridad alimentaria / higiene renovada' },
@@ -16891,7 +16891,21 @@ function departmentRoutinesGet() {
     Object.entries(dept.cadences).forEach(([cadKey, cad]) => {
       out[deptKey].cadences[cadKey] = {
         role: cad.role,
-        label: currentLanguage === 'es' ? cad.label.es : cad.label.en,
+        // 28/10: el nombre de la cadencia sale de `CHECKLIST_CADENCIAS`, que es
+        // el ÚNICO juego de nombres. Antes cada una de las 16 entradas de
+        // `DEPARTMENT_ROUTINES_I18N` traía su propio `label`, o sea un segundo
+        // juego — y el cambio del 15/10 («Mañana» se lee como *tomorrow*, pasó a
+        // «Inicio del día») entró en uno solo. Lo reportó Fran el 28/10: la
+        // tarjeta de Configuración decía «Mañana» y Checklists «Inicio del día»,
+        // para la misma rutina.
+        //
+        // Los 16 labels se BORRARON en vez de corregirse. Corregirlos los habría
+        // dejado coincidiendo hoy y libres de divergir mañana, que es el modo de
+        // falla de siempre: el defecto aparece donde la copia **falta**, o donde
+        // la corrección no llega. El test de cadencias ya afirmaba esta regla
+        // para la pantalla de Checklists desde el 15/10; la tarjeta de rutinas se
+        // escribió el 21/10 y nació afuera.
+        label: t(CHECKLIST_CADENCIAS[cadKey]),
         items: cad.items.map((i, idx) => ({ id: String(idx), text: currentLanguage === 'es' ? i.es : i.en }))
       };
     });
@@ -23618,7 +23632,16 @@ async function copiarRutinaEstandar(deptKey, cadence) {
     // (es un ROL del staff) y una rutina es del departamento, no de un rol —
     // 'deck' y 'stewards' no son roles. La convención la copia la tabla
     // hermana `custom_checklists`, que separa `dept_key` de `role_scope`.
-    title: cad.label.en || deptKey,
+    // El título que se guarda va SIEMPRE en inglés, no en el idioma de quien
+    // copia: las 11 plantillas que ya existen dicen `Morning` / `End of Day`, y
+    // un título en español para una copia nueva dejaría la misma cadencia con
+    // dos nombres en la base. Por eso se lee `TRANSLATIONS.en` a mano en vez de
+    // `t()`, que resuelve el idioma de quien mira.
+    //
+    // Y sale del mismo juego de nombres que todo lo demás desde el 28/10. Los
+    // valores no cambian —`cl_cadence_morning` en inglés ES `Morning`— así que
+    // esto no divide las plantillas viejas de las nuevas; se midió antes.
+    title: TRANSLATIONS.en[CHECKLIST_CADENCIAS[cadence]] || deptKey,
     active: true,
     created_by: currentUserId || null
   }).select('id').limit(1);

@@ -56,7 +56,8 @@ const hook=main+"\n;window.__t={"+
   "rol:(r)=>checklistRoleLabel(r),"+
   "setIdioma:(l)=>{currentLanguage=l;},"+
   "t:(k)=>t(k),"+
-  "cad:()=>CHECKLIST_CADENCIAS};";
+  "cad:()=>CHECKLIST_CADENCIAS,"+
+  "rutinas:()=>departmentRoutinesGet()};";
 let boot=null; try{window.eval(hook);}catch(e){boot=e;}
 
 let fail=0;
@@ -292,6 +293,28 @@ chk('y se puebla desde cadenciasQueSeOfrecen',
       'weekly=' + T.grano('weekly') + ' night=' + T.grano('night'));
 }
 
+// Y la mitad de comportamiento: que el nombre que la tarjeta dibuja sea el
+// mismo que el de Checklists, en los dos idiomas. Sin esto, alguien puede
+// reintroducir un segundo juego con otra forma y lo estructural de arriba pasa.
+for (const idioma of ['es','en']) {
+  T.setIdioma(idioma);
+  const rutinas = T.rutinas();
+  {
+    const malos = [];
+    for (const [deptKey, dept] of Object.entries(rutinas)) {
+      for (const cadKey of Object.keys(dept.cadences)) {
+        const esperado = T.t(T.cad()[cadKey]);
+        if (dept.cadences[cadKey].label !== esperado) {
+          malos.push(`${deptKey}.${cadKey}: "${dept.cadences[cadKey].label}" != "${esperado}"`);
+        }
+      }
+    }
+    chk(`en ${idioma}, la tarjeta y Checklists usan el mismo nombre de cadencia`,
+        malos.length === 0, malos.slice(0,3).join(' | '));
+  }
+}
+T.setIdioma('en');
+
 }catch(e){ chk('el cuerpo del test corrió hasta el final',false,String(e).slice(0,300)); }
 
 
@@ -309,6 +332,21 @@ chk('el selector de departamento ofrece las cadencias que tienen propias',
     (html.match(/function cadenciasVisiblesDelDepartamento\(/g)||[]).length===1 &&
     /\.filter\(cc => cc\.dept_key === currentDeptKey\)/.test(html),
     'las cableadas MÁS las que tengan al menos una checklist propia');
+
+// ─── UN solo juego de nombres, también en la tarjeta de Configuración ───
+//
+// Lo reportó Fran el 28/10: Configuración → Rutinas por Departamento decía
+// «Mañana» y Checklists decía «Inicio del día», **para la misma rutina**. La
+// causa es que cada una de las 16 entradas de `DEPARTMENT_ROUTINES_I18N` traía
+// su propio `label` de cadencia —un segundo juego de nombres— y el cambio del
+// 15/10 entró en uno solo.
+//
+// Los 16 se borraron en vez de corregirse: corregirlos los habría dejado
+// coincidiendo hoy y libres de divergir mañana. Esta comprobación afirma que no
+// vuelvan, que es lo que ningún arreglo puntual garantiza.
+chk('ninguna cadencia de rutina trae su propio nombre',
+    !/(?:morning|eod|night|weekly|monthly|yearly): \{ role: '[a-z_]+', label:/.test(html),
+    'los nombres de cadencia viven sólo en CHECKLIST_CADENCIAS');
 
 chk('y las etiquetas salen de CHECKLIST_CADENCIAS, no de un segundo juego',
     /t\(CHECKLIST_CADENCIAS\[cadKey\]\)/.test(html) &&
