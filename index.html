@@ -6480,6 +6480,18 @@ function refreshDynamicTranslations() {
     if (fleetSelectAllBtn) fleetSelectAllBtn.textContent = window.fleetShowAllBoats ? t('fleet_show_selected_only') : t('fleet_select_all');
     if (typeof loadCrew === 'function') loadCrew();
     if (typeof renderTripTypesList === 'function') renderTripTypesList();
+    // 28/10: FALTABA, y lo encontró Fran cambiando de idioma mientras probaba
+    // el editor de rutinas: la tarjeta de Tipos de Salida se traducía y la de
+    // Rutinas por Departamento se quedaba en el idioma anterior hasta recargar.
+    //
+    // No es un olvido aislado: esta función es una LISTA ESCRITA A MANO de ~23
+    // redibujos, y su modo de falla es que falte una entrada. Ya pasó con el
+    // detalle de un barco y con el cartel de sin conexión —los dos comentados
+    // más arriba— así que ésta es la tercera vez. Agregar una línea arregla el
+    // síntoma y deja el generador de defectos en pie; el arreglo de fondo (que
+    // cada camino de dibujo se registre, en vez de que alguien se acuerde de
+    // agregarlo acá) es un cambio aparte y está anotado como tal.
+    if (typeof dibujarRutinasDeDepartamento === 'function') dibujarRutinasDeDepartamento();
     if (typeof syncCategoryCheckboxes === 'function') syncCategoryCheckboxes();
     if (typeof loadLocations === 'function') loadLocations();
     if (document.getElementById('page-reports') && document.getElementById('page-reports').classList.contains('active')) {
@@ -9421,7 +9433,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28b';
+const BUILD_WEB = '2026-10-28c';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -23212,8 +23224,22 @@ function abrirSoloEstePanel(panelId) {
   const panel = document.getElementById(panelId);
   if (!panel) return null;
   const estabaAbierto = panel.style.display === 'block';
-  const alcance = document.getElementById('trip-types-list') || document;
-  alcance.querySelectorAll('.tt-panel').forEach(p => { p.style.display = 'none'; });
+  // 28/10: ESTO ESTABA ACOTADO A `#trip-types-list` y por eso el panel de una
+  // rutina no se cerraba nunca. Lo reportó Fran probando: apretar «Ítems» una
+  // segunda vez dejaba el panel abierto.
+  //
+  // La causa es una sola y vale más que el síntoma: los `.tt-panel` viven en
+  // DOS contenedores (`#trip-types-list` y `#dept-routines-list`), y acotar a
+  // uno hacía que (a) el propio nunca se escondiera —`estabaAbierto` salía true
+  // y la función devolvía null sin haberlo cerrado— y (b) un panel de tipo de
+  // salida y uno de rutina pudieran quedar **los dos abiertos**, que es
+  // exactamente la regla que esta función existe para sostener.
+  //
+  // Se busca en `document` a propósito, no en una lista de contenedores: una
+  // lista de dos es dos lugares donde puede faltar una entrada, y la tercera
+  // tarjeta que use `.tt-panel` se olvidaría en silencio. Es el mismo criterio
+  // por el que se cierra por CLASE y no por una lista de ids.
+  document.querySelectorAll('.tt-panel').forEach(p => { p.style.display = 'none'; });
   if (estabaAbierto) return null;   // era un toggle sobre el propio: queda cerrado
   panel.style.display = 'block';
   return panel;

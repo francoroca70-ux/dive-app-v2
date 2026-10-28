@@ -58,7 +58,8 @@ const hook=main+`
   leer:(d)=>plantillaParaEditar(d),
   dibujar:(d)=>dibujarPanelDePreparacion(d),
   interruptor:(v)=>{ EDITOR_RUTINAS=v; }, verInterruptor:()=>EDITOR_RUTINAS,
-  dibujarTarjeta:()=>dibujarRutinasDeDepartamento()
+  dibujarTarjeta:()=>dibujarRutinasDeDepartamento(),
+  abrirPanel:(id)=>abrirSoloEstePanel(id)
 };`;
 let boot=null; try{ window.eval(hook); }catch(e){ boot=e; }
 chk('arranca sin excepción', !boot, boot?String(boot&&boot.stack||boot).slice(0,300):'');
@@ -205,6 +206,72 @@ try {
     const decl = html.match(new RegExp('(async )?function ' + f + '\\(([^)]*)\\)'));
     chk(f + ' recibe un destino', !!decl && /^destino/.test(decl[2].trim()),
         decl ? decl[2] : '(no se encontró la declaración)');
+  }
+
+  // ─── 9 · Un solo panel abierto, también ENTRE tarjetas ─────────────────
+  //
+  // Lo encontró Fran el 28/10: apretar «Ítems» una segunda vez dejaba el panel
+  // abierto. La causa no era del editor: `abrirSoloEstePanel()` buscaba los
+  // `.tt-panel` dentro de `#trip-types-list`, y el panel de una rutina vive en
+  // `#dept-routines-list`. Fuera de ese alcance nunca se escondía — ni el
+  // propio al cerrarlo, ni el de la otra tarjeta al abrir uno nuevo.
+  //
+  // Esto afirma el COMPORTAMIENTO en las dos direcciones, no el alcance, para
+  // que siga valiendo si mañana la función se escribe de otra forma.
+  {
+    const cont = (id) => {
+      let c = d.getElementById(id);
+      if (!c) { c = d.createElement('div'); c.id = id; d.body.appendChild(c); }
+      return c;
+    };
+    const panel = (contId, panelId) => {
+      let p = d.getElementById(panelId);
+      if (!p) { p = d.createElement('div'); p.id = panelId; p.className = 'tt-panel';
+                p.style.display = 'none'; cont(contId).appendChild(p); }
+      return p;
+    };
+    const pTipo   = panel('trip-types-list',   '__panel-de-un-tipo');
+    const pRutina = panel('dept-routines-list','__panel-de-una-rutina');
+
+    T.abrirPanel('__panel-de-un-tipo');
+    chk('abrir el de un tipo de salida lo muestra', pTipo.style.display === 'block');
+
+    T.abrirPanel('__panel-de-una-rutina');
+    chk('abrir el de una rutina CIERRA el del tipo',
+        pRutina.style.display === 'block' && pTipo.style.display === 'none',
+        'tipo=' + pTipo.style.display + ' rutina=' + pRutina.style.display);
+
+    const devolvio = T.abrirPanel('__panel-de-una-rutina');
+    chk('apretar el mismo otra vez lo CIERRA', pRutina.style.display === 'none',
+        'quedó en ' + pRutina.style.display);
+    chk('y devuelve null para que quien llama no lo rellene', devolvio === null);
+
+    T.abrirPanel('__panel-de-un-tipo');
+    T.abrirPanel('__panel-de-una-rutina');
+    const abiertos = [...d.querySelectorAll('.tt-panel')]
+      .filter(p => p.style.display === 'block').length;
+    chk('nunca queda más de un .tt-panel abierto', abiertos === 1, abiertos + ' abiertos');
+  }
+
+  // ─── 10 · El cambio de idioma repinta la tarjeta de rutinas ────────────
+  //
+  // Lo encontró Fran el 28/10: Tipos de Salida se traducía y Rutinas por
+  // Departamento se quedaba en el idioma anterior hasta recargar la página.
+  //
+  // `refreshDynamicTranslations()` es una lista escrita a mano de ~23
+  // redibujos, y su modo de falla es que falte una entrada. Ya pasó dos veces
+  // antes (el detalle de un barco y el cartel de sin conexión), así que lo que
+  // se afirma es la entrada concreta — un guardián de la lista entera es el
+  // arreglo de fondo y es otro cambio.
+  {
+    const cuerpo = html.slice(html.indexOf('function refreshDynamicTranslations'),
+                              html.indexOf('function setLanguage'));
+    chk('refreshDynamicTranslations repinta la tarjeta de rutinas',
+        /dibujarRutinasDeDepartamento\(\)/.test(cuerpo),
+        'sin esto la tarjeta se queda en el idioma anterior hasta recargar');
+    chk('y lo hace al lado de la de tipos de salida, que es su par',
+        cuerpo.indexOf('renderTripTypesList()') < cuerpo.indexOf('dibujarRutinasDeDepartamento()'),
+        'las dos tarjetas de Configuración se repintan juntas');
   }
 
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,500)); }
