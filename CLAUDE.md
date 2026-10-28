@@ -472,12 +472,29 @@ haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 > sesión.** Teléfono nuevo, después de cerrar sesión, o pasadas las 12 h del
 > token sin haber visto red. Nada de eso es el día a día.
 >
-> **La promesa de la ficha de Play cambia** de *«Works offline»* a **«Sigue
-> funcionando cuando se cae la señal — hecha para centros con wifi inestable»*.
-> Esa frase **no está en el repo**: vive en los paneles de Play y App Store
-> Connect, que los cambia Fran (regla 1) y figuran sin confirmar hasta la
-> captura (regla 9). **La landing ya decía la verdad**; se le agregó la pregunta
-> `ln180`/`ln181` para el caso del día entero sin señal.
+> **La promesa de la ficha de Play ya no dice «Works offline»** — y la corrección
+> terminó siendo otra de la que yo había propuesto. Primero puse la frase de la
+> señal corregida como **descripción breve**, y Fran señaló que eso es **una
+> función, no la descripción de la app**: quien abre la ficha sin saber qué es
+> Seven Seas lee «sigue funcionando sin señal» y no se enteró de para qué sirve.
+> Quedó `Operaciones de buceo y charter: reservas, equipo, tripulación y cierre
+> de caja.` / `Dive and charter operations: bookings, gear, crew and daily
+> cash-up.`, y la frase de la señal vive en la **descripción completa**. *Un
+> diferenciador se lee después de saber qué cosa es la que se diferencia.*
+>
+> **Y se armó la ficha en `es-419`, que no existía** aunque la app es bilingüe
+> desde el primer día. Texto completo en `_play/ficha-es-419.md`.
+>
+> Esos textos **no están en el repo** más que como ese archivo de referencia:
+> viven en los paneles de Play y App Store Connect, que los cambia Fran (regla 1).
+> **Medido con captura el 28/10:** los cambios están en las *verificaciones
+> rápidas* de Play, que **no es «enviado a revisión» todavía** — Play los manda
+> solo al pasarlas, y con la publicación administrada desactivada salen a la
+> tienda sin otro paso. Esto se cierra **midiendo la ficha pública**, no con otra
+> captura. Capturas en español: no se subieron, Play hereda las de inglés.
+>
+> **La landing ya decía la verdad**; se le agregó la pregunta `ln180`/`ln181`
+> para el caso del día entero sin señal.
 >
 > **Apple deja de estar bloqueado por esto.** Lo que sigue en pie es probar el
 > build nuevo en un iPhone en modo avión, porque el 162001 es anterior al
