@@ -1106,8 +1106,36 @@ Lo decide `fuenteDeLaLista(role, tripId)` **dentro** de `buildRecordPayload()`,
 no en los tres que firman — es el dato que uno de los tres se olvidaría de pasar.
 `instructor` mira el centinela de `instructorItemsByTrip`; `custom_*` es del
 centro por definición; cualquier otro rol (las rutinas de departamento) es
-`hardwired`, porque `scope='department'` tiene **cero** plantillas y hasta que el
-A1 se construya eso es la verdad.
+`hardwired`. **Eso era cierto hasta el 21/10 y ya no:** el A1-a/b construyó el
+camino y hay **11 plantillas `scope='department'`** en la base (medido el 28/10).
+Desde entonces `fuenteDeLaLista()` mira el **centinela de la instancia**, igual
+que para una salida, y con `FUENTE_RUTINAS_DEPTO` apagado una rutina sin resolver
+devuelve `null` —«no se midió»— en vez de afirmar la genérica.
+
+> [!important] Las dos mediciones previas a prender las rutinas — 28/10
+> Pedidas por Fran, y las dos contestadas midiendo:
+>
+> **1 · `EDITOR_RUTINAS` está sano, y la duda era mía.** Figura en `false` con 11
+> plantillas en la base, pero esas filas las escribe «Hacerla propia»
+> (`copiarRutinaEstandar`), cerrada por `puedeEditarPlantillas()` y **no** por
+> ese interruptor, que controla sólo el editor de ítems. Medido: las 11 son
+> copias intactas, **0 ítems retirados o editados** — si el editor hubiera estado
+> alcanzable, se vería. Queda registrado aparte que el A1-b1 se construyó **sin
+> interruptor** y escribe en la base: es admisible porque con
+> `FUENTE_RUTINAS_DEPTO` en `'cableado'` **nadie lee esas filas**, así que la
+> escritura es inerte.
+>
+> **2 · Prender `FUENTE_RUTINAS_DEPTO` es seguro hoy, y «hoy» es la palabra.**
+> Cambia la llave de los tildes de posicional a uuid, y la defensa en memoria
+> (`rutinaItemsPorInstancia` por `scopeKey`) **no cruza un despliegue**. Medido:
+> de las 7 instancias con tildes posicionales, las 2 con período abierto (anual
+> 2026, mensual de octubre) **no tienen plantilla** y las 2 que la tienen son días
+> cerrados — la intersección es **vacía**. Por eso hay un **chequeo SQL previo
+> obligatorio**, que se corre el día que se prenda y no antes: cero filas = se
+> puede; una fila = esa tripulación perdería sus tildes y se espera a que el
+> período cierre. Está en
+> `Seven Seas Ops/El centro edita sus rutinas de departamento.md`, junto al orden
+> (primero `EDITOR_RUTINAS`, editar de verdad, después el otro).
 
 **En pantalla sólo se dice cuando NO era la del centro** —`lineaDeFuenteDeLista()`,
 un lugar, usado por la pantalla de la salida y por Logged Checklists— con el
