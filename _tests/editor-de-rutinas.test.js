@@ -60,7 +60,23 @@ const hook=main+`
   interruptor:(v)=>{ EDITOR_RUTINAS=v; }, verInterruptor:()=>EDITOR_RUTINAS,
   dibujarTarjeta:()=>dibujarRutinasDeDepartamento(),
   abrirPanel:(id)=>abrirSoloEstePanel(id),
-  fuente:(v)=>{ FUENTE_RUTINAS_DEPTO=v; }, lineaOffline:()=>lineaDeOfflineDeRutinas()
+  fuente:(v)=>{ FUENTE_RUTINAS_DEPTO=v; }, lineaOffline:()=>lineaDeOfflineDeRutinas(),
+  // C11 fase 2. Los cargadores se reemplazan por espías para medir QUÉ se
+  // repinta al cambiar de idioma, en vez de afirmar que el código tiene un if.
+  // Las entradas del registro son cierres —() => loadFleet()—, así que
+  // resuelven el nombre al llamarse y pisarlo acá alcanza.
+  llamados:[],
+  espiar:()=>{ const L=window.__t.llamados;
+    const esp=(n)=>()=>{ L.push(n); };
+    renderCalendar=esp('renderCalendar'); loadFleet=esp('loadFleet');
+    loadCrew=esp('loadCrew'); renderTripTypesList=esp('renderTripTypesList');
+    dibujarRutinasDeDepartamento=esp('dibujarRutinasDeDepartamento');
+    syncCategoryCheckboxes=esp('syncCategoryCheckboxes'); loadLocations=esp('loadLocations');
+    loadCompressors=esp('loadCompressors'); loadGearRegistry=esp('loadGearRegistry');
+    loadGearInventory=esp('loadGearInventory');
+  },
+  repintar:()=>refreshDynamicTranslations(),
+  entradas:()=>repintadosDeIdioma.map(e=>e.nombre)
 };`;
 let boot=null; try{ window.eval(hook); }catch(e){ boot=e; }
 chk('arranca sin excepción', !boot, boot?String(boot&&boot.stack||boot).slice(0,300):'');
@@ -318,6 +334,75 @@ try {
     const tarjeta = d.getElementById('dept-routines-list').innerHTML;
     chk('la tarjeta de rutinas la muestra', tarjeta.includes(T.lineaOffline().slice(0, 40)),
         'la función existía y el dato no llegaba a la pantalla — ya pasó una vez');
+  }
+
+  // ─── C11 fase 2 · Cambiar de idioma no sale a buscar pantallas invisibles ──
+  //
+  // Medido en el navegador antes de tocar nada: estando en Inicio, cambiar de
+  // idioma costaba **34 pedidos a Supabase en 2,2 s** — más que el arranque
+  // entero. Diez entradas del registro llamaban a una carga completa sin mirar
+  // si alguien estaba viendo esa pantalla.
+  //
+  // Esto NO afirma que el código tenga un `if`: pisa los diez cargadores con
+  // espías y mira **qué se llamó de verdad** desde cada pantalla. Un guardián
+  // que describe la implementación se rompe cuando la implementación mejora.
+  {
+    const PESADOS = ['renderCalendar','loadFleet','loadCrew','renderTripTypesList',
+                     'dibujarRutinasDeDepartamento','syncCategoryCheckboxes','loadLocations',
+                     'loadCompressors','loadGearRegistry','loadGearInventory'];
+    T.espiar();
+    const enPantalla = (id) => {
+      d.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const p = d.getElementById('page-' + id);
+      if (p) p.classList.add('active');
+      T.llamados.length = 0;
+      T.repintar();
+      return T.llamados.slice();
+    };
+
+    const desdeInicio = enPantalla('home');
+    chk('DESDE INICIO NO SE CARGA NINGUNA PANTALLA INVISIBLE',
+        desdeInicio.filter(n => PESADOS.includes(n)).length === 0,
+        'se llamó: ' + desdeInicio.join(', '));
+
+    // Y la otra mitad, que es la que vuelve esto una regla y no un apagado: la
+    // pantalla que SÍ se está mirando tiene que repintarse igual.
+    chk('estando en Flota se repinta la flota', enPantalla('fleet').includes('loadFleet'));
+    chk('estando en Tripulación se repinta la tripulación', enPantalla('crew').includes('loadCrew'));
+    chk('estando en el Calendario se repinta el calendario',
+        enPantalla('calendar').includes('renderCalendar'));
+
+    // Configuración es el caso que vuelve esto una fase aparte: hasta el 28/10
+    // era la única pantalla que NO se recargaba al abrirse, así que
+    // condicionarla la habría dejado en el idioma viejo hasta recargar la app.
+    const enConfig = enPantalla('settings');
+    for (const f of ['renderTripTypesList','dibujarRutinasDeDepartamento',
+                     'syncCategoryCheckboxes','loadLocations']) {
+      chk('estando en Configuración se repinta ' + f, enConfig.includes(f), enConfig.join(', '));
+    }
+    chk('y Configuración YA se recarga al abrirse, que es lo que lo permite',
+        /if \(id === 'settings'\) cargarContenidosDeConfiguracion\(\);/.test(html),
+        'sin esta rama, condicionar las cuatro las deja en el idioma anterior');
+    chk('los cuatro contenidos de Configuración se piden en UN solo lugar',
+        (html.match(/cargarContenidosDeConfiguracion\(\)/g) || []).length === 3,
+        'la declaración más los dos que la llaman: arranque y showPage');
+
+    // Equipo tiene tres vistas en la misma pantalla y cada una se recarga al
+    // tocar su pestaña, así que la condición es la vista, no la pantalla.
+    d.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    d.getElementById('page-gear').classList.add('active');
+    const vista = (id) => {
+      ['gear-compressors-view','gear-inventory-view','gear-registry-view']
+        .forEach(v => { const e = d.getElementById(v); if (e) e.style.display = 'none'; });
+      const e = d.getElementById(id); if (e) e.style.display = 'block';
+      T.llamados.length = 0; T.repintar(); return T.llamados.slice();
+    };
+    const conCompresores = vista('gear-compressors-view');
+    chk('en Equipo se repinta sólo la vista abierta',
+        conCompresores.includes('loadCompressors') &&
+        !conCompresores.includes('loadGearRegistry') &&
+        !conCompresores.includes('loadGearInventory'), conCompresores.join(', '));
+    chk('y al abrir el catálogo, el catálogo', vista('gear-registry-view').includes('loadGearRegistry'));
   }
 
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,500)); }

@@ -6507,13 +6507,38 @@ repintarAlCambiarIdioma('etiquetas de tipo de formulario', () => { waiverTypeLab
 repintarAlCambiarIdioma('lista de la firma remota', () => rwRenderList(),
   () => window.rwToken && window.rwData && visible('rw-list-view')());
 
-repintarAlCambiarIdioma('calendario', () => renderCalendar(), hayCentro);
+// ─── FASE 2 (28/10): CADA REDIBUJO QUE SALE A LA RED MIRA SI LA PANTALLA ESTÁ
+// A LA VISTA.
+//
+// Medido en el navegador ANTES de tocar nada, que es la mitad del cambio:
+// estando en Inicio, cambiar de idioma costaba **34 pedidos a Supabase en
+// 2.227 ms** — más pedidos que el arranque entero, que son 28. De las 29
+// entradas, diez llamaban a una carga completa sin mirar si alguien estaba
+// mirando esa pantalla, así que **33 de esos 34 pedidos eran de pantallas
+// invisibles**.
+//
+// Y lo que vuelve esto un condicional y no un mecanismo nuevo: **`showPage()`
+// ya recarga cada pantalla al abrirla**. Repintar Flota por adelantado no
+// adelanta nada; cuando alguien entre, se carga en el idioma nuevo igual. Es el
+// mismo hallazgo que borró las tres precargas del arranque.
+//
+// La excepción medida era Configuración, que NO se recargaba al abrirse — y por
+// eso la fase 2 le agrega su rama en `showPage()`, en vez de dejarla como el
+// único caso especial de la app.
+//
+// Lo que NO se condiciona, a propósito: las entradas que sólo escriben texto ya
+// presente en el DOM (el cartel de conexión, el saludo, la fecha, el build) y
+// los dos mapas de etiquetas, que son de los que lee todo lo demás. Cuestan
+// cero viajes y condicionarlas sería un caso especial sin beneficio.
+repintarAlCambiarIdioma('calendario', () => renderCalendar(),
+  () => hayCentro() && pantallaActiva('calendar')());
 // Los dos avisos del modal de una salida escriben su texto una vez, cuando
 // cambian sus campos. Si el modal está abierto al cambiar de idioma, hay que
 // volver a correrlos o el aviso visible queda en el idioma anterior.
 repintarAlCambiarIdioma('avisos del modal de salida', () => { checkBoatConflict(); checkGuestCapacity(); },
   () => hayCentro() && visible('modal-trip')());
-repintarAlCambiarIdioma('flota', () => loadFleet(), hayCentro);
+repintarAlCambiarIdioma('flota', () => loadFleet(),
+  () => hayCentro() && pantallaActiva('fleet')());
 // El detalle de un barco es otro camino de dibujo, y los cambios de idioma lo
 // salteaban por completo: se quedaba en el idioma en que se abrió.
 repintarAlCambiarIdioma('detalle del barco abierto', () => {
@@ -6523,12 +6548,20 @@ repintarAlCambiarIdioma('detalle del barco abierto', () => {
 repintarAlCambiarIdioma('botón de ver todas las embarcaciones', () => {
   const b = document.getElementById('btn-fleet-select-all');
   if (b) b.textContent = window.fleetShowAllBoats ? t('fleet_show_selected_only') : t('fleet_select_all');
-}, hayCentro);
-repintarAlCambiarIdioma('tripulación', () => loadCrew(), hayCentro);
-repintarAlCambiarIdioma('tipos de salida', () => renderTripTypesList(), hayCentro);
-repintarAlCambiarIdioma('rutinas por departamento', () => dibujarRutinasDeDepartamento(), hayCentro);
-repintarAlCambiarIdioma('categorías de operación', () => syncCategoryCheckboxes(), hayCentro);
-repintarAlCambiarIdioma('locales', () => loadLocations(), hayCentro);
+}, () => hayCentro() && pantallaActiva('fleet')());
+repintarAlCambiarIdioma('tripulación', () => loadCrew(),
+  () => hayCentro() && pantallaActiva('crew')());
+// Las cuatro de Configuración. Antes corrían siempre porque `showPage('settings')`
+// no las recargaba; ahora sí (ver la rama en `showPage()`), así que condicionarlas
+// ya no las deja en el idioma viejo.
+repintarAlCambiarIdioma('tipos de salida', () => renderTripTypesList(),
+  () => hayCentro() && pantallaActiva('settings')());
+repintarAlCambiarIdioma('rutinas por departamento', () => dibujarRutinasDeDepartamento(),
+  () => hayCentro() && pantallaActiva('settings')());
+repintarAlCambiarIdioma('categorías de operación', () => syncCategoryCheckboxes(),
+  () => hayCentro() && pantallaActiva('settings')());
+repintarAlCambiarIdioma('locales', () => loadLocations(),
+  () => hayCentro() && pantallaActiva('settings')());
 repintarAlCambiarIdioma('informes', () => { populateReportsScopeSelect(); loadReports(); },
   () => hayCentro() && pantallaActiva('reports')());
 repintarAlCambiarIdioma('arqueo de caja', () => loadCashUp(),
@@ -6542,11 +6575,13 @@ repintarAlCambiarIdioma('insignia de formularios', () => updateWaiversStatusBadg
 repintarAlCambiarIdioma('checklists', () => { initInstructorChecklist(); initDeptChecklists(); },
   () => hayCentro() && pantallaActiva('checklists')());
 repintarAlCambiarIdioma('catálogo de equipo', () => loadGearRegistry(),
-  () => hayCentro() && !!document.getElementById('gear-registry-list'));
-repintarAlCambiarIdioma('compresores', () => loadCompressors(), hayCentro);
+  () => hayCentro() && pantallaActiva('gear')() && visible('gear-registry-view')());
+// Las tres vistas de Equipo se recargan solas al tocar su pestaña
+// (`showGearView()`), así que alcanza con mirar si esa vista está a la vista.
+repintarAlCambiarIdioma('compresores', () => loadCompressors(),
+  () => hayCentro() && pantallaActiva('gear')() && visible('gear-compressors-view')());
 repintarAlCambiarIdioma('inventario de equipo', () => loadGearInventory(),
-  () => hayCentro() && !!document.getElementById('inventory-categories') &&
-        !!document.getElementById('inventory-categories').innerHTML.trim());
+  () => hayCentro() && pantallaActiva('gear')() && visible('gear-inventory-view')());
 repintarAlCambiarIdioma('tareas', () => { renderTasksMine(); renderTasksAll(); },
   () => hayCentro() && pantallaActiva('tasks')());
 repintarAlCambiarIdioma('ayuda', () => renderHelpPage(),
@@ -6555,6 +6590,9 @@ repintarAlCambiarIdioma('ayuda', () => renderHelpPage(),
 // El panel de Inicio va al final: `updateHomeBanner()` encadena los números y
 // el bloque de «para empezar», y los dos leen las etiquetas reconstruidas
 // arriba.
+// El panel de Inicio se queda sin condición de pantalla: Inicio es la que se
+// muestra al arrancar y la que más se mira, y sus números los encadena esta
+// misma función. Condicionarla ahorraría cero en el caso que importa.
 repintarAlCambiarIdioma('panel de Inicio', () => updateHomeBanner(), hayCentro);
 
 // Y el que recorre el registro. Esto es TODO lo que hace: ya no hay una lista
@@ -8446,6 +8484,33 @@ function ensurePageViewVisible(pageId) {
   }
 }
 
+// Los cuatro contenidos de Configuración que se leen de la base. Vive en una
+// función porque ahora lo piden DOS lugares —`loadSettings()` en el arranque y
+// `showPage('settings')` al abrirla— y hasta hoy era una ola suelta adentro del
+// primero.
+//
+// 28/10: hasta esta fecha Configuración era la ÚNICA pantalla que no se
+// recargaba al abrirse, y eso la volvía un caso especial en los dos lados: el
+// arranque tenía que traerla aunque nadie la mirara, y el cambio de idioma
+// tenía que repintarla siempre por lo mismo. Darle la rama que todas las demás
+// ya tenían saca el caso especial en vez de escribirlo dos veces más.
+//
+// `allSettled` y no `all`: si una falla, las otras tres se dibujan igual — cada
+// una ya sabe decir que no pudo leer.
+//
+// Medido antes de juntarlas (y es la mitad del cambio): las cuatro filtran sólo
+// por `currentOrgId`, ninguna usa lo que deja otra, y cada una escribe en su
+// propio contenedor. Las de categorías y tipos de salida conservan su orden
+// relativo porque la segunda dibuja el aviso de listas que faltan.
+async function cargarContenidosDeConfiguracion() {
+  await Promise.allSettled([
+    loadLocations(),
+    syncCategoryCheckboxes(),
+    renderTripTypesList(),
+    dibujarRutinasDeDepartamento()
+  ]);
+}
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
@@ -8473,6 +8538,7 @@ function showPage(id) {
   if (id === 'waivers') loadWaivers();
   if (id === 'reports') loadReports();
   if (id === 'help') renderHelpPage();
+  if (id === 'settings') cargarContenidosDeConfiguracion();
 }
 
 // ─── NAV ITEMS ───
@@ -9486,7 +9552,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28m';
+const BUILD_WEB = '2026-10-28n';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9609,10 +9675,19 @@ async function initAuthInner() {
     // con sus propias consultas, dentro de `updateHomeBanner()`. Medido antes
     // de borrar.
     //
-    // Las cuatro lecturas de Configuración sí se quedan: `showPage('settings')`
-    // **no** las recarga, así que diferirlas dejaría la pantalla vacía hasta
-    // recargar la app. Esa es la diferencia entre precargar y ser la única
-    // carga que hay.
+    // Las cuatro lecturas de Configuración se quedaban porque
+    // `showPage('settings')` **no** las recargaba: diferirlas dejaba la pantalla
+    // vacía hasta recargar la app. Esa es la diferencia entre precargar y ser la
+    // única carga que hay.
+    //
+    // **Eso cambió el 28/10 con la fase 2 del cambio de idioma**: Configuración
+    // ya tiene su rama en `showPage()`, igual que todas las demás. Así que estas
+    // cuatro pasaron a ser una precarga como las tres que se borraron arriba, y
+    // son candidatas a borrarse — 4 de los 28 pedidos del arranque. **No se
+    // borraron todavía porque falta una medición**: si algo de Inicio lee lo que
+    // alguna de las cuatro deja puesto, borrarlas lo rompería en silencio. Y
+    // «la suite en verde» no contesta esa pregunta: jsdom resuelve los stubs al
+    // instante y una dependencia de orden no aparece.
     // 28/10: ACÁ HABÍA UN `await loadCurrentUserRole()` Y SE BORRÓ.
   //
   // Leía `staff` y `staff_locations` por el id del usuario para dejar puestos
@@ -10609,12 +10684,7 @@ async function loadSettings(user) {
     //
     // `allSettled` y no `all`: si una falla, las otras tres tienen que
     // dibujarse igual — cada una ya sabe decir que no pudo leer.
-    await Promise.allSettled([
-      loadLocations(),
-      syncCategoryCheckboxes(),
-      renderTripTypesList(),
-      dibujarRutinasDeDepartamento()
-    ]);
+    await cargarContenidosDeConfiguracion();
 
     // Keep the account switcher's saved copy of this session in sync,
     // including a friendly org/role label for its dropdown -- this is the one

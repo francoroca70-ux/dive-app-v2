@@ -64,7 +64,7 @@ const MINIMOS = {
   'checklist-record.test.js':       57,
   'dept-visibility.test.js':        42,
   'editor-de-plantillas.test.js':   92,
-  'editor-de-rutinas.test.js':      41,
+  'editor-de-rutinas.test.js':      67,
   'etapa-3b-lista-por-tipo.test.js':25,
   'firmar-sin-senal.test.js':       16,
   'firmar-una-sola-vez.test.js':    27,
