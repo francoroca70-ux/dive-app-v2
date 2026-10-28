@@ -53,7 +53,7 @@ chk('son dos interruptores distintos y no uno compartido',
 chk('las tres capas no se duplicaron',
     (html.match(/async function cargarConTresCapas/g) || []).length === 1);
 chk('y cada camino le pasa su propio interruptor',
-    /fuente: FUENTE_PLANTILLAS/.test(html) && /fuente: FUENTE_RUTINAS_DEPTO/.test(html));
+    /fuente: FUENTE_PLANTILLAS/.test(html) && /fuente: fuenteDeRutinas\(\)/.test(html));
 
 // ─── 2 · Los seis lugares piden la lista por función ───────────────────────
 //

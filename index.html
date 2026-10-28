@@ -5150,6 +5150,8 @@ const TRANSLATIONS = {
     prep_read_only: 'Only the owner or a manager can edit this list.',
     rut_card_title: 'Department Routines',
     rut_card_desc: "The captain, deck, instructor and steward routines ship as a standard list. Make a copy to turn one into this shop's own.",
+    rut_offline_cableado: 'The standard list travels inside the app, so it always works with no connection. For now, editing a routine here does not change what the crew sees on the boat.',
+    rut_offline_base: "This shop's list downloads the first time someone opens that checklist with a signal, and stays on that phone. A phone that never opened it online shows the standard list on the boat.",
     rut_standard: 'standard list · {n} items',
     rut_own_copy: "this shop's list · {n} items",
     rut_make_own: 'Make it ours',
@@ -6025,6 +6027,8 @@ const TRANSLATIONS = {
     prep_read_only: 'Sólo el dueño o un encargado puede editar esta lista.',
     rut_card_title: 'Rutinas por Departamento',
     rut_card_desc: 'Las rutinas de capitán, cubierta, instructores y stewards vienen con una lista estándar. Hacer una copia las convierte en la lista de este centro.',
+    rut_offline_cableado: 'La lista estándar viaja dentro de la app, así que funciona sin conexión siempre. Por ahora, editar una rutina acá no cambia lo que ve la tripulación en el barco.',
+    rut_offline_base: 'La lista de este centro se descarga la primera vez que alguien abre esa checklist con señal, y queda en ese teléfono. Un teléfono que nunca la abrió con conexión muestra la lista estándar en el barco.',
     rut_standard: 'lista estándar · {n} ítems',
     rut_own_copy: 'lista de este centro · {n} ítems',
     rut_make_own: 'Hacerla propia',
@@ -9433,7 +9437,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28c';
+const BUILD_WEB = '2026-10-28d';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -17310,6 +17314,28 @@ function itemsDeLaSalida(tripId) {
 // estabilidad le gana a frescura.**
 let FUENTE_RUTINAS_DEPTO = 'cableado';   // 'cableado' | 'base'
 
+// Un lugar decide, N preguntan — el patrón de `copiaLocalEncendida()`. Hizo
+// falta el 28/10: la tarjeta de rutinas tiene que decirle al centro qué pasa
+// sin señal, y eso **depende de la posición del interruptor**. Leer la
+// constante ahí serían tres lecturas y el guardián —que afirma dos— tendría
+// razón al ponerse en rojo.
+function fuenteDeRutinas() { return FUENTE_RUTINAS_DEPTO; }
+
+// Qué pasa en el barco, en una línea, y SIEMPRE derivada del interruptor.
+//
+// Lo pidió Fran el 28/10 con la pregunta correcta al revés: creía que una
+// rutina sin copia del centro no iba a cargar sin señal. Es lo contrario —la
+// lista estándar vive en `index.html`, que el service worker cachea y que viaja
+// dentro del binario, así que es la que **siempre** está. La que puede faltar
+// es la del centro, que vive en la base.
+//
+// Y el texto no se escribe a mano para el estado de hoy: se deriva, porque un
+// cartel escrito para una posición del interruptor queda mintiendo el día que
+// se mueva. Es el mismo criterio del acta y su `items_source`.
+function lineaDeOfflineDeRutinas() {
+  return fuenteDeRutinas() === 'base' ? t('rut_offline_base') : t('rut_offline_cableado');
+}
+
 // scopeKey → filas bilingües de la plantilla, o el centinela 'cableado'.
 //
 // La caída a lo cableado **también se guarda**, por lo mismo que en las salidas:
@@ -17321,7 +17347,7 @@ function nombreEnCacheDeRutina(deptKey, cadence) { return `rutina_${deptKey}_${c
 
 async function filasDePlantillaDeRutina(deptKey, cadence) {
   return cargarConTresCapas({
-    fuente: FUENTE_RUTINAS_DEPTO,
+    fuente: fuenteDeRutinas(),
     nombreEnCache: nombreEnCacheDeRutina(deptKey, cadence),
     cableado: () => null,
     convertir: (filas) => filas,
@@ -23612,7 +23638,12 @@ async function dibujarRutinasDeDepartamento() {
     return;
   }
   const rutinas = departmentRoutinesGet();
-  cont.innerHTML = Object.entries(rutinas).map(([deptKey, dept]) => `
+  // Qué pasa en el barco, arriba de todo, porque es lo que decide si vale la
+  // pena editar. No se dibuja en la rama de error de arriba a propósito: ahí lo
+  // que hay que leer es que la medición falló, y un segundo párrafo tapa eso.
+  cont.innerHTML = `<p style="font-size:0.76rem;color:var(--muted);margin:0 0 12px;">${
+    escapeHtml(lineaDeOfflineDeRutinas())}</p>` +
+    Object.entries(rutinas).map(([deptKey, dept]) => `
     <div style="margin-bottom:14px;">
       <div style="font-size:0.78rem;font-weight:700;color:var(--blue);margin-bottom:6px;">${escapeHtml(dept.label)}</div>
       ${Object.entries(dept.cadences).map(([cadKey, cad]) => {

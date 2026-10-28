@@ -59,7 +59,8 @@ const hook=main+`
   dibujar:(d)=>dibujarPanelDePreparacion(d),
   interruptor:(v)=>{ EDITOR_RUTINAS=v; }, verInterruptor:()=>EDITOR_RUTINAS,
   dibujarTarjeta:()=>dibujarRutinasDeDepartamento(),
-  abrirPanel:(id)=>abrirSoloEstePanel(id)
+  abrirPanel:(id)=>abrirSoloEstePanel(id),
+  fuente:(v)=>{ FUENTE_RUTINAS_DEPTO=v; }, lineaOffline:()=>lineaDeOfflineDeRutinas()
 };`;
 let boot=null; try{ window.eval(hook); }catch(e){ boot=e; }
 chk('arranca sin excepción', !boot, boot?String(boot&&boot.stack||boot).slice(0,300):'');
@@ -272,6 +273,47 @@ try {
     chk('y lo hace al lado de la de tipos de salida, que es su par',
         cuerpo.indexOf('renderTripTypesList()') < cuerpo.indexOf('dibujarRutinasDeDepartamento()'),
         'las dos tarjetas de Configuración se repintan juntas');
+  }
+
+  // ─── 11 · La línea de offline se DERIVA del interruptor ────────────────
+  //
+  // Fran preguntó el 28/10 si una rutina sin copia del centro iba a cargar sin
+  // señal. Es al revés: la lista estándar vive en `index.html`, que el service
+  // worker cachea y que viaja en el binario, así que es la que siempre está.
+  // La que puede faltar es la del centro, que vive en la base.
+  //
+  // Lo que se afirma acá no es el texto: es que **cambiar el interruptor cambia
+  // la frase**. Un cartel escrito a mano para el estado de hoy queda mintiendo
+  // el día que el interruptor se mueva, y nadie se enteraría.
+  {
+    const fuenteOriginal = /let FUENTE_RUTINAS_DEPTO = '(\w+)'/.exec(html)[1];
+
+    T.fuente('cableado');
+    const conCableado = T.lineaOffline();
+    T.fuente('base');
+    const conBase = T.lineaOffline();
+    T.fuente(fuenteOriginal);
+
+    chk('con el interruptor apagado dice que la estándar viaja en la app',
+        /sin conexión|no connection/i.test(conCableado), conCableado.slice(0, 90));
+    chk('y avisa que editar todavía no cambia el barco',
+        /no cambia|does not change/i.test(conCableado), conCableado.slice(0, 90));
+    chk('con el interruptor prendido habla de descargar con señal',
+        /se descarga|downloads/i.test(conBase), conBase.slice(0, 90));
+    chk('y dice qué ve un teléfono que nunca la abrió con conexión',
+        /lista estándar|standard list/i.test(conBase), conBase.slice(0, 90));
+    chk('CAMBIAR EL INTERRUPTOR CAMBIA LA FRASE', conCableado !== conBase,
+        'si son iguales, el cartel no se deriva de nada');
+    chk('ninguna de las dos queda sin traducir', !/^\[/.test(conCableado) && !/^\[/.test(conBase),
+        conCableado.slice(0, 40) + ' | ' + conBase.slice(0, 40));
+
+    // Y la tarjeta la muestra: la frase sin un lugar donde aparecer es la mitad
+    // del arreglo, que es el error del 15/10 con `items_source`.
+    T.interruptor(true);
+    await T.dibujarTarjeta();
+    const tarjeta = d.getElementById('dept-routines-list').innerHTML;
+    chk('la tarjeta de rutinas la muestra', tarjeta.includes(T.lineaOffline().slice(0, 40)),
+        'la función existía y el dato no llegaba a la pantalla — ya pasó una vez');
   }
 
 } catch(e){ chk('el test corrió entero', false, String(e&&e.stack||e).slice(0,500)); }
