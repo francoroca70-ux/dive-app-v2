@@ -460,6 +460,38 @@ hizo» no es una medición hasta que alguien lo ve.*
 incrustado daría PGRST200), que las 5 columnas del select están, y que RLS
 haciéndose pasar por Fran devuelve filas — 9 plantillas y 156 ítems.
 
+> [!important] Qué quiere decir «funciona sin conexión» — decidido por Fran el 28/10
+> **Ninguna app con cuenta arranca de cero sin internet, y está bien que sea
+> así.** Lo que importa es que el instructor **se conecta en el centro a la
+> mañana y la app le sigue sirviendo todo el día en el barco**. Y el dato de
+> oficio que lo sostiene, que es de Fran: **nadie cierra del todo una app de
+> trabajo durante la jornada** — queda en segundo plano, y volver de WhatsApp
+> sin datos no recarga nada.
+>
+> **El límite real, en una línea: lo único que necesita conexión es iniciar
+> sesión.** Teléfono nuevo, después de cerrar sesión, o pasadas las 12 h del
+> token sin haber visto red. Nada de eso es el día a día.
+>
+> **La promesa de la ficha de Play cambia** de *«Works offline»* a **«Sigue
+> funcionando cuando se cae la señal — hecha para centros con wifi inestable»*.
+> Esa frase **no está en el repo**: vive en los paneles de Play y App Store
+> Connect, que los cambia Fran (regla 1) y figuran sin confirmar hasta la
+> captura (regla 9). **La landing ya decía la verdad**; se le agregó la pregunta
+> `ln180`/`ln181` para el caso del día entero sin señal.
+>
+> **Apple deja de estar bloqueado por esto.** Lo que sigue en pie es probar el
+> build nuevo en un iPhone en modo avión, porque el 162001 es anterior al
+> arreglo del 14/10.
+>
+> **Y `SESION_SIN_VERIFICAR` pierde casi todo su sentido**: se construyó para el
+> arranque en frío sin señal, que ya no es el caso que importa. Queda apagado, y
+> la pregunta no es cuándo prenderlo sino si conviene **borrar ese camino**.
+>
+> **La lección de producto:** dos días persiguiendo un caso que el oficio dice
+> que no existe. Cuando Fran describe cómo se usa la herramienta en un barco,
+> eso es un dato y va **antes** de medir. Detalle en
+> `Decisiones/Qué quiere decir que la app funciona sin conexión.md`.
+
 > [!warning] Medido el 26/10: la app ABRE sin señal, y adentro no hay nada
 > Fran probó desde el binario (TestFlight **203001**): logueado, app cerrada del
 > todo, wifi y datos apagados, abrir. **Abre** — eso cierra la mitad del 14/10.

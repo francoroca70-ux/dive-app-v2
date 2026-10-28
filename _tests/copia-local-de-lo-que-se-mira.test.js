@@ -272,6 +272,32 @@ chk('y el camino del login también',
   /guardarIdentidadLocal\(\);\n\s*showScreen\('app'\);/.test(html),
   'si esto falla, quien se loguea no deja identidad y el arreglo offline no tiene de dónde leer');
 
+
+// ─── 16 · Quién soy se lee del disco, no de la red ────────────────────────
+//
+// Fran recargó sin señal y vio el avatar en «?» tras QUINCE SEGUNDOS. Una sola
+// llamada explica los dos síntomas: `sb.auth.getUser()` **valida contra el
+// servidor de Auth en cada llamada**, no lee del disco. Sin señal devuelve
+// null (el '?') después de reintentar con backoff (los 15 s).
+//
+// Medido ese día: 35 llamadas a getUser() contra 4 a getSession(). Casi toda
+// la app sale a preguntar por la red algo que ya tiene guardado — la causa de
+// fondo de que no sirva en un barco.
+{
+  const codigoSolo = html.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+  const getUser = (codigoSolo.match(/sb\.auth\.getUser\(\)/g) || []).length;
+  chk('existe usuarioActual() y sale de la sesión, no de la red',
+    /async function usuarioActual\(\)[\s\S]{0,160}sb\.auth\.getSession\(\)/.test(html));
+  chk('el avatar del selector de cuenta ya no usa getUser()',
+    /const user = await usuarioActual\(\);\n\s*const currentUserId = user \? user\.id : null;/.test(html));
+  chk('el rol del arranque de checklists tampoco',
+    /const yo = await usuarioActual\(\);/.test(html));
+  // Los 33 restantes son deuda CONOCIDA y medida. El número sólo puede bajar:
+  // si sube, alguien agregó una llamada nueva a la red para saber quién mira.
+  chk('las llamadas a getUser() no aumentan',
+    getUser <= 33, 'hay ' + getUser + ' — eran 35 el 27/10 y bajaron a 33; este número sólo baja');
+}
+
 console.log('\n' + pass + ' pasaron, ' + fail + ' fallaron');
 process.exit(fail ? 1 : 0);
 

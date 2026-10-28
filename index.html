@@ -9421,7 +9421,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-27f';
+const BUILD_WEB = '2026-10-28a';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -10161,7 +10161,7 @@ async function renderAccountSwitcherMenu() {
   if (!avatarEl || !headerEl || !listEl) return;
 
 
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const currentUserId = user ? user.id : null;
   const accounts = getSavedAccounts();
   const currentAccount = accounts.find(a => a.userId === currentUserId);
@@ -16343,6 +16343,39 @@ function leerIdentidadLocal(userId) {
 // de medir.
 let COPIA_LOCAL = 'encendido';   // 'apagado' | 'encendido'
 
+// Quién soy, SIN salir a la red.
+//
+// 27/10. Fran recargó la web sin señal y le salió el avatar con un «?» arriba
+// a la derecha, después de **quince segundos** de pantalla de carga. Una sola
+// llamada explica los dos síntomas:
+//
+//     const { data: { user } } = await sb.auth.getUser();
+//     avatarEl.textContent = (displayEmail || '?').charAt(0);
+//
+// `getUser()` **no lee del disco: valida contra el servidor de Auth en cada
+// llamada**. Sin señal falla, `user` queda en null, el avatar cae al '?' — y el
+// reintento con backoff de la librería es el cuarto de minuto que esperó.
+//
+// `getSession()` en cambio sale de `localStorage` y no toca la red (la única
+// excepción es refrescar un token vencido, y para eso está la ventana de 12 h
+// del JWT que Fran subió ese día).
+//
+// Medido el mismo día: **35 llamadas a `getUser()` contra 4 a `getSession()`.**
+// O sea que casi toda la app sale a preguntar por la red algo que ya tiene en
+// el disco — ésa es la causa de fondo de que no sirva en un barco. Hoy se
+// cambian los DOS del arranque, que son los que se ven; el barrido de los 33
+// restantes va aparte y con su guardián, porque dos reemplazos mecánicos
+// salieron mal ese mismo día y 35 a las apuradas es cómo se rompe algo.
+//
+// Sobre la seguridad, que es la pregunta obvia: la validación de `getUser()` no
+// protege nada acá. El token que viaja en cada consulta es el mismo, y **quien
+// decide qué puede ver cada uno es RLS, del lado del servidor**. Mentirse a uno
+// mismo en el navegador no abre ninguna puerta.
+async function usuarioActual() {
+  const { data: { session } } = await sb.auth.getSession();
+  return (session && session.user) || null;
+}
+
 // Quien quiera saber si está prendido pregunta ACÁ, no mira la constante.
 //
 // El 27/10 agregué una segunda comparación directa en `loadSettings()` y el
@@ -16946,7 +16979,8 @@ async function initChecklists() {
   arrancarRefrescoDeProgreso();
   // Get current user role
   if (currentOrgId) {
-    const { data: s } = await sb.from('staff').select('role').eq('id', (await sb.auth.getUser()).data.user.id).single();
+    const yo = await usuarioActual();
+    const { data: s } = yo ? await sb.from('staff').select('role').eq('id', yo.id).single() : { data: null };
     currentUserRole = s?.role || 'instructor';
   }
 
