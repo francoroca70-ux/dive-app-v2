@@ -292,10 +292,22 @@ chk('y el camino del login también',
     /const user = await usuarioActual\(\);\n\s*const currentUserId = user \? user\.id : null;/.test(html));
   chk('el rol del arranque de checklists tampoco',
     /const yo = await usuarioActual\(\);/.test(html));
-  // Los 33 restantes son deuda CONOCIDA y medida. El número sólo puede bajar:
-  // si sube, alguien agregó una llamada nueva a la red para saber quién mira.
-  chk('las llamadas a getUser() no aumentan',
-    getUser <= 33, 'hay ' + getUser + ' — eran 35 el 27/10 y bajaron a 33; este número sólo baja');
+  // 28/10: BARRIDAS LAS 33. Eran 35 el 26/10, bajaron a 2 ese día y a **cero**
+  // el 28, después de que Fran esperara quince segundos en el celular por esto.
+  //
+  // El guardián deja de ser un techo que baja y pasa a afirmar la regla: **para
+  // saber quién mira no se sale a la red**. Cero significa que la próxima
+  // llamada que alguien agregue se ve en rojo el mismo día, en vez de sumarse a
+  // una deuda que nadie vuelve a contar.
+  //
+  // Si algún día hace falta validar de verdad contra el servidor de Auth —no
+  // para saber quién mira, sino para echar a alguien ya dado de baja— va con su
+  // motivo escrito acá al lado, como las excepciones de los otros guardianes.
+  chk('para saber quién mira NUNCA se sale a la red',
+    getUser === 0, 'hay ' + getUser + ' llamadas a getUser() en código; la regla es cero');
+  chk('y lo pregunta por usuarioActual(), que lee la sesión del disco',
+    (codigoSolo.match(/await usuarioActual\(\)/g) || []).length >= 29,
+    'son los 33 barridos más los 2 del 27/10');
 }
 
 console.log('\n' + pass + ' pasaron, ' + fail + ' fallaron');

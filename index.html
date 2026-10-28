@@ -7522,7 +7522,7 @@ async function openPaddleCheckout(tier, cycle) {
   feedback.textContent = t('bp_redirecting');
   feedback.className = 'save-feedback visible';
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    const user = await usuarioActual();
     // Inline checkout (not overlay): renders branded directly into
     // #paddle-checkout-container using the colors/fonts set in Paddle ->
     // Checkout settings -> Inline tab, instead of Paddle's default green
@@ -8625,7 +8625,7 @@ async function renderHomeGettingStartedOrFinance() {
   const container = document.getElementById('home-dynamic-section');
   if (!container) return;
 
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const myId = user && user.id;
   const blocks = [];
 
@@ -8953,7 +8953,7 @@ function refreshCurrentView() {
 // ─── AUTH ───
 let currentStaffAssignedLocationIds = [];
 async function loadCurrentUserRole() {
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (!user) return;
   const { data: s } = await sb.from('staff').select('role').eq('id', user.id).single();
   currentUserRole = s?.role || null;   // null = no se sabe, NUNCA un rol inventado
@@ -9128,7 +9128,7 @@ function closeRosterCellModal() {
 }
 document.getElementById('btn-save-roster-location').addEventListener('click', async () => {
   const locationId = document.getElementById('roster-cell-location').value;
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   // El borrado es requisito del upsert: si falla y seguimos, el día queda con
   // disponibilidad Y local a la vez, que se contradicen.
   if (!(await borrarOAvisar(sb.from('staff_availability').delete().eq('staff_id', rosterCellStaffId).eq('start_date', rosterCellDate).eq('end_date', rosterCellDate)))) return;
@@ -9139,7 +9139,7 @@ document.getElementById('btn-save-roster-location').addEventListener('click', as
   renderRosterGrid();
 });
 async function setRosterCellStatus(status) {
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (!(await borrarOAvisar(sb.from('staff_daily_location').delete().eq('staff_id', rosterCellStaffId).eq('work_date', rosterCellDate)))) return;
   await sb.from('staff_availability').insert({
     org_id: currentOrgId, staff_id: rosterCellStaffId, status, start_date: rosterCellDate, end_date: rosterCellDate, set_by: user.email
@@ -9205,7 +9205,7 @@ document.getElementById('btn-save-task-list').addEventListener('click', async ()
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const { data: list, error } = await sb.from('task_lists').insert({
     org_id: currentOrgId, location_id: currentLocationId, title, due_date: date || null, created_by: user.email
   }).select().single();
@@ -9219,7 +9219,7 @@ document.getElementById('btn-save-task-list').addEventListener('click', async ()
 });
 async function renderTasksMine() {
   const container = document.getElementById('tasks-mine-view');
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const { data: staffRow } = await sb.from('staff').select('id').eq('id', user.id).single();
   const myStaffId = staffRow?.id;
   if (!myStaffId) { container.innerHTML = ''; return; }
@@ -9308,7 +9308,7 @@ async function openTaskDetail(taskListId) {
   }
   currentTaskListId = taskListId;
 
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const { data: staffRow } = await sb.from('staff').select('id').eq('id', user.id).single();
   currentTaskStaffId = staffRow?.id;
 
@@ -9385,7 +9385,7 @@ document.getElementById('btn-save-task-note').addEventListener('click', async ()
 async function checkTasksNotifications() {
   const badge = document.getElementById('tasks-notification-badge');
   if (!badge) return;
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (!user) { badge.style.display = 'none'; return; }
   const { count } = await sb.from('task_list_assignees').select('id', { count: 'exact', head: true }).eq('staff_id', user.id).is('seen_at', null);
   badge.style.display = (count && count > 0) ? 'block' : 'none';
@@ -9402,7 +9402,7 @@ async function checkTasksNotifications() {
 async function checkChecklistNotifications() {
   const badge = document.getElementById('checklist-notification-badge');
   if (!badge) return;
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (!user || !currentOrgId) { badge.style.display = 'none'; return; }
   const today = fechaLocal();
   const { data: assigned } = await sb.from('trip_crew')
@@ -9444,7 +9444,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28i';
+const BUILD_WEB = '2026-10-28j';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9910,7 +9910,7 @@ async function performSignOutCurrentAccount() {
   // A full sign-out revokes this session's refresh token server-side, so the
   // copy sitting in ss_saved_accounts would fail next time the switcher tried
   // to use it -- drop it from the list rather than leave a dead entry.
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (user) removeSavedAccount(user.id);
   await sb.auth.signOut();
   showScreen('login');
@@ -10237,7 +10237,7 @@ async function renderAccountSwitcherMenu() {
 // identically instead of drifting apart over time. Removing anyone else just
 // drops their saved tokens from this device; they can always log back in.
 function removeAccountFromSwitcher(userId) {
-  sb.auth.getUser().then(({ data: { user } }) => {
+  usuarioActual().then((user) => {
     if (user && user.id === userId) {
       performSignOutCurrentAccount();
     } else {
@@ -10327,7 +10327,7 @@ document.getElementById('account-switcher-add').addEventListener('click', () => 
 // Google's own account menu offers it.
 document.getElementById('account-switcher-forget').addEventListener('click', () => {
   closeAccountSwitcherMenu();
-  sb.auth.getUser().then(({ data: { user } }) => {
+  usuarioActual().then((user) => {
     if (user) removeAccountFromSwitcher(user.id);
   });
 });
@@ -10703,7 +10703,7 @@ document.getElementById('btn-save-org').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = t('common_saving');
 
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
 
   if (!currentOrgId) {
     // Create new org
@@ -12114,7 +12114,7 @@ async function confirmCheckIn(groupId) {
     return;
   }
   const boxes = document.querySelectorAll(`.checkin-box-${groupId}`);
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const now = new Date().toISOString();
   for (const box of boxes) {
     const pid = box.dataset.pid;
@@ -12583,7 +12583,7 @@ async function confirmAddExpense(date) {
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const { error } = await sb.from('cash_expenses').insert({
     org_id: currentOrgId, location_id: currentLocationId, expense_date: date,
     description, amount, logged_by: user.email
@@ -12607,7 +12607,7 @@ async function saveCashUp(date, cashTotal, cardTotal, transferTotal, paidOut) {
   const countedInput = document.getElementById('cashup-counted').value;
   const counted = countedInput ? parseFloat(countedInput) : null;
   const notes = document.getElementById('cashup-notes').value.trim();
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   btn.disabled = true; btn.textContent = t('cu_saving');
   const { error } = await sb.from('cash_ups').upsert({
     org_id: currentOrgId, location_id: currentLocationId, cash_up_date: date,
@@ -12727,7 +12727,7 @@ async function confirmOpenTab() {
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   await sb.from('guest_tabs').insert({
     org_id: currentOrgId, location_id: currentLocationId,
     guest_name: name,
@@ -12849,7 +12849,7 @@ async function confirmPayTabFull(tabId, unpaidGroups) {
     return;
   }
   if (btn) btn.disabled = true;
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const today = fechaLocal();
   for (const g of unpaidGroups) {
     await sb.from('payments').insert({
@@ -12878,7 +12878,7 @@ async function closeGuestTab(tabId, linkedGroups) {
     feedback.className = 'save-feedback error visible';
     return;
   }
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   await sb.from('guest_tabs').update({ status: 'closed', closed_by: user.email, closed_at: new Date().toISOString() }).eq('id', tabId);
   await loadGuestTabs();
 }
@@ -13513,7 +13513,7 @@ document.getElementById('btn-save-trip').addEventListener('click', async () => {
     contact_name: primaryGroup.contact_name || null,
     booking_mode: window.currentBookingMode || 'private',
     status: 'scheduled',
-    created_by: (await sb.auth.getUser()).data.user.id
+    created_by: (await usuarioActual()).id
   };
 
   let tripId = currentTripId;
@@ -14571,7 +14571,7 @@ document.getElementById('btn-confirm-signature').addEventListener('click', async
     }
   }
 
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const { data: staffRow } = await sb.from('staff').select('full_name').eq('id', user.id).single();
 
   const payload = {
@@ -14657,7 +14657,7 @@ async function saveMedicalClearance(sp, status, feedback, opts) {
     return;
   }
 
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const { data: staffRow } = await sb.from('staff').select('full_name').eq('id', user.id).single();
   const now = new Date().toISOString();
 
@@ -15521,7 +15521,7 @@ async function confirmLogPayment(groupId, total, paid) {
   // A note used to be required whenever the payment exceeds what's owed
   // (overpayment/tip) -- per Fran, that's an unnecessary blocker. The note
   // field still appears as an optional way to explain the overage.
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   await sb.from('payments').insert({
     org_id: currentOrgId, location_id: currentLocationId, trip_id: currentTripId, group_id: groupId,
     amount, method, payment_date: fechaLocal(),
@@ -19373,10 +19373,10 @@ async function saveNewCustomChecklist() {
     return;
   }
   const deptKey = deptKeyForRole(roleScope);
-  const { data: userData } = await sb.auth.getUser();
+  const yo = await usuarioActual();
   const { error } = await sb.from('custom_checklists').insert({
     org_id: currentOrgId, dept_key: deptKey, role_scope: roleScope, cadence,
-    title, items, created_by: userData?.user?.id || null,
+    title, items, created_by: yo?.id || null,
   });
   if (error) {
     errEl.textContent = error.message || 'Error saving checklist.';
@@ -19599,8 +19599,8 @@ async function renderCustomChecklistsForCurrentView() {
   const container = document.getElementById('dept-custom-list');
   if (!container) return;
   cargarChecklistsAbiertas();
-  const { data: userData } = await sb.auth.getUser();
-  const myUserId = userData?.user?.id;
+  const yo = await usuarioActual();
+  const myUserId = yo?.id;
   const matching = customChecklists.filter(cc => cc.dept_key === currentDeptKey && cc.cadence === currentCadenceKey);
   // Cada una tiene su propia instancia en curso.
   for (const cc of matching) {
@@ -20200,7 +20200,7 @@ async function updateStaffDayRate(staffId, value) {
 }
 async function updateBankedDays(staffId, newValue) {
   const value = parseFloat(newValue) || 0;
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const { data: current } = await sb.from('staff').select('banked_days').eq('id', staffId).single();
   const delta = value - (current?.banked_days || 0);
   await sb.from('staff').update({ banked_days: value }).eq('id', staffId);
@@ -20298,7 +20298,7 @@ document.getElementById('btn-submit-dayoff').addEventListener('click', async () 
 });
 async function approveDayOffRequest(reqId, staffId, start, end) {
   if (!(await showConfirmModal(t('crew_approve_confirm')))) return;
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   await sb.from('day_off_requests').update({ status: 'approved', decided_by: user.email, decided_at: new Date().toISOString() }).eq('id', reqId);
   await sb.from('staff_availability').insert({
     org_id: currentOrgId, staff_id: staffId, status: 'dayoff', start_date: start, end_date: end, set_by: user.email
@@ -20309,7 +20309,7 @@ async function approveDayOffRequest(reqId, staffId, start, end) {
 async function openDenyDayOffModal(reqId) {
   const note = await showPromptModal(t('crew_deny_reason_prompt'), t('crew_deny_reason_placeholder'));
   if (!note) return;
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   await sb.from('day_off_requests').update({ status: 'denied', manager_note: note, decided_by: user.email, decided_at: new Date().toISOString() }).eq('id', reqId);
   await loadDayOffRequests();
   await checkCrewNotifications();
@@ -20425,7 +20425,7 @@ document.getElementById('btn-send-invite').addEventListener('click', async () =>
     full_name: fullName,
     location_id: locationId || null,
     token,
-    created_by: (await sb.auth.getUser()).data.user.id
+    created_by: (await usuarioActual()).id
   });
 
   if (invErr) {
@@ -21140,7 +21140,7 @@ document.getElementById('btn-save-boat-maintenance').addEventListener('click', a
   }
 
   btn.disabled = true; btn.textContent = t('fleet_saving');
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const logPayload = {
     org_id: currentOrgId,
     boat_id: boatId,
@@ -21740,7 +21740,7 @@ document.getElementById('btn-save-gear-maintenance').addEventListener('click', a
   }
 
   btn.disabled = true; btn.textContent = t('common_saving');
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   const logPayload = {
     org_id: currentOrgId,
     gear_id: gearId,
@@ -22974,7 +22974,7 @@ async function deleteInspectionItem(itemId) {
   await loadInspectionChecklist();
 }
 async function tickInspectionItem(itemId, status) {
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (!user) return;
   let notes = null;
   if (status !== 'pass') {
