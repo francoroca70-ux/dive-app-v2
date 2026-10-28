@@ -7,6 +7,17 @@
 //   deptKeyForRole()                 → bajo qué pestaña se ARCHIVAN sus
 //                                      checklists propias
 // Este test cubre los dos justamente para que no se los toque a la vez.
+// 28/10 · El default del rol dejó de inventar.
+//
+// Lo encontró Fran probando en el celular sin datos: es DUEÑO y Checklists le
+// mostró UN departamento. Medido en la app en vivo: `currentUserRole` tenía
+// `'instructor'` como valor inicial, así que un rol que no llega a cargar no
+// deja a la app sin saber — la deja **afirmando** que sos instructor, y a un
+// dueño le esconde tres departamentos sin decir nada.
+//
+// Lo que estas comprobaciones afirman es la REGLA, no el valor: que el valor
+// inicial no sea un rol real, que no se invente uno en ningún camino, y que con
+// el rol sin confirmar se muestren todos los departamentos **y se diga**.
 const fs=require('fs'); const {JSDOM}=require('./jsdom');
 const P=require('path').join(__dirname,'..','index.html');
 const html=fs.readFileSync(P,'utf8');
@@ -94,5 +105,46 @@ chk('NO se le muestra al dueño', !muestra('owner'));
 chk('NO se le muestra al gerente', !muestra('manager'));
 chk('NO se le muestra al capitán (ya ve los cuatro)', !muestra('captain'));
 chk('NO se le muestra a un rol fuera del mapa', !muestra('front_desk'));
+
+// ── El rol no se inventa ──
+//
+// Las tres primeras miran el CÓDIGO, porque el valor inicial se evalúa al
+// arrancar y a esa altura ya se perdió: para cuando el test puede preguntar,
+// alguien ya lo pisó.
+const sinComentarios = html.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');
+chk('el valor inicial del rol no es un rol real',
+    /let currentUserRole = null;/.test(sinComentarios),
+    'null = no se sabe; un rol de verdad ahí es una afirmación sin medir');
+chk('y ningún camino cae a un rol inventado',
+    !/\|\| 'instructor'/.test(sinComentarios),
+    'eran tres lugares: el inicial, el arranque con sesión guardada y loadSettings');
+chk('hay un solo lugar que decide si el rol está sin confirmar',
+    (sinComentarios.match(/function rolSinConfirmar\(/g) || []).length === 1);
+
+// ── Y con el rol sin confirmar: se ven TODOS, y se dice ──
+window.__t.setRole(null); window.__t.elevated(false);
+const sinRol = window.visibleDeptKeysForCurrentUser();
+chk('sin rol confirmado se listan los cuatro departamentos',
+    sinRol.length === 4, sinRol.join(','));
+chk('y eso NO es lo que pasaba con el default viejo',
+    JSON.stringify(ve('instructor')) !== JSON.stringify(sinRol),
+    'con instructor era un solo departamento — ese era el síntoma de Fran');
+
+window.__t.setRole(null);
+chk('rolSinConfirmar() lo detecta', window.rolSinConfirmar() === true);
+chk('y con un rol de verdad no molesta', (window.__t.setRole('owner'), window.rolSinConfirmar() === false));
+
+// El aviso tiene que existir en los DOS idiomas, y no afirmar de más: dice que
+// no se pudo confirmar, no que el rol cambió.
+for (const clave of ["cl_rol_sin_confirmar: '"]) {
+  chk('el aviso está definido dos veces (en y es)',
+      (html.match(new RegExp('cl_rol_sin_confirmar:', 'g')) || []).length === 2);
+}
+chk('el aviso no vosea', !/cl_rol_sin_confirmar: '[^']*(confirmá|fijate|mirá|podés|tenés)/.test(html));
+chk('la pantalla tiene dónde mostrarlo',
+    /id="dept-rol-sin-confirmar"/.test(html));
+chk('y initDeptChecklists lo pinta',
+    /dept-rol-sin-confirmar/.test(sinComentarios.slice(sinComentarios.indexOf('function initDeptChecklists'))),
+    'una función que decide sin pantalla donde aparecer es la mitad del arreglo');
 
 process.exit(fail);

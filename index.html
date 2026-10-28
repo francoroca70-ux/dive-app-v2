@@ -3462,6 +3462,11 @@ body { background: var(--navy); color: var(--text); }
               <div class="sf-group" style="max-width:260px;">
                 <label class="sf-label" data-i18n="cl_department_label">Department</label>
                 <select class="sf-input" id="dept-tabs" onchange="selectDeptDepartment(this.value)"></select>
+                <!-- El texto lo pone initDeptChecklists(), no `data-i18n`: sólo
+                     se dibuja cuando el rol NO se pudo confirmar, y un aviso
+                     siempre presente en el HTML se acaba mostrando en el caso
+                     en que no corresponde. -->
+                <p id="dept-rol-sin-confirmar" style="display:none;font-size:0.76rem;color:var(--muted);margin:6px 0 0;"></p>
                 <!-- Sólo aparece para quien tiene la vista acotada por su rol.
                      A dueño y gerente no se les muestra: ya ven todo. -->
                 <label class="dept-show-all" id="dept-show-all-row" style="display:none;">
@@ -4952,6 +4957,7 @@ const TRANSLATIONS = {
     cl_includes_spares: 'includes {n} spares',
     cl_dept_captain: 'Captain', cl_dept_instructor: 'Instructor / DM / Dive Guide', cl_dept_deck: 'Deck', cl_dept_stewards: 'Stewards',
     cl_cadence_morning: 'Morning', cl_cadence_eod: 'End of Day', cl_cadence_monthly: 'Monthly', cl_cadence_yearly: 'Yearly',
+    cl_rol_sin_confirmar: 'Your role could not be confirmed, so every department is listed. Reconnecting puts back the view that matches your role.',
     cl_cadence_night: 'Night', cl_cadence_weekly: 'Weekly',
     cl_crew_signoff_status: 'Crew Sign-Off Status', cl_vessel_safety_check: 'Vessel Safety Check',
     cl_complete_once_daily: 'Complete once per day before first departure. Independent of individual trips.',
@@ -5827,6 +5833,7 @@ const TRANSLATIONS = {
     // día» no tiene la otra lectura y además hace par con «Fin del día», que es
     // la etiqueta de la otra cadencia diaria.
     cl_cadence_morning: 'Inicio del día', cl_cadence_eod: 'Fin del día', cl_cadence_monthly: 'Mensual', cl_cadence_yearly: 'Anual',
+    cl_rol_sin_confirmar: 'No se pudo confirmar tu rol, así que se listan todos los departamentos. Al reconectar vuelve la vista que corresponde a tu rol.',
     // «Noche» y no «Fin de jornada»: en un charter la salida de noche es una
     // salida distinta, no el cierre del día. Pedido por Fran el 14/10.
     cl_cadence_night: 'Noche', cl_cadence_weekly: 'Semanal',
@@ -8949,7 +8956,7 @@ async function loadCurrentUserRole() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
   const { data: s } = await sb.from('staff').select('role').eq('id', user.id).single();
-  currentUserRole = s?.role || 'instructor';
+  currentUserRole = s?.role || null;   // null = no se sabe, NUNCA un rol inventado
   const { data: locRows } = await sb.from('staff_locations').select('location_id').eq('staff_id', user.id);
   currentStaffAssignedLocationIds = (locRows || []).map(r => r.location_id);
 }
@@ -9437,7 +9444,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28h';
+const BUILD_WEB = '2026-10-28i';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9597,7 +9604,7 @@ function arrancarSinVerificar({ sesion, vencidaHace }) {
   currentUserId = sesion.user.id;
   currentOrgId = id.orgId;
   currentLocationId = id.locationId || null;
-  currentUserRole = id.role || 'instructor';
+  currentUserRole = id.role || null;   // null = no se sabe, NUNCA un rol inventado
   currentStaffAssignedLocationIds = id.locationIds || [];
   window.currentCaptainElevated = !!id.captainElevated;
 
@@ -17003,7 +17010,29 @@ let currentChecklistTripId = null;
 // ya no puede incrustarla igual. Ver la migración
 // checklist_records_trip_fecha_hora.
 let checklistTripById = {};
-let currentUserRole = 'instructor';
+// 28/10: ESTO ERA `'instructor'`, y era una mentira silenciosa.
+//
+// Lo encontró Fran probando en el celular sin datos: es DUEÑO y la pantalla de
+// Checklists le mostró **un solo departamento**, instructor. Medido en su
+// navegador con la app en vivo:
+//
+//   currentUserRole = 'instructor'  → visibleDeptKeysForCurrentUser() = ['instructor']
+//   currentUserRole = null          → ['captain','instructor','deck','stewards']
+//
+// O sea el síntoma ERA el default. Si el rol no se alcanza a cargar, la app no
+// se queda sin saber: **afirma que sos instructor**, y a un dueño le esconde
+// tres departamentos sin decir una palabra. Es la misma familia que la lista
+// vacía del 26/10 —«no pude leer» dibujado igual que «no hay nada»— pero del
+// lado de quién sos.
+//
+// `null` quiere decir **no se sabe**, y es la dirección segura: medido llamando
+// a los ocho ayudantes de permiso con null en la app en vivo, los ocho
+// devuelven `false` y ninguno lanza. No se gana nada; se deja de inventar.
+// Y `visibleDeptKeysForCurrentUser()` ya devolvía TODOS los departamentos para
+// un rol sin entrada en el mapa, así que ver las pestañas con el rol sin
+// confirmar es el comportamiento que ya existía — lo único que cambia es que
+// ahora también se **dice**.
+let currentUserRole = null;
 // Id del usuario logueado, cacheado al arrancar la sesión. Existe para que
 // escrituras frecuentes —los tildes de una checklist— no tengan que pedirlo
 // por red cada vez. Lo setea initAuthInner() y lo limpia el cierre de sesión.
@@ -17018,7 +17047,7 @@ async function initChecklists() {
   if (currentOrgId) {
     const yo = await usuarioActual();
     const { data: s } = yo ? await sb.from('staff').select('role').eq('id', yo.id).single() : { data: null };
-    currentUserRole = s?.role || 'instructor';
+    currentUserRole = s?.role || null;   // null = no se sabe, NUNCA un rol inventado
   }
 
   // Show/hide logged-checklists tab based on role
@@ -19651,10 +19680,22 @@ document.getElementById('btn-cancel-new-checklist').addEventListener('click', ()
 document.getElementById('btn-save-new-checklist').addEventListener('click', saveNewCustomChecklist);
 
 // ─── DEPARTMENT ROUTINES (Captain / Instructor-DM / Deck × Morning / EOD / Monthly / Yearly) ───
+// Si el rol no se pudo confirmar, se DICE. Antes la pantalla mostraba la lista
+// de departamentos del rol inventado y se leía como correcta — a Fran, dueño,
+// le mostró un solo departamento sin una palabra de por qué.
+//
+// Es síncrona y no mira la red: el único hecho que necesita es si el rol llegó.
+function rolSinConfirmar() { return !currentUserRole; }
+
 function initDeptChecklists() {
   const tabRow = document.getElementById('dept-tabs');
   const depts = departmentRoutinesGet();
   const visibleKeys = visibleDeptKeysForCurrentUser();
+  const aviso = document.getElementById('dept-rol-sin-confirmar');
+  if (aviso) {
+    aviso.style.display = rolSinConfirmar() ? 'block' : 'none';
+    if (rolSinConfirmar()) aviso.textContent = t('cl_rol_sin_confirmar');
+  }
   if (!visibleKeys.includes(currentDeptKey)) currentDeptKey = visibleKeys[0];
   // Dropdowns instead of a pill row per department/cadence -- much less
   // vertical/horizontal space on mobile once a shop has several departments.
