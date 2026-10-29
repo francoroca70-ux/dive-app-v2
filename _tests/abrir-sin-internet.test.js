@@ -311,8 +311,18 @@ chk('ya no queda el mapa enumerado de 17 entradas',
       'eran cuatro esperas en fila');
 
   // Los tres avisos, en una sola ola.
-  chk('los tres avisos del arranque van en una sola ola',
-      /Promise\.allSettled\(\[\s*checkCrewNotifications\(\),\s*checkTasksNotifications\(\),\s*checkChecklistNotifications\(\)\s*\]\)/.test(sinComentarios));
+  // La REGLA: los tres se piden juntos, en un solo lugar, y ninguno se espera
+  // en fila. Este guardián se puso en rojo el 29/10 cuando los tres se mudaron
+  // a la ola del panel de Inicio — afirmaba la FORMA de la llamada, no la regla.
+  // Tercera vez en dos días con la misma causa.
+  {
+    const juntos = [...sinComentarios.matchAll(/checkCrewNotifications\(\)[\s\S]{0,120}checkTasksNotifications\(\)[\s\S]{0,120}checkChecklistNotifications\(\)/g)].length;
+    chk('los tres avisos se piden juntos y en UN solo lugar', juntos === 1,
+        juntos + ' lugares — dos serían seis consultas para tres números');
+    chk('y ninguno se espera en fila',
+        !/await checkCrewNotifications\(\);\s*await/.test(sinComentarios) &&
+        !/await checkTasksNotifications\(\);\s*await checkChecklist/.test(sinComentarios));
+  }
 
   // allSettled y no all: una lectura que falla no se lleva a las otras.
   chk('y usa allSettled, no all',
@@ -328,9 +338,13 @@ chk('ya no queda el mapa enumerado de 17 entradas',
       /const \{ data: locRows \} = await pLocsDelStaff;/.test(sinComentarios));
 
   // El nombre del centro no se vuelve a pedir: viene del select('*').
-  chk('updateHomeBanner acepta el centro ya leído',
-      /async function updateHomeBanner\(orgYaLeido\)/.test(sinComentarios) &&
-      /await updateHomeBanner\(org\);/.test(sinComentarios),
+  // La REGLA, no la firma: el centro ya leído entra como primer argumento y
+  // quien llama se lo pasa. La firma creció el 29/10 con las tareas de la ola y
+  // este guardián se puso en rojo con el código sano — otra vez por describir la
+  // implementación en vez de la regla.
+  chk('updateHomeBanner recibe el centro ya leído',
+      /async function updateHomeBanner\(orgYaLeido[,)]/.test(sinComentarios) &&
+      /await updateHomeBanner\(org[,)]/.test(sinComentarios),
       'era un segundo viaje por un dato que ya estaba en la mano');
 }
 
@@ -408,7 +422,7 @@ chk('ya no queda el mapa enumerado de 17 entradas',
       banner.indexOf('await updateAppContext(') < banner.indexOf('allSettled'),
       'si va en paralelo, las burbujas cuentan las salidas de todos los locales');
   chk('las burbujas y el panel se arman en UNA ola',
-      /allSettled\(\[refreshHomeStats\(\), renderHomeGettingStartedOrFinance\(\)\]\)/.test(banner),
+      /allSettled\(\[[\s\S]{0,200}refreshHomeStats\(\)[\s\S]{0,200}renderHomeGettingStartedOrFinance\(\)/.test(banner),
       'eran dos esperas en fila sin dependencia entre ellas');
 
   // Las tarjetas de Inicio: ninguna rama vuelve a esperarlas de a una.
@@ -439,6 +453,50 @@ chk('ya no queda el mapa enumerado de 17 entradas',
   chk('ningún camino de entrada precarga el trío de pantallas',
       !trio.test(sinComentarios),
       'showPage() ya carga cada pantalla al abrirla; al arrancar se muestra Inicio');
+
+  // El preconnect: el host tiene que ser EL MISMO que usa la app, o es una
+  // conexión abierta a un servidor que nadie va a usar.
+  {
+    const host = (html.match(/rel="preconnect" href="(https:\/\/[a-z0-9]+\.supabase\.co)"/) || [])[1];
+    const usado = (html.match(/const SUPABASE_URL = .(https:\/\/[a-z0-9]+\.supabase\.co)./) || [])[1];
+    chk("hay preconnect a Supabase", !!host, String(host));
+    chk("y apunta al MISMO proyecto que usa la app", host === usado, host + " vs " + usado);
+    chk("lleva crossorigin, o el navegador abre una conexión que nadie reutiliza",
+        /href="https:\/\/[a-z0-9]+\.supabase\.co" crossorigin/.test(html));
+  }
+
+  // Los avisos de las pestañas viajan en la ola del panel, no en una propia.
+  chk("los tres avisos van en la ola del panel de Inicio",
+      sinComentarios.includes("() => checkCrewNotifications()") &&
+      sinComentarios.includes("...tareasDelLocal.map(f => f())"),
+      "eran una sexta ola de 1,1 s esperando algo que no necesitan");
+  chk("y YA NO se esperan aparte después del panel",
+      !/allSettled\(\[\s*checkCrewNotifications\(\)/.test(sinComentarios),
+      "si quedan las dos, se piden dos veces");
+  // Y NO entran por el repintado de idioma: son números, no texto traducido.
+  chk("el repintado de idioma no arrastra los avisos",
+      !sinComentarios.slice(sinComentarios.indexOf("repintarAlCambiarIdioma('panel de Inicio'"), 
+                            sinComentarios.indexOf("function refreshDynamicTranslations")).includes("checkCrew"),
+      "meterlos adentro le agregaría tres pedidos a cada cambio de idioma");
+  // C12 · Hay UN solo lugar que mapea «qué pantalla está abierta» → «qué
+  // cargar», y es `showPage()`. Eran dos, y el segundo tenía 24 de sus 30
+  // líneas inalcanzables porque su único llamador hacía `showPage('home')` una
+  // línea antes.
+  //
+  // Lo que se afirma es la regla, no el nombre que tenía esa función: que nadie
+  // vuelva a decidir qué cargar leyendo cuál es la pantalla activa fuera de
+  // `showPage()`. Un segundo lugar divergió de este en cuatro pantallas y nadie
+  // se enteró.
+  {
+    const mapas = [...sinComentarios.matchAll(/\.page\.active/g)].length;
+    chk('nadie más lee «cuál es la pantalla activa» para decidir qué cargar',
+        mapas === 0, mapas + ' lugares siguen mirando .page.active');
+    chk('y refreshCurrentView() no volvió a nacer',
+        !/function refreshCurrentView/.test(sinComentarios));
+    const ramas = (sinComentarios.match(/if \(id === '[a-z]+'\)/g) || []).length;
+    chk('las ramas por pantalla viven todas en showPage()', ramas >= 12,
+        ramas + ' ramas');
+  }
 
   // La lista de primeros pasos es una tarjeta más, no una ola previa.
   chk('la lista de primeros pasos se arma como una tarjeta',

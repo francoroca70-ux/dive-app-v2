@@ -89,6 +89,19 @@
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<!-- El saludo con Supabase, mientras todavía baja el HTML.
+     29/10/2026, medido en el navegador: el PRIMER pedido a Supabase no sale
+     hasta los 3.585 ms, porque antes hay que bajar y parsear 1,4 MB de
+     index.html. Y esa primera ola tardó 1.560 ms contra los 380 ms de una ola
+     posterior de ONCE consultas — la diferencia no son los datos, es abrir la
+     conexión: DNS, TCP y TLS a São Paulo, en frío.
+     `preconnect` hace ese saludo en paralelo con la descarga, así que cuando el
+     código por fin pide algo, el túnel ya está abierto. Es una PISTA para el
+     navegador: si la ignora, no cambia nada; no hay camino nuevo que probar.
+     `crossorigin` es obligatorio acá — sin eso el navegador abre una conexión
+     sin credenciales y las llamadas con cabeceras reutilizan... ninguna, con lo
+     que el preconnect se desperdicia en silencio. -->
+<link rel="preconnect" href="https://ggtbxjwstkuhnabwpgdz.supabase.co" crossorigin>
 <!-- La tipografía NO bloquea el arranque.
      27/10/2026: era un <link rel="stylesheet"> normal, y un stylesheet bloquea
      el render hasta que resuelve. Sin señal eso es la pantalla en blanco
@@ -8652,7 +8665,21 @@ function initHome(user) {
 // Sigue andando sin argumento porque hay tres lugares más que la llaman sin
 // tener el centro leído —el repintado al cambiar de idioma entre ellos—. El
 // parámetro es una oportunidad de ahorrar un viaje, no un requisito.
-async function updateHomeBanner(orgYaLeido) {
+// `tareasDelLocal` son tareas que necesitan `currentLocationId` resuelto y
+// nada más, y que quien llama quiere en LA MISMA ola que el panel.
+//
+// Existe por una medición del 29/10: los tres avisos de las pestañas eran una
+// sexta ola de **1,1 s al final del arranque**, esperando a que el panel
+// terminara. Uno de los tres —el de checklists— filtra por el local, así que no
+// puede arrancar antes que `updateAppContext()`; pero no necesita nada del
+// panel, así que esperarlo era una fila sin motivo.
+//
+// Por qué un parámetro y no meterlos adentro: `updateHomeBanner()` también la
+// llama el **repintado de idioma**, y ahí los avisos no hacen falta — son
+// números, no texto traducido. Meterlos dentro le agregaría tres pedidos a cada
+// cambio de idioma, deshaciendo parte de lo que se ganó hoy. El arranque los
+// pide; el repintado no.
+async function updateHomeBanner(orgYaLeido, tareasDelLocal = []) {
   if (!currentOrgId) return;
   const org = orgYaLeido || (await sb.from('organizations').select('name').eq('id', currentOrgId).single()).data;
   const banner = document.getElementById('setup-banner');
@@ -8681,7 +8708,11 @@ async function updateHomeBanner(orgYaLeido) {
   // lea. Eran dos esperas en fila por costumbre, no por dependencia.
   //
   // `allSettled` y no `all`: si una falla, la otra tiene que dibujarse igual.
-  await Promise.allSettled([refreshHomeStats(), renderHomeGettingStartedOrFinance()]);
+  await Promise.allSettled([
+    refreshHomeStats(),
+    renderHomeGettingStartedOrFinance(),
+    ...tareasDelLocal.map(f => f())
+  ]);
 }
 function locationStorageKey() { return 'sevenSeasLocationId_' + (currentOrgId || 'none'); }
 
@@ -9100,8 +9131,10 @@ document.getElementById('location-picker').addEventListener('change', (e) => {
   checkShopMismatchBanner();
   // Jump to Home so the shop switch is obviously reflected, instead of silently
   // refreshing numbers behind whatever page happened to be open.
+  // `showPage('home')` ya recarga Inicio. Lo que había acá —una llamada a
+  // `refreshCurrentView()`— se borró el 29/10: ver el comentario en el lugar
+  // donde vivía esa función.
   showPage('home');
-  refreshCurrentView();
 });
 
 // Nudges crew (not owners/managers, who are expected to move between shops) when the
@@ -9129,38 +9162,29 @@ function dismissShopMismatchBanner() {
   document.getElementById('shop-mismatch-banner').style.display = 'none';
 }
 
-function refreshCurrentView() {
-  refreshHomeStats();
-  const activePage = document.querySelector('.page.active');
-  const pageId = activePage ? activePage.id : '';
-
-  if (pageId === 'page-calendar' && typeof renderCalendar === 'function') { renderCalendar(); checkDoubleBookings(); }
-  if (pageId === 'page-fleet' && typeof loadFleet === 'function') loadFleet();
-  if (pageId === 'page-crew' && typeof loadCrew === 'function') loadCrew();
-  if (pageId === 'page-checklists') {
-    if (typeof initInstructorChecklist === 'function') initInstructorChecklist();
-    if (typeof initDeptChecklists === 'function') initDeptChecklists();
-  }
-  if (pageId === 'page-waivers' && typeof loadWaivers === 'function') loadWaivers();
-  if (pageId === 'page-cashup' && typeof loadCashUp === 'function') loadCashUp();
-  if (pageId === 'page-tasks' && typeof loadTasks === 'function') loadTasks();
-
-  const gearInvView = document.getElementById('gear-inventory-view');
-  if (gearInvView && gearInvView.style.display !== 'none') {
-    loadGearInventory();
-  }
-  const inspectionView = document.getElementById('gear-inspection-view');
-  if (inspectionView && inspectionView.style.display !== 'none') {
-    loadInspectionChecklist();
-  }
-  if (pageId === 'page-gear') {
-    if (typeof loadGearRegistry === 'function' && document.getElementById('gear-registry-list')) loadGearRegistry();
-    if (typeof loadCompressors === 'function') loadCompressors();
-  }
-  if (pageId === 'page-reports') {
-    loadReports();
-  }
-}
+// 29/10: ACÁ VIVÍA `refreshCurrentView()` Y SE BORRÓ ENTERA.
+//
+// Era el SEGUNDO de los tres lugares que mapeaban «qué pantalla está abierta»
+// → «qué cargar», y me había anotado unificar los tres detrás de un interruptor
+// como un 6/10. Al medirlo no hacía falta construir nada: **tenía un solo
+// llamador, y la línea inmediatamente anterior era `showPage('home')`.**
+//
+// O sea que su `pageId` era SIEMPRE `page-home`, y sus doce ramas por pantalla
+// —calendario, flota, tripulación, checklists, formularios, caja, tareas,
+// equipo, informes— **no se alcanzaban nunca**. 24 de sus 30 líneas eran código
+// muerto que igual había que mantener coherente con `showPage()`, y que de hecho
+// ya divergía de él en cuatro pantallas.
+//
+// Lo único que sí corría:
+//   · `refreshHomeStats()`, que `showPage('home')` ya llama una línea antes;
+//   · y dos lecturas de Equipo que **no miraban `pageId`** —inventario e
+//     inspección, por el `display` de su vista—. Esas eran un BUG, no una
+//     función: al cambiar de local, con una vista de Equipo abierta de antes,
+//     salían a leer equipo estando el usuario en Inicio.
+//
+// Así que el cambio terminó siendo una deleción de 3/10 en vez de una
+// unificación de 6/10 detrás de un interruptor. *Medir el tamaño es parte del
+// cambio, no un trámite previo.*
 
 // ─── AUTH ───
 let currentStaffAssignedLocationIds = [];
@@ -9648,7 +9672,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-29c';
+const BUILD_WEB = '2026-10-29e';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9811,11 +9835,12 @@ async function initAuthInner() {
     //
     // `allSettled` y no `all`: si uno falla, los otros dos avisos tienen que
     // aparecer igual. Con `all` un solo rechazo se lleva los tres.
-    await Promise.allSettled([
-      checkCrewNotifications(),
-      checkTasksNotifications(),
-      checkChecklistNotifications()
-    ]);
+    //
+    // 29/10: Y SE MOVIERON A LA OLA DEL PANEL. Medido en el navegador: esta ola
+    // arrancaba cuando el panel terminaba —1,1 s después— y de los tres sólo
+    // el de checklists depende de algo del panel (`currentLocationId`, que lo
+    // deja `updateAppContext()`, la primera parte). Esperar al resto era una
+    // fila sin dependencia. Se los pasa `loadSettings()` como tareas de la ola.
     // Quién soy y dónde trabajo, para que un arranque sin señal tenga qué
     // dibujar. Va acá, al final de un arranque que SÍ se pudo verificar: antes
     // de esta línea el rol todavía no está resuelto.
@@ -10555,12 +10580,15 @@ async function switchToAccount(userId) {
   // Si alguna vez hace falta releer el rol sin rehacer todo `loadSettings`, va
   // con su motivo escrito y mirando el error antes de pisar nada.
   document.getElementById('nav-item-reports').style.display = currentUserRole === 'owner' ? 'flex' : 'none';
-  // Los tres en paralelo — ver el porqué en initAuthInner().
-  await Promise.allSettled([
-    checkCrewNotifications(),
-    checkTasksNotifications(),
-    checkChecklistNotifications()
-  ]);
+  // 29/10: ACÁ SE PEDÍAN LOS TRES AVISOS OTRA VEZ, Y SE BORRÓ.
+  //
+  // `loadSettings()` —que esta función llama arriba— ya los pide, desde el
+  // 29/10, dentro de la ola del panel de Inicio. Dejar los dos los pedía DOS
+  // VECES por cambio de cuenta: seis consultas para tres números.
+  //
+  // Lo encontró un guardián que yo había escrito mal: afirmaba que no quedaba
+  // ningún `allSettled` con los avisos, y dio en rojo porque este existía. Mi
+  // primera lectura fue que el guardián sobraba.
   updateOfflineBanner();
   flushOfflineQueue();
   showScreen('app');
@@ -10718,7 +10746,14 @@ async function loadSettings(user) {
     // recién después se descubría que la cuenta estaba cerrada y se cerraba
     // sesión. Pintar algo que se va a tirar un instante después es peor que
     // tardar un instante más.
-    await updateHomeBanner(org);
+    // Los tres avisos de las pestañas viajan en la ola del panel. Ver
+    // `updateHomeBanner()`: eran una sexta ola de 1,1 s al final del arranque
+    // esperando algo que no necesitan.
+    await updateHomeBanner(org, [
+      () => checkCrewNotifications(),
+      () => checkTasksNotifications(),
+      () => checkChecklistNotifications()
+    ]);
 
     if (org) {
       document.getElementById('org-name').value = org.name || '';
