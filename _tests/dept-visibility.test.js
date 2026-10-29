@@ -205,5 +205,86 @@ chk('y initDeptChecklists lo pinta',
       'escribe su texto una vez: sin entrada en el registro se queda en el idioma viejo');
 }
 
+// ─── 29/10 · Nueve diálogos de confirmación estaban en inglés duro ──────────
+//
+// Medido buscando a propósito, después de que el cartel de doble reserva
+// apareciera de casualidad: de los 30 `showConfirmModal()` de la app, 16 usaban
+// `t()`, 5 reciben un texto ya armado... y **9 tenían el texto en inglés escrito
+// a mano**. Todos en el momento de BORRAR algo — un local, un grupo con sus
+// pagos, un huésped, un equipo, un compresor, un ítem de checklist con su
+// historial.
+//
+// Es el peor momento posible para que la app cambie de idioma: la pregunta que
+// más necesita entenderse es la que avisa que algo no se puede deshacer.
+{
+  const fuente = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  // LA REGLA, no la lista: ninguna confirmación recibe un literal. Puede
+  // recibir t(), una variable, o un texto ya armado — nunca una frase cruda.
+  const crudos = [...fuente.matchAll(/showConfirmModal\(\s*['"`]/g)].length;
+  chk('ninguna confirmación lleva el texto escrito a mano', crudos === 0,
+      crudos + ' siguen con un literal — en inglés, justo al borrar algo');
+  const claves = ['loc_remove_confirm','bk_remove_group_confirm','cu_remove_payment_confirm',
+                  'bk_remove_guest_confirm','gear_remove_item_confirm','gear_repaired_confirm',
+                  'comp_filter_reset_confirm','comp_remove_confirm','cl_remove_item_confirm'];
+  for (const k of claves) {
+    const veces = (fuente.match(new RegExp('\\s' + k + ':', 'g')) || []).length;
+    chk(k + ' está en los dos diccionarios y en ninguno más', veces === 2, veces + ' veces');
+    chk('y la usa alguien', fuente.includes("t('" + k + "')"));
+  }
+  // Y seis textos de pantalla del mismo barrido. TRES de ellos YA TENÍAN CLAVE
+  // en el diccionario y el código escribió el inglés al lado — ése es el peor
+  // caso: no falta la traducción, falta usarla.
+  for (const k of ['tt_no_tab','fleet_no_locations','crew_no_locations_settings',
+                   'wv_paper_copy_on_file','crew_set_date_first','gear_no_inspection_items']) {
+    const veces = (fuente.match(new RegExp('\\s' + k + ':', 'g')) || []).length;
+    chk(k + ' en los dos diccionarios', veces === 2, veces + ' veces');
+    // La clave tiene que estar REFERENCIADA, no necesariamente por `t()`: tres
+    // de estas seis pasan por `textoDeListaVacia(err, clave)`, que decide si
+    // puede afirmar que la lista está vacía. Este guardián se puso en rojo con
+    // el código sano justo por eso — afirmaba la forma de la llamada.
+    chk('y el código la USA', fuente.includes("'" + k + "'"),
+        'una clave que existe y nadie llama es una traducción que no se ve');
+  }
+  for (const frase of ['No tab — pay per trip', 'No locations — add one in Settings',
+                       'No locations — add in Settings', 'Set a date to see available crew.',
+                       'No inspection checklist items yet', 'Paper copy on file']) {
+    const veces = fuente.split(frase).length - 1;
+    chk('«' + frase.slice(0,28) + '…» sólo vive en el diccionario', veces === 1,
+        veces + ' veces — más de una quiere decir que quedó escrita a mano');
+  }
+
+  // El español de los nueve: neutro, sin voseo, y preguntando en infinitivo.
+  const es = fuente.slice(fuente.indexOf("loc_remove_confirm: '¿Quitar"));
+  const trozo = es.slice(0, es.indexOf("wv_go_to_settings"));
+  chk('el español de los nueve no vosea',
+      !/\b(Quitá|Borrá|Confirmá|Registrá|querés|podés|tenés)\b/.test(trozo),
+      'la regla del español neutro vale también para un diálogo');
+}
+// ─── Ninguna interpolación queda atrapada en comillas simples ──────────────
+//
+// Lo cometí DOS VECES el 29/10 traduciendo los exportables, con la suite en
+// verde las dos: el archivo parsea, la función corre, y el documento sale con
+// `${t(...)}` impreso. Ningún test de comportamiento lo veía, porque **nadie
+// renderiza un exportable en jsdom** — no hay DOM donde mirar.
+//
+// Se mide sobre los CUATRO exportables y no sobre el archivo entero, y el
+// motivo va escrito: el escáner todavía pierde el estado en una zona del
+// formulario de salidas (un atributo con comillas dentro de una plantilla
+// anidada) y ahí da seis falsos positivos. Un guardián que grita en verde se
+// apaga solo a los dos días. Cubre el lugar donde el defecto apareció.
+{
+  const { interpolacionesMuertas } = require('./interpolacion-muerta');
+  const fuente2 = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  for (const n of ['exportWaiversForDay', 'exportChecklistsForDay',
+                   'exportTripRecordsForDay', 'exportAllShopRecords']) {
+    const i2 = fuente2.indexOf('async function ' + n);
+    chk(n + ' sigue existiendo', i2 >= 0);
+    if (i2 < 0) continue;
+    const fin = fuente2.indexOf('\n}\n', fuente2.indexOf('</html>', i2));
+    const malas = interpolacionesMuertas(fuente2.slice(i2, fin));
+    chk('en ' + n + ' no quedó ninguna interpolación como texto', malas.length === 0,
+        malas.map(m => m.texto.slice(0, 55)).join(' | '));
+  }
+}
 console.log('\n' + (fail ? 'HAY FALLOS' : 'todo en verde') + ' — dept-visibility');
 process.exit(fail);

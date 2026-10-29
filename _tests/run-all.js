@@ -62,7 +62,7 @@ const MINIMOS = {
   'titulo-de-acta.test.js':         32,
   'checklist-record-scope.test.js': 38,
   'checklist-record.test.js':       57,
-  'dept-visibility.test.js':        53,
+  'dept-visibility.test.js':        99,
   'editor-de-plantillas.test.js':   92,
   'editor-de-rutinas.test.js':      67,
   'etapa-3b-lista-por-tipo.test.js':25,

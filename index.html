@@ -895,8 +895,6 @@ body { background: var(--navy); color: var(--text); }
 .loading-logo-badge img { width: 100%; display: block; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-
-
 /* ─── CHECKLISTS ─── */
 .cl-tab-row { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border); padding-bottom: 12px; flex-wrap: wrap; }
 .cl-tab {
@@ -1243,10 +1241,6 @@ body { background: var(--navy); color: var(--text); }
 }
 .location-delete:hover { color: var(--error); }
 
-
-
-
-
 .required-star { color: #d97706; }
 
 .warning-banner {
@@ -1396,7 +1390,6 @@ body { background: var(--navy); color: var(--text); }
 .account-switcher-forget:hover { background: rgba(229,62,62,0.08); }
 .account-switcher-empty { font-size: 0.78rem; color: var(--muted); padding: 10px 8px; }
 
-
 .crew-member-tag-v2 {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--foam); border: 1px solid var(--border);
@@ -1405,8 +1398,6 @@ body { background: var(--navy); color: var(--text); }
 .crew-member-tag-v2 button {
   background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 0;
 }
-
-
 
 /* ─── RADIO BUTTONS ─── */
 .radio-group {
@@ -1669,7 +1660,6 @@ body { background: var(--navy); color: var(--text); }
 .p-payment.cash { background: rgba(47,133,90,0.1); color: #276749; }
 .p-payment.card { background: rgba(26,107,138,0.1); color: var(--blue); }
 .p-payment.transfer { background: rgba(107,70,193,0.1); color: #6b46c1; }
-
 
 /* ─── CHECKLISTS ─── */
 .cl-tab {
@@ -2292,7 +2282,6 @@ body { background: var(--navy); color: var(--text); }
     </div>
   </div>
 </div>
-
 
 <div class="modal-overlay" id="modal-roster-cell" style="display:none;z-index:300;">
   <div class="modal-box" style="max-width:420px;">
@@ -5277,6 +5266,37 @@ const TRANSLATIONS = {
     dbl_crew: '{person} is assigned to both «{a}» and «{b}» — overlapping dates.',
     dbl_note: "This isn't a bug — it happens when a booking is made while offline, since two devices without a connection can't see each other's changes at the moment of booking. Open the trips above and adjust the boat, crew, or time to fix it.",
     dbl_boat_fallback: 'A boat', dbl_crew_fallback: 'A crew member', dbl_unnamed: 'Unnamed',
+    // Los nueve diálogos de confirmación que estaban EN INGLÉS DURO hasta el
+    // 29/10 — todos en el momento de borrar algo, que es el peor momento para
+    // que la app cambie de idioma.
+    loc_remove_confirm: 'Remove this location?',
+    bk_remove_group_confirm: 'Remove this group and its guests/payments? This cannot be undone.',
+    cu_remove_payment_confirm: 'Remove this payment record?',
+    bk_remove_guest_confirm: 'Remove this guest?',
+    gear_remove_item_confirm: 'Remove this gear item? Its maintenance history will stay on file but will no longer be linked to a named item.',
+    gear_repaired_confirm: 'Confirm this item has been repaired and is back in service?',
+    comp_filter_reset_confirm: 'Log this as a completed filter change and reset the hour counter to zero?',
+    comp_remove_confirm: 'Remove this compressor and its history?',
+    cl_remove_item_confirm: 'Remove this checklist item? This also deletes its history.',
+    // Tres textos de pantalla que estaban escritos a mano en inglés. Los otros
+    // tres del mismo barrido NO necesitaron clave nueva: ya existía y el código
+    // había escrito el inglés al lado.
+    wv_paper_copy_on_file: 'Paper copy on file — no digital signature.',
+    crew_set_date_first: 'Set a date to see available crew.',
+    gear_no_inspection_items: 'No inspection checklist items yet. Enable a category in Settings.',
+    // Los documentos que se IMPRIMEN. Estaban enteros en inglés, y ahí viven
+    // además los cinco plurales a mano que el barrido del 26/10 no vio: miró la
+    // pantalla, no los exportables. Sexta convención de plural.
+    exp_title_waivers: 'Signed Waivers', exp_title_checklists: 'Logged Checklists',
+    exp_title_trips: 'Trip Records',
+    exp_count_waivers: '{n} waivers', exp_count_waivers_one: '{n} waiver',
+    exp_count_signoffs: '{n} sign-offs', exp_count_signoffs_one: '{n} sign-off',
+    exp_count_trips: '{n} trips', exp_count_trips_one: '{n} trip',
+    exp_count_guests: '{n} guests', exp_count_guests_one: '{n} guest',
+    exp_unnamed_guest: 'Unnamed guest', exp_unnamed_group: 'Unnamed group',
+    exp_signed_digitally: 'Signed digitally',
+    exp_no_guests: 'No guests logged', exp_title_full: 'Full Export',
+
     wv_go_to_settings: 'Go to Settings',
     wv_med_section: 'Dive clearance',
     wv_saved_list_stale: 'Saved — but the list on screen could not refresh. Reload the page to see it up to date.',
@@ -6158,6 +6178,28 @@ const TRANSLATIONS = {
     dbl_crew: '{person} está asignado a «{a}» y «{b}» a la vez — las fechas se superponen.',
     dbl_note: 'No es una falla: pasa cuando una reserva se hace sin conexión, porque dos aparatos sin señal no pueden ver los cambios del otro en el momento de reservar. Abrir las salidas de arriba y ajustar la embarcación, la tripulación o el horario.',
     dbl_boat_fallback: 'Una embarcación', dbl_crew_fallback: 'Alguien de la tripulación', dbl_unnamed: 'Sin nombre',
+    loc_remove_confirm: '¿Quitar este local?',
+    bk_remove_group_confirm: '¿Quitar este grupo con sus huéspedes y sus pagos? No se puede deshacer.',
+    cu_remove_payment_confirm: '¿Quitar este registro de pago?',
+    bk_remove_guest_confirm: '¿Quitar a este huésped?',
+    gear_remove_item_confirm: '¿Quitar este equipo? Su historial de mantenimiento se conserva, pero deja de estar asociado a un equipo con nombre.',
+    gear_repaired_confirm: '¿Confirmar que este equipo quedó reparado y vuelve al servicio?',
+    comp_filter_reset_confirm: '¿Registrar un cambio de filtro hecho y poner el contador de horas en cero?',
+    comp_remove_confirm: '¿Quitar este compresor con su historial?',
+    cl_remove_item_confirm: '¿Quitar este ítem de la checklist? También se borra su historial.',
+    wv_paper_copy_on_file: 'Copia en papel archivada — sin firma digital.',
+    crew_set_date_first: 'Elegir una fecha para ver la tripulación disponible.',
+    gear_no_inspection_items: 'Todavía no hay ítems de inspección. Activar una categoría en Configuración.',
+    exp_title_waivers: 'Formularios firmados', exp_title_checklists: 'Checklists registradas',
+    exp_title_trips: 'Registro de salidas',
+    exp_count_waivers: '{n} formularios', exp_count_waivers_one: '{n} formulario',
+    exp_count_signoffs: '{n} firmas', exp_count_signoffs_one: '{n} firma',
+    exp_count_trips: '{n} salidas', exp_count_trips_one: '{n} salida',
+    exp_count_guests: '{n} huéspedes', exp_count_guests_one: '{n} huésped',
+    exp_unnamed_guest: 'Huésped sin nombre', exp_unnamed_group: 'Grupo sin nombre',
+    exp_signed_digitally: 'Firmado digitalmente',
+    exp_no_guests: 'Sin huéspedes registrados', exp_title_full: 'Exportación completa',
+
     wv_go_to_settings: 'Ir a Configuración',
     wv_med_section: 'Habilitación para bucear',
     wv_saved_list_stale: 'Guardado — pero la lista en pantalla no se pudo actualizar. Hay que recargar la página para verla al día.',
@@ -9672,7 +9714,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-29e';
+const BUILD_WEB = '2026-10-29g';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -10470,7 +10512,6 @@ async function renderAccountSwitcherMenu() {
   const listEl = document.getElementById('account-switcher-list');
   if (!avatarEl || !headerEl || !listEl) return;
 
-
   const user = await usuarioActual();
   const currentUserId = user ? user.id : null;
   const accounts = getSavedAccounts();
@@ -10637,7 +10678,6 @@ document.getElementById('account-switcher-forget').addEventListener('click', () 
     if (user) removeAccountFromSwitcher(user.id);
   });
 });
-
 
 // ─── SETTINGS ───
 let currentOrgId = null;
@@ -11238,11 +11278,10 @@ document.getElementById('btn-save-location').addEventListener('click', async () 
 
 // Delete location
 async function deleteLocation(id) {
-  if (!(await showConfirmModal('Remove this location?'))) return;
+  if (!(await showConfirmModal(t('loc_remove_confirm')))) return;
   if (!(await borrarOAvisar(sb.from('locations').delete().eq('id', id)))) return;
   await loadLocations();
 }
-
 
 // ─── CALENDAR & BOOKINGS ───
 let calView = 'day';
@@ -12200,13 +12239,13 @@ async function renderGroupsPanel() {
 }
 
 async function buildTabOptionsHtml(selectedTabId) {
-  if (!currentOrgId || !currentLocationId) return '<option value="">No tab — pay per trip</option>';
+  if (!currentOrgId || !currentLocationId) return `<option value="">${t('tt_no_tab')}</option>`;
   const { data: openTabs } = await sb.from('guest_tabs')
     .select('id, guest_name')
     .eq('org_id', currentOrgId)
     .eq('location_id', currentLocationId)
     .eq('status', 'open');
-  return '<option value="">No tab — pay per trip</option>' +
+  return `<option value="">${t('tt_no_tab')}</option>` +
     (openTabs || []).map(t => `<option value="${t.id}" ${t.id === selectedTabId ? 'selected' : ''}>${escapeHtml(t.guest_name)}</option>`).join('');
 }
 
@@ -12631,7 +12670,7 @@ document.getElementById('btn-add-group').addEventListener('click', async () => {
 
 async function removeGroup(groupId) {
   if (tripGroups_cache.length <= 1) return;
-  if (!(await showConfirmModal('Remove this group and its guests/payments? This cannot be undone.', { danger: true }))) return;
+  if (!(await showConfirmModal(t('bk_remove_group_confirm'), { danger: true }))) return;
   // En orden, y cortando al primer fallo. Seguir después de un error es lo
   // que dejaba el grupo borrado a medias — el mismo patrón que perdía datos al
   // borrar una salida.
@@ -14139,7 +14178,6 @@ async function printManifest() {
   // puede salir de una caché de hace media hora.
   const stockManifiesto = await cargarStockDeLaSede();
 
-
   const groupsHtml = (await Promise.all(tripGroups_cache.map(async (g, i) => {
     const groupType = effectiveTripTypeForGroup(g);
     const gearColumns = await gearFieldsForType(g.trip_type_id);
@@ -14436,7 +14474,6 @@ async function renderRemoteWaiverGroupsStatus(tripIds, tripById, requiredWaivers
     if (!p.group_id) return;
     (participantsByGroup[p.group_id] = participantsByGroup[p.group_id] || []).push(p);
   });
-
 
   listEl.innerHTML = groups.map(g => {
     const trip = tripById[g.trip_id];
@@ -14853,7 +14890,6 @@ function setMedicalStatus(status) {
   document.getElementById('sig-med-physician').classList.toggle('selected', status === 'physician_required');
 }
 
-
 function makeSignaturePad(canvasId) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return null;
@@ -14880,7 +14916,6 @@ function makeSignaturePad(canvasId) {
   canvas.ontouchstart = start; canvas.ontouchmove = move; canvas.ontouchend = end;
   return pad;
 }
-
 
 document.getElementById('btn-confirm-signature').addEventListener('click', async () => {
   const feedback = document.getElementById('signature-save-feedback');
@@ -15127,7 +15162,6 @@ document.getElementById('btn-export-trips').addEventListener('click', () => {
   exportTripRecordsForDay(date);
 });
 
-
 // Cómo se capturó la firma. El dato ya estaba en la base (signed_via, signer_ip,
 // signer_user_agent los escribe la edge function desde julio) pero no se mostraba
 // en ningún lado -- ni en la app ni en el PDF.
@@ -15225,7 +15259,6 @@ async function exportWaiversForDay(date) {
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
 
-
   // El día local, como ventana de instantes: exportar «lo de hoy» a las 22
   // en Mar del Plata dejaba afuera todo lo firmado después de las 21. Para un
   // export de registros legales el silencio es el peor modo de falla — no da
@@ -15264,9 +15297,9 @@ async function exportWaiversForDay(date) {
   const rowsHtml = data.map(w => `
     <div class="waiver-entry">
       <div class="waiver-entry-header">
-        <strong>${escapeHtml(w.participants?.full_name || 'Unknown guest')}</strong>
+        <strong>${escapeHtml(w.participants?.full_name || t('wv_unknown_guest'))}</strong>
         <span>${waiverTypeLabels[w.waiver_type] || escapeHtml(w.waiver_type)}</span>
-        <span>${w.method === 'paper' ? 'Logged on paper' : 'Signed digitally'}</span>
+        <span>${w.method === 'paper' ? t('wv_logged_paper') : t('exp_signed_digitally')}</span>
         <span>${new Date(w.signed_at).toLocaleTimeString(localeDeLaApp(), {hour:'2-digit', minute:'2-digit'})}</span>
         <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
       </div>
@@ -15276,11 +15309,11 @@ async function exportWaiversForDay(date) {
       ${w.notes ? `<p class="waiver-entry-notes">${escapeHtml(w.notes)}</p>` : ''}
       ${w.waiver_type === 'medical' && w.medical_status ? `
         <div class="waiver-entry-medical">${w.medical_status === 'cleared'
-          ? 'Cleared to dive' : 'Physician sign-off needed'}${w.medical_checked_at
+          ? t('wv_med_cleared') : t('wv_med_physician')}${w.medical_checked_at
           ? ' · ' + new Date(w.medical_checked_at).toLocaleString(localeDeLaApp()) : ''}</div>
       ` : ''}
       ${w.body_snapshot ? `<div class="waiver-entry-body">${escapeHtml(w.body_snapshot)}</div>` : ''}
-      ${w.method === 'digital' && w.signature_data ? `<img src="${w.signature_data}" style="max-width:280px;border:1px solid #ccc;margin-top:6px;">` : '<p style="font-size:12px;color:#888;">Paper copy on file — no digital signature.</p>'}
+      ${w.method === 'digital' && w.signature_data ? `<img src="${w.signature_data}" style="max-width:280px;border:1px solid #ccc;margin-top:6px;">` : `<p style="font-size:12px;color:#888;">${t('wv_paper_copy_on_file')}</p>`}
       ${w.guardian_printed_name ? `
         <div class="waiver-entry-guardian">
           <div class="waiver-entry-signee">Parent/guardian: ${escapeHtml(w.guardian_printed_name)} &nbsp;·&nbsp; Date: ${w.guardian_signed_date || '—'}</div>
@@ -15291,7 +15324,7 @@ async function exportWaiversForDay(date) {
   `).join('');
 
   const html = `<!DOCTYPE html>
-<html><head><title>Waivers — ${date}</title>
+<html><head><title>${t('exp_title_waivers')} — ${date}</title>
 <style>
   body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
   h1 { font-size: 20px; margin-bottom: 4px; }
@@ -15308,8 +15341,8 @@ async function exportWaiversForDay(date) {
   @media print { body { padding: 10px; } }
 </style>
 </head><body>
-  <h1>Signed Waivers</h1>
-  <div class="meta">${date} · ${data.length} waiver${data.length === 1 ? '' : 's'}</div>
+  <h1>${t('exp_title_waivers')}</h1>
+  <div class="meta">${date} · ${textoConCantidad('exp_count_waivers', data.length)}</div>
   ${rowsHtml}
 </body></html>`;
 
@@ -15330,7 +15363,6 @@ async function exportChecklistsForDay(date) {
   const feedback = document.getElementById('cl-export-feedback');
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
-
 
   const vActas = ventanaDelDia(date);
   const { data, error } = await sb.from('checklist_completions')
@@ -15367,7 +15399,7 @@ async function exportChecklistsForDay(date) {
   }).join('');
 
   const html = `<!DOCTYPE html>
-<html><head><title>Checklists — ${date}</title>
+<html><head><title>${t('exp_title_checklists')} — ${date}</title>
 <style>
   body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
   h1 { font-size: 20px; margin-bottom: 4px; }
@@ -15378,8 +15410,8 @@ async function exportChecklistsForDay(date) {
   @media print { body { padding: 10px; } }
 </style>
 </head><body>
-  <h1>Logged Checklists</h1>
-  <div class="meta">${date} · ${data.length} sign-off${data.length === 1 ? '' : 's'}</div>
+  <h1>${t('exp_title_checklists')}</h1>
+  <div class="meta">${date} · ${textoConCantidad('exp_count_signoffs', data.length)}</div>
   ${rowsHtml}
 </body></html>`;
 
@@ -15401,7 +15433,6 @@ async function exportTripRecordsForDay(date) {
   const feedback = document.getElementById('waiver-export-feedback');
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
-
 
   let query = tripsVigentes('id, trip_time, trip_type, boats(name), trip_groups(contact_name, participants(full_name, is_certified))')
     .eq('org_id', currentOrgId)
@@ -15427,13 +15458,13 @@ async function exportTripRecordsForDay(date) {
     const groupsHtml = groups.map(g => {
       const guestsHtml = (g.participants || []).map(p => `
         <div class="tr-export-guest">
-          <span>${escapeHtml(p.full_name || 'Unnamed guest')}</span>
-          ${p.is_certified === true ? '<span class="tr-cert">Certified</span>' : p.is_certified === false ? '<span class="tr-cert">Not certified</span>' : ''}
+          <span>${escapeHtml(p.full_name || t('exp_unnamed_guest'))}</span>
+          ${p.is_certified === true ? `<span class="tr-cert">${t('tt_certified')}</span>` : p.is_certified === false ? `<span class="tr-cert">${t('tt_not_certified')}</span>` : ''}
         </div>`).join('');
       return `
       <div class="tr-export-group">
-        <div class="tr-export-group-header"><strong>${escapeHtml(g.contact_name || 'Unnamed group')}</strong></div>
-        ${guestsHtml || '<div class="tr-export-guest" style="color:#888;">No guests logged</div>'}
+        <div class="tr-export-group-header"><strong>${escapeHtml(g.contact_name || t('exp_unnamed_group'))}</strong></div>
+        ${guestsHtml || `<div class="tr-export-guest" style="color:#888;">${t('exp_no_guests')}</div>`}
       </div>`;
     }).join('');
 
@@ -15441,15 +15472,15 @@ async function exportTripRecordsForDay(date) {
     <div class="tr-export-trip">
       <div class="tr-export-trip-header">
         <strong>${trip.trip_time ? trip.trip_time.slice(0, 5) + ' — ' : ''}${escapeHtml(trTypeName(trip.trip_type) || 'Trip')}</strong>
-        <span>${escapeHtml(trip.boats?.name || 'No boat')}</span>
-        <span>${totalGuests} guest${totalGuests === 1 ? '' : 's'}</span>
+        <span>${escapeHtml(trip.boats?.name || t('cal_no_boat'))}</span>
+        <span>${textoConCantidad('exp_count_guests', totalGuests)}</span>
       </div>
       ${groupsHtml}
     </div>`;
   }).join('');
 
   const html = `<!DOCTYPE html>
-<html><head><title>Trip Records — ${date}</title>
+<html><head><title>${t('exp_title_trips')} — ${date}</title>
 <style>
   body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
   h1 { font-size: 20px; margin-bottom: 4px; }
@@ -15463,8 +15494,8 @@ async function exportTripRecordsForDay(date) {
   @media print { body { padding: 10px; } }
 </style>
 </head><body>
-  <h1>Trip Records</h1>
-  <div class="meta">${date} · ${data.length} trip${data.length === 1 ? '' : 's'}</div>
+  <h1>${t('exp_title_trips')}</h1>
+  <div class="meta">${date} · ${textoConCantidad('exp_count_trips', data.length)}</div>
   ${tripsHtml}
 </body></html>`;
 
@@ -15491,7 +15522,6 @@ async function exportAllShopRecords() {
   feedback.textContent = t('wv_preparing_export');
   feedback.className = 'save-feedback visible';
 
-
   let waiversQuery = sb.from('waivers').select('*, participants(full_name)').eq('org_id', currentOrgId).order('signed_at');
   if (currentLocationId) waiversQuery = waiversQuery.eq('location_id', currentLocationId);
   const [{ data: waivers }, { data: completions }, { data: trips }] = await Promise.all([
@@ -15514,7 +15544,7 @@ async function exportAllShopRecords() {
 
   const waiversHtml = (waivers || []).map(w => `
     <div class="ex-entry">
-      <strong>${escapeHtml(w.participants?.full_name || 'Unknown guest')}</strong>
+      <strong>${escapeHtml(w.participants?.full_name || t('wv_unknown_guest'))}</strong>
       <span>${waiverTypeLabels[w.waiver_type] || escapeHtml(w.waiver_type)}</span>
       <span>${w.signed_at ? new Date(w.signed_at).toLocaleString(localeDeLaApp()) : '—'}</span>
       <span>Staff: ${escapeHtml(w.signed_by_name || '—')}</span>
@@ -15540,8 +15570,8 @@ async function exportAllShopRecords() {
     return `
     <div class="ex-entry">
       <strong>${trip.trip_date || ''} ${trip.trip_time ? trip.trip_time.slice(0, 5) : ''} — ${escapeHtml(trTypeName(trip.trip_type) || 'Trip')}</strong>
-      <span>${escapeHtml(trip.boats?.name || 'No boat')}</span>
-      <span>${guestCount} guest${guestCount === 1 ? '' : 's'}</span>
+      <span>${escapeHtml(trip.boats?.name || t('cal_no_boat'))}</span>
+      <span>${textoConCantidad('exp_count_guests', guestCount)}</span>
       ${guestNames ? `<div class="ex-sub">${escapeHtml(guestNames)}</div>` : ''}
     </div>`;
   }).join('') || `<p class="ex-empty">${t('wv_no_records_date')}</p>`;
@@ -15551,7 +15581,7 @@ async function exportAllShopRecords() {
   const generatedAt = new Date().toLocaleString(localeDeLaApp());
 
   const html = `<!DOCTYPE html>
-<html><head><title>${shopName} — Full Export</title>
+<html><head><title>${shopName} — ${t('exp_title_full')}</title>
 <style>
   body { font-family: -apple-system, Arial, sans-serif; padding: 30px; color: #1a2b3c; }
   h1 { font-size: 22px; margin-bottom: 2px; }
@@ -15569,7 +15599,7 @@ async function exportAllShopRecords() {
   ${waiversHtml}
   <h2>Checklists</h2>
   ${checklistsHtml}
-  <h2>Trip Records</h2>
+  <h2>${t('exp_title_trips')}</h2>
   ${tripsHtml}
 </body></html>`;
 
@@ -15647,7 +15677,7 @@ async function renderTripCrewSection() {
   const container = document.getElementById('trip-crew-fields');
   const date = document.getElementById('trip-date').value;
   if (!date) {
-    container.innerHTML = '<p style="font-size:0.83rem;color:var(--muted);">Set a date to see available crew.</p>';
+    container.innerHTML = `<p style="font-size:0.83rem;color:var(--muted);">${t('crew_set_date_first')}</p>`;
     return;
   }
   const { eligibleStaff, availability, conflicted, isMultiDay, endDate } = await getEligibleCrewData();
@@ -15896,7 +15926,7 @@ async function confirmLogPayment(groupId, total, paid) {
   await refreshGroupPaymentSection(groupId);
 }
 async function removeGroupPayment(id, groupId) {
-  if (!(await showConfirmModal('Remove this payment record?'))) return;
+  if (!(await showConfirmModal(t('cu_remove_payment_confirm')))) return;
   if (!(await borrarOAvisar(sb.from('payments').delete().eq('id', id)))) return;
   await refreshGroupPaymentSection(groupId);
 }
@@ -16406,7 +16436,7 @@ async function saveGroupParticipant(groupId) {
 
 async function removeGroupParticipant(participantId, groupId) {
   if (isOffline) { await showAlertModal(t('guest_offline')); return; }
-  if (!(await showConfirmModal('Remove this guest?'))) return;
+  if (!(await showConfirmModal(t('bk_remove_guest_confirm')))) return;
   if (!(await borrarOAvisar(sb.from('participants').delete().eq('id', participantId)))) return;
   await loadGroupParticipants(groupId);
   await recalcTripGuestCount(currentTripId);
@@ -16414,7 +16444,6 @@ async function removeGroupParticipant(participantId, groupId) {
   await checkGuestCapacity();
 }
 // ─── END CALENDAR ───
-
 
 // ─── END SETTINGS ───
 
@@ -20457,7 +20486,6 @@ document.getElementById('cl-logged-clear-search').addEventListener('click', () =
 
 // ─── END CHECKLISTS ───
 
-
 // ─── CREW ───
 async function loadCrew() {
   if (!currentOrgId) return;
@@ -20849,7 +20877,6 @@ async function cancelInvite(id) {
   await loadPendingInvites();
 }
 // ─── END CREW ───
-
 
 // ─── FLEET ───
 async function loadFleet() {
@@ -21823,9 +21850,12 @@ function gearRegistryStatusLabel(status) {
 
 async function populateRegistryLocationSelect() {
   if (!currentOrgId) return;
-  const { data: locs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId);
+  // El error se MIRA: una lectura que falló no puede decir «no hay locales».
+  // Ver textoDeListaVacia() y el postmortem del 26/10.
+  const { data: locs, error: errLocs } = await sb.from('locations').select('id, name').eq('org_id', currentOrgId);
   const sel = document.getElementById('reg-location');
-  sel.innerHTML = (locs || []).map(l => `<option value="${escapeHtml(l.id)}">${escapeHtml(l.name)}</option>`).join('') || '<option value="">No locations — add one in Settings</option>';
+  sel.innerHTML = (locs || []).map(l => `<option value="${escapeHtml(l.id)}">${escapeHtml(l.name)}</option>`).join('')
+    || `<option value="">${escapeHtml(textoDeListaVacia(errLocs, 'fleet_no_locations'))}</option>`;
   await populateRegistryGearItemSelect();
 }
 
@@ -22067,7 +22097,7 @@ document.getElementById('btn-save-gear-detail').addEventListener('click', async 
 
 document.getElementById('btn-delete-gear-item').addEventListener('click', async () => {
   const feedback = document.getElementById('gear-detail-feedback');
-  if (!(await showConfirmModal('Remove this gear item? Its maintenance history will stay on file but will no longer be linked to a named item.'))) return;
+  if (!(await showConfirmModal(t('gear_remove_item_confirm')))) return;
   const { error } = await sb.from('gear').delete().eq('id', window.currentGearDetailId);
   if (error) {
     feedback.textContent = t('common_error_prefix') + error.message;
@@ -22179,7 +22209,6 @@ function renderGearDetailMaintenance(logs, errLogs) {
   list.innerHTML = logs.map(l => filaDeService(l)).join('');
 }
 // ─── END GEAR REGISTRY ───
-
 
 // ─── COMPRESSORS ───
 function showGearView(view, el) {
@@ -22869,7 +22898,7 @@ async function gearStockRepair(itemId, size) {
 async function gearStockReturn(itemId, size) {
   const row = await getOrCreateStockRow(itemId, size);
   if (row.repair_count <= 0) { await showAlertModal('No items in repair for this size.'); return; }
-  if (!(await showConfirmModal('Confirm this item has been repaired and is back in service?'))) return;
+  if (!(await showConfirmModal(t('gear_repaired_confirm')))) return;
   await sb.from('gear_stock').update({
     available_count: row.available_count + 1, repair_count: row.repair_count - 1
   }).eq('id', row.id);
@@ -22898,10 +22927,11 @@ async function gearStockDiscard(itemId, size) {
 
 async function populateCompressorSelects(selectedLoc, selectedBoat) {
   if (!currentOrgId) return;
-  const { data: locs } = await sb.from('locations').select('id,name').eq('org_id', currentOrgId);
+  // Igual que arriba: el error se mira antes de afirmar que no hay locales.
+  const { data: locs, error: errLocs } = await sb.from('locations').select('id,name').eq('org_id', currentOrgId);
   const locSel = document.getElementById('compressor-location');
   const effectiveLoc = selectedLoc || currentLocationId || (locs && locs[0] && locs[0].id) || '';
-  locSel.innerHTML = (locs || []).map(l => `<option value="${l.id}" ${l.id===effectiveLoc?'selected':''}>${escapeHtml(l.name)}</option>`).join('') || '<option value="">No locations — add in Settings</option>';
+  locSel.innerHTML = (locs || []).map(l => `<option value="${l.id}" ${l.id===effectiveLoc?'selected':''}>${escapeHtml(l.name)}</option>`).join('') || `<option value="">${escapeHtml(textoDeListaVacia(errLocs, 'crew_no_locations_settings'))}</option>`;
   await populateCompressorBoatSelect(effectiveLoc, selectedBoat);
   locSel.onchange = () => populateCompressorBoatSelect(locSel.value, null);
 }
@@ -23034,7 +23064,7 @@ async function logCompressorFill(id) {
 }
 
 async function resetCompressor(id) {
-  if (!(await showConfirmModal('Log this as a completed filter change and reset the hour counter to zero?'))) return;
+  if (!(await showConfirmModal(t('comp_filter_reset_confirm')))) return;
   const loggedBy = document.getElementById(`comp-logby-${id}`)?.value.trim() || await showPromptModal('Who replaced the filter?', 'Your name');
   if (!loggedBy) return;
   await sb.from('compressors').update({ current_hours: 0 }).eq('id', id);
@@ -23043,7 +23073,7 @@ async function resetCompressor(id) {
 }
 
 async function deleteCompressor(id) {
-  if (!(await showConfirmModal('Remove this compressor and its history?'))) return;
+  if (!(await showConfirmModal(t('comp_remove_confirm')))) return;
   if (!(await borrarOAvisar(sb.from('compressor_fill_logs').delete().eq('compressor_id', id)))) return;
   if (!(await borrarOAvisar(sb.from('compressors').delete().eq('id', id)))) return;
   await loadCompressors();
@@ -23244,9 +23274,12 @@ async function loadInspectionChecklist() {
   }
   noLocEl.style.display = 'none';
   const month = fechaLocal().slice(0, 7);
-  const { data: items } = await sb.from('gear_inspection_checklist_items').select('*').eq('org_id', currentOrgId).eq('active', true).order('sort_order');
+  // Y el error se mira: sin esto, una lectura que falla dice «todavía no hay
+  // ítems de inspección» y manda a activar una categoría que ya puede estar
+  // activa. Ver textoDeListaVacia() y el postmortem del 26/10.
+  const { data: items, error: errItems } = await sb.from('gear_inspection_checklist_items').select('*').eq('org_id', currentOrgId).eq('active', true).order('sort_order');
   if (!items || !items.length) {
-    catEl.innerHTML = '<p style="color:var(--muted);">No inspection checklist items yet. Enable a category in Settings.</p>';
+    catEl.innerHTML = `<p style="color:var(--muted);">${escapeHtml(textoDeListaVacia(errItems, 'gear_no_inspection_items'))}</p>`;
     return;
   }
   const itemIds = items.map(i => i.id);
@@ -23339,7 +23372,7 @@ async function addInspectionItem() {
   await loadInspectionChecklist();
 }
 async function deleteInspectionItem(itemId) {
-  if (!(await showConfirmModal('Remove this checklist item? This also deletes its history.', { danger: true }))) return;
+  if (!(await showConfirmModal(t('cl_remove_item_confirm'), { danger: true }))) return;
   if (!(await borrarOAvisar(sb.from('gear_inspection_completions').delete().eq('checklist_item_id', itemId)))) return;
   if (!(await borrarOAvisar(sb.from('gear_inspection_checklist_items').delete().eq('id', itemId)))) return;
   await loadInspectionChecklist();
@@ -24518,8 +24551,6 @@ document.getElementById('btn-add-trip-type').addEventListener('click', async () 
 
 // ─── END TRIP TYPES ───
 
-
-
 // ─── CONFIRM / PROMPT / ALERT MODAL ───
 let _modalResolve = null;
 
@@ -24856,7 +24887,6 @@ if ('serviceWorker' in navigator) {
 
 </script>
 <!-- CONFIRM / PROMPT MODAL -->
-
 
 </body>
 </html>
