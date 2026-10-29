@@ -173,4 +173,37 @@ chk('y initDeptChecklists lo pinta',
     /dept-rol-sin-confirmar/.test(sinComentarios.slice(sinComentarios.indexOf('function initDeptChecklists'))),
     'una función que decide sin pantalla donde aparecer es la mitad del arreglo');
 
+// ─── 29/10 · El aviso de doble reserva estaba en inglés duro y sin escapar ───
+//
+// Dos reglas escritas del proyecto rotas en la misma función: «todo string nuevo
+// va en los dos diccionarios» y «el texto del centro no entra crudo al
+// innerHTML». Un centro en español leía un cartel entero en inglés, y el nombre
+// de una embarcación o de un contacto se interpretaba como HTML.
+{
+  const fuente = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  const fn = fuente.slice(fuente.indexOf('async function checkDoubleBookings'));
+  const cuerpo = fn.slice(0, fn.indexOf('\n}'));
+
+  chk('el aviso no tiene inglés duro',
+      !/Double-booking detected|is booked for both|is assigned to both|This isn't a bug/.test(cuerpo),
+      'una app bilingüe desde el primer día no puede tener un cartel sin clave');
+  for (const k of ['dbl_title', 'dbl_note', 'dbl_boat', 'dbl_crew']) {
+    chk('usa la clave ' + k, cuerpo.includes("t('" + k + "')") || cuerpo.includes(k + "')"));
+    chk('y ' + k + ' está en los dos diccionarios',
+        (fuente.match(new RegExp('\\s' + k + ':', 'g')) || []).length === 2,
+        (fuente.match(new RegExp('\\s' + k + ':', 'g')) || []).length + ' veces');
+  }
+  // Lo que se afirma es la regla: ningún nombre del centro llega al texto sin
+  // pasar por el escapado. Los cuatro —embarcación, dos contactos, tripulante—
+  // van por el mismo ayudante, así que se afirma que no hay otro camino.
+  chk('ningún nombre del centro entra sin escapar',
+      !/\$\{(a|b|c)\.(boats|staff|contact_name)/.test(cuerpo) &&
+      cuerpo.includes('escapeHtml(v || t(clave))'),
+      'nombre de embarcación, de contacto y de tripulante iban crudos al innerHTML');
+  chk('y el aviso se repinta al cambiar de idioma',
+      fuente.includes("repintarAlCambiarIdioma('aviso de doble reserva'"),
+      'escribe su texto una vez: sin entrada en el registro se queda en el idioma viejo');
+}
+
+console.log('\n' + (fail ? 'HAY FALLOS' : 'todo en verde') + ' — dept-visibility');
 process.exit(fail);

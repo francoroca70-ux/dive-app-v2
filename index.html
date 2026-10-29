@@ -4553,6 +4553,23 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { storage: rememberMeStorage, persistSession: true, autoRefreshToken: true }
 });
 
+// ─── lanzar(): manda la consulta AHORA, para esperarla después ───
+//
+// Medido en el navegador el 29/10, y corrige un cambio mío del 28:
+// **guardar una consulta de supabase-js en una variable NO la manda.** El
+// constructor de PostgREST es perezoso — ejecuta recién cuando alguien llama su
+// `then`, o sea al `await`. Comprobado contra producción: tras guardarla, 0
+// pedidos; tras esperarla, 1.
+//
+// Así que el patrón «la lanzo arriba y la espero abajo» era **cosmético**: las
+// dos lecturas seguían una atrás de la otra y el comentario afirmaba un
+// paralelismo que no existía. Un comentario que miente sobre una medición es
+// peor que no tenerlo, porque el próximo lo va a copiar.
+//
+// `lanzar()` la convierte en una promesa de verdad, en vuelo. Existe para que
+// la intención se vea en una palabra y para que un guardián pueda exigirla.
+function lanzar(consulta) { return consulta.then(r => r); }
+
 // ─── LANGUAGE / TRANSLATIONS (English + Spanish) ───
 // Scope: app "furniture" — nav, headers, login/invite screens, buttons that appear
 // throughout the app. Shop-entered content (trip type names, gear labels, notes) is
@@ -5240,6 +5257,13 @@ const TRANSLATIONS = {
     cu_select_location_tabs: 'Select a location above to view guest tabs.',
 
     wv_not_enabled: "Waivers aren't enabled yet", wv_not_enabled_desc: 'Turn them on in Settings to start collecting digital signatures.',
+    // El aviso de doble reserva. Estaba EN INGLÉS DURO hasta el 29/10 — cinco
+    // textos sin clave, en una app bilingüe desde el primer día.
+    dbl_title: 'Double-booking detected',
+    dbl_boat: '{boat} is booked for both «{a}» and «{b}» — overlapping dates.',
+    dbl_crew: '{person} is assigned to both «{a}» and «{b}» — overlapping dates.',
+    dbl_note: "This isn't a bug — it happens when a booking is made while offline, since two devices without a connection can't see each other's changes at the moment of booking. Open the trips above and adjust the boat, crew, or time to fix it.",
+    dbl_boat_fallback: 'A boat', dbl_crew_fallback: 'A crew member', dbl_unnamed: 'Unnamed',
     wv_go_to_settings: 'Go to Settings',
     wv_med_section: 'Dive clearance',
     wv_saved_list_stale: 'Saved — but the list on screen could not refresh. Reload the page to see it up to date.',
@@ -6116,6 +6140,11 @@ const TRANSLATIONS = {
     cu_select_location_tabs: 'Selecciona una ubicación arriba para ver las cuentas de huéspedes.',
 
     wv_not_enabled: 'Los Formularios aún no están activados', wv_not_enabled_desc: 'Activalos en Configuración para empezar a recolectar firmas digitales.',
+    dbl_title: 'Doble reserva detectada',
+    dbl_boat: '{boat} está reservada para «{a}» y «{b}» a la vez — las fechas se superponen.',
+    dbl_crew: '{person} está asignado a «{a}» y «{b}» a la vez — las fechas se superponen.',
+    dbl_note: 'No es una falla: pasa cuando una reserva se hace sin conexión, porque dos aparatos sin señal no pueden ver los cambios del otro en el momento de reservar. Abrir las salidas de arriba y ajustar la embarcación, la tripulación o el horario.',
+    dbl_boat_fallback: 'Una embarcación', dbl_crew_fallback: 'Alguien de la tripulación', dbl_unnamed: 'Sin nombre',
     wv_go_to_settings: 'Ir a Configuración',
     wv_med_section: 'Habilitación para bucear',
     wv_saved_list_stale: 'Guardado — pero la lista en pantalla no se pudo actualizar. Hay que recargar la página para verla al día.',
@@ -6532,6 +6561,12 @@ repintarAlCambiarIdioma('lista de la firma remota', () => rwRenderList(),
 // cero viajes y condicionarlas sería un caso especial sin beneficio.
 repintarAlCambiarIdioma('calendario', () => renderCalendar(),
   () => hayCentro() && pantallaActiva('calendar')());
+// El aviso de doble reserva escribe su texto una vez, cuando se detecta. Si
+// está visible al cambiar de idioma se quedaba en el anterior — el mismo caso
+// que los avisos del modal de una salida. Entró recién el 29/10, porque hasta
+// ese día el cartel estaba en inglés duro y no había idioma que cambiarle.
+repintarAlCambiarIdioma('aviso de doble reserva', () => checkDoubleBookings(),
+  () => hayCentro() && pantallaActiva('calendar')() && visible('double-booking-banner')());
 // Los dos avisos del modal de una salida escriben su texto una vez, cuando
 // cambian sus campos. Si el modal está abierto al cambiar de idioma, hay que
 // volver a correrlos o el aviso visible queda en el idioma anterior.
@@ -8634,9 +8669,19 @@ async function updateHomeBanner(orgYaLeido) {
     const nameEl = document.getElementById('home-org-name');
     if (nameEl) nameEl.textContent = org.name;
   }
+  // `updateAppContext()` va PRIMERO y sola, porque es la que deja puesto
+  // `currentLocationId` — y las dos de abajo filtran por él. Medido antes de
+  // tocar esto: si se paralelizaran las tres, las dos últimas correrían con el
+  // local todavía sin resolver y contarían las salidas de TODOS los locales.
+  // Eso no da error: da un número plausible y equivocado.
   await updateAppContext(org && org.name);
-  await refreshHomeStats();
-  await renderHomeGettingStartedOrFinance();
+  // Las otras dos NO se usan entre sí. Medido leyendo las dos: `refreshHomeStats`
+  // escribe las burbujas de arriba (#stat-trips, #stat-guests, #stat-boats) y la
+  // otra escribe #home-dynamic-section; ninguna escribe una global que la otra
+  // lea. Eran dos esperas en fila por costumbre, no por dependencia.
+  //
+  // `allSettled` y no `all`: si una falla, la otra tiene que dibujarse igual.
+  await Promise.allSettled([refreshHomeStats(), renderHomeGettingStartedOrFinance()]);
 }
 function locationStorageKey() { return 'sevenSeasLocationId_' + (currentOrgId || 'none'); }
 
@@ -8696,29 +8741,103 @@ async function refreshHomeStats() {
     .lte('trip_date', today)
     .or(`end_date.gte.${today},and(end_date.is.null,trip_date.eq.${today})`);
   if (currentLocationId) tripsQuery = tripsQuery.eq('location_id', currentLocationId);
+
+  // Las barcas NO dependen de las salidas de hoy, así que arrancan junto con
+  // ellas. Eran tres olas en fila —salidas, huéspedes, barcas— y son dos: lo
+  // único que de verdad espera es la cuenta de huéspedes, que necesita los ids.
+  //
+  // `lanzar()` y no una variable: guardarla no la manda. Ver su comentario.
+  let boatsCountQuery = sb.from('boats').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('active', true);
+  if (currentLocationId) boatsCountQuery = boatsCountQuery.eq('location_id', currentLocationId);
+  const pBoats = lanzar(boatsCountQuery);
+
   const { data: todaysTrips } = await tripsQuery;
   const tripIds = (todaysTrips || []).map(t => t.id);
 
   const tripsEl = document.getElementById('stat-trips');
   if (tripsEl) tripsEl.textContent = tripIds.length;
 
+  const pGuests = tripIds.length
+    ? lanzar(sb.from('participants').select('id', { count: 'exact', head: true }).in('trip_id', tripIds))
+    : null;
+  const [guests, boats] = await Promise.all([pGuests, pBoats]);
+
   const guestsEl = document.getElementById('stat-guests');
-  if (guestsEl) {
-    if (!tripIds.length) {
-      guestsEl.textContent = '0';
-    } else {
-      const { count } = await sb.from('participants').select('id', { count: 'exact', head: true }).in('trip_id', tripIds);
-      guestsEl.textContent = count || 0;
-    }
-  }
+  if (guestsEl) guestsEl.textContent = (guests && guests.count) || 0;
 
   const boatsEl = document.getElementById('stat-boats');
-  if (boatsEl) {
-    let boatsCountQuery = sb.from('boats').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('active', true);
-    if (currentLocationId) boatsCountQuery = boatsCountQuery.eq('location_id', currentLocationId);
-    const { count: boatsCount } = await boatsCountQuery;
-    boatsEl.textContent = boatsCount || 0;
-  }
+  if (boatsEl) boatsEl.textContent = (boats && boats.count) || 0;
+}
+
+// Arma varias tarjetas de Inicio A LA VEZ y las devuelve EN ORDEN.
+//
+// Las cuatro del dueño eran cuatro `blocks.push(await ...)` en fila: 7 de las 12
+// olas que medí el 29/10 en el cambio de idioma. No se usan entre sí —cada una
+// devuelve su HTML y ninguna escribe una global—, así que la fila era costumbre.
+//
+// `allSettled` y no `all`: con `all`, una tarjeta que lanza se lleva las otras
+// tres y Inicio queda sin panel. Acá una que falla sale como vacía, se registra
+// en consola, y las demás se dibujan. **El orden lo da el arreglo, no quién
+// termine primero** — si no, el panel se reordenaría solo según la latencia.
+async function tarjetasEnParalelo(tareas) {
+  const r = await Promise.allSettled(tareas.map(f => f()));
+  return r.map((x, i) => {
+    if (x.status === 'fulfilled') return x.value;
+    console.warn('[inicio] no se pudo armar la tarjeta ' + i, x.reason);
+    return '';
+  });
+}
+
+// La lista de primeros pasos del dueño, como una tarjeta más.
+//
+// The "finish setting up" checklist (boat added, a trip type priced, more than
+// one staff member) is the owner's job, not the crew's -- a captain opening the
+// app to check their assigned trip has nothing to do with whether the owner has
+// finished configuring Settings yet. This used to gate the ENTIRE home screen
+// for every role, so any crew member's trips and tasks silently never rendered
+// at all while setup was incomplete.
+//
+// Devuelve '' cuando los tres pasos están hechos, que es lo que la vuelve una
+// tarjeta como las otras y le permite ir en la misma ola. Antes era una espera
+// aparte y previa a las cuatro — una ola entera para decidir si se muestra algo.
+async function buildGettingStartedHtml() {
+  const [{ count: boatsCount }, { data: pricedTypes }, { count: staffCount }] = await Promise.all([
+    sb.from('boats').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('active', true),
+    sb.from('trip_types').select('id').eq('org_id', currentOrgId).eq('is_active', true).gt('default_price', 0).limit(1),
+    sb.from('staff').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId)
+  ]);
+
+  const hasBoat = (boatsCount || 0) > 0;
+  const hasPricedTrip = (pricedTypes || []).length > 0;
+  // Más de uno: el dueño ya tiene su propia fila en staff desde el alta.
+  const hasCrew = (staffCount || 0) > 1;
+  if (hasBoat && hasPricedTrip && hasCrew) return '';
+
+  // La lista de primeros pasos acompaña al panel, no lo reemplaza.
+  //
+  // Antes había un `return` en quien llama y el dueño no veía NADA más hasta
+  // completar los tres pasos. Dos problemas:
+  //
+  //  1. «Invitá a un tripulante» exige staff > 1, y un instructor que trabaja
+  //     solo nunca lo va a cumplir. Starter es de 1 a 3 botes: operar solo no
+  //     es el caso raro, es el caso típico del plan más barato. Ese dueño se
+  //     quedaba con una lista imposible en lugar de una app, para siempre. Hay
+  //     dos organizaciones así en la base.
+  //  2. Aun pudiendo completarlos, esconder el panel mientras se configura
+  //     castiga justo los primeros diez minutos, que son los que deciden si la
+  //     prueba sigue.
+  //
+  // Una lista de tareas sugiere; no debería tomar la pantalla de rehén.
+  return `<div class="card">
+    <h2>${t('getting_started_title')}</h2>
+    <p class="card-desc" style="margin-bottom:14px;">${t('getting_started_sub')}</p>
+    <div class="onboard-checklist">
+      ${renderOnboardStep(hasBoat, t('onboard_step_boat'), 'fleet')}
+      ${renderOnboardStep(hasPricedTrip, t('onboard_step_prices'), 'settings')}
+      ${renderOnboardStep(hasCrew, t('onboard_step_crew'), 'crew')}
+    </div>
+    ${hasCrew ? '' : `<p class="card-desc" style="margin-top:12px;font-style:italic;">${t('onboard_solo_note')}</p>`}
+  </div>`;
 }
 
 function renderOnboardStep(done, label, pageId) {
@@ -8752,62 +8871,32 @@ async function renderHomeGettingStartedOrFinance() {
   // gate the ENTIRE home screen for every role, so any crew member's trips
   // and tasks silently never rendered at all while setup was incomplete.
   if (currentUserRole === 'owner') {
-    const [{ count: boatsCount }, { data: pricedTypes }, { count: staffCount }] = await Promise.all([
-      sb.from('boats').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('active', true),
-      sb.from('trip_types').select('id').eq('org_id', currentOrgId).eq('is_active', true).gt('default_price', 0).limit(1),
-      sb.from('staff').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId)
-    ]);
-
-    const hasBoat = (boatsCount || 0) > 0;
-    const hasPricedTrip = (pricedTypes || []).length > 0;
-    // Más de uno: el dueño ya tiene su propia fila en staff desde el alta.
-    const hasCrew = (staffCount || 0) > 1;
-    const setupComplete = hasBoat && hasPricedTrip && hasCrew;
-
-    if (!setupComplete) {
-      // La lista de primeros pasos acompaña al panel, no lo reemplaza.
-      //
-      // Antes había un `return` acá y el dueño no veía NADA más hasta
-      // completar los tres pasos. Dos problemas:
-      //
-      //  1. «Invitá a un tripulante» exige staff > 1, y un instructor que
-      //     trabaja solo nunca lo va a cumplir. Starter es de 1 a 3 botes:
-      //     operar solo no es el caso raro, es el caso típico del plan más
-      //     barato. Ese dueño se quedaba con una lista imposible en lugar de
-      //     una app, para siempre. Hay dos organizaciones así en la base.
-      //  2. Aun pudiendo completarlos, esconder el panel mientras se
-      //     configura castiga justo los primeros diez minutos, que son los
-      //     que deciden si la prueba sigue.
-      //
-      // Una lista de tareas sugiere; no debería tomar la pantalla de rehén.
-      blocks.push(`<div class="card">
-        <h2>${t('getting_started_title')}</h2>
-        <p class="card-desc" style="margin-bottom:14px;">${t('getting_started_sub')}</p>
-        <div class="onboard-checklist">
-          ${renderOnboardStep(hasBoat, t('onboard_step_boat'), 'fleet')}
-          ${renderOnboardStep(hasPricedTrip, t('onboard_step_prices'), 'settings')}
-          ${renderOnboardStep(hasCrew, t('onboard_step_crew'), 'crew')}
-        </div>
-        ${hasCrew ? '' : `<p class="card-desc" style="margin-top:12px;font-style:italic;">${t('onboard_solo_note')}</p>`}
-      </div>`);
-    }
-
-    blocks.push(await buildMaintenanceDueHtml());
-    blocks.push(await buildFinanceCardHtml());
-    blocks.push(await buildTripsTodayHtml('all'));
-    blocks.push(await buildPhase2ChecklistHtml());
+    blocks.push(...await tarjetasEnParalelo([
+      // Era una espera aparte ANTES de las otras cuatro: su propia ola, para
+      // decidir si se muestra una tarjeta. Ahora es una tarjeta más — devuelve
+      // '' cuando no hay nada que mostrar, igual que las demás.
+      () => buildGettingStartedHtml(),
+      () => buildMaintenanceDueHtml(),
+      () => buildFinanceCardHtml(),
+      () => buildTripsTodayHtml('all'),
+      () => buildPhase2ChecklistHtml()
+    ]));
   } else if (currentUserRole === 'manager') {
-    blocks.push(await buildMaintenanceDueHtml());
-    blocks.push(await buildTaskBannerHtml(myId));
-    blocks.push(await buildTripsTodayHtml('all'));
+    blocks.push(...await tarjetasEnParalelo([
+      () => buildMaintenanceDueHtml(),
+      () => buildTaskBannerHtml(myId),
+      () => buildTripsTodayHtml('all')
+    ]));
   } else {
     // También la ve la tripulación. Un capitán que sale con el motor vencido
     // tiene que enterarse antes de largar, no cuando alguien revise Flota.
-    blocks.push(await buildMaintenanceDueHtml());
     // Captain and every other crew role (deckhand, instructor, front desk,
     // etc.) only see what's assigned to them personally.
-    blocks.push(await buildTaskBannerHtml(myId));
-    blocks.push(await buildTripsTodayHtml('mine', myId));
+    blocks.push(...await tarjetasEnParalelo([
+      () => buildMaintenanceDueHtml(),
+      () => buildTaskBannerHtml(myId),
+      () => buildTripsTodayHtml('mine', myId)
+    ]));
   }
 
   container.innerHTML = blocks.filter(Boolean).join('');
@@ -8948,22 +9037,29 @@ async function buildPhase2ChecklistHtml() {
   // siempre un paso pendiente que no tenía forma de completar, porque la
   // tarea no existe en su operación. Pedirle a alguien que haga algo que no
   // le corresponde es peor que no pedirle nada: le enseña a ignorar la lista.
+  // Cuatro lecturas, y eran cuatro olas en fila. Son DOS cadenas de dos, y las
+  // dos cadenas no se conocen: categorías → compresor (sólo si el centro bucea),
+  // y equipo → stock (sólo si hay equipo). Así que las dos arrancan juntas.
+  //
+  // `lanzar()` y no una variable: guardar la consulta no la manda — ver su
+  // comentario. Sin eso, esto quedaría igual de secuencial con el código
+  // reordenado, que es exactamente el error que lo encontró.
+  const pGearItems = lanzar(sb.from('gear_items').select('id').eq('org_id', currentOrgId).limit(500));
   const categorias = await loadActiveCategories();
   const buceaONoSabemos = !categorias.length || categorias.includes('diving');
 
-  let hasCompressor = true;
-  if (buceaONoSabemos) {
-    const { count: compCount } = await sb.from('compressors').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId);
-    hasCompressor = (compCount || 0) > 0;
-  }
+  const pComp = buceaONoSabemos
+    ? lanzar(sb.from('compressors').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId))
+    : null;
+  const { data: orgGearItems } = await pGearItems;
+  const pStock = (orgGearItems && orgGearItems.length)
+    ? lanzar(sb.from('gear_stock').select('id')
+        .in('gear_item_id', orgGearItems.map(g => g.id)).gt('available_count', 0).limit(1))
+    : null;
 
-  const { data: orgGearItems } = await sb.from('gear_items').select('id').eq('org_id', currentOrgId).limit(500);
-  let hasGearStock = false;
-  if (orgGearItems && orgGearItems.length) {
-    const { data: stockRows } = await sb.from('gear_stock').select('id')
-      .in('gear_item_id', orgGearItems.map(g => g.id)).gt('available_count', 0).limit(1);
-    hasGearStock = !!(stockRows && stockRows.length);
-  }
+  const [comp, stock] = await Promise.all([pComp, pStock]);
+  const hasCompressor = buceaONoSabemos ? ((comp && comp.count) || 0) > 0 : true;
+  const hasGearStock = !!(stock && stock.data && stock.data.length);
 
   if (hasCompressor && hasGearStock) return '';
 
@@ -9552,7 +9648,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-28n';
+const BUILD_WEB = '2026-10-29c';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -9886,9 +9982,11 @@ document.getElementById('btn-login').addEventListener('click', async () => {
       btn.textContent = t('auth_sign_in');
       return;
     }
-    loadFleet();
-    loadCrew();
-    renderCalendar();
+    // 29/10: acá había otro juego de las tres precargas y se borró — ver
+    // `initAuthInner()`. `showPage()` recarga cada pantalla al abrirla y la que se
+    // muestra al entrar es Inicio. Eran DOS caminos más de los que yo creía que
+    // había cerrado el 28: *al borrar una precarga, la pregunta siguiente es
+    // quién más la hacía.*
     // La identidad local TAMBIÉN se guarda acá, y la falta costó caro.
     //
     // Medido el 27/10 en el navegador de Fran: `ss_identidad_v1_<uid>` **no
@@ -10015,9 +10113,11 @@ document.getElementById('btn-signup').addEventListener('click', async () => {
     if (settingsOk === false) return;
     const ownerNameInput = document.getElementById('owner-full-name');
     if (ownerNameInput && !ownerNameInput.value) ownerNameInput.value = fullName;
-    loadFleet();
-    loadCrew();
-    renderCalendar();
+    // 29/10: acá había otro juego de las tres precargas y se borró — ver
+    // `initAuthInner()`. `showPage()` recarga cada pantalla al abrirla y la que se
+    // muestra al entrar es Inicio. Eran DOS caminos más de los que yo creía que
+    // había cerrado el 28: *al borrar una precarga, la pregunta siguiente es
+    // quién más la hacía.*
     showScreen('app');
   } else {
     // This Supabase project requires email confirmation -- can't log them in
@@ -10533,7 +10633,7 @@ async function loadSettings(user) {
   // salidas tempranas debajo —cuenta cerrada, identidad local, sin fila de
   // staff— y envolverlas cambiaría ese control de flujo, que es justo donde vive
   // el arranque sin señal.
-  const pLocsDelStaff = sb.from('staff_locations').select('location_id').eq('staff_id', user.id);
+  const pLocsDelStaff = lanzar(sb.from('staff_locations').select('location_id').eq('staff_id', user.id));
   // Try to load existing org for this user
   const { data: staffRow, error: errStaffRow } = await sb
     .from('staff')
@@ -10684,7 +10784,22 @@ async function loadSettings(user) {
     //
     // `allSettled` y no `all`: si una falla, las otras tres tienen que
     // dibujarse igual — cada una ya sabe decir que no pudo leer.
-    await cargarContenidosDeConfiguracion();
+    // 29/10: y ahora SÓLO si alguien está mirando Configuración.
+    //
+    // Al arrancar la pantalla activa es Inicio —`page-home` ya nace con la
+    // clase en el HTML—, así que acá se saltean: son **4 de los 28 pedidos del
+    // arranque** que se pedían para una pantalla que nadie abrió.
+    //
+    // Pero no se borran, y la razón es el **cambio de cuenta**: `switchToAccount`
+    // llama a `loadSettings()` y **no navega**, así que alguien parado en
+    // Configuración se quedaría viendo los datos del centro anterior. Medido:
+    // los cinco caminos que llaman a `loadSettings()` son de entrada (sesión
+    // guardada, login, alta, cambio de cuenta, recuperar contraseña) y ninguno
+    // es un refresco después de guardar.
+    //
+    // Es la misma condición que usa el repintado de idioma, y a propósito: una
+    // sola regla —«se carga lo que se está mirando»— en vez de dos criterios.
+    if (pantallaActiva('settings')()) await cargarContenidosDeConfiguracion();
 
     // Keep the account switcher's saved copy of this session in sync,
     // including a friendly org/role label for its dropdown -- this is the one
@@ -11340,13 +11455,26 @@ async function checkDoubleBookings() {
     for (let j = i + 1; j < list.length; j++) {
       const a = list[i], b = list[j];
       if (!rangesOverlap(a, b)) continue;
+      // 29/10: estos dos textos estaban en inglés duro Y metían el nombre de la
+      // embarcación, de los dos contactos y del tripulante **crudos** en un
+      // innerHTML. Las dos cosas en la misma línea, y las dos son reglas
+      // escritas del proyecto. Escapado acá, donde se arma el texto: el aviso
+      // entero entra por innerHTML, así que escaparlo al pintar sería escapar
+      // también las etiquetas.
+      const nombre = (v, clave) => escapeHtml(v || t(clave));
       if (a.boat_id && a.boat_id === b.boat_id) {
-        issues.push(`${a.boats?.name || 'A boat'} is booked for both "${a.contact_name || 'Unnamed'}" and "${b.contact_name || 'Unnamed'}" — overlapping dates.`);
+        issues.push(t('dbl_boat')
+          .replace('{boat}', nombre(a.boats?.name, 'dbl_boat_fallback'))
+          .replace('{a}', nombre(a.contact_name, 'dbl_unnamed'))
+          .replace('{b}', nombre(b.contact_name, 'dbl_unnamed')));
       }
       const aCrewIds = (a.trip_crew || []).map(c => c.staff_id);
       (b.trip_crew || []).forEach(c => {
         if (aCrewIds.includes(c.staff_id)) {
-          issues.push(`${c.staff?.full_name || 'A crew member'} is assigned to both "${a.contact_name || 'Unnamed'}" and "${b.contact_name || 'Unnamed'}" — overlapping dates.`);
+          issues.push(t('dbl_crew')
+            .replace('{person}', nombre(c.staff?.full_name, 'dbl_crew_fallback'))
+            .replace('{a}', nombre(a.contact_name, 'dbl_unnamed'))
+            .replace('{b}', nombre(b.contact_name, 'dbl_unnamed')));
         }
       });
     }
@@ -11354,9 +11482,9 @@ async function checkDoubleBookings() {
 
   if (issues.length) {
     banner.innerHTML = `
-      <strong>⚠ Double-booking detected</strong>
+      <strong>⚠ ${t('dbl_title')}</strong>
       <div style="margin-top:6px;">${issues.map(i => `<div>${i}</div>`).join('')}</div>
-      <div style="margin-top:8px;font-size:0.8rem;opacity:0.85;">This isn't a bug — it happens when a booking is made while offline, since two devices without a connection can't see each other's changes at the moment of booking. Open the trips above and adjust the boat, crew, or time to fix it.</div>
+      <div style="margin-top:8px;font-size:0.8rem;opacity:0.85;">${t('dbl_note')}</div>
     `;
     banner.style.display = 'block';
   } else {
@@ -24669,9 +24797,12 @@ document.getElementById('btn-reset-pw-save').addEventListener('click', async () 
     if (session) {
       initHome(session.user);
       await loadSettings(session.user);
-      loadFleet();
-      loadCrew();
-      await renderCalendar();
+      // 29/10: acá había un TERCER juego de las tres precargas —flota,
+      // tripulación, calendario— y se borró por lo mismo que los otros dos:
+      // `showPage()` recarga cada pantalla al abrirla, y la que se muestra al
+      // entrar es Inicio. Lo encontré buscando quién llama a `loadSettings()`,
+      // no corrigiendo este camino: *al borrar una precarga, la pregunta
+      // siguiente es quién más la hacía.*
       showScreen('app');
     } else {
       showScreen('login');

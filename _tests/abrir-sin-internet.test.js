@@ -377,6 +377,97 @@ chk('ya no queda el mapa enumerado de 17 entradas',
   }
 }
 
+// ─── J3/J4 · Las olas del panel de Inicio ──────────────────────────────────
+//
+// Medido en el navegador el 29/10: cambiar de idioma estando en Inicio costaba
+// **15 pedidos en 12 OLAS casi todas en fila**, y por eso bajar de 34 a 15
+// pedidos movió el tiempo de 2,2 a 2,0 s y nada más. **Lo que se paga es la
+// fila, no la cantidad** — la misma lección que el arranque.
+//
+// Y el hallazgo que lo destapó, que corrige un cambio del 28/10: guardar una
+// consulta de supabase-js en una variable NO la manda. Comprobado contra
+// producción: tras guardarla, 0 pedidos; tras esperarla, 1.
+{
+  chk('lanzar() se declara una vez',
+      (sinComentarios.match(/function lanzar\(/g) || []).length === 1);
+
+  // La regla, no el inventario: una consulta que se guarda para esperar después
+  // tiene que pasar por `lanzar()`, o no está en vuelo y el paralelismo es
+  // decorativo.
+  const guardadasCrudas = [...sinComentarios.matchAll(/const (p[A-Z]\w*)\s*=\s*sb\.from\(/g)].map(m => m[1]);
+  chk('ninguna consulta se guarda cruda esperando salir sola',
+      guardadasCrudas.length === 0, guardadasCrudas.join(', ') + ' — les falta lanzar()');
+
+  // `updateAppContext` SÍ va sola y antes: deja puesto `currentLocationId`, y
+  // las dos de abajo filtran por él. Paralelizar las tres daría números
+  // plausibles y equivocados — de todos los locales en vez de uno.
+  const banner = sinComentarios.slice(sinComentarios.indexOf('async function updateHomeBanner'),
+                                      sinComentarios.indexOf('function locationStorageKey'));
+  chk('el contexto del local se resuelve antes, y solo',
+      /await updateAppContext\(/.test(banner) &&
+      banner.indexOf('await updateAppContext(') < banner.indexOf('allSettled'),
+      'si va en paralelo, las burbujas cuentan las salidas de todos los locales');
+  chk('las burbujas y el panel se arman en UNA ola',
+      /allSettled\(\[refreshHomeStats\(\), renderHomeGettingStartedOrFinance\(\)\]\)/.test(banner),
+      'eran dos esperas en fila sin dependencia entre ellas');
+
+  // Las tarjetas de Inicio: ninguna rama vuelve a esperarlas de a una.
+  const enFila = (sinComentarios.match(/blocks\.push\(await build/g) || []).length;
+  chk('ninguna tarjeta de Inicio se espera en fila', enFila === 0, enFila + ' quedaron en fila');
+  const ramas = (sinComentarios.match(/blocks\.push\(\.\.\.await tarjetasEnParalelo\(/g) || []).length;
+  chk('las tres ramas de rol usan el mismo armador', ramas === 3, ramas + ' ramas');
+  chk('tarjetasEnParalelo preserva el orden del arreglo, no el de llegada',
+      /\.map\(\(x, i\)/.test(sinComentarios) &&
+      sinComentarios.includes('async function tarjetasEnParalelo'),
+      'sin esto el panel se reordena solo según la latencia');
+  chk('y una tarjeta que falla no se lleva a las otras',
+      /tarjetasEnParalelo[\s\S]{0,300}allSettled/.test(sinComentarios));
+
+  // Las cuatro de Configuración sólo se leen si alguien la está mirando.
+  chk('Configuración sólo se carga si se la está mirando',
+      sinComentarios.includes("if (pantallaActiva('settings')()) await cargarContenidosDeConfiguracion();"),
+      "4 de los 28 pedidos del arranque eran de una pantalla que nadie abrió");
+  chk('y usa la MISMA condición que el repintado de idioma',
+      sinComentarios.split("pantallaActiva('settings')").length - 1 >= 2,
+      'dos criterios para «se está mirando» son dos lugares donde puede estar mal');
+
+  // La precarga de pantallas aparecía SIEMPRE como el mismo trío, y en cuatro
+  // caminos de entrada — no en dos, como yo creía el 28/10. Lo que se afirma es
+  // que el trío no existe en ningún lado, no cuántas veces aparece cada llamada:
+  // un número habría pasado con sólo subirlo.
+  const trio = /loadFleet\(\);\s*loadCrew\(\);\s*(await )?renderCalendar\(\);/;
+  chk('ningún camino de entrada precarga el trío de pantallas',
+      !trio.test(sinComentarios),
+      'showPage() ya carga cada pantalla al abrirla; al arrancar se muestra Inicio');
+
+  // La lista de primeros pasos es una tarjeta más, no una ola previa.
+  chk('la lista de primeros pasos se arma como una tarjeta',
+      /async function buildGettingStartedHtml/.test(sinComentarios) &&
+      /buildGettingStartedHtml()/.test(sinComentarios.slice(sinComentarios.indexOf('tarjetasEnParalelo(['))),
+      'era una espera aparte y previa, una ola para decidir si se muestra algo');
+  chk('y devuelve vacío cuando los tres pasos están hechos',
+      sinComentarios.includes("hasBoat && hasPricedTrip && hasCrew) return '';"),
+      'sin eso no puede ir en la misma ola que las otras');
+
+  // Las burbujas: lo único que espera de verdad es la cuenta de huéspedes.
+  const stats = sinComentarios.slice(sinComentarios.indexOf('async function refreshHomeStats'));
+  const cuerpoStats = stats.slice(0, stats.indexOf('\n}'));
+  chk('las barcas no esperan a las salidas de hoy',
+      cuerpoStats.indexOf('pBoats') < cuerpoStats.indexOf('await tripsQuery'),
+      'no dependen de los ids: eran tres olas en fila y son dos');
+  chk('y las dos que quedan se cierran juntas',
+      cuerpoStats.includes('Promise.all([pGuests, pBoats])'));
+
+
+  const p2 = sinComentarios.slice(sinComentarios.indexOf('async function buildPhase2ChecklistHtml'));
+  const cuerpo2 = p2.slice(0, p2.indexOf('\n}'));
+  chk('el equipo se pide ANTES de esperar las categorías',
+      cuerpo2.indexOf('pGearItems') < cuerpo2.indexOf('await loadActiveCategories'),
+      'eran cuatro olas en fila y son dos cadenas que no se conocen');
+  chk('y las dos cadenas se cierran en una sola ola',
+      /Promise\.all\(\[pComp, pStock\]\)/.test(cuerpo2));
+}
+
 }catch(e){ chk('el cuerpo del test corrió hasta el final',false,String(e).slice(0,300)); }
 
 console.log(`\n${fail?'HAY FALLOS':'todo en verde'} — abrir-sin-internet`);
