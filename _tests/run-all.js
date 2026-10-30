@@ -77,7 +77,7 @@ const MINIMOS = {
   'motivo-de-un-rechazo.test.js':   11,
   'onboarding.test.js':             12,
   'plan-limits.test.js':            14,
-  'pos-etapa-1.test.js':           24,
+  'pos-etapa-1.test.js':           33,
   'anular-una-venta.test.js':      46,
   'fecha-local.test.js':           14,
   'ventana-del-dia.test.js':       26,

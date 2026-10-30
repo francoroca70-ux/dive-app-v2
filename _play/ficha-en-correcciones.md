@@ -111,3 +111,43 @@ and the Spanish texts.
 **Midiendo la ficha pública** —`play.google.com/store/apps/details?id=com.sevenseasops.app&hl=en`—
 y comprobando las cinco cosas: nombre, descripción breve, una sola línea de
 offline, enlaces al dominio, y novedades en inglés. Eso sí lo puede medir Claude.
+
+---
+
+## MEDIDO EN LA FICHA PÚBLICA EL 30/10, Y HAY ALGO MÁS GRANDE QUE LA FICHA
+
+> [!warning] **«Updated on Sep 1, 2026».** No salió ninguna versión nueva a Play
+> **desde el 1 de septiembre.**
+>
+> O sea que el binario que tienen los 13 dispositivos reales es el de antes del
+> arreglo del 14/10: **el que lleva `server.url` y no abre sin señal.** Todo lo
+> que se construyó este mes para que la app abra del binario —sacar `server.url`,
+> vendorizar supabase-js, la copia local— **no llegó a ningún teléfono Android**.
+>
+> Y la ficha en inglés sigue prometiendo, dos veces, lo que decidimos el 28/10
+> que no era cierto: *«all designed to keep working when the signal drops»* y el
+> bullet *«Works offline — built for shops with unreliable wifi»*.
+>
+> **Esto es lo más urgente que hay hoy**, y no es código: es una release de Play.
+> El AAB firmado lo construye el workflow solo con cada push (*Actions → Mobile
+> app builds*, artefacto del release). Lo único que falta es subirlo.
+
+### Y el nombre ya estaba decidido por los hechos
+
+La ficha pública en inglés dice **«Seven Seas»**, igual que `appName` en
+`capacitor.config.json`. La que dice «Seven Seas Ops» es la española, que subiste
+el 28/10. Así que no hay que elegir entre dos opciones: hay que **unificar las dos
+fichas**, y lo barato es dejar «Seven Seas» en las dos — coincide con el ícono del
+teléfono y con el binario, y no pide build nuevo.
+
+(El dominio y la landing siguen diciendo «Seven Seas Ops». Eso es el nombre del
+producto y puede diferir del nombre de la app en la tienda sin que moleste a
+nadie; lo que no puede pasar es que las dos fichas de la MISMA app difieran.)
+
+### El orden, entonces
+
+1. **Subir la release de Android** con el build actual. Es lo único que le llega
+   a un usuario real.
+2. Corregir la ficha en inglés: descripción breve, **las dos** menciones de
+   offline, los enlaces al dominio, y las novedades en inglés.
+3. Recién después, iOS.

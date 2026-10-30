@@ -9714,7 +9714,7 @@ async function checkCrewNotifications() {
 // La regla 5 de CLAUDE.md sigue igual: este número y el `CACHE_VERSION` de
 // `sw.js` suben juntos, y `sin-vitrina-en-nativo.test.js` falla si uno se
 // queda atrás.
-const BUILD_WEB = '2026-10-29g';
+const BUILD_WEB = '2026-10-30a';
 
 // Se pinta en Configuración, abajo de todo. Se llama al arrancar y después de
 // cada cambio de idioma, porque la etiqueta se traduce y el número no.
@@ -22370,6 +22370,44 @@ const POS_VENTAS = false;
 // de ser interruptor.
 function posEstaPrendido() { return POS_VENTAS === true; }
 
+// ─── El interruptor SE PARTIÓ EN DOS el 30/10, y el motivo es una medición ───
+//
+// El bloqueo del POS era **circular**, y recién se ve midiendo las dos cosas a
+// la vez:
+//
+//   · la nota decía «prenderlo no sirve: 0 de 178 artículos están a la venta»;
+//   · y el control para marcar un artículo a la venta **vive detrás del mismo
+//     interruptor** (`bloqueDeVentaDeItem()` devuelve '' con el POS apagado).
+//
+// O sea que apagado no hay forma de marcar nada, así que el dato nunca puede
+// dejar de ser 0, y el 0 es el argumento para dejarlo apagado. Medido hoy
+// contra producción: 178 artículos, **0 a la venta, 0 con precio, 0 ventas**.
+// *Un dato que el propio interruptor impide producir no es una medición: es una
+// consecuencia del interruptor.*
+//
+// Así que son dos decisiones distintas y ahora son dos interruptores:
+//
+//   `POS_PRECIOS` · marcar un artículo a la venta y ponerle precio. Es
+//      CONFIGURACIÓN: no hay carrito, no hay cobro, no se escribe ni una fila
+//      en `sales`. Lo único que toca son dos columnas de `gear_items` que ya
+//      existen, con su CHECK (`for_sale = false OR sale_price >= 0`), y el
+//      permiso lo decide `puedeEditarPrecios()`, que dice lo mismo que RLS.
+//
+//   `POS_VENTAS` · el mostrador, el carrito, la venta y su anulación. Eso
+//      mueve dinero y **se queda apagado**.
+//
+// Prender el primero es lo que permite que el segundo tenga algún día un dato
+// detrás. Las dos siguen apagadas en producción: prenderlas es decisión de
+// Fran, no efecto de este commit (regla 8).
+//
+// Y el orden importa: prender `POS_VENTAS` con `POS_PRECIOS` apagado deja el
+// mostrador diciendo «todavía no hay nada a la venta» y sin ninguna pantalla
+// donde arreglarlo — que es exactamente el estado del que salimos.
+const POS_PRECIOS = 'apagado';   // 'apagado' | 'encendido'
+
+// El único lector, por lo mismo que arriba.
+function preciosDeVentaPrendidos() { return POS_PRECIOS === 'encendido'; }
+
 // Lo que se lleva tildado antes de confirmar. Clave: `itemId|talle`, igual que
 // `stockMap`, para no inventar una segunda forma de identificar lo mismo.
 let carritoDeVenta = {};
@@ -22405,7 +22443,14 @@ function puedeEditarPrecios() { return puedeEditarPlantillas(); }
 // vacío con el interruptor apagado, que es lo que hace que la pantalla vieja
 // quede intacta.
 function bloqueDeVentaDeItem(item) {
-  if (!posEstaPrendido()) return '';
+  // 30/10: este bloque pasó a depender de `POS_PRECIOS` y NO de `POS_VENTAS`.
+  // Marcar un precio es configuración; cobrar es otra cosa. Ver el comentario
+  // largo donde se declaran los dos interruptores.
+  //
+  // `o` y no `y`: con el mostrador prendido, el precio tiene que poder editarse
+  // igual — si no, prender las ventas dejaría la pantalla sin dónde corregir un
+  // precio mal puesto.
+  if (!preciosDeVentaPrendidos() && !posEstaPrendido()) return '';
   const puede = puedeEditarPrecios();
   const precio = item.sale_price != null ? Number(item.sale_price).toFixed(2) : '';
   const marcado = item.for_sale ? 'checked' : '';

@@ -48,6 +48,20 @@ chk('se declara una vez y lo lee una sola función',
 chk('y el único lector es posEstaPrendido()',
     /function posEstaPrendido\(\) \{ return POS_VENTAS === true; \}/.test(html));
 
+// El segundo interruptor, con la MISMA regla: una declaración, un lector.
+chk('POS_PRECIOS también está apagado en producción',
+    /const POS_PRECIOS = 'apagado';/.test(html),
+    'prenderlo es decisión de Fran — pero es la decisión barata, no toca dinero');
+const lineasPrecios = lineasDeCodigoCon(html, 'POS_PRECIOS');
+chk('POS_PRECIOS se declara una vez y lo lee una sola función',
+    lineasPrecios.length === 2 &&
+    lineasPrecios.some(l => l.startsWith('const POS_PRECIOS')) &&
+    lineasPrecios.some(l => l.startsWith('function preciosDeVentaPrendidos')),
+    lineasPrecios.length + ' líneas: ' + JSON.stringify(lineasPrecios));
+chk('y son DOS interruptores distintos, no un alias',
+    !/POS_PRECIOS\s*=\s*POS_VENTAS/.test(html) && !/POS_VENTAS\s*=\s*POS_PRECIOS/.test(html),
+    'si uno deriva del otro, volvimos al bloqueo circular con dos nombres');
+
 // ─── 2 · Lo estructural ─────────────────────────────────────────────────────
 
 chk('una venta se registra con UNA llamada al servidor',
@@ -109,6 +123,13 @@ const hook = main + "\n;window.__t={" +
   "bloqueConInterruptorPrendido:(i)=>{const POS_VENTAS=true;" +
   "  const posEstaPrendido=()=>POS_VENTAS===true;" +
   "  return eval('(' + bloqueDeVentaDeItem.toString() + ')')(i);}," +
+  // 30/10: los DOS interruptores, en las cuatro combinaciones. Lo que se
+  // prueba no es que existan: es que marcar un precio dejó de depender del
+  // interruptor de las VENTAS, que era el bloqueo circular.
+  "bloqueCon:(i,precios,ventas)=>{" +
+  "  const preciosDeVentaPrendidos=()=>precios;" +
+  "  const posEstaPrendido=()=>ventas;" +
+  "  return eval('(' + bloqueDeVentaDeItem.toString() + ')')(i);}," +
   "t:(k)=>t(k)};";
 let boot = null;
 try { window.eval(hook); } catch (e) { boot = e; }
@@ -131,6 +152,35 @@ chk('y PRENDIDO sí — cambiarlo cambia el resultado',
     typeof conPrendido === 'string' && conPrendido.length > 0 &&
     /pos-precio-input/.test(conPrendido),
     conPrendido.slice(0, 60));
+
+// ── 30/10 · El bloqueo era CIRCULAR, y las cuatro combinaciones lo prueban
+//
+// Medido contra producción: 178 artículos, 0 a la venta, 0 con precio, 0
+// ventas. Y el control para marcar un precio vivía detrás del interruptor de
+// las ventas, así que apagado el dato no podía dejar de ser 0 — y el 0 era el
+// argumento para dejarlo apagado.
+//
+// Lo que se afirma es la regla: **poner un precio no depende de poder cobrar.**
+{
+  const combos = [
+    ['los dos apagados', false, false, false],
+    ['sólo PRECIOS prendido', true,  false, true ],
+    ['sólo VENTAS prendido',  false, true,  true ],
+    ['los dos prendidos',     true,  true,  true ]
+  ];
+  for (const [nombre, precios, ventas, esperaBloque] of combos) {
+    const r = T.bloqueCon(remera, precios, ventas);
+    const hay = typeof r === 'string' && /pos-precio-input/.test(r);
+    chk('con ' + nombre + ' el precio ' + (esperaBloque ? 'SE PUEDE editar' : 'no se ofrece'),
+        hay === esperaBloque, '«' + String(r).slice(0, 50) + '»');
+  }
+  // La que rompe el círculo, dicha aparte porque es el punto del cambio.
+  chk('SE PUEDE marcar un precio SIN que las ventas estén prendidas',
+      /pos-precio-input/.test(T.bloqueCon(remera, true, false)),
+      'si esto falla, el dato que justifica prender las ventas no se puede producir');
+  chk('y un artículo que no está a la venta igual ofrece el campo para ponerlo',
+      /pos-precio-input/.test(T.bloqueCon(regulador, true, false)));
+}
 
 // ── Qué se puede vender
 const stock = { 'it-1|M': { available_count: 4 }, 'it-1|L': { available_count: 0 },
